@@ -156,7 +156,7 @@ describe('production TLS rules', () => {
       {
         key: 'DATABASE_URL',
         problem:
-          'must set sslmode=require (or verify-ca, verify-full) in production; ALLOW_INSECURE_BACKENDS=1 overrides',
+          'must set exactly one sslmode, require (or verify-ca, verify-full), in production; ALLOW_INSECURE_BACKENDS=1 overrides',
       },
       {
         key: 'REDIS_URL',
@@ -166,6 +166,26 @@ describe('production TLS rules', () => {
     expect(issues({ ...PROD, DATABASE_URL: `${DB}?sslmode=disable` }).map((i) => i.key)).toEqual([
       'DATABASE_URL',
     ]);
+  });
+
+  // Review of B004: pg-connection-string copies query parameters in order, so the last sslmode
+  // wins; a check that read the first one let `?sslmode=require&sslmode=disable` through.
+  it.each([
+    ['require then disable', 'sslmode=require&sslmode=disable'],
+    ['disable then require', 'sslmode=disable&sslmode=require'],
+    ['require twice', 'sslmode=require&sslmode=require'],
+    ['an empty value', 'sslmode='],
+    ['a different case', 'sslmode=Require'],
+    ['no-verify', 'sslmode=no-verify'],
+  ])('rejects a repeated or non-TLS sslmode (%s)', (_, query) => {
+    expect(issues({ ...PROD, DATABASE_URL: `${DB}?${query}` }).map((i) => i.key)).toEqual([
+      'DATABASE_URL',
+    ]);
+  });
+
+  it('accepts exactly one TLS sslmode next to other parameters', () => {
+    const url = `${DB}?application_name=api&sslmode=verify-full&connect_timeout=5`;
+    expect(baseConfig({ ...PROD, DATABASE_URL: url }).databaseUrl.reveal()).toBe(url);
   });
 
   it('still reports the TLS rules when an unrelated key is invalid', () => {

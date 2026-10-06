@@ -97,7 +97,8 @@ describe('defineConfig', () => {
 
   it('works with refined and transformed schemas', () => {
     const shaped = schema
-      .refine((v) => v.COUNT !== 4, { path: ['COUNT'], message: 'must not be 4' })
+      // Messages describe the rule, never the value (a value would be scrubbed; see below).
+      .refine((v) => v.COUNT !== 4, { path: ['COUNT'], message: 'is reserved' })
       .transform((v) => ({ name: v.NAME, nested: { count: v.COUNT } }));
     expect(defineConfig(shaped, { NAME: 'svc', TOKEN: 'tok-abcdef' })).toEqual({
       name: 'svc',
@@ -106,7 +107,7 @@ describe('defineConfig', () => {
     expect(
       configError(() => defineConfig(shaped, { NAME: 'svc', TOKEN: 'tok-abcdef', COUNT: '4' }), {})
         .issues,
-    ).toEqual([{ key: 'COUNT', problem: 'must not be 4' }]);
+    ).toEqual([{ key: 'COUNT', problem: 'is reserved' }]);
   });
 
   it('scrubs a value that a schema author put into a custom message', () => {
@@ -117,6 +118,17 @@ describe('defineConfig', () => {
       KEY: 'sekret-123',
     });
     expect(err.issues).toEqual([{ key: 'KEY', problem: 'bad value [redacted] here' }]);
+  });
+
+  it('scrubs short values (1-3 characters) as whole tokens only', () => {
+    const echo = z.object({
+      KEY: z.string().refine(() => false, { message: 'got 7 (expected 70 or 17), see x7y' }),
+      CODE: z.string().refine(() => false, { message: "code 'ab' is not abc" }),
+    });
+    expect(configError(() => defineConfig(echo, { KEY: '7', CODE: 'ab' }), {}).issues).toEqual([
+      { key: 'KEY', problem: 'got [redacted] (expected 70 or 17), see x7y' },
+      { key: 'CODE', problem: "code '[redacted]' is not abc" },
+    ]);
   });
 
   it('rejects a schema that is not an object of environment keys', () => {

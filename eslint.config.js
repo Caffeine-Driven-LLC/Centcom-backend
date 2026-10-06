@@ -21,6 +21,16 @@ const WORKSPACE_IMPORT_PATTERNS = [
 const ENV_MESSAGE =
   'Read configuration with defineConfig() from @centcom/core (B004); only the config loader and apps/*/src/main.ts read process.env.';
 
+// Ways around no-restricted-properties: aliasing `process`, reaching it through `globalThis` or
+// `global`, and computed access (`process[key]`). A guardrail against mistakes, not a sandbox:
+// `Reflect.get(process, 'env')` and similar indirection are left to review.
+const ENV_SYNTAX = [
+  "VariableDeclarator[id.type='Identifier'][init.type='Identifier'][init.name='process']",
+  "AssignmentExpression[right.type='Identifier'][right.name='process']",
+  "MemberExpression[object.name=/^(globalThis|global)$/][property.name='process']",
+  "MemberExpression[object.name='process'][computed=true]",
+].map((selector) => ({ selector, message: ENV_MESSAGE }));
+
 export default defineConfig([
   globalIgnores([
     '**/node_modules/',
@@ -56,6 +66,7 @@ export default defineConfig([
         'error',
         { object: 'process', property: 'env', message: ENV_MESSAGE },
       ],
+      'no-restricted-syntax': ['error', ...ENV_SYNTAX],
     },
   },
   {
@@ -63,6 +74,7 @@ export default defineConfig([
     files: ['apps/*/src/main.ts', 'packages/core/src/config/**', 'tools/**'],
     rules: {
       'no-restricted-properties': 'off',
+      'no-restricted-syntax': 'off',
       'no-restricted-imports': ['error', { patterns: WORKSPACE_IMPORT_PATTERNS }],
     },
   },

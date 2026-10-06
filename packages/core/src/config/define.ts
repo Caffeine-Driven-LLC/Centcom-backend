@@ -7,7 +7,7 @@
  * (integer, boolean, URL) and deep freezing. Must not: put a config value or a secret file path
  * into an error, warning or thrown object, or read keys the schema does not declare.
  */
-import { readFileSync, statSync } from 'node:fs';
+import { closeSync, constants, fstatSync, openSync, readSync } from 'node:fs';
 import { z } from 'zod';
 import { REDACTED, Secret } from './secret.js';
 
@@ -36,17 +36,21 @@ export class ConfigError extends Error {
   }
 }
 
-/** File access for KEY_FILE secrets (tests inject a fake; the default is node:fs). */
-export interface SecretFiles {
-  stat(path: string): { mode: number; size: number; isFile(): boolean };
-  read(path: string): string;
-}
+/**
+ * Reads one KEY_FILE secret: its permission bits and at most `maxBytes` of UTF-8 content.
+ * Throws an error whose `code` is `ENOTREG` (not a regular file), `EFBIG` (over `maxBytes`) or an
+ * fs code such as `ENOENT`. Tests inject a fake; the default is `readSecretFileSync`.
+ */
+export type SecretFileReader = (
+  path: string,
+  maxBytes: number,
+) => { mode: number; content: string };
 
 /** Options for `defineConfig`. */
 export interface DefineConfigOptions {
   /** Receives warnings; defaults to `process.emitWarning` until logging (B005) is wired in. */
   onWarning?: (warning: ConfigWarning) => void;
-  files?: SecretFiles;
+  readSecretFile?: SecretFileReader;
   /** Used to skip the permission check on Windows, where mode bits are not meaningful. */
   platform?: string;
 }
@@ -66,10 +70,49 @@ export type DeepReadonly<T> =
           ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
           : T;
 
-const nodeFiles: SecretFiles = {
-  stat: (path) => statSync(path),
-  read: (path) => readFileSync(path, 'utf8'),
-};
+const fileError = (code: string, message: string): Error =>
+  Object.assign(new Error(message), { code });
+
+/** O_NONBLOCK: opening a FIFO for reading must not hang startup (it is then refused by fstat). */
+const SECRET_OPEN_FLAGS = constants.O_RDONLY | (constants.O_NONBLOCK ?? 0);
+
+/**
+ * The default SecretFileReader: one file descriptor for the type check, the permission bits and
+ * a bounded read, so the file cannot be swapped between check and read, and a file whose size is
+ * misreported (procfs) still cannot exceed `maxBytes`.
+ */
+export function readSecretFileSync(
+  path: string,
+  maxBytes: number,
+): { mode: number; content: string } {
+  const fd = openSync(path, SECRET_OPEN_FLAGS);
+  try {
+    const stat = fstatSync(fd);
+    if (!stat.isFile()) throw fileError('ENOTREG', 'not a regular file');
+    const buffer = Buffer.alloc(maxBytes + 1);
+    let length = 0;
+    while (length < buffer.length) {
+      const n = readSync(fd, buffer, length, buffer.length - length, null);
+      if (n === 0) break;
+      length += n;
+    }
+    if (length > maxBytes) throw fileError('EFBIG', 'file too large');
+    return { mode: stat.mode, content: buffer.toString('utf8', 0, length) };
+  } finally {
+    closeSync(fd);
+  }
+}
+
+/** Removes a UTF-8 byte-order mark and trailing newlines (`\n`, `\r\n`), in linear time. */
+function trimSecretFile(content: string): string {
+  const start = content.charCodeAt(0) === 0xfeff ? 1 : 0;
+  let end = content.length;
+  while (end > start && content.charCodeAt(end - 1) === 0x0a) {
+    end -= 1;
+    if (end > start && content.charCodeAt(end - 1) === 0x0d) end -= 1;
+  }
+  return content.slice(start, end);
+}
 
 const defaultWarning = (w: ConfigWarning): void => {
   process.emitWarning(`${w.key}: ${w.problem}`, { code: 'CENTCOM_CONFIG' });
@@ -115,7 +158,7 @@ interface ReadResult {
  * over KEY. File problems are reported against KEY_FILE without the path.
  */
 function readEnv(keys: readonly string[], env: Env, options: DefineConfigOptions): ReadResult {
-  const files = options.files ?? nodeFiles;
+  const readSecretFile = options.readSecretFile ?? readSecretFileSync;
   const onWarning = options.onWarning ?? defaultWarning;
   const checkPermissions =
     (options.platform ?? process.platform) !== 'win32' && env.NODE_ENV?.trim() === 'production';
@@ -133,41 +176,47 @@ function readEnv(keys: readonly string[], env: Env, options: DefineConfigOptions
       out.issues.push({ key: fileKey, problem });
       out.failedFiles.add(key);
     };
-    let content: string;
+    let file: { mode: number; content: string };
     try {
-      const stat = files.stat(path.trim());
-      if (!stat.isFile()) {
-        fail('must point to a regular file');
-        continue;
-      }
-      if (stat.size > MAX_SECRET_FILE_BYTES) {
-        fail(`file is larger than ${MAX_SECRET_FILE_BYTES} bytes`);
-        continue;
-      }
-      if (checkPermissions && (stat.mode & 0o004) !== 0) {
-        onWarning({
-          key: fileKey,
-          problem: 'secret file is readable by every user; restrict it to the service user',
-        });
-      }
-      content = files.read(path.trim());
+      file = readSecretFile(path.trim(), MAX_SECRET_FILE_BYTES);
     } catch (e) {
       const code =
         typeof e === 'object' && e !== null && 'code' in e && typeof e.code === 'string'
           ? e.code
           : 'error';
-      fail(`file cannot be read (${code})`);
+      if (code === 'ENOTREG' || code === 'EISDIR') fail('must point to a regular file');
+      else if (code === 'EFBIG') fail(`file is larger than ${MAX_SECRET_FILE_BYTES} bytes`);
+      else fail(`file cannot be read (${code})`);
       continue;
     }
-    const value = content.replace(/(?:\r?\n)+$/, '');
+    // World-readable only, as the card asks: group-readable is the usual way to share a secret
+    // with a service group, and warning on it would make the warning noise.
+    if (checkPermissions && (file.mode & 0o004) !== 0) {
+      onWarning({
+        key: fileKey,
+        problem: 'secret file is readable by every user; restrict it to the service user',
+      });
+    }
+    // Only a byte-order mark and trailing newlines are removed; other whitespace is part of the
+    // value, exactly as for a KEY given directly in the environment.
+    const value = trimSecretFile(file.content);
     if (!isBlank(value)) out.values[key] = value;
   }
   return out;
 }
 
-/** Replaces any occurrence of the raw value in a message authored by a schema (defence in depth). */
+const escapeRegExp = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Removes the raw value from a message authored by a schema (defence in depth: built-in messages
+ * never contain values). Values of 4+ characters are replaced wherever they occur; shorter ones
+ * only as whole tokens, since they also occur inside ordinary words.
+ */
 function scrub(message: string, raw: string | undefined): string {
-  return raw !== undefined && raw.length >= 4 ? message.split(raw).join(REDACTED) : message;
+  if (raw === undefined || raw === '') return message;
+  if (raw.length >= 4) return message.split(raw).join(REDACTED);
+  const token = new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(raw)}(?![\\p{L}\\p{N}])`, 'gu');
+  return message.replace(token, REDACTED);
 }
 
 const ARTICLE = /^[aeiou]/;

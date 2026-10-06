@@ -22,11 +22,12 @@ export {
   envInt,
   envUrl,
   MAX_SECRET_FILE_BYTES,
+  readSecretFileSync,
   type ConfigIssue,
   type ConfigWarning,
   type DeepReadonly,
   type DefineConfigOptions,
   type Env,
-  type SecretFiles,
+  type SecretFileReader,
 } from './define.js';
 export { REDACTED, Secret, secretString } from './secret.js';

@@ -23,26 +23,41 @@ schemas.
 ### Rules
 
 - **Read the environment only at the entrypoint.** Call `baseConfig()` (and your lane's own
-  `defineConfig(...)`) in `apps/*/src/main.ts`, then pass the result on. Lint rejects `process.env`
-  everywhere except the config loader (`packages/core/src/config/`), entrypoints and `tools/`.
+  `defineConfig(...)`) in `apps/*/src/main.ts`, then pass the result on. Lint rejects reading the
+  environment everywhere except the config loader (`packages/core/src/config/`), entrypoints and
+  `tools/`. It catches `process.env`, `process['env']`, destructuring, `import { env }`, aliasing
+  `process` to another name, `globalThis.process` / `global.process` and `process[key]`. It is a
+  guardrail against mistakes, not a sandbox: deliberate indirection such as
+  `Reflect.get(process, 'env')` is left to review.
 - **Declare your own keys in your own module**, with `defineConfig`. Don't edit the base schema.
   Give every key `.meta({ description, example })` and add the schema to `SECTIONS` in
   `scripts/gen-config-docs.ts` so it appears in `docs/config.md` and `.env.example`.
 - **Wrap secrets** with `secretString()`. Never put a value in a refinement message; messages are
-  shown to operators. A message that does contain the value is scrubbed, but don't rely on that.
+  shown to operators. A message that does contain the value is scrubbed (values of 1-3 characters
+  only as whole words), but don't rely on that.
 
 ### Behaviour
 
 - Blank values count as unset. Missing required keys and invalid values are collected and thrown
   together, as one `ConfigError`.
 - **`KEY_FILE` secrets.** Any key can be given as `KEY_FILE=<path>`:
-  - the file wins over `KEY`, and trailing newlines are removed
+  - the file wins over `KEY`. An empty file counts as unset; it does not fall back to `KEY`.
+  - a UTF-8 byte-order mark and trailing newlines (`\n`, `\r\n`) are removed. Other whitespace is
+    part of the value, exactly as for a `KEY` given directly.
+  - the file is opened once (non-blocking, so a FIFO cannot hang startup). Its type, permission
+    bits and at most 64 KiB + 1 bytes are read through that one handle, so the file cannot be
+    swapped between check and read, and a file that misreports its size (procfs) is still capped.
   - a file that is missing, unreadable, not a regular file, or larger than 64 KiB is reported
     against `KEY_FILE`, without the path
-  - in production, a world-readable secret file produces a warning. Warnings go to
-    `process.emitWarning` until B005 wires in the logger; pass `onWarning` to route them.
-- **TLS in production.** `DATABASE_URL` needs `sslmode=require` (or `verify-ca`, `verify-full`) and
-  `REDIS_URL` needs `rediss://`. `ALLOW_INSECURE_BACKENDS=1` overrides both.
+  - in production, a world-readable secret file produces a warning. Group-readable files are
+    deliberately silent: a service group is the usual way to share a secret, and warning on it
+    would turn the warning into noise. Warnings go to `process.emitWarning` until B005 wires in
+    the logger; pass `onWarning` to route them, and `readSecretFile` to replace file access in
+    tests.
+- **TLS in production.** `DATABASE_URL` needs exactly one `sslmode`, and it must be `require`,
+  `verify-ca` or `verify-full`; a repeated `sslmode` is refused because drivers such as
+  `pg-connection-string` use the last one. `REDIS_URL` needs `rediss://`.
+  `ALLOW_INSECURE_BACKENDS=1` overrides both.
 - **Strict `NODE_ENV`.** It is required, and an unknown value is an error; it is never mapped to
   `development`.
 

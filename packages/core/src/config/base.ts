@@ -30,6 +30,16 @@ export type LogLevel = (typeof LOG_LEVELS)[number];
 /** sslmode values that require TLS to Postgres. */
 const TLS_SSLMODES = new Set(['require', 'verify-ca', 'verify-full']);
 
+/**
+ * True if the URL carries exactly one sslmode and it requires TLS. A repeated sslmode is refused:
+ * this check would read one value while the driver uses another (pg-connection-string copies
+ * every query parameter in order, so the last one wins).
+ */
+const requiresTls = (databaseUrl: string): boolean => {
+  const modes = new URL(databaseUrl).searchParams.getAll('sslmode');
+  return modes.length === 1 && TLS_SSLMODES.has(modes[0] ?? '');
+};
+
 /** The environment keys, with documentation metadata (rendered into docs/config.md and .env.example). */
 export const baseEnvSchema = z.object({
   NODE_ENV: z.enum(NODE_ENVS).meta({
@@ -72,7 +82,7 @@ export const baseEnvSchema = z.object({
     }),
   DATABASE_URL: secretString(envUrl({ protocols: ['postgres:', 'postgresql:'] })).meta({
     description:
-      'Postgres connection URL. In production it must set sslmode=require (or verify-ca / verify-full).',
+      'Postgres connection URL. In production it must set exactly one sslmode: require, verify-ca or verify-full.',
     example: 'postgres://centcom:centcom@localhost:5432/centcom',
   }),
   REDIS_URL: secretString(envUrl({ protocols: ['redis:', 'rediss:'] })).meta({
@@ -107,17 +117,12 @@ const whenValid =
 
 /** The full base schema: environment keys, production TLS rules, camel-case config object. */
 export const baseSchema = baseEnvSchema
-  .refine(
-    (v) =>
-      !insecureForbidden(v) ||
-      TLS_SSLMODES.has(new URL(v.DATABASE_URL.reveal()).searchParams.get('sslmode') ?? ''),
-    {
-      path: ['DATABASE_URL'],
-      message:
-        'must set sslmode=require (or verify-ca, verify-full) in production; ALLOW_INSECURE_BACKENDS=1 overrides',
-      when: whenValid('NODE_ENV', 'ALLOW_INSECURE_BACKENDS', 'DATABASE_URL'),
-    },
-  )
+  .refine((v) => !insecureForbidden(v) || requiresTls(v.DATABASE_URL.reveal()), {
+    path: ['DATABASE_URL'],
+    message:
+      'must set exactly one sslmode, require (or verify-ca, verify-full), in production; ALLOW_INSECURE_BACKENDS=1 overrides',
+    when: whenValid('NODE_ENV', 'ALLOW_INSECURE_BACKENDS', 'DATABASE_URL'),
+  })
   .refine((v) => !insecureForbidden(v) || new URL(v.REDIS_URL.reveal()).protocol === 'rediss:', {
     path: ['REDIS_URL'],
     message: 'must use rediss:// (TLS) in production; ALLOW_INSECURE_BACKENDS=1 overrides',

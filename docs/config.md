@@ -8,7 +8,9 @@ lists every problem by key name, never by value.
 
 - Blank values count as unset.
 - Any key can instead be given as `KEY_FILE=<path>` (Docker and Fly secrets). The file wins over
-  `KEY`, trailing newlines are removed, and an unreadable file is reported against `KEY_FILE`.
+  `KEY`. A UTF-8 byte-order mark and trailing newlines are removed; other whitespace is part of
+  the value. A file that is missing, unreadable, not a regular file or over 64 KiB is reported
+  against `KEY_FILE`, without its path.
 - Secrets print as `[redacted]` in logs, errors and JSON; code reads them with `reveal()`.
 - Only the config loader and service entrypoints may read `process.env` (enforced by lint).
 - A lane that adds keys declares them with `defineConfig` in its own module and adds a section to
@@ -26,7 +28,7 @@ Owner: B004, `baseConfig()` in `@centcom/core`.
 | `HOST` | host or IP | `127.0.0.1` | no | no | Interface to listen on. Set 0.0.0.0 (or ::) in containers. |
 | `PORT` | integer 1..65535 | `3000` | no | no | TCP port to listen on. |
 | `PUBLIC_API_URL` | URL (http:// or https://) |  | yes | no | Public base URL of the REST API, used in links. Trailing slashes are removed. |
-| `DATABASE_URL` | URL (postgres:// or postgresql://) |  | yes | yes | Postgres connection URL. In production it must set sslmode=require (or verify-ca / verify-full). |
+| `DATABASE_URL` | URL (postgres:// or postgresql://) |  | yes | yes | Postgres connection URL. In production it must set exactly one sslmode: require, verify-ca or verify-full. |
 | `REDIS_URL` | URL (redis:// or rediss://) |  | yes | yes | Redis connection URL. In production it must use rediss:// (TLS). |
 | `TRUSTED_PROXY_HOPS` | integer 0..10 | `1` | no | no | Number of reverse proxies in front of the service whose X-Forwarded-For is trusted. |
 | `REQUEST_TIMEOUT_MS` | integer 100..600000 | `30000` | no | no | Server-side timeout for one request, in milliseconds. |

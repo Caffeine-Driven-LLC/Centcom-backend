@@ -59,6 +59,9 @@ describe('environment access (B004)', () => {
     ['process-env.ts', 'no-restricted-properties'],
     ['process-env-destructure.ts', 'no-restricted-properties'],
     ['process-env-import.ts', 'no-restricted-imports'],
+    ['process-env-alias.ts', 'no-restricted-syntax'],
+    ['process-env-global.ts', 'no-restricted-syntax'],
+    ['process-env-computed.ts', 'no-restricted-syntax'],
   ] as const) {
     it(`${fixture} fails outside the config loader and entrypoints`, { timeout: TIMEOUT }, () => {
       for (const asPath of [
