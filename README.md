@@ -32,10 +32,11 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 | Lane | What | Size | Milestone |
 |---|---|---|---|
-| [B005](plan/backend/B005.md) | Structured logging, request ids, redaction | S | M0 |
 | [B007](plan/backend/B007.md) | Database package: Postgres client, migration runner, conventions | M | M0 |
 | [B009](plan/backend/B009.md) | Redis abstraction: pub/sub, KV, rate-limit primitives (in-memory + Redis impls) | M | M0 |
+| [B006](plan/backend/B006.md) | Error layer: problem+json, error registry, error handler | M | M0 |
 | [B091](plan/backend/B091.md) | Infrastructure as code: environments dev, stage, prod | L | M3 |
+| [B037](plan/backend/B037.md) | Relay service skeleton: ws server, health, graceful shutdown | M | M3 |
 | [B097](plan/backend/B097.md) | Security hardening: headers, WAF rules, secret scanning, dependency policy | M | M6 |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
