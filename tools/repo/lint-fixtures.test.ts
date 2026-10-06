@@ -54,6 +54,40 @@ describe('lint fixtures', () => {
   });
 });
 
+describe('environment access (B004)', () => {
+  for (const [fixture, rule] of [
+    ['process-env.ts', 'no-restricted-properties'],
+    ['process-env-destructure.ts', 'no-restricted-properties'],
+    ['process-env-import.ts', 'no-restricted-imports'],
+  ] as const) {
+    it(`${fixture} fails outside the config loader and entrypoints`, { timeout: TIMEOUT }, () => {
+      for (const asPath of [
+        'packages/db/src/env.ts',
+        'apps/api/src/server.ts',
+        'packages/core/test/config/env.test.ts',
+      ]) {
+        const r = lintAs(fixture, asPath);
+        expect(r.status, asPath).toBe(1);
+        expect(r.output, asPath).toContain(rule);
+      }
+    });
+  }
+
+  it(
+    'the config loader, entrypoints and repo tooling may read the environment',
+    { timeout: TIMEOUT },
+    () => {
+      for (const asPath of [
+        'packages/core/src/config/env.ts',
+        'apps/api/src/main.ts',
+        'tools/ci/env.mjs',
+      ]) {
+        expect(lintAs('process-env.ts', asPath).status, asPath).toBe(0);
+      }
+    },
+  );
+});
+
 describe('typecheck fixture', () => {
   it('an implicit any fails tsc under tsconfig.base.json', { timeout: TIMEOUT }, () => {
     const r = spawnSync(process.execPath, [tscBin, '-p', 'tools/lint-fixtures/implicit-any'], {

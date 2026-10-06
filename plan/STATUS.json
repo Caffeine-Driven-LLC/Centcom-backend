@@ -10,8 +10,12 @@
    "note": "merged in #2"
   },
   "B003": {
+   "pct": 1,
+   "note": "merged in #8"
+  },
+  "B004": {
    "pct": 0.9,
-   "note": "in review: generator, validators, helpers and tests done"
+   "note": "in review: loader, secrets, base config, docs and lint rule done"
   }
  },
  "next": [
