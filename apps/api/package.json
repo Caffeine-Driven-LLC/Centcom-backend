@@ -15,5 +15,8 @@
   },
   "scripts": {
     "build": "tsc -b"
+  },
+  "dependencies": {
+    "ms": "2.1.3"
   }
 }
