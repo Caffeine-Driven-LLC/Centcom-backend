@@ -1,0 +1,30 @@
+{
+ "updated": "2026-10-06",
+ "lanes": {},
+ "next": [
+  {
+   "title": "B001 monorepo scaffold, then B002 CI and B003 contract codegen",
+   "why": "the contracts are frozen and locked, so the backend can start; nothing is built yet and these three unblock everything else (gate G0 also needs B002's CI)"
+  },
+  {
+   "title": "B004-B006 config, logging and the error layer",
+   "why": "every later lane uses them; keep the problem+json shape from contracts/ exactly"
+  },
+  {
+   "title": "B007 database package and B008 core schema v1, with B009 Redis abstraction",
+   "why": "identity, sessions and the relay all sit on these"
+  },
+  {
+   "title": "B011 mock client simulator and B012 one-command local environment",
+   "why": "lets the relay lanes be tested without the client repo (you only ever meet the client at contracts/)"
+  },
+  {
+   "title": "B016 device authorization grant and B017 token service",
+   "why": "the terminal client's `centcom login` needs these first (client lane C052)"
+  },
+  {
+   "title": "Relay lanes (see plan/ROADMAP.md M2-M3)",
+   "why": "the backend should be ready by the time the client reaches M3; start the relay while identity is in review"
+  }
+ ]
+}
