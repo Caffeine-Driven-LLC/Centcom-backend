@@ -29,6 +29,7 @@
     "packages/*/vitest.setup.ts",
     "tools/repo/**/*.ts",
     "tools/repo/**/*.mjs",
+    "tools/ci/**/*.mjs",
     "vitest.workspace.ts"
   ],
   "exclude": ["**/node_modules", "**/dist"]

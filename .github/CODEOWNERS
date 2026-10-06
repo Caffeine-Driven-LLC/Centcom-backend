@@ -1,0 +1,13 @@
+# B002. Review routing only: on the current GitHub plan, branch protection (and so "require
+# review from code owners") is unavailable for this private repo; see docs/ci.md.
+*                @Bomoga @AlexanderGese
+
+# Shared with the client repo; changes only through a Contract PR (plan/GUIDELINES.md §9).
+/contracts/      @Bomoga @AlexanderGese
+/plan/           @Bomoga @AlexanderGese
+/tools/plan/     @Bomoga @AlexanderGese
+
+# CI, supply chain and security settings.
+/.github/        @Bomoga @AlexanderGese
+/tools/ci/       @Bomoga @AlexanderGese
+/pnpm-workspace.yaml @Bomoga @AlexanderGese

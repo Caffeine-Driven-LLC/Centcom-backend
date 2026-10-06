@@ -1,0 +1,30 @@
+# B002: a pull request title must start with its lane ID, e.g. `B037: relay service skeleton`.
+name: pr-title
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-title:
+    # Dependabot security-update PRs are not lanes; they are reviewed on their own merits.
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: tools/ci
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+      # The title goes through an env var, never interpolated into the script (injection-safe).
+      - name: Title starts with a lane ID
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: node tools/ci/check-lane-title.mjs "$TITLE"

@@ -1,0 +1,15 @@
+# Shared job setup (B002): Node from .node-version, pnpm from package.json "packageManager",
+# a cached pnpm store, and a frozen-lockfile install. Third-party actions are pinned to full SHAs.
+name: setup
+description: Node 22, pnpm, cached store, frozen install
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      with:
+        node-version-file: .node-version
+        cache: pnpm
+    - name: Install (frozen lockfile)
+      shell: bash
+      run: pnpm install --frozen-lockfile

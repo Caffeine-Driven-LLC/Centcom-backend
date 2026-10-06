@@ -33,7 +33,11 @@ export default defineConfig({
       })),
       {
         extends: true as const,
-        test: { name: 'repo', root, include: ['tools/repo/**/*.test.ts'] },
+        test: {
+          name: 'repo',
+          root,
+          include: ['tools/repo/**/*.test.ts', 'tools/ci/**/*.test.mjs'],
+        },
       },
     ],
     coverage: {
