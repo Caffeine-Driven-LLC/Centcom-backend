@@ -52,9 +52,12 @@ jobs:
             "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}"
           echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/$archive" | sha256sum --check --strict
           tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" gitleaks
+      # Scan only history reachable from the checked-out commit (for a PR, its merge commit).
+      # Without --log-opts gitleaks walks every fetched ref (`git log --all`), so a secret pushed
+      # to any branch would fail every other pull request too.
       - name: Scan git history for secrets
         run: |
-          "$RUNNER_TEMP/gitleaks" git --redact --verbose --exit-code 1 --no-banner .
+          "$RUNNER_TEMP/gitleaks" git --log-opts="HEAD" --redact --verbose --exit-code 1 --no-banner .
 
   codeql:
     # CodeQL's licence does not cover private, non-open-source code without GitHub Code Security.

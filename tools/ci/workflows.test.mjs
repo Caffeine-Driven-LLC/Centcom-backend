@@ -73,6 +73,11 @@ describe('workflow guardrails', () => {
     expect(job.split(/^ {4}steps:/m)[0]).not.toMatch(/^ {4}if:/m);
   });
 
+  it('the secret scan covers only history reachable from HEAD, not every fetched branch', () => {
+    // Regression (B002 dry run): a fake key on one scratch branch failed every other PR's scan.
+    expect(workflows['security.yml']).toMatch(/gitleaks" git --log-opts="HEAD" /);
+  });
+
   it('the PR title reaches the script through an env var, not inline interpolation', () => {
     const prTitle = workflows['pr-title.yml'] ?? '';
     expect(prTitle).toMatch(/TITLE: \$\{\{ github\.event\.pull_request\.title \}\}/);
