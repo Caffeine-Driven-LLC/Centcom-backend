@@ -30,7 +30,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 | Lane | What | Done | Note |
 |---|---|--:|---|
-| [B002](plan/backend/B002.md) | CI pipeline (typecheck, lint, test, build, security scan, contract-lock check) | 80% | PR #2: workflows built; dry runs in progress |
+| [B002](plan/backend/B002.md) | CI pipeline (typecheck, lint, test, build, security scan, contract-lock check) | 90% | PR #2 in review: all checks green, dry runs recorded in docs/ci.md |
 
 ### Ready to pick up (all dependencies done)
 

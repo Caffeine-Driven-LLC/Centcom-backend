@@ -6,8 +6,8 @@
    "note": "merged in #1"
   },
   "B002": {
-   "pct": 0.8,
-   "note": "PR #2: workflows built; dry runs in progress"
+   "pct": 0.9,
+   "note": "PR #2 in review: all checks green, dry runs recorded in docs/ci.md"
   }
  },
  "next": [

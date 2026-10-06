@@ -15,7 +15,7 @@ full commit SHAs, every workflow defaults to `permissions: contents: read`, and 
 | `ci / integration`    | `pnpm test` with Postgres 16 and Redis 7                                   | a service is not healthy within 60 s, or a test fails                                                             |
 | `ci / contract-lock`  | `tools/plan/lock.py --check` + diff against the PR base                    | any byte of `contracts/` changes (including the lock)                                                             |
 | `security / audit`    | `pnpm audit --prod --audit-level high`, then `tools/ci/check-licences.mjs` | a high/critical advisory, an unreachable audit service, or a production licence outside MIT, Apache-2.0, BSD, ISC |
-| `security / secrets`  | gitleaks 8.30.1 over the full git history                                  | anything shaped like a secret                                                                                     |
+| `security / secrets`  | gitleaks 8.30.1 over the history reachable from the PR                     | anything shaped like a secret                                                                                     |
 | `security / codeql`   | CodeQL (JavaScript/TypeScript)                                             | **skipped** until enabled (see below)                                                                             |
 | `pr-title / pr-title` | `tools/ci/check-lane-title.mjs`                                            | the title does not start with `B###: `                                                                            |
 
@@ -53,6 +53,12 @@ Set it only after Code Security is enabled for the repository (or the repository
   Dependabot PRs skip the `pr-title` check because they are not lanes.
 - gitleaks: the official GitHub Action needs a licence key for organisation repositories, so the
   workflow downloads the MIT-licensed CLI release and verifies its SHA-256 before running it.
+  It scans only history reachable from the checked-out commit (`--log-opts="HEAD"`); by default
+  gitleaks walks every fetched branch, which made one branch's leak fail every PR.
+- `.gitleaksignore` accepts six known test values by exact fingerprint (commit, file, rule, line):
+  the CT-CRYPTO known-answer vectors and the fake AWS keys used by the B101 leak-guard fixtures.
+  Add an entry only for a deliberate test value, with a comment saying why; never for a real key
+  (rotate it and purge history instead).
 - Cache: only the pnpm store is cached (by `actions/setup-node`); nothing containing `.env` files
   or secrets is cached.
 
@@ -79,6 +85,24 @@ node tools/ci/check-lane-title.mjs "B002: CI pipeline"
 
 ## Dry runs
 
-Recorded when B002 was built (scratch pull requests, closed without merging):
+Recorded on 2026-10-06 while B002 was built. Each case is a scratch pull request into the B002
+branch (#3 to #6, never merged). On the B002 branch itself every check passed (CodeQL skipped).
 
-<!-- dry-run-results -->
+| Case                                            | PR  | Expected                                 | Result                                                                 |
+| ----------------------------------------------- | --- | ---------------------------------------- | ---------------------------------------------------------------------- |
+| One byte added to `contracts/00-foundations.md` | #3  | `ci / contract-lock` fails within 2 min  | failed in 7 s (`DRIFT 00-foundations.md`)                              |
+| Fake AWS access key in a new file               | #4  | `security / secrets` fails               | failed (`aws-access-token`, `generic-api-key`)                         |
+| GPL-3.0 production dependency in `apps/api`     | #5  | licence step of `security / audit` fails | `pnpm audit` passed, licence step failed naming `dryrun-gpl (GPL-3.0)` |
+| MIT production dependency in `apps/api`         | #6  | `security / audit` passes                | passed                                                                 |
+| Title without a lane ID                         | #6  | `pr-title` fails                         | failed                                                                 |
+
+Also measured on the B002 branch: the whole `ci` workflow took 67 s with the pnpm store restored
+from cache (limit 10 min). The integration job logged both services healthy before steps ran, then
+`DATABASE_URL: localhost:5432 reachable.` and `REDIS_URL: localhost:6379 reachable.`
+
+The dry runs found two bugs, fixed before merge:
+
+- `pnpm licenses list` without `-r` reports only the root package, so the GPL dependency in
+  `apps/api` passed. The check now lists every workspace package.
+- gitleaks walked every fetched branch, so the fake key from #4 failed the secret scan on every
+  other PR. The scan is now limited to history reachable from `HEAD`.
