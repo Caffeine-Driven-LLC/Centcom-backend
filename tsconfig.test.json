@@ -25,6 +25,7 @@
     "packages/*/test/**/*.ts",
     "packages/*/src/**/*.test.ts",
     "packages/*/scripts/**/*.ts",
+    "packages/*/scripts/**/*.mjs",
     "packages/*/*.config.ts",
     "packages/*/vitest.setup.ts",
     "tools/repo/**/*.ts",

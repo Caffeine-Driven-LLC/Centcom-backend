@@ -17,7 +17,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 ![Progress](docs/progress.svg)
 
-**2% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
+**3% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
 
 ## Next steps
 
@@ -32,15 +32,15 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 | Lane | What | Done | Note |
 |---|---|--:|---|
-| [B002](plan/backend/B002.md) | CI pipeline (typecheck, lint, test, build, security scan, contract-lock check) | 90% | PR #2 in review: all checks green, dry runs recorded in docs/ci.md |
+| [B003](plan/backend/B003.md) | Contract codegen package (types and validators from contracts/) | 90% | in review: generator, validators, helpers and tests done |
 
 ### Ready to pick up (all dependencies done)
 
 | Lane | What | Size | Milestone |
 |---|---|---|---|
-| [B003](plan/backend/B003.md) | Contract codegen package (types and validators from contracts/) | M | M0 |
 | [B004](plan/backend/B004.md) | Typed configuration and secrets loader | S | M0 |
 | [B091](plan/backend/B091.md) | Infrastructure as code: environments dev, stage, prod | L | M3 |
+| [B097](plan/backend/B097.md) | Security hardening: headers, WAF rules, secret scanning, dependency policy | M | M6 |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
 
