@@ -62,10 +62,17 @@ and add `security / codeql` to the required checks at the same time. Until then 
   workflow downloads the MIT-licensed CLI release and verifies its SHA-256 before running it.
   It scans only history reachable from the checked-out commit (`--log-opts="HEAD"`); by default
   gitleaks walks every fetched branch, which made one branch's leak fail every PR.
-- `.gitleaksignore` accepts six known test values by exact fingerprint (commit, file, rule, line):
-  the CT-CRYPTO known-answer vectors and the fake AWS keys used by the B101 leak-guard fixtures.
-  Add an entry only for a deliberate test value, with a comment saying why; never for a real key
-  (rotate it and purge history instead).
+- `.gitleaksignore` accepts findings by exact fingerprint (commit, file, rule, line):
+  - six deliberate test values: the CT-CRYPTO known-answer vectors and the fake AWS keys used by
+    the B101 leak-guard fixtures
+  - two false positives in a superseded B003 branch commit, kept so that branch's history scans
+    clean
+
+  Add an entry only for a deliberate test value, or for a false positive that has already been
+  fixed at the source, with a comment saying why. Never add one for a real key: rotate it and purge
+  history instead. Because the scan covers history, a fixed false positive still fails its branch
+  until the old commit is ignored or rewritten.
+
 - Cache: only the pnpm store is cached (by `actions/setup-node`); nothing containing `.env` files
   or secrets is cached.
 

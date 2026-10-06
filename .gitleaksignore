@@ -9,3 +9,10 @@
 c5a1eff1dfe7301923c4ff9e4bfbdbfb90d87eb3:contracts/fixtures/providers/secret-patterns.json:aws-access-token:37
 c5a1eff1dfe7301923c4ff9e4bfbdbfb90d87eb3:plan/backend/B101.md:aws-access-token:80
 c5a1eff1dfe7301923c4ff9e4bfbdbfb90d87eb3:plan/lanes/backend/B101.json:aws-access-token:73
+#
+# False positives in commit a4852c8 of the B003 branch (PR #8): gitleaks matched a long generated
+# export name containing "api", then the next line's map key, as an API key. Fixed in b18ddf2
+# (short export names). These entries are pinned to that commit, so later edits of the generated
+# file cannot shift them; a squash merge never brings the commit to main.
+a4852c89d6c40af30617ab092f0c2f7a0a854185:packages/contracts/src/generated/validators.js:generic-api-key:35353
+a4852c89d6c40af30617ab092f0c2f7a0a854185:packages/contracts/src/generated/validators.js:generic-api-key:35410
