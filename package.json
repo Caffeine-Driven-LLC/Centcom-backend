@@ -10,7 +10,7 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "typecheck": "tsc -b --noEmit && tsc -p tools/repo/tsconfig.json",
+    "typecheck": "tsc -b --noEmit && tsc -p tsconfig.test.json",
     "lint": "eslint . && node tools/repo/check-exact-pins.mjs",
     "test": "vitest run --config vitest.workspace.ts",
     "format": "prettier --write .",

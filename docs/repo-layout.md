@@ -25,6 +25,9 @@ site/             public website and docs (not part of the pnpm workspace)
 Each workspace has `package.json` (private, ESM, `engines.node >=22 <23`, public surface only
 through its `exports` map), `tsconfig.json` extending `tsconfig.base.json`, and `src/index.ts`.
 Tests live in `<workspace>/test/**/*.test.ts` or next to the code as `src/**/*.test.ts`.
+Workspace `tsconfig.json` files build `src/` only (colocated tests excluded from `dist/`); the root
+`tsconfig.test.json` type-checks every workspace's tests and scripts, plus `tools/repo`, against
+source through `paths`, so tests type-check without a prior build.
 
 ## Toolchain
 
@@ -39,15 +42,15 @@ Tests live in `<workspace>/test/**/*.test.ts` or next to the code as `src/**/*.t
 
 ## Root scripts
 
-| Script                                   | What it does                                                                |
-| ---------------------------------------- | --------------------------------------------------------------------------- |
-| `pnpm build`                             | `tsc -b`: builds every workspace into its `dist/`                           |
-| `pnpm typecheck`                         | `tsc -b --noEmit`, then the repo checks in `tools/repo`                     |
-| `pnpm lint`                              | ESLint, then `tools/repo/check-exact-pins.mjs` (fails on any version range) |
-| `pnpm test`                              | Vitest with v8 coverage; 80 % line coverage is the hard floor               |
-| `pnpm format`                            | Prettier, writing in place                                                  |
-| `pnpm contracts:gen` / `contracts:check` | delegate to `@centcom/contracts` (provided by B003)                         |
-| `pnpm dev:up`                            | runs `tools/dev/up.sh` (provided by B012)                                   |
+| Script                                   | What it does                                                                                 |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `pnpm build`                             | `tsc -b`: builds every workspace into its `dist/`                                            |
+| `pnpm typecheck`                         | `tsc -b --noEmit` for sources, then `tsconfig.test.json` for tests, scripts and `tools/repo` |
+| `pnpm lint`                              | ESLint, then `tools/repo/check-exact-pins.mjs` (fails on any version range)                  |
+| `pnpm test`                              | Vitest with v8 coverage; 80 % line coverage is the hard floor                                |
+| `pnpm format`                            | Prettier, writing in place                                                                   |
+| `pnpm contracts:gen` / `contracts:check` | delegate to `@centcom/contracts` (provided by B003)                                          |
+| `pnpm dev:up`                            | runs `tools/dev/up.sh` (provided by B012)                                                    |
 
 ## Rules the toolchain enforces
 

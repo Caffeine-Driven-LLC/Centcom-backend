@@ -49,6 +49,30 @@ describe('workspaces', () => {
     expect(refs.sort()).toEqual(Object.keys(WORKSPACES).sort());
   });
 
+  it('tsconfig.test.json type-checks every workspace test against source', () => {
+    const cfg = readJson('tsconfig.test.json');
+    const opts = cfg.compilerOptions as { noEmit?: boolean; paths?: Record<string, string[]> };
+    expect(opts.noEmit).toBe(true);
+    expect(opts.paths).toEqual(
+      Object.fromEntries(
+        Object.entries(WORKSPACES).map(([dir, name]) => [name, [`./${dir}/src/index.ts`]]),
+      ),
+    );
+    const include = cfg.include as string[];
+    for (const glob of [
+      'apps/*/test/**/*.ts',
+      'apps/*/src/**/*.test.ts',
+      'packages/*/test/**/*.ts',
+      'packages/*/src/**/*.test.ts',
+      'tools/repo/**/*.ts',
+    ]) {
+      expect(include, glob).toContain(glob);
+    }
+    for (const dir of Object.keys(WORKSPACES)) {
+      expect(readJson(`${dir}/tsconfig.json`).exclude, dir).toEqual(['src/**/*.test.ts']);
+    }
+  });
+
   it('no workspace carries its own lint config (one root config is the source of truth)', () => {
     for (const dir of Object.keys(WORKSPACES)) {
       for (const f of [
