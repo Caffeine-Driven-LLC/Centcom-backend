@@ -26,9 +26,10 @@ const jobIds = (yml) =>
   [...(yml.split(/^jobs:\s*$/m)[1] ?? '').matchAll(/^ {2}([\w-]+):\s*$/gm)].map((m) => m[1]);
 
 describe('workflow guardrails', () => {
-  it('has the ci, security, pr-title and claude-pr workflows', () => {
+  it('has the ci, security, pr-title and Claude PR pipeline workflows', () => {
     expect(Object.keys(workflows).sort()).toEqual([
       'ci.yml',
+      'claude-pr-trigger.yml',
       'claude-pr.yml',
       'pr-title.yml',
       'security.yml',
@@ -81,6 +82,34 @@ describe('workflow guardrails', () => {
   it('the secret scan covers only history reachable from HEAD, not every fetched branch', () => {
     // Regression (B002 dry run): a fake key on one scratch branch failed every other PR's scan.
     expect(workflows['security.yml']).toMatch(/gitleaks" git --log-opts="HEAD" /);
+  });
+
+  it('claude-pr runs only as defined on main: PR events arrive through the relay workflow', () => {
+    const pipeline = workflows['claude-pr.yml'] ?? '';
+    expect(pipeline).not.toMatch(/^ {2}pull_request:/m);
+    expect(pipeline).toMatch(/workflows: \[claude-pr-trigger,/);
+  });
+
+  it('claude-pr makes no git fetch in YAML (checkouts drop their credentials)', () => {
+    expect(workflows['claude-pr.yml']).not.toMatch(/git fetch/);
+  });
+
+  it('every claude-pr job that runs the state script can read workflow runs', () => {
+    const pipeline = workflows['claude-pr.yml'] ?? '';
+    const jobs = (pipeline.split(/^jobs:\s*$/m)[1] ?? '').split(/^ {2}(?=[\w-]+:\s*$)/m);
+    const users = jobs.filter((j) => j.includes('claude-pr-state.mjs'));
+    expect(users.length).toBeGreaterThan(0);
+    for (const job of users) {
+      expect(job, job.split('\n')[0]).toMatch(/^ {6}actions: (read|write)/m);
+    }
+  });
+
+  it('the job that runs Claude cannot write statuses, pull requests or contents', () => {
+    const pipeline = workflows['claude-pr.yml'] ?? '';
+    const job = pipeline.split(/^ {2}claude:\s*$/m)[1]?.split(/^ {2}[\w-]+:\s*$/m)[0] ?? '';
+    const permissions = job.split(/^ {4}permissions:\s*$/m)[1]?.split(/^ {4}\S/m)[0] ?? '';
+    expect(permissions).toMatch(/contents: read/);
+    expect(permissions).not.toMatch(/statuses|pull-requests|contents: write/);
   });
 
   it('the PR title reaches the script through an env var, not inline interpolation', () => {

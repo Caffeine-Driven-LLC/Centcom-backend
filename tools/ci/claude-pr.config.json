@@ -20,9 +20,27 @@
     ".github/",
     "tools/plan/",
     "tools/ci/",
-    "pnpm-workspace.yaml"
+    "pnpm-workspace.yaml",
+    ".claude/",
+    ".claude.json",
+    ".mcp.json",
+    ".husky/",
+    ".gitmodules",
+    ".ripgreprc",
+    ".npmrc",
+    ".pnpmfile.cjs",
+    ".pnpmfile.mjs"
   ],
+  "protectedNames": ["CLAUDE.md", "CLAUDE.local.md"],
   "laneOwnedPaths": ["plan/STATUS.json"],
   "gates": "`pnpm typecheck`, `pnpm lint` and `pnpm test` (integration tests run in CI only)",
+  "execTools": [
+    "Bash(pnpm install --frozen-lockfile)",
+    "Bash(pnpm typecheck)",
+    "Bash(pnpm lint)",
+    "Bash(pnpm test)",
+    "Bash(pnpm build)",
+    "Bash(pnpm exec prettier --write:*)"
+  ],
   "mainWorkflows": ["ci.yml", "security.yml"]
 }
