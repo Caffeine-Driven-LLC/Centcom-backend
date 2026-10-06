@@ -44,7 +44,7 @@ source through `paths`, so tests type-check without a prior build.
 
 | Script                                   | What it does                                                                                                                        |
 | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm build`                             | `tsc -b`: builds every workspace into its `dist/`                                                                                   |
+| `pnpm build`                             | `tsc -b` into each `dist/`, then each package's `build:assets` (contracts: copies its generated validators)                         |
 | `pnpm typecheck`                         | `tsc -b --noEmit` for sources, then `tsconfig.test.json` for tests, scripts and `tools/repo`                                        |
 | `pnpm lint`                              | ESLint, then `tools/repo/check-exact-pins.mjs` (fails on any version range)                                                         |
 | `pnpm test`                              | Vitest with v8 coverage; 80 % line coverage is the hard floor                                                                       |

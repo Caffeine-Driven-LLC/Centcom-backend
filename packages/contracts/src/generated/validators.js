@@ -8,7 +8,7 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 
-export const v_entitlements = validate20;
+export const v0 = validate20;
 const schema31 = {"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://centcom.dev/contracts/entitlements.schema.json","title":"Entitlements - CT-ENTITLEMENTS","type":"object","required":["workspace","rev","plan","status","limits"],"additionalProperties":true,"properties":{"workspace":{"type":"string","pattern":"^wsp_[0-9A-HJKMNP-TV-Z]{26}$"},"rev":{"type":"integer","minimum":0},"plan":{"enum":["free","pro","team"]},"status":{"enum":["active","trialing","past_due","canceled","none"]},"period":{"type":"object","properties":{"start":{"type":"string","format":"date-time"},"end":{"type":"string","format":"date-time"}}},"limits":{"type":"object","required":["relay_access","lan_multiplayer","max_seats","max_session_members","max_concurrent_sessions","max_parallel_agents","history_days","hosted_minutes_month","audit_log_days","webhooks_max","api_keys_max"],"additionalProperties":true,"properties":{"relay_access":{"type":"boolean"},"lan_multiplayer":{"const":true},"max_seats":{"type":["integer","null"],"minimum":0},"max_session_members":{"type":["integer","null"],"minimum":0},"max_concurrent_sessions":{"type":["integer","null"],"minimum":0},"max_parallel_agents":{"type":["integer","null"],"minimum":0},"history_days":{"type":["integer","null"],"minimum":0},"queue_items_month":{"type":["integer","null"],"minimum":0},"audit_log_days":{"type":["integer","null"],"minimum":0},"webhooks_max":{"type":["integer","null"],"minimum":0},"api_keys_max":{"type":["integer","null"],"minimum":0},"hosted_minutes_month":{"type":["integer","null"],"minimum":0}}},"usage":{"type":"object","additionalProperties":{"type":"integer","minimum":0}},"warnings":{"type":"array","items":{"type":"object","required":["limit","pct"],"properties":{"limit":{"type":"string"},"pct":{"type":"integer","minimum":0,"maximum":100}}}},"grace_until":{"type":["string","null"],"format":"date-time"}}};
 const pattern4 = new RegExp("^wsp_[0-9A-HJKMNP-TV-Z]{26}$", "u");
 const formats0 = require("ajv-formats/dist/formats").fullFormats["date-time"];
@@ -591,7 +591,7 @@ return errors === 0;
 }
 validate20.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_envelope = validate21;
+export const v1 = validate21;
 const schema32 = {"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://centcom.dev/contracts/envelope.schema.json","title":"WebSocket frame envelope - CT-WS-ENVELOPE","type":"object","required":["v","t"],"additionalProperties":true,"properties":{"v":{"const":1},"t":{"enum":["sys.hello","sys.welcome","sys.ping","sys.pong","sys.error","sys.slow_down","sys.notice","sys.resume","sys.resumed","sys.bye","event","queue","control","presence","ack"]},"id":{"type":"string","pattern":"^msg_[0-9A-HJKMNP-TV-Z]{26}$"},"sid":{"type":"string","pattern":"^ses_[0-9A-HJKMNP-TV-Z]{26}$"},"from":{"type":"string","pattern":"^(mem_[0-9A-HJKMNP-TV-Z]{26}|srv)$"},"ts":{"type":"string","format":"date-time"},"seq":{"type":"integer","minimum":1},"ack":{"type":"integer","minimum":0},"ref":{"type":"string","pattern":"^msg_[0-9A-HJKMNP-TV-Z]{26}$"},"k":{"type":"string","pattern":"^[a-z_]+(\\.[a-z_]+)*$","maxLength":64},"p":{"type":"object"},"ct":{"type":"object","required":["alg","kid","n","c"],"additionalProperties":false,"properties":{"alg":{"const":"xchacha20poly1305"},"kid":{"type":"string","pattern":"^k[0-9]+$"},"n":{"type":"string","pattern":"^[A-Za-z0-9_-]{32}$"},"c":{"type":"string","pattern":"^[A-Za-z0-9_-]+$"}}},"sig":{"type":"string","pattern":"^[A-Za-z0-9_-]{86}$|^AAAA$"}},"allOf":[{"if":{"properties":{"t":{"enum":["event","queue","control","presence"]}},"required":["t"]},"then":{"required":["k","sid"]}},{"if":{"properties":{"t":{"enum":["event","queue","control"]}},"required":["t"]},"then":{"required":["id"]}},{"if":{"required":["ct"]},"then":{"required":["sig"]}},{"if":{"properties":{"t":{"const":"sys.hello"}},"required":["t"]},"then":{"required":["p"],"properties":{"p":{"type":"object","required":["protocols","ticket","client"],"properties":{"protocols":{"type":"array","items":{"type":"integer"},"minItems":1},"caps":{"type":"array","items":{"type":"string"}},"ticket":{"type":"string","minLength":10},"last_seq":{"type":["integer","null"]},"client":{"type":"object","required":["name","version"],"properties":{"name":{"type":"string"},"version":{"type":"string"},"contract":{"type":"string"}}}}}}}},{"if":{"properties":{"t":{"const":"sys.welcome"}},"required":["t"]},"then":{"required":["p"],"properties":{"p":{"type":"object","required":["protocol","member","heartbeat","limits"],"properties":{"protocol":{"const":1},"caps":{"type":"array","items":{"type":"string"}},"member":{"type":"object","required":["id","name","slot","role"],"properties":{"id":{"type":"string","pattern":"^mem_[0-9A-HJKMNP-TV-Z]{26}$"},"name":{"type":"string"},"slot":{"type":"integer","minimum":0},"role":{"enum":["host","editor","viewer"]}}},"roster_v":{"type":"integer"},"server_time":{"type":"string","format":"date-time"},"heartbeat":{"type":"object","required":["ping_ms","dead_ms"],"properties":{"ping_ms":{"type":"integer"},"dead_ms":{"type":"integer"}}},"limits":{"type":"object"},"session":{"type":"object","properties":{"mode":{"enum":["command_post","branch"]},"state":{"enum":["pending","live","paused","ended","expired"]}}}}}}}},{"if":{"properties":{"t":{"const":"sys.error"}},"required":["t"]},"then":{"required":["p"],"properties":{"p":{"$ref":"problem.schema.json"}}}}]};
 const schema33 = {"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://centcom.dev/contracts/problem.schema.json","title":"Problem (RFC 9457) - CT-ERR","type":"object","required":["type","title","status","code","request_id"],"additionalProperties":true,"properties":{"type":{"type":"string","format":"uri"},"title":{"type":"string"},"status":{"type":"integer","minimum":400,"maximum":599},"code":{"type":"string","pattern":"^[a-z0-9_]+$"},"detail":{"type":"string"},"instance":{"type":"string"},"request_id":{"type":"string","pattern":"^req_[0-9A-HJKMNP-TV-Z]{26}$"},"retry_after_s":{"type":"integer","minimum":0},"errors":{"type":"array","items":{"type":"object","required":["pointer","code"],"properties":{"pointer":{"type":"string"},"code":{"type":"string"},"detail":{"type":"string"}}}}}};
 const func1 = require("ajv/dist/runtime/ucs2length").default;
@@ -2175,7 +2175,7 @@ return errors === 0;
 }
 validate21.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_events = validate22;
+export const v2 = validate22;
 const schema34 = {"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://centcom.dev/contracts/events.schema.json","title":"Centcom session events (frame-level rules per kind)","description":"Apply AFTER envelope.schema.json. `$defs.p_*` validate cleartext payloads; `$defs.s_*` validate the decrypted secret payload of encrypted/hybrid kinds.","$defs":{"s_message_user":{"type":"object","additionalProperties":true,"properties":{"text":{"type":"string","maxLength":65536},"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"queue_item":{"type":"string","pattern":"^que_[0-9A-HJKMNP-TV-Z]{26}$"},"attachments":{"type":"array","items":{"type":"object"},"maxItems":200},"reply_to":{"type":"string","pattern":"^msg_[0-9A-HJKMNP-TV-Z]{26}$"}},"required":["text"]},"s_message_assistant_delta":{"type":"object","additionalProperties":true,"properties":{"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"message_id":{"type":"string","pattern":"^msg_[0-9A-HJKMNP-TV-Z]{26}$"},"index":{"type":"integer","minimum":0},"delta":{"type":"string","maxLength":65536}},"required":["agent_id","message_id","index","delta"]},"s_message_assistant_done":{"type":"object","additionalProperties":true,"properties":{"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"message_id":{"type":"string","pattern":"^msg_[0-9A-HJKMNP-TV-Z]{26}$"},"input_tokens":{"type":"integer","minimum":0},"output_tokens":{"type":"integer","minimum":0}},"required":["agent_id","message_id"]},"s_message_system":{"type":"object","additionalProperties":true,"properties":{"level":{"type":"string","enum":["info","warn","error"]},"text":{"type":"string","maxLength":65536}},"required":["level","text"]},"s_tool_request":{"type":"object","additionalProperties":true,"properties":{"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"tool_id":{"type":"string","maxLength":200},"name":{"type":"string","maxLength":200},"input_summary":{"type":"string","maxLength":65536},"risk":{"type":"string","enum":["low","medium","high"]}},"required":["agent_id","tool_id","name","input_summary","risk"]},"p_approval_request":{"type":"object","additionalProperties":true,"properties":{"approval_id":{"type":"string","pattern":"^apr_[0-9A-HJKMNP-TV-Z]{26}$"},"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"risk":{"type":"string","enum":["low","medium","high"]},"expires_at":{"type":"string","format":"date-time"},"approver":{"type":"string","enum":["host","owner","any_editor"]}},"required":["approval_id","agent_id","risk","expires_at","approver"]},"s_approval_request":{"type":"object","additionalProperties":true,"properties":{"summary":{"type":"string","maxLength":65536},"command":{"type":"string","maxLength":65536},"cwd":{"type":"string","maxLength":65536}},"required":["summary"]},"p_approval_decision":{"type":"object","additionalProperties":true,"properties":{"approval_id":{"type":"string","pattern":"^apr_[0-9A-HJKMNP-TV-Z]{26}$"},"decision":{"type":"string","enum":["approve","deny"]},"scope":{"type":"string","enum":["once","session","always"]}},"required":["approval_id","decision","scope"]},"s_approval_decision":{"type":"object","additionalProperties":true,"properties":{"reason":{"type":"string","maxLength":65536}},"required":[]},"s_tool_result":{"type":"object","additionalProperties":true,"properties":{"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"tool_id":{"type":"string","maxLength":200},"status":{"type":"string","enum":["ok","error","denied","canceled"]},"summary":{"type":"string","maxLength":65536}},"required":["agent_id","tool_id","status","summary"]},"p_agent_spawn":{"type":"object","additionalProperties":true,"properties":{"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"owner":{"type":"string","pattern":"^mem_[0-9A-HJKMNP-TV-Z]{26}$"},"mode":{"type":"string","enum":["command_post","branch"]},"runs_on":{"type":"string","pattern":"^mem_[0-9A-HJKMNP-TV-Z]{26}$"},"provider":{"type":"string","enum":["anthropic","openai","other"]}},"required":["agent_id","owner","mode"]},"s_agent_spawn":{"type":"object","additionalProperties":true,"properties":{"label":{"type":"string","maxLength":200},"branch":{"type":"string","maxLength":200},"worktree":{"type":"string","maxLength":200},"model":{"type":"string","maxLength":200}},"required":[]},"p_agent_state":{"type":"object","additionalProperties":true,"properties":{"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"state":{"type":"string","enum":["approved","asking-question","auth-required","awaiting-approval","away","background-task","celebrate","ci-fail","ci-pass","ci-running","compacting","context-full","cost-alert","crash","creating-file","deleting-file","denied","deploying","editing-file","empty","error","first-run","handoff","high-five","host-session","idle","listening","merge-conflict","message-queued","no-results","offline","online","pair-working","planning","pr-merged","pr-open","prompt-received","provider-auth-required","provider-cap-reached","provider-policy-blocked","quota-reached","rate-limited","reading-file","ready","reconnecting","running-command","saving","searching","session-expired","sleeping","streaming","sub-agent","success","teammate-joins","teammate-leaves","teammate-typing","tests-fail","tests-pass","thinking","thinking-hard","tool-running","update-available","warning","welcome-teammate"]},"since":{"type":"string","format":"date-time"}},"required":["agent_id","state","since"]},"p_agent_exit":{"type":"object","additionalProperties":true,"properties":{"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"outcome":{"type":"string","enum":["ok","error","canceled"]},"error_code":{"type":"string","maxLength":200}},"required":["agent_id","outcome"]},"s_agent_exit":{"type":"object","additionalProperties":true,"properties":{"detail":{"type":"string","maxLength":65536}},"required":[]},"s_branch_update":{"type":"object","additionalProperties":true,"properties":{"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"branch":{"type":"string","maxLength":200},"head":{"type":"string","maxLength":200},"ahead":{"type":"integer","minimum":0},"behind":{"type":"integer","minimum":0},"dirty":{"type":"boolean"}},"required":["agent_id","branch","head","ahead","behind","dirty"]},"p_file_lock":{"type":"object","additionalProperties":true,"properties":{"action":{"type":"string","enum":["acquire","release","deny","expire"]},"path_hmac":{"type":"string","pattern":"^[A-Za-z0-9_-]+$"},"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"ttl_ms":{"type":"integer","minimum":0}},"required":["action","path_hmac","agent_id"]},"s_file_lock":{"type":"object","additionalProperties":true,"properties":{"path":{"type":"string","maxLength":65536}},"required":[]},"p_agent_handoff":{"type":"object","additionalProperties":true,"properties":{"handoff":{"type":"string","pattern":"^msg_[0-9A-HJKMNP-TV-Z]{26}$"},"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"to":{"type":"string","pattern":"^mem_[0-9A-HJKMNP-TV-Z]{26}$"},"op":{"type":"string","enum":["offer","accept","decline"]}},"required":["handoff","agent_id","to","op"]},"s_agent_handoff":{"type":"object","additionalProperties":true,"properties":{"note":{"type":"string","maxLength":65536}},"required":[]},"p_conflict_detected":{"type":"object","additionalProperties":true,"properties":{"agent_ids":{"type":"array","items":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"maxItems":200},"path_hmacs":{"type":"array","items":{"type":"string","pattern":"^[A-Za-z0-9_-]+$"},"maxItems":200}},"required":["agent_ids","path_hmacs"]},"s_conflict_detected":{"type":"object","additionalProperties":true,"properties":{"paths":{"type":"array","items":{"type":"string","maxLength":200},"maxItems":200}},"required":[]},"s_diff_share":{"type":"object","additionalProperties":true,"properties":{"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"files":{"type":"array","items":{"type":"object"},"maxItems":200},"blob":{"type":"string","pattern":"^blb_[0-9A-HJKMNP-TV-Z]{26}$"}},"required":["agent_id","files"]},"p_reaction":{"type":"object","additionalProperties":true,"properties":{"target":{"type":"string","pattern":"^msg_[0-9A-HJKMNP-TV-Z]{26}$"},"code":{"type":"string","enum":["thumbs","heart","party","laugh","eyes","check"]},"op":{"type":"string","enum":["add","remove"]}},"required":["target","code","op"]},"s_comment_add":{"type":"object","additionalProperties":true,"properties":{"target":{"type":"string","pattern":"^msg_[0-9A-HJKMNP-TV-Z]{26}$"},"text":{"type":"string","maxLength":65536}},"required":["target","text"]},"p_key_grant":{"type":"object","additionalProperties":true,"properties":{"to_device":{"type":"string","pattern":"^dev_[0-9A-HJKMNP-TV-Z]{26}$"},"kids":{"type":"array","items":{"type":"string","maxLength":200},"maxItems":200}},"required":["to_device","kids"]},"s_key_grant":{"type":"object","additionalProperties":true,"properties":{"grants":{"type":"array","items":{"type":"object"},"maxItems":200}},"required":["grants"]},"p_queue_submit":{"type":"object","additionalProperties":true,"properties":{"item":{"type":"string","pattern":"^que_[0-9A-HJKMNP-TV-Z]{26}$"},"size":{"type":"integer","minimum":0},"kind":{"type":"string","enum":["message","command"]}},"required":["item","size","kind"]},"s_queue_submit":{"type":"object","additionalProperties":true,"properties":{"body":{"type":"string","maxLength":65536},"attachments":{"type":"array","items":{"type":"object"},"maxItems":200}},"required":["body"]},"p_queue_cancel":{"type":"object","additionalProperties":true,"properties":{"item":{"type":"string","pattern":"^que_[0-9A-HJKMNP-TV-Z]{26}$"}},"required":["item"]},"p_queue_approve":{"type":"object","additionalProperties":true,"properties":{"item":{"type":"string","pattern":"^que_[0-9A-HJKMNP-TV-Z]{26}$"}},"required":["item"]},"p_queue_reject":{"type":"object","additionalProperties":true,"properties":{"item":{"type":"string","pattern":"^que_[0-9A-HJKMNP-TV-Z]{26}$"},"code":{"type":"string","enum":["not_now","off_topic","unsafe","duplicate","other"]}},"required":["item","code"]},"s_queue_reject":{"type":"object","additionalProperties":true,"properties":{"note":{"type":"string","maxLength":65536}},"required":[]},"p_queue_reorder":{"type":"object","additionalProperties":true,"properties":{"order":{"type":"array","items":{"type":"string","pattern":"^que_[0-9A-HJKMNP-TV-Z]{26}$"},"maxItems":200}},"required":["order"]},"p_queue_drop":{"type":"object","additionalProperties":true,"properties":{"item":{"type":"string","pattern":"^que_[0-9A-HJKMNP-TV-Z]{26}$"}},"required":["item"]},"p_queue_claim":{"type":"object","additionalProperties":true,"properties":{"item":{"type":"string","pattern":"^que_[0-9A-HJKMNP-TV-Z]{26}$"},"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"}},"required":["item","agent_id"]},"p_queue_done":{"type":"object","additionalProperties":true,"properties":{"item":{"type":"string","pattern":"^que_[0-9A-HJKMNP-TV-Z]{26}$"},"outcome":{"type":"string","enum":["ok","error","canceled"]}},"required":["item","outcome"]},"p_queue_state":{"type":"object","additionalProperties":true,"properties":{"version":{"type":"integer","minimum":0},"items":{"type":"array","items":{"type":"object"},"maxItems":200}},"required":["version","items"]},"p_control_kick":{"type":"object","additionalProperties":true,"properties":{"member":{"type":"string","pattern":"^mem_[0-9A-HJKMNP-TV-Z]{26}$"},"code":{"type":"string","enum":["abuse","inactive","request","other"]}},"required":["member","code"]},"p_control_mute":{"type":"object","additionalProperties":true,"properties":{"member":{"type":"string","pattern":"^mem_[0-9A-HJKMNP-TV-Z]{26}$"},"until":{"type":"string","format":"date-time"}},"required":["member"]},"p_control_unmute":{"type":"object","additionalProperties":true,"properties":{"member":{"type":"string","pattern":"^mem_[0-9A-HJKMNP-TV-Z]{26}$"}},"required":["member"]},"p_control_role":{"type":"object","additionalProperties":true,"properties":{"member":{"type":"string","pattern":"^mem_[0-9A-HJKMNP-TV-Z]{26}$"},"role":{"type":"string","enum":["editor","viewer"]}},"required":["member","role"]},"p_control_transfer_host":{"type":"object","additionalProperties":true,"properties":{"to":{"type":"string","pattern":"^mem_[0-9A-HJKMNP-TV-Z]{26}$"}},"required":["to"]},"p_control_end":{"type":"object","additionalProperties":true,"properties":{"code":{"type":"string","enum":["done","abandoned","error"]}},"required":["code"]},"p_control_policy":{"type":"object","additionalProperties":true,"properties":{"auto_approve":{"type":"string","enum":["ask","trusted","everyone"]},"share_history":{"type":"boolean"},"queue_limit":{"type":"integer","minimum":0},"locked":{"type":"boolean"},"auto_failover":{"type":"boolean"},"trusted":{"type":"array","items":{"type":"string","pattern":"^mem_[0-9A-HJKMNP-TV-Z]{26}$"},"maxItems":200},"approvers":{"type":"array","items":{"type":"string","pattern":"^mem_[0-9A-HJKMNP-TV-Z]{26}$"},"maxItems":200},"queue_paused":{"type":"boolean"}},"required":["auto_approve","share_history","queue_limit"]},"p_control_member_joined":{"type":"object","additionalProperties":true,"properties":{"member":{"type":"string","pattern":"^mem_[0-9A-HJKMNP-TV-Z]{26}$"},"name":{"type":"string","maxLength":200},"slot":{"type":"integer","minimum":0},"role":{"type":"string","enum":["host","editor","viewer"]},"device":{"type":"string","pattern":"^dev_[0-9A-HJKMNP-TV-Z]{26}$"}},"required":["member","name","slot","role","device"]},"p_control_member_left":{"type":"object","additionalProperties":true,"properties":{"member":{"type":"string","pattern":"^mem_[0-9A-HJKMNP-TV-Z]{26}$"},"code":{"type":"string","enum":["left","kicked","timeout","revoked"]}},"required":["member","code"]},"p_control_roster":{"type":"object","additionalProperties":true,"properties":{"version":{"type":"integer","minimum":0},"members":{"type":"array","items":{"type":"object"},"maxItems":200}},"required":["version","members"]},"p_control_host_changed":{"type":"object","additionalProperties":true,"properties":{"host":{"type":"string","pattern":"^mem_[0-9A-HJKMNP-TV-Z]{26}$"},"code":{"type":"string","enum":["transfer","failover"]}},"required":["host","code"]},"p_control_session_state":{"type":"object","additionalProperties":true,"properties":{"state":{"type":"string","enum":["pending","live","paused","ended","expired"]}},"required":["state"]},"p_control_rotate_request":{"type":"object","additionalProperties":true,"properties":{"reason":{"type":"string","enum":["scheduled","requested"]}},"required":["reason"]},"p_control_rotate_key":{"type":"object","additionalProperties":true,"properties":{"kid":{"type":"string","maxLength":200},"reason":{"type":"string","enum":["member_removed","scheduled","requested"]}},"required":["kid","reason"]},"p_presence_update":{"type":"object","additionalProperties":true,"properties":{"status":{"type":"string","enum":["online","away","busy"]},"activity":{"type":"string","enum":["idle","typing","reviewing","running"]},"agent_count":{"type":"integer","minimum":0}},"required":["status","activity"]},"p_presence_nudge":{"type":"object","additionalProperties":true,"properties":{"to":{"type":"string","pattern":"^mem_[0-9A-HJKMNP-TV-Z]{26}$"}},"required":["to"]},"s_presence_cursor":{"type":"object","additionalProperties":true,"properties":{"path":{"type":"string","maxLength":65536},"line":{"type":"integer","minimum":0},"col":{"type":"integer","minimum":0},"sel_end_line":{"type":"integer","minimum":0},"sel_end_col":{"type":"integer","minimum":0}},"required":[]}},"allOf":[{"if":{"properties":{"k":{"const":"message.user"},"t":{"const":"event"}},"required":["k","t"]},"then":{"required":["ct"],"not":{"required":["p"]}}},{"if":{"properties":{"k":{"const":"message.assistant.delta"},"t":{"const":"event"}},"required":["k","t"]},"then":{"required":["ct"],"not":{"required":["p"]}}},{"if":{"properties":{"k":{"const":"message.assistant.done"},"t":{"const":"event"}},"required":["k","t"]},"then":{"required":["ct"],"not":{"required":["p"]}}},{"if":{"properties":{"k":{"const":"message.system"},"t":{"const":"event"}},"required":["k","t"]},"then":{"required":["ct"],"not":{"required":["p"]}}},{"if":{"properties":{"k":{"const":"tool.request"},"t":{"const":"event"}},"required":["k","t"]},"then":{"required":["ct"],"not":{"required":["p"]}}},{"if":{"properties":{"k":{"const":"approval.request"},"t":{"const":"event"}},"required":["k","t"]},"then":{"required":["p","ct"],"properties":{"p":{"$ref":"#/$defs/p_approval_request"}}}},{"if":{"properties":{"k":{"const":"approval.decision"},"t":{"const":"event"}},"required":["k","t"]},"then":{"required":["p","ct"],"properties":{"p":{"$ref":"#/$defs/p_approval_decision"}}}},{"if":{"properties":{"k":{"const":"tool.result"},"t":{"const":"event"}},"required":["k","t"]},"then":{"required":["ct"],"not":{"required":["p"]}}},{"if":{"properties":{"k":{"const":"agent.spawn"},"t":{"const":"event"}},"required":["k","t"]},"then":{"required":["p","ct"],"properties":{"p":{"$ref":"#/$defs/p_agent_spawn"}}}},{"if":{"properties":{"k":{"const":"agent.state"},"t":{"const":"event"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_agent_state"}}}},{"if":{"properties":{"k":{"const":"agent.exit"},"t":{"const":"event"}},"required":["k","t"]},"then":{"required":["p","ct"],"properties":{"p":{"$ref":"#/$defs/p_agent_exit"}}}},{"if":{"properties":{"k":{"const":"branch.update"},"t":{"const":"event"}},"required":["k","t"]},"then":{"required":["ct"],"not":{"required":["p"]}}},{"if":{"properties":{"k":{"const":"file.lock"},"t":{"const":"event"}},"required":["k","t"]},"then":{"required":["p","ct"],"properties":{"p":{"$ref":"#/$defs/p_file_lock"}}}},{"if":{"properties":{"k":{"const":"agent.handoff"},"t":{"const":"event"}},"required":["k","t"]},"then":{"required":["p","ct"],"properties":{"p":{"$ref":"#/$defs/p_agent_handoff"}}}},{"if":{"properties":{"k":{"const":"conflict.detected"},"t":{"const":"event"}},"required":["k","t"]},"then":{"required":["p","ct"],"properties":{"p":{"$ref":"#/$defs/p_conflict_detected"}}}},{"if":{"properties":{"k":{"const":"diff.share"},"t":{"const":"event"}},"required":["k","t"]},"then":{"required":["ct"],"not":{"required":["p"]}}},{"if":{"properties":{"k":{"const":"reaction"},"t":{"const":"event"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_reaction"}}}},{"if":{"properties":{"k":{"const":"comment.add"},"t":{"const":"event"}},"required":["k","t"]},"then":{"required":["ct"],"not":{"required":["p"]}}},{"if":{"properties":{"k":{"const":"key.grant"},"t":{"const":"event"}},"required":["k","t"]},"then":{"required":["p","ct"],"properties":{"p":{"$ref":"#/$defs/p_key_grant"}}}},{"if":{"properties":{"k":{"const":"queue.submit"},"t":{"const":"queue"}},"required":["k","t"]},"then":{"required":["p","ct"],"properties":{"p":{"$ref":"#/$defs/p_queue_submit"}}}},{"if":{"properties":{"k":{"const":"queue.cancel"},"t":{"const":"queue"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_queue_cancel"}}}},{"if":{"properties":{"k":{"const":"queue.approve"},"t":{"const":"queue"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_queue_approve"}}}},{"if":{"properties":{"k":{"const":"queue.reject"},"t":{"const":"queue"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_queue_reject"}}}},{"if":{"properties":{"k":{"const":"queue.reorder"},"t":{"const":"queue"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_queue_reorder"}}}},{"if":{"properties":{"k":{"const":"queue.drop"},"t":{"const":"queue"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_queue_drop"}}}},{"if":{"properties":{"k":{"const":"queue.claim"},"t":{"const":"queue"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_queue_claim"}}}},{"if":{"properties":{"k":{"const":"queue.done"},"t":{"const":"queue"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_queue_done"}}}},{"if":{"properties":{"k":{"const":"queue.state"},"t":{"const":"queue"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_queue_state"}}}},{"if":{"properties":{"k":{"const":"control.kick"},"t":{"const":"control"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_control_kick"}}}},{"if":{"properties":{"k":{"const":"control.mute"},"t":{"const":"control"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_control_mute"}}}},{"if":{"properties":{"k":{"const":"control.unmute"},"t":{"const":"control"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_control_unmute"}}}},{"if":{"properties":{"k":{"const":"control.role"},"t":{"const":"control"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_control_role"}}}},{"if":{"properties":{"k":{"const":"control.transfer_host"},"t":{"const":"control"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_control_transfer_host"}}}},{"if":{"properties":{"k":{"const":"control.end"},"t":{"const":"control"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_control_end"}}}},{"if":{"properties":{"k":{"const":"control.policy"},"t":{"const":"control"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_control_policy"}}}},{"if":{"properties":{"k":{"const":"control.member_joined"},"t":{"const":"control"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_control_member_joined"}}}},{"if":{"properties":{"k":{"const":"control.member_left"},"t":{"const":"control"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_control_member_left"}}}},{"if":{"properties":{"k":{"const":"control.roster"},"t":{"const":"control"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_control_roster"}}}},{"if":{"properties":{"k":{"const":"control.host_changed"},"t":{"const":"control"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_control_host_changed"}}}},{"if":{"properties":{"k":{"const":"control.session_state"},"t":{"const":"control"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_control_session_state"}}}},{"if":{"properties":{"k":{"const":"control.rotate_request"},"t":{"const":"control"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_control_rotate_request"}}}},{"if":{"properties":{"k":{"const":"control.rotate_key"},"t":{"const":"control"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_control_rotate_key"}}}},{"if":{"properties":{"k":{"const":"presence.update"},"t":{"const":"presence"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_presence_update"}}}},{"if":{"properties":{"k":{"const":"presence.nudge"},"t":{"const":"presence"}},"required":["k","t"]},"then":{"required":["p"],"not":{"required":["ct"]},"properties":{"p":{"$ref":"#/$defs/p_presence_nudge"}}}},{"if":{"properties":{"k":{"const":"presence.cursor"},"t":{"const":"presence"}},"required":["k","t"]},"then":{"required":["ct"],"not":{"required":["p"]}}}]};
 const schema35 = {"type":"object","additionalProperties":true,"properties":{"approval_id":{"type":"string","pattern":"^apr_[0-9A-HJKMNP-TV-Z]{26}$"},"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"risk":{"type":"string","enum":["low","medium","high"]},"expires_at":{"type":"string","format":"date-time"},"approver":{"type":"string","enum":["host","owner","any_editor"]}},"required":["approval_id","agent_id","risk","expires_at","approver"]};
 const schema36 = {"type":"object","additionalProperties":true,"properties":{"approval_id":{"type":"string","pattern":"^apr_[0-9A-HJKMNP-TV-Z]{26}$"},"decision":{"type":"string","enum":["approve","deny"]},"scope":{"type":"string","enum":["once","session","always"]}},"required":["approval_id","decision","scope"]};
@@ -10638,7 +10638,7 @@ return errors === 0;
 }
 validate22.evaluated = {"dynamicProps":true,"dynamicItems":false};
 
-export const v_lan_pair = validate23;
+export const v3 = validate23;
 const schema70 = {"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://centcom.dev/contracts/lan-pair.schema.json","title":"LAN pairing frames - CT-LAN","type":"object","required":["t"],"additionalProperties":true,"properties":{"t":{"enum":["lan.pair.1","lan.pair.2","lan.pair.3","lan.pair.4","lan.pair.err"]},"cpace_msg":{"type":"string"},"fp":{"type":"string","pattern":"^[A-Z2-7]{4}(-[A-Z2-7]{4}){2}$"},"device":{"type":"object","required":["id","x25519","ed25519","name"],"properties":{"id":{"type":"string","pattern":"^dev_[0-9A-HJKMNP-TV-Z]{26}$"},"x25519":{"type":"string"},"ed25519":{"type":"string"},"name":{"type":"string"}}},"confirm":{"type":"string"},"ok":{"type":"boolean"},"reconnect_token":{"type":"string"},"code":{"enum":["bad_code","locked_out","version","busy"]}}};
 const pattern55 = new RegExp("^[A-Z2-7]{4}(-[A-Z2-7]{4}){2}$", "u");
 
@@ -10857,7 +10857,7 @@ return errors === 0;
 }
 validate23.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_notification = validate24;
+export const v4 = validate24;
 const schema71 = {"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://centcom.dev/contracts/notification.schema.json","title":"Notification - CT-NOTIF-PAYLOAD","type":"object","required":["id","created_at","category","title_key","body_key","priority"],"additionalProperties":true,"properties":{"id":{"type":"string","pattern":"^ntf_[0-9A-HJKMNP-TV-Z]{26}$"},"created_at":{"type":"string","format":"date-time"},"read_at":{"type":["string","null"],"format":"date-time"},"category":{"enum":["trial_ending","approval_needed","queue_turn","mention","member_joined","member_left","agent_done","ci_failed","pr_merged","usage_warning","quota_reached","billing_issue","invite_received","update_available","security_alert"]},"title_key":{"type":"string","pattern":"^notif\\.[a-z_.]+$"},"body_key":{"type":"string","pattern":"^notif\\.[a-z_.]+$"},"params":{"type":"object","additionalProperties":{"type":["string","number","boolean"]}},"action":{"type":"object","required":["type"],"properties":{"type":{"enum":["open_session","open_billing","open_invite","open_update","none"]},"deeplink":{"type":"string","pattern":"^centcom://"}}},"priority":{"enum":["low","normal","high"]}}};
 const pattern57 = new RegExp("^ntf_[0-9A-HJKMNP-TV-Z]{26}$", "u");
 const pattern58 = new RegExp("^notif\\.[a-z_.]+$", "u");
@@ -11123,7 +11123,7 @@ return errors === 0;
 }
 validate24.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_problem = validate25;
+export const v5 = validate25;
 
 function validate25(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 /*# sourceURL="https://centcom.dev/contracts/problem.schema.json" */;
@@ -11391,7 +11391,7 @@ return errors === 0;
 }
 validate25.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_provider_policy = validate26;
+export const v6 = validate26;
 const schema73 = {"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://centcom.dev/contracts/provider-policy.schema.json","title":"Provider policy table - CT-PROVIDER","type":"object","required":["checked_at","methods"],"properties":{"checked_at":{"type":"string","format":"date-time"},"methods":{"type":"array","minItems":1,"items":{"type":"object","required":["id","provider","status","flag","source"],"properties":{"id":{"type":"string"},"provider":{"enum":["anthropic","openai","other"]},"status":{"enum":["allowed","allowed_with_conditions","not_permitted","pending_confirmation"]},"flag":{"type":"string","pattern":"^provider\\.[a-z_.]+$"},"engine":{"type":"string"},"source":{"type":"string","format":"uri"},"conditions":{"type":"array","items":{"type":"string"}}}}}}};
 const pattern63 = new RegExp("^provider\\.[a-z_.]+$", "u");
 
@@ -11626,7 +11626,7 @@ return errors === 0;
 }
 validate26.evaluated = {"props":{"checked_at":true,"methods":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_release_manifest = validate27;
+export const v7 = validate27;
 const schema74 = {"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://centcom.dev/contracts/release-manifest.schema.json","title":"Release manifest - CT-API-RELEASES","type":"object","required":["channel","version","released_at","min_supported","artifacts"],"additionalProperties":true,"properties":{"channel":{"enum":["stable","beta","nightly"]},"version":{"type":"string","pattern":"^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?$"},"released_at":{"type":"string","format":"date-time"},"min_supported":{"type":"string"},"rollout_pct":{"type":"integer","minimum":0,"maximum":100},"notes_url":{"type":"string","format":"uri"},"contract_version":{"type":"string"},"artifacts":{"type":"array","minItems":1,"items":{"type":"object","required":["platform","arch","url","sha256","size","sig"],"properties":{"platform":{"enum":["linux","darwin","win32"]},"arch":{"enum":["x64","arm64"]},"kind":{"enum":["binary","npm","archive"]},"url":{"type":"string","format":"uri"},"sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"size":{"type":"integer","minimum":1},"sig":{"type":"string","description":"Ed25519 signature (base64url) over the sha256 digest bytes"},"sig_kid":{"type":"string"}}}}}};
 const pattern64 = new RegExp("^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?$", "u");
 const pattern65 = new RegExp("^[0-9a-f]{64}$", "u");
@@ -11981,7 +11981,7 @@ return errors === 0;
 }
 validate27.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_telemetry = validate28;
+export const v8 = validate28;
 const schema75 = {"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://centcom.dev/contracts/telemetry.schema.json","title":"Telemetry batch - CT-TELEMETRY","type":"object","required":["install_id","events"],"additionalProperties":false,"properties":{"install_id":{"type":"string","pattern":"^[0-9A-HJKMNP-TV-Z]{26}$"},"app":{"type":"object","properties":{"name":{"type":"string"},"version":{"type":"string"},"os":{"type":"string"},"arch":{"type":"string"},"contract":{"type":"string"}}},"events":{"type":"array","minItems":1,"maxItems":100,"items":{"type":"object","required":["type","at"],"additionalProperties":false,"properties":{"type":{"enum":["app.start","app.exit","command.run","session.created","session.joined","agent.state_change","feature.used","error.shown","perf.startup","perf.frame","update.result"]},"at":{"type":"string","format":"date-time"},"props":{"type":"object","maxProperties":8,"additionalProperties":{"type":["string","number","boolean"],"maxLength":64}}}}}}};
 const pattern66 = new RegExp("^[0-9A-HJKMNP-TV-Z]{26}$", "u");
 
@@ -12272,7 +12272,7 @@ return errors === 0;
 }
 validate28.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_webhook = validate29;
+export const v9 = validate29;
 const schema76 = {"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://centcom.dev/contracts/webhook.schema.json","title":"Webhook delivery payload - CT-WEBHOOKS","type":"object","required":["id","type","created_at","workspace","api_version","data"],"additionalProperties":true,"properties":{"id":{"type":"string","pattern":"^dlv_[0-9A-HJKMNP-TV-Z]{26}$"},"type":{"enum":["workspace.member.joined","workspace.member.left","workspace.member.role_changed","workspace.invite.created","workspace.invite.accepted","workspace.invite.revoked","session.created","session.started","session.ended","session.member.joined","session.member.left","agent.completed","billing.subscription.updated","billing.invoice.paid","billing.invoice.payment_failed","usage.threshold","api_key.created","api_key.revoked","webhook.test"]},"created_at":{"type":"string","format":"date-time"},"workspace":{"type":"string","pattern":"^wsp_[0-9A-HJKMNP-TV-Z]{26}$"},"api_version":{"type":"string","pattern":"^\\d{4}-\\d{2}-\\d{2}$"},"data":{"type":"object"}}};
 const pattern67 = new RegExp("^dlv_[0-9A-HJKMNP-TV-Z]{26}$", "u");
 const pattern69 = new RegExp("^\\d{4}-\\d{2}-\\d{2}$", "u");
@@ -12424,7 +12424,7 @@ return errors === 0;
 }
 validate29.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_approval_request = validate30;
+export const v10 = validate30;
 
 function validate30(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -12558,7 +12558,7 @@ return errors === 0;
 }
 validate30.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_approval_decision = validate31;
+export const v11 = validate31;
 
 function validate31(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -12646,7 +12646,7 @@ return errors === 0;
 }
 validate31.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_agent_spawn = validate32;
+export const v12 = validate32;
 
 function validate32(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -12778,7 +12778,7 @@ return errors === 0;
 }
 validate32.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_agent_state = validate33;
+export const v13 = validate33;
 
 function validate33(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -12872,7 +12872,7 @@ return errors === 0;
 }
 validate33.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_agent_exit = validate34;
+export const v14 = validate34;
 
 function validate34(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -12964,7 +12964,7 @@ return errors === 0;
 }
 validate34.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_file_lock = validate35;
+export const v15 = validate35;
 
 function validate35(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -13078,7 +13078,7 @@ return errors === 0;
 }
 validate35.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_agent_handoff = validate36;
+export const v16 = validate36;
 
 function validate36(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -13192,7 +13192,7 @@ return errors === 0;
 }
 validate36.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_conflict_detected = validate37;
+export const v17 = validate37;
 
 function validate37(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -13314,7 +13314,7 @@ return errors === 0;
 }
 validate37.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_reaction = validate38;
+export const v18 = validate38;
 
 function validate38(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -13402,7 +13402,7 @@ return errors === 0;
 }
 validate38.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_key_grant = validate39;
+export const v19 = validate39;
 
 function validate39(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -13500,7 +13500,7 @@ return errors === 0;
 }
 validate39.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_queue_submit = validate40;
+export const v20 = validate40;
 
 function validate40(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -13592,7 +13592,7 @@ return errors === 0;
 }
 validate40.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_queue_cancel = validate41;
+export const v21 = validate41;
 
 function validate41(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -13640,7 +13640,7 @@ return errors === 0;
 }
 validate41.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_queue_approve = validate42;
+export const v22 = validate42;
 
 function validate42(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -13688,7 +13688,7 @@ return errors === 0;
 }
 validate42.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_queue_reject = validate43;
+export const v23 = validate43;
 
 function validate43(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -13758,7 +13758,7 @@ return errors === 0;
 }
 validate43.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_queue_reorder = validate44;
+export const v24 = validate44;
 
 function validate44(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -13830,7 +13830,7 @@ return errors === 0;
 }
 validate44.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_queue_drop = validate45;
+export const v25 = validate45;
 
 function validate45(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -13878,7 +13878,7 @@ return errors === 0;
 }
 validate45.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_queue_claim = validate46;
+export const v26 = validate46;
 
 function validate46(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -13952,7 +13952,7 @@ return errors === 0;
 }
 validate46.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_queue_done = validate47;
+export const v27 = validate47;
 
 function validate47(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -14022,7 +14022,7 @@ return errors === 0;
 }
 validate47.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_queue_state = validate48;
+export const v28 = validate48;
 
 function validate48(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -14112,7 +14112,7 @@ return errors === 0;
 }
 validate48.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_control_kick = validate49;
+export const v29 = validate49;
 
 function validate49(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -14182,7 +14182,7 @@ return errors === 0;
 }
 validate49.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_control_mute = validate50;
+export const v30 = validate50;
 
 function validate50(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -14258,7 +14258,7 @@ return errors === 0;
 }
 validate50.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_control_unmute = validate51;
+export const v31 = validate51;
 
 function validate51(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -14306,7 +14306,7 @@ return errors === 0;
 }
 validate51.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_control_role = validate52;
+export const v32 = validate52;
 
 function validate52(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -14376,7 +14376,7 @@ return errors === 0;
 }
 validate52.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_control_transfer_host = validate53;
+export const v33 = validate53;
 
 function validate53(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -14424,7 +14424,7 @@ return errors === 0;
 }
 validate53.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_control_end = validate54;
+export const v34 = validate54;
 
 function validate54(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -14467,7 +14467,7 @@ return errors === 0;
 }
 validate54.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_control_policy = validate55;
+export const v35 = validate55;
 
 function validate55(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -14681,7 +14681,7 @@ return errors === 0;
 }
 validate55.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_control_member_joined = validate56;
+export const v36 = validate56;
 
 function validate56(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -14817,7 +14817,7 @@ return errors === 0;
 }
 validate56.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_control_member_left = validate57;
+export const v37 = validate57;
 
 function validate57(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -14887,7 +14887,7 @@ return errors === 0;
 }
 validate57.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_control_roster = validate58;
+export const v38 = validate58;
 
 function validate58(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -14977,7 +14977,7 @@ return errors === 0;
 }
 validate58.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_control_host_changed = validate59;
+export const v39 = validate59;
 
 function validate59(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -15047,7 +15047,7 @@ return errors === 0;
 }
 validate59.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_control_session_state = validate60;
+export const v40 = validate60;
 
 function validate60(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -15090,7 +15090,7 @@ return errors === 0;
 }
 validate60.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_control_rotate_request = validate61;
+export const v41 = validate61;
 
 function validate61(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -15133,7 +15133,7 @@ return errors === 0;
 }
 validate61.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_control_rotate_key = validate62;
+export const v42 = validate62;
 
 function validate62(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -15203,7 +15203,7 @@ return errors === 0;
 }
 validate62.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_presence_update = validate63;
+export const v43 = validate63;
 
 function validate63(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -15291,7 +15291,7 @@ return errors === 0;
 }
 validate63.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_presence_nudge = validate64;
+export const v44 = validate64;
 
 function validate64(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -15339,7 +15339,7 @@ return errors === 0;
 }
 validate64.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_secret_message_user = validate65;
+export const v45 = validate65;
 const schema112 = {"type":"object","additionalProperties":true,"properties":{"text":{"type":"string","maxLength":65536},"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"queue_item":{"type":"string","pattern":"^que_[0-9A-HJKMNP-TV-Z]{26}$"},"attachments":{"type":"array","items":{"type":"object"},"maxItems":200},"reply_to":{"type":"string","pattern":"^msg_[0-9A-HJKMNP-TV-Z]{26}$"}},"required":["text"]};
 
 function validate65(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -15496,7 +15496,7 @@ return errors === 0;
 }
 validate65.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_secret_message_assistant_delta = validate66;
+export const v46 = validate66;
 const schema113 = {"type":"object","additionalProperties":true,"properties":{"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"message_id":{"type":"string","pattern":"^msg_[0-9A-HJKMNP-TV-Z]{26}$"},"index":{"type":"integer","minimum":0},"delta":{"type":"string","maxLength":65536}},"required":["agent_id","message_id","index","delta"]};
 
 function validate66(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -15615,7 +15615,7 @@ return errors === 0;
 }
 validate66.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_secret_message_assistant_done = validate67;
+export const v47 = validate67;
 const schema114 = {"type":"object","additionalProperties":true,"properties":{"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"message_id":{"type":"string","pattern":"^msg_[0-9A-HJKMNP-TV-Z]{26}$"},"input_tokens":{"type":"integer","minimum":0},"output_tokens":{"type":"integer","minimum":0}},"required":["agent_id","message_id"]};
 
 function validate67(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -15734,7 +15734,7 @@ return errors === 0;
 }
 validate67.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_secret_message_system = validate68;
+export const v48 = validate68;
 const schema115 = {"type":"object","additionalProperties":true,"properties":{"level":{"type":"string","enum":["info","warn","error"]},"text":{"type":"string","maxLength":65536}},"required":["level","text"]};
 
 function validate68(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -15805,7 +15805,7 @@ return errors === 0;
 }
 validate68.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_secret_tool_request = validate69;
+export const v49 = validate69;
 const schema116 = {"type":"object","additionalProperties":true,"properties":{"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"tool_id":{"type":"string","maxLength":200},"name":{"type":"string","maxLength":200},"input_summary":{"type":"string","maxLength":65536},"risk":{"type":"string","enum":["low","medium","high"]}},"required":["agent_id","tool_id","name","input_summary","risk"]};
 
 function validate69(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -15942,7 +15942,7 @@ return errors === 0;
 }
 validate69.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_secret_approval_request = validate70;
+export const v50 = validate70;
 const schema117 = {"type":"object","additionalProperties":true,"properties":{"summary":{"type":"string","maxLength":65536},"command":{"type":"string","maxLength":65536},"cwd":{"type":"string","maxLength":65536}},"required":["summary"]};
 
 function validate70(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -16039,7 +16039,7 @@ return errors === 0;
 }
 validate70.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_secret_approval_decision = validate71;
+export const v51 = validate71;
 const schema118 = {"type":"object","additionalProperties":true,"properties":{"reason":{"type":"string","maxLength":65536}},"required":[]};
 
 function validate71(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -16081,7 +16081,7 @@ return errors === 0;
 }
 validate71.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_secret_tool_result = validate72;
+export const v52 = validate72;
 const schema119 = {"type":"object","additionalProperties":true,"properties":{"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"tool_id":{"type":"string","maxLength":200},"status":{"type":"string","enum":["ok","error","denied","canceled"]},"summary":{"type":"string","maxLength":65536}},"required":["agent_id","tool_id","status","summary"]};
 
 function validate72(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -16196,7 +16196,7 @@ return errors === 0;
 }
 validate72.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_secret_agent_spawn = validate73;
+export const v53 = validate73;
 const schema120 = {"type":"object","additionalProperties":true,"properties":{"label":{"type":"string","maxLength":200},"branch":{"type":"string","maxLength":200},"worktree":{"type":"string","maxLength":200},"model":{"type":"string","maxLength":200}},"required":[]};
 
 function validate73(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -16308,7 +16308,7 @@ return errors === 0;
 }
 validate73.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_secret_agent_exit = validate74;
+export const v54 = validate74;
 const schema121 = {"type":"object","additionalProperties":true,"properties":{"detail":{"type":"string","maxLength":65536}},"required":[]};
 
 function validate74(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -16350,7 +16350,7 @@ return errors === 0;
 }
 validate74.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_secret_branch_update = validate75;
+export const v55 = validate75;
 const schema122 = {"type":"object","additionalProperties":true,"properties":{"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"branch":{"type":"string","maxLength":200},"head":{"type":"string","maxLength":200},"ahead":{"type":"integer","minimum":0},"behind":{"type":"integer","minimum":0},"dirty":{"type":"boolean"}},"required":["agent_id","branch","head","ahead","behind","dirty"]};
 
 function validate75(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -16504,7 +16504,7 @@ return errors === 0;
 }
 validate75.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_secret_file_lock = validate76;
+export const v56 = validate76;
 const schema123 = {"type":"object","additionalProperties":true,"properties":{"path":{"type":"string","maxLength":65536}},"required":[]};
 
 function validate76(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -16546,7 +16546,7 @@ return errors === 0;
 }
 validate76.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_secret_agent_handoff = validate77;
+export const v57 = validate77;
 const schema124 = {"type":"object","additionalProperties":true,"properties":{"note":{"type":"string","maxLength":65536}},"required":[]};
 
 function validate77(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -16588,7 +16588,7 @@ return errors === 0;
 }
 validate77.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_secret_conflict_detected = validate78;
+export const v58 = validate78;
 const schema125 = {"type":"object","additionalProperties":true,"properties":{"paths":{"type":"array","items":{"type":"string","maxLength":200},"maxItems":200}},"required":[]};
 
 function validate78(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -16654,7 +16654,7 @@ return errors === 0;
 }
 validate78.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_secret_diff_share = validate79;
+export const v59 = validate79;
 const schema126 = {"type":"object","additionalProperties":true,"properties":{"agent_id":{"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$"},"files":{"type":"array","items":{"type":"object"},"maxItems":200},"blob":{"type":"string","pattern":"^blb_[0-9A-HJKMNP-TV-Z]{26}$"}},"required":["agent_id","files"]};
 const pattern119 = new RegExp("^blb_[0-9A-HJKMNP-TV-Z]{26}$", "u");
 
@@ -16768,7 +16768,7 @@ return errors === 0;
 }
 validate79.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_secret_comment_add = validate80;
+export const v60 = validate80;
 const schema127 = {"type":"object","additionalProperties":true,"properties":{"target":{"type":"string","pattern":"^msg_[0-9A-HJKMNP-TV-Z]{26}$"},"text":{"type":"string","maxLength":65536}},"required":["target","text"]};
 
 function validate80(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -16843,7 +16843,7 @@ return errors === 0;
 }
 validate80.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_secret_key_grant = validate81;
+export const v61 = validate81;
 const schema128 = {"type":"object","additionalProperties":true,"properties":{"grants":{"type":"array","items":{"type":"object"},"maxItems":200}},"required":["grants"]};
 
 function validate81(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -16908,7 +16908,7 @@ return errors === 0;
 }
 validate81.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_secret_queue_submit = validate82;
+export const v62 = validate82;
 const schema129 = {"type":"object","additionalProperties":true,"properties":{"body":{"type":"string","maxLength":65536},"attachments":{"type":"array","items":{"type":"object"},"maxItems":200}},"required":["body"]};
 
 function validate82(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -16999,7 +16999,7 @@ return errors === 0;
 }
 validate82.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_secret_queue_reject = validate83;
+export const v63 = validate83;
 const schema130 = {"type":"object","additionalProperties":true,"properties":{"note":{"type":"string","maxLength":65536}},"required":[]};
 
 function validate83(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -17041,7 +17041,7 @@ return errors === 0;
 }
 validate83.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_event_secret_presence_cursor = validate84;
+export const v64 = validate84;
 const schema131 = {"type":"object","additionalProperties":true,"properties":{"path":{"type":"string","maxLength":65536},"line":{"type":"integer","minimum":0},"col":{"type":"integer","minimum":0},"sel_end_line":{"type":"integer","minimum":0},"sel_end_col":{"type":"integer","minimum":0}},"required":[]};
 
 function validate84(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -17175,7 +17175,7 @@ return errors === 0;
 }
 validate84.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_UserId = validate86;
+export const v65 = validate86;
 const schema133 = {"type":"string","pattern":"^usr_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a user.","examples":["usr_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 const pattern121 = new RegExp("^usr_[0-9A-HJKMNP-TV-Z]{26}$", "u");
 
@@ -17212,7 +17212,7 @@ return errors === 0;
 }
 validate86.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WorkspaceId = validate87;
+export const v66 = validate87;
 const schema134 = {"type":"string","pattern":"^wsp_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a workspace.","examples":["wsp_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 
 function validate87(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -17248,7 +17248,7 @@ return errors === 0;
 }
 validate87.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_DeviceId = validate88;
+export const v67 = validate88;
 const schema135 = {"type":"string","pattern":"^dev_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a device.","examples":["dev_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 
 function validate88(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -17284,7 +17284,7 @@ return errors === 0;
 }
 validate88.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_MemberId = validate89;
+export const v68 = validate89;
 const schema136 = {"type":"string","pattern":"^mem_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a membership.","examples":["mem_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 
 function validate89(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -17320,7 +17320,7 @@ return errors === 0;
 }
 validate89.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_InviteId = validate90;
+export const v69 = validate90;
 const schema137 = {"type":"string","pattern":"^inv_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a invite.","examples":["inv_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 const pattern125 = new RegExp("^inv_[0-9A-HJKMNP-TV-Z]{26}$", "u");
 
@@ -17357,7 +17357,7 @@ return errors === 0;
 }
 validate90.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_ApiKeyId = validate91;
+export const v70 = validate91;
 const schema138 = {"type":"string","pattern":"^key_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a API key.","examples":["key_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 const pattern126 = new RegExp("^key_[0-9A-HJKMNP-TV-Z]{26}$", "u");
 
@@ -17394,7 +17394,7 @@ return errors === 0;
 }
 validate91.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WebhookId = validate92;
+export const v71 = validate92;
 const schema139 = {"type":"string","pattern":"^whk_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a webhook endpoint.","examples":["whk_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 const pattern127 = new RegExp("^whk_[0-9A-HJKMNP-TV-Z]{26}$", "u");
 
@@ -17431,7 +17431,7 @@ return errors === 0;
 }
 validate92.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_DeliveryId = validate93;
+export const v72 = validate93;
 const schema140 = {"type":"string","pattern":"^dlv_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a webhook delivery.","examples":["dlv_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 
 function validate93(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -17467,7 +17467,7 @@ return errors === 0;
 }
 validate93.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_NotificationId = validate94;
+export const v73 = validate94;
 const schema141 = {"type":"string","pattern":"^ntf_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a notification.","examples":["ntf_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 
 function validate94(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -17503,7 +17503,7 @@ return errors === 0;
 }
 validate94.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_SnapshotId = validate95;
+export const v74 = validate95;
 const schema142 = {"type":"string","pattern":"^snp_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a snapshot.","examples":["snp_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 const pattern130 = new RegExp("^snp_[0-9A-HJKMNP-TV-Z]{26}$", "u");
 
@@ -17540,7 +17540,7 @@ return errors === 0;
 }
 validate95.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_ProjectId = validate96;
+export const v75 = validate96;
 const schema143 = {"type":"string","pattern":"^prj_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a project.","examples":["prj_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 const pattern131 = new RegExp("^prj_[0-9A-HJKMNP-TV-Z]{26}$", "u");
 
@@ -17577,7 +17577,7 @@ return errors === 0;
 }
 validate96.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_SessionId = validate97;
+export const v76 = validate97;
 const schema144 = {"type":"string","pattern":"^ses_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a session.","examples":["ses_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 
 function validate97(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -17613,7 +17613,7 @@ return errors === 0;
 }
 validate97.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_SubscriptionId = validate98;
+export const v77 = validate98;
 const schema145 = {"type":"string","pattern":"^sub_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a subscription.","examples":["sub_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 const pattern133 = new RegExp("^sub_[0-9A-HJKMNP-TV-Z]{26}$", "u");
 
@@ -17650,7 +17650,7 @@ return errors === 0;
 }
 validate98.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_AuditEventId = validate99;
+export const v78 = validate99;
 const schema146 = {"type":"string","pattern":"^aud_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a audit event.","examples":["aud_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 const pattern134 = new RegExp("^aud_[0-9A-HJKMNP-TV-Z]{26}$", "u");
 
@@ -17687,7 +17687,7 @@ return errors === 0;
 }
 validate99.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_RequestId = validate100;
+export const v79 = validate100;
 const schema147 = {"type":"string","pattern":"^req_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a request.","examples":["req_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 
 function validate100(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -17723,7 +17723,7 @@ return errors === 0;
 }
 validate100.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_AgentId = validate101;
+export const v80 = validate101;
 const schema148 = {"type":"string","pattern":"^agt_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a agent.","examples":["agt_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 
 function validate101(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -17759,7 +17759,7 @@ return errors === 0;
 }
 validate101.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_ExportId = validate102;
+export const v81 = validate102;
 const schema149 = {"type":"string","pattern":"^exp_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a export job (prefix not defined in CT-IDS; see x-gaps).","examples":["exp_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 const pattern137 = new RegExp("^exp_[0-9A-HJKMNP-TV-Z]{26}$", "u");
 
@@ -17796,7 +17796,7 @@ return errors === 0;
 }
 validate102.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_PushSubscriptionId = validate103;
+export const v82 = validate103;
 const schema150 = {"type":"string","pattern":"^psh_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a push subscription (prefix not defined in CT-IDS; see x-gaps).","examples":["psh_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 const pattern138 = new RegExp("^psh_[0-9A-HJKMNP-TV-Z]{26}$", "u");
 
@@ -17833,7 +17833,7 @@ return errors === 0;
 }
 validate103.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Money = validate104;
+export const v83 = validate104;
 const schema151 = {"type":"object","properties":{"amount":{"type":"integer","description":"Minor units (cents)"},"currency":{"type":"string","enum":["USD","EUR"]}},"required":["amount","currency"]};
 
 function validate104(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -17896,7 +17896,7 @@ return errors === 0;
 }
 validate104.evaluated = {"props":{"amount":true,"currency":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Role = validate105;
+export const v84 = validate105;
 const schema152 = {"type":"string","enum":["owner","admin","member","billing","guest"],"description":"Workspace role. Consumers must tolerate unknown values."};
 
 function validate105(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -17922,7 +17922,7 @@ return errors === 0;
 }
 validate105.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Role__tolerant = validate107;
+export const v85 = validate107;
 const schema154 = {"type":"string","description":"Workspace role. Consumers must tolerate unknown values."};
 
 function validate107(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -17944,7 +17944,7 @@ return errors === 0;
 }
 validate107.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_SessionRole = validate108;
+export const v86 = validate108;
 const schema155 = {"type":"string","enum":["host","editor","viewer"]};
 
 function validate108(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -17970,7 +17970,7 @@ return errors === 0;
 }
 validate108.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Scope = validate109;
+export const v87 = validate109;
 const schema156 = {"type":"string","enum":["profile","workspaces:read","workspaces:write","sessions:read","sessions:write","sessions:host","billing:read","billing:write","usage:write","webhooks:write","audit:read"]};
 
 function validate109(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -17996,7 +17996,7 @@ return errors === 0;
 }
 validate109.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_ProblemError = validate110;
+export const v88 = validate110;
 const schema157 = {"type":"object","properties":{"pointer":{"type":"string","description":"JSON Pointer into the request"},"code":{"type":"string"},"detail":{"type":"string"}},"required":["pointer","code"]};
 
 function validate110(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -18066,7 +18066,7 @@ return errors === 0;
 }
 validate110.evaluated = {"props":{"pointer":true,"code":true,"detail":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Problem = validate111;
+export const v89 = validate111;
 const schema158 = {"type":"object","properties":{"type":{"type":"string","format":"uri"},"title":{"type":"string"},"status":{"type":"integer"},"code":{"type":"string","description":"Stable code from errors.json"},"detail":{"type":"string"},"instance":{"type":"string"},"request_id":{"$ref":"#/$defs/RequestId"},"retry_after_s":{"type":"integer"},"errors":{"type":"array","items":{"$ref":"#/$defs/ProblemError"}}},"required":["type","title","status","code","request_id"],"description":"RFC 9457 problem details (CT-ERR). Defined inline; no contracts/schemas/problem.schema.json existed when written."};
 
 function validate111(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -18311,7 +18311,7 @@ return errors === 0;
 }
 validate111.evaluated = {"props":{"type":true,"title":true,"status":true,"code":true,"detail":true,"instance":true,"request_id":true,"retry_after_s":true,"errors":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Page = validate112;
+export const v90 = validate112;
 const schema161 = {"type":"object","properties":{"data":{"type":"array","items":{}},"next_cursor":{"type":["string","null"]},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"],"description":"Generic CT-PAGE wrapper; typed variants are <Name>Page."};
 
 function validate112(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -18384,7 +18384,7 @@ return errors === 0;
 }
 validate112.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_User = validate113;
+export const v91 = validate113;
 const schema162 = {"type":"object","properties":{"id":{"$ref":"#/$defs/UserId"},"email":{"type":"string","format":"email","maxLength":254},"display_name":{"type":"string","minLength":1,"maxLength":40},"locale":{"type":"string","description":"BCP 47","default":"en"},"avatar":{"type":["string","null"],"maxLength":64,"description":"Avatar slot identifier"},"telemetry":{"type":"boolean"},"created_at":{"type":"string","format":"date-time"},"deletion_scheduled_for":{"type":["string","null"],"format":"date-time"}},"required":["id","email","display_name","locale","telemetry","created_at"]};
 const formats46 = /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i;
 
@@ -18599,7 +18599,7 @@ return errors === 0;
 }
 validate113.evaluated = {"props":{"id":true,"email":true,"display_name":true,"locale":true,"avatar":true,"telemetry":true,"created_at":true,"deletion_scheduled_for":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Me = validate114;
+export const v92 = validate114;
 const schema164 = {"type":"object","properties":{"user":{"$ref":"#/$defs/User"},"plan":{"type":"string","enum":["free","pro","team"]},"active_workspace":{"oneOf":[{"$ref":"#/$defs/WorkspaceId"},{"type":"null"}]},"ent":{"type":"integer"}},"required":["user","plan","active_workspace","ent"],"description":"Current user, plan summary, active workspace and entitlement revision (the access-token `ent` claim)."};
 
 function validate114(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -18776,7 +18776,7 @@ return errors === 0;
 }
 validate114.evaluated = {"props":{"user":true,"plan":true,"active_workspace":true,"ent":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_MeUpdate = validate116;
+export const v93 = validate116;
 const schema166 = {"type":"object","properties":{"display_name":{"type":"string","minLength":1,"maxLength":40},"locale":{"type":"string"},"avatar":{"type":["string","null"],"maxLength":64},"telemetry":{"type":"boolean"}},"minProperties":1};
 
 function validate116(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -18882,7 +18882,7 @@ return errors === 0;
 }
 validate116.evaluated = {"props":{"display_name":true,"locale":true,"avatar":true,"telemetry":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_AccountDeletion = validate117;
+export const v94 = validate117;
 const schema167 = {"type":"object","properties":{"status":{"type":"string","enum":["pending_deletion"]},"scheduled_for":{"type":"string","format":"date-time"},"grace_days":{"type":"integer"}},"required":["status","scheduled_for"]};
 
 function validate117(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -18969,7 +18969,7 @@ return errors === 0;
 }
 validate117.evaluated = {"props":{"status":true,"scheduled_for":true,"grace_days":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_DataExport = validate118;
+export const v95 = validate118;
 const schema168 = {"type":"object","properties":{"id":{"$ref":"#/$defs/ExportId"},"status":{"type":"string","enum":["pending","ready","failed","expired"]},"created_at":{"type":"string","format":"date-time"},"expires_at":{"type":["string","null"],"format":"date-time"},"download_url":{"type":["string","null"],"format":"uri","description":"Signed, short-lived"},"size_bytes":{"type":["integer","null"]}},"required":["id","status","created_at"]};
 
 function validate118(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -19133,7 +19133,7 @@ return errors === 0;
 }
 validate118.evaluated = {"props":{"id":true,"status":true,"created_at":true,"expires_at":true,"download_url":true,"size_bytes":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Device = validate119;
+export const v96 = validate119;
 const schema170 = {"type":"object","properties":{"id":{"$ref":"#/$defs/DeviceId"},"name":{"type":"string"},"platform":{"type":"string","enum":["linux","macos","windows","web","other"]},"created_at":{"type":"string","format":"date-time"},"last_seen_at":{"type":["string","null"],"format":"date-time"},"revoked_at":{"type":["string","null"],"format":"date-time"},"key_fingerprint":{"type":"string","description":"ABCD-EFGH-IJKL (CT-CRYPTO)"},"current":{"type":"boolean"}},"required":["id","name","platform","created_at","key_fingerprint"]};
 
 function validate119(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -19322,7 +19322,7 @@ return errors === 0;
 }
 validate119.evaluated = {"props":{"id":true,"name":true,"platform":true,"created_at":true,"last_seen_at":true,"revoked_at":true,"key_fingerprint":true,"current":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_DeviceKeys = validate120;
+export const v97 = validate120;
 const schema172 = {"type":"object","properties":{"device":{"$ref":"#/$defs/DeviceId"},"x25519":{"type":"string","pattern":"^[A-Za-z0-9_-]{43}$","description":"32-byte raw key, base64url without padding"},"ed25519":{"type":"string","pattern":"^[A-Za-z0-9_-]{43}$","description":"32-byte raw key, base64url without padding"},"fingerprint":{"type":"string"},"revoked":{"type":"boolean"}},"required":["device","x25519","ed25519","fingerprint"]};
 const pattern145 = new RegExp("^[A-Za-z0-9_-]{43}$", "u");
 
@@ -19453,7 +19453,7 @@ return errors === 0;
 }
 validate120.evaluated = {"props":{"device":true,"x25519":true,"ed25519":true,"fingerprint":true,"revoked":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_ApiKey = validate121;
+export const v98 = validate121;
 const schema174 = {"type":"object","properties":{"id":{"$ref":"#/$defs/ApiKeyId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"name":{"type":"string","minLength":1,"maxLength":60},"prefix":{"type":"string","description":"First 8 chars of the key, display only"},"scopes":{"type":"array","items":{"$ref":"#/$defs/Scope"}},"created_by":{"$ref":"#/$defs/UserId"},"created_at":{"type":"string","format":"date-time"},"last_used_at":{"type":["string","null"],"format":"date-time"},"expires_at":{"type":["string","null"],"format":"date-time"},"revoked_at":{"type":["string","null"],"format":"date-time"}},"required":["id","workspace","name","prefix","scopes","created_at"]};
 
 function validate121(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -19744,7 +19744,7 @@ return errors === 0;
 }
 validate121.evaluated = {"props":{"id":true,"workspace":true,"name":true,"prefix":true,"scopes":true,"created_by":true,"created_at":true,"last_used_at":true,"expires_at":true,"revoked_at":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_ApiKeyCreate = validate122;
+export const v99 = validate122;
 const schema179 = {"type":"object","properties":{"workspace":{"$ref":"#/$defs/WorkspaceId"},"name":{"type":"string","minLength":1,"maxLength":60},"scopes":{"type":"array","items":{"$ref":"#/$defs/Scope"},"minItems":1},"expires_at":{"type":"string","format":"date-time"}},"required":["workspace","name","scopes"]};
 
 function validate122(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -19898,7 +19898,7 @@ return errors === 0;
 }
 validate122.evaluated = {"props":{"workspace":true,"name":true,"scopes":true,"expires_at":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_ApiKeyCreated = validate123;
+export const v100 = validate123;
 const schema182 = {"allOf":[{"$ref":"#/$defs/ApiKey"},{"type":"object","properties":{"secret":{"type":"string","pattern":"^cen_(live|test)_[A-Za-z0-9]{32}$","description":"Returned once only"}},"required":["secret"]}]};
 const pattern151 = new RegExp("^cen_(live|test)_[A-Za-z0-9]{32}$", "u");
 
@@ -19958,7 +19958,7 @@ return errors === 0;
 }
 validate123.evaluated = {"props":{"secret":true,"id":true,"workspace":true,"name":true,"prefix":true,"scopes":true,"created_by":true,"created_at":true,"last_used_at":true,"expires_at":true,"revoked_at":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WorkspaceSettings = validate125;
+export const v101 = validate125;
 const schema183 = {"type":"object","properties":{"auto_approve":{"type":"string","enum":["ask","trusted","everyone"],"description":"Default auto-approve level (matches control.policy.auto_approve)"},"share_history":{"type":"boolean"},"history_retention_days":{"type":["integer","null"]}},"required":["auto_approve","share_history"],"description":"Retention override must not exceed the plan history_days."};
 
 function validate125(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -20034,7 +20034,7 @@ return errors === 0;
 }
 validate125.evaluated = {"props":{"auto_approve":true,"share_history":true,"history_retention_days":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WorkspaceSettingsUpdate = validate126;
+export const v102 = validate126;
 const schema184 = {"type":"object","properties":{"auto_approve":{"type":"string","enum":["ask","trusted","everyone"]},"share_history":{"type":"boolean"},"history_retention_days":{"type":["integer","null"],"minimum":0}},"minProperties":1};
 
 function validate126(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -20117,7 +20117,7 @@ return errors === 0;
 }
 validate126.evaluated = {"props":{"auto_approve":true,"share_history":true,"history_retention_days":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Workspace = validate127;
+export const v103 = validate127;
 const schema185 = {"type":"object","properties":{"id":{"$ref":"#/$defs/WorkspaceId"},"name":{"type":"string","minLength":1,"maxLength":60},"slug":{"type":"string","pattern":"^[a-z0-9-]{3,40}$"},"role":{"$ref":"#/$defs/Role"},"owner":{"$ref":"#/$defs/UserId"},"plan":{"type":"string","enum":["free","pro","team"]},"member_count":{"type":"integer"},"created_at":{"type":"string","format":"date-time"},"settings":{"$ref":"#/$defs/WorkspaceSettings"}},"required":["id","name","slug","created_at"]};
 const pattern153 = new RegExp("^[a-z0-9-]{3,40}$", "u");
 
@@ -20400,7 +20400,7 @@ return errors === 0;
 }
 validate127.evaluated = {"props":{"id":true,"name":true,"slug":true,"role":true,"owner":true,"plan":true,"member_count":true,"created_at":true,"settings":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Workspace__tolerant = validate128;
+export const v104 = validate128;
 const schema190 = {"type":"object","properties":{"id":{"$ref":"#/$defs/WorkspaceId"},"name":{"type":"string","minLength":1,"maxLength":60},"slug":{"type":"string","pattern":"^[a-z0-9-]{3,40}$"},"role":{"$ref":"#/$defs/Role"},"owner":{"$ref":"#/$defs/UserId"},"plan":{"type":"string","enum":["free","pro","team"]},"member_count":{"type":"integer"},"created_at":{"type":"string","format":"date-time"},"settings":{"$ref":"#/$defs/WorkspaceSettings"}},"required":["id","name","slug","created_at"]};
 const schema191 = {"type":"string","pattern":"^wsp_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a workspace.","examples":["wsp_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 const schema193 = {"type":"string","pattern":"^usr_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a user.","examples":["usr_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
@@ -20680,7 +20680,7 @@ return errors === 0;
 }
 validate128.evaluated = {"props":{"id":true,"name":true,"slug":true,"role":true,"owner":true,"plan":true,"member_count":true,"created_at":true,"settings":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WorkspaceCreate = validate129;
+export const v105 = validate129;
 const schema195 = {"type":"object","properties":{"name":{"type":"string","minLength":1,"maxLength":60},"slug":{"type":"string","pattern":"^[a-z0-9-]{3,40}$"}},"required":["name"]};
 
 function validate129(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -20761,7 +20761,7 @@ return errors === 0;
 }
 validate129.evaluated = {"props":{"name":true,"slug":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WorkspaceUpdate = validate130;
+export const v106 = validate130;
 const schema196 = {"type":"object","properties":{"name":{"type":"string","minLength":1,"maxLength":60},"settings":{"$ref":"#/$defs/WorkspaceSettingsUpdate"}},"minProperties":1};
 
 function validate130(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -20895,7 +20895,7 @@ return errors === 0;
 }
 validate130.evaluated = {"props":{"name":true,"settings":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Member = validate131;
+export const v107 = validate131;
 const schema198 = {"type":"object","properties":{"id":{"$ref":"#/$defs/MemberId"},"user":{"$ref":"#/$defs/UserId"},"display_name":{"type":"string"},"email":{"type":"string","format":"email","description":"Omitted for guests / limited views"},"role":{"$ref":"#/$defs/Role"},"joined_at":{"type":"string","format":"date-time"}},"required":["id","user","display_name","role","joined_at"]};
 
 function validate131(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -21063,7 +21063,7 @@ return errors === 0;
 }
 validate131.evaluated = {"props":{"id":true,"user":true,"display_name":true,"email":true,"role":true,"joined_at":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Member__tolerant = validate132;
+export const v108 = validate132;
 const schema202 = {"type":"object","properties":{"id":{"$ref":"#/$defs/MemberId"},"user":{"$ref":"#/$defs/UserId"},"display_name":{"type":"string"},"email":{"type":"string","format":"email","description":"Omitted for guests / limited views"},"role":{"$ref":"#/$defs/Role"},"joined_at":{"type":"string","format":"date-time"}},"required":["id","user","display_name","role","joined_at"]};
 const schema203 = {"type":"string","pattern":"^mem_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a membership.","examples":["mem_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 
@@ -21227,7 +21227,7 @@ return errors === 0;
 }
 validate132.evaluated = {"props":{"id":true,"user":true,"display_name":true,"email":true,"role":true,"joined_at":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_MemberUpdate = validate133;
+export const v109 = validate133;
 const schema206 = {"type":"object","properties":{"role":{"type":"string","enum":["admin","member","billing","guest"],"description":"owner is only assignable via transfer-ownership"}},"required":["role"]};
 
 function validate133(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -21271,7 +21271,7 @@ return errors === 0;
 }
 validate133.evaluated = {"props":{"role":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_OwnershipTransfer = validate134;
+export const v110 = validate134;
 const schema207 = {"type":"object","properties":{"to_member":{"$ref":"#/$defs/MemberId"}},"required":["to_member"]};
 
 function validate134(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -21326,7 +21326,7 @@ return errors === 0;
 }
 validate134.evaluated = {"props":{"to_member":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Invite = validate135;
+export const v111 = validate135;
 const schema209 = {"type":"object","properties":{"id":{"$ref":"#/$defs/InviteId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"email":{"type":["string","null"],"format":"email"},"role":{"type":"string","enum":["admin","member","billing","guest"]},"status":{"type":"string","enum":["pending","accepted","revoked","expired"]},"share_history":{"type":"boolean"},"created_by":{"$ref":"#/$defs/UserId"},"created_at":{"type":"string","format":"date-time"},"expires_at":{"type":"string","format":"date-time"}},"required":["id","workspace","role","status","created_at","expires_at"]};
 
 function validate135(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -21565,7 +21565,7 @@ return errors === 0;
 }
 validate135.evaluated = {"props":{"id":true,"workspace":true,"email":true,"role":true,"status":true,"share_history":true,"created_by":true,"created_at":true,"expires_at":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_InviteCreate = validate136;
+export const v112 = validate136;
 const schema213 = {"type":"object","properties":{"email":{"type":"string","format":"email","maxLength":254,"description":"Omit to create a link-only invite"},"role":{"type":"string","enum":["admin","member","billing","guest"],"default":"member"},"share_history":{"type":"boolean"}}};
 
 function validate136(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -21650,7 +21650,7 @@ return errors === 0;
 }
 validate136.evaluated = {"props":{"email":true,"role":true,"share_history":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_InviteCreated = validate137;
+export const v113 = validate137;
 const schema214 = {"allOf":[{"$ref":"#/$defs/Invite"},{"type":"object","properties":{"token":{"type":"string","description":"160-bit URL-safe single-purpose token"},"url":{"type":"string","format":"uri","description":"https://centcom.dev/i/<token>"}},"required":["token","url"]}]};
 
 function validate137(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -21728,7 +21728,7 @@ return errors === 0;
 }
 validate137.evaluated = {"props":{"token":true,"url":true,"id":true,"workspace":true,"email":true,"role":true,"status":true,"share_history":true,"created_by":true,"created_at":true,"expires_at":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_InvitePreview = validate139;
+export const v114 = validate139;
 const schema215 = {"type":"object","properties":{"workspace_name":{"type":"string"},"inviter_name":{"type":"string"},"role":{"type":"string","enum":["admin","member","billing","guest"]},"expires_at":{"type":"string","format":"date-time"},"has_key_bundle":{"type":"boolean"}},"required":["workspace_name","inviter_name","role","expires_at"]};
 
 function validate139(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -21840,7 +21840,7 @@ return errors === 0;
 }
 validate139.evaluated = {"props":{"workspace_name":true,"inviter_name":true,"role":true,"expires_at":true,"has_key_bundle":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_InviteAcceptance = validate140;
+export const v115 = validate140;
 const schema216 = {"type":"object","properties":{"workspace":{"$ref":"#/$defs/Workspace"},"member":{"$ref":"#/$defs/Member"}},"required":["workspace","member"]};
 
 function validate140(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -21897,7 +21897,7 @@ return errors === 0;
 }
 validate140.evaluated = {"props":{"workspace":true,"member":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_InviteAcceptance__tolerant = validate143;
+export const v116 = validate143;
 const schema217 = {"type":"object","properties":{"workspace":{"$ref":"#/$defs/Workspace"},"member":{"$ref":"#/$defs/Member"}},"required":["workspace","member"]};
 
 function validate143(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -21954,7 +21954,7 @@ return errors === 0;
 }
 validate143.evaluated = {"props":{"workspace":true,"member":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_KeyBundle = validate146;
+export const v117 = validate146;
 const schema218 = {"type":"object","properties":{"bundle":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"crypto_box_seal of the epoch keys to the one-time invite public key (CT-CRYPTO section 4), base64url"}},"required":["bundle"]};
 
 function validate146(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -22003,7 +22003,7 @@ return errors === 0;
 }
 validate146.evaluated = {"props":{"bundle":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Project = validate147;
+export const v118 = validate147;
 const schema219 = {"type":"object","properties":{"id":{"$ref":"#/$defs/ProjectId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"name":{"type":"string","minLength":1,"maxLength":80},"repo":{"type":["string","null"],"maxLength":200,"description":"Named repo reference (e.g. owner/name); never a local path"},"created_at":{"type":"string","format":"date-time"}},"required":["id","workspace","name","created_at"]};
 
 function validate147(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -22166,7 +22166,7 @@ return errors === 0;
 }
 validate147.evaluated = {"props":{"id":true,"workspace":true,"name":true,"repo":true,"created_at":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_ProjectCreate = validate148;
+export const v119 = validate148;
 const schema222 = {"type":"object","properties":{"name":{"type":"string","minLength":1,"maxLength":80},"repo":{"type":"string","maxLength":200}},"required":["name"]};
 
 function validate148(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -22247,7 +22247,7 @@ return errors === 0;
 }
 validate148.evaluated = {"props":{"name":true,"repo":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_ProjectUpdate = validate149;
+export const v120 = validate149;
 const schema223 = {"type":"object","properties":{"name":{"type":"string","minLength":1,"maxLength":80},"repo":{"type":["string","null"],"maxLength":200}},"minProperties":1};
 
 function validate149(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -22327,7 +22327,7 @@ return errors === 0;
 }
 validate149.evaluated = {"props":{"name":true,"repo":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_SessionPolicy = validate150;
+export const v121 = validate150;
 const schema224 = {"type":"object","properties":{"auto_approve":{"type":"string","enum":["ask","trusted","everyone"]},"share_history":{"type":"boolean"},"queue_limit":{"type":"integer","minimum":1,"default":20},"locked":{"type":"boolean"},"auto_failover":{"type":"boolean"}}};
 
 function validate150(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -22430,7 +22430,7 @@ return errors === 0;
 }
 validate150.evaluated = {"props":{"auto_approve":true,"share_history":true,"queue_limit":true,"locked":true,"auto_failover":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_SessionMember = validate151;
+export const v122 = validate151;
 const schema225 = {"type":"object","properties":{"id":{"$ref":"#/$defs/MemberId"},"user":{"$ref":"#/$defs/UserId"},"display_name":{"type":"string"},"device":{"$ref":"#/$defs/DeviceId"},"role":{"$ref":"#/$defs/SessionRole"},"slot":{"type":"integer"},"join_order":{"type":"integer"},"device_keys":{"$ref":"#/$defs/DeviceKeys"},"joined_at":{"type":"string","format":"date-time"}},"required":["id","role","slot","join_order","device_keys"]};
 
 function validate151(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -22644,7 +22644,7 @@ return errors === 0;
 }
 validate151.evaluated = {"props":{"id":true,"user":true,"display_name":true,"device":true,"role":true,"slot":true,"join_order":true,"device_keys":true,"joined_at":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Session = validate153;
+export const v123 = validate153;
 const schema230 = {"type":"object","properties":{"id":{"$ref":"#/$defs/SessionId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"name":{"type":"string","minLength":1,"maxLength":80},"state":{"type":"string","enum":["pending","live","paused","ended","expired"]},"host":{"$ref":"#/$defs/MemberId"},"policy":{"$ref":"#/$defs/SessionPolicy"},"region":{"type":"string","description":"Relay region, e.g. eu, us"},"created_at":{"type":"string","format":"date-time"},"ended_at":{"type":["string","null"],"format":"date-time"},"member_count":{"type":"integer"}},"required":["id","workspace","name","state","host","policy","region","created_at"]};
 
 function validate153(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -22979,7 +22979,7 @@ return errors === 0;
 }
 validate153.evaluated = {"props":{"id":true,"workspace":true,"name":true,"state":true,"host":true,"policy":true,"region":true,"created_at":true,"ended_at":true,"member_count":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_SessionCreate = validate154;
+export const v124 = validate154;
 const schema235 = {"type":"object","properties":{"workspace":{"$ref":"#/$defs/WorkspaceId"},"name":{"type":"string","minLength":1,"maxLength":80},"project":{"$ref":"#/$defs/ProjectId"},"policy":{"$ref":"#/$defs/SessionPolicy"},"region_preference":{"type":"string"}},"required":["workspace","name"]};
 
 function validate154(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -23205,7 +23205,7 @@ return errors === 0;
 }
 validate154.evaluated = {"props":{"workspace":true,"name":true,"project":true,"policy":true,"region_preference":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_SessionCreated = validate155;
+export const v125 = validate155;
 const schema239 = {"allOf":[{"$ref":"#/$defs/Session"},{"type":"object","properties":{"region_hint":{"type":"string","description":"Region the client should connect to"},"relay_url":{"type":"string","format":"uri"},"host_member":{"$ref":"#/$defs/SessionMember"}},"required":["region_hint","host_member"]}]};
 
 function validate155(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -23296,7 +23296,7 @@ return errors === 0;
 }
 validate155.evaluated = {"props":{"region_hint":true,"relay_url":true,"host_member":true,"id":true,"workspace":true,"name":true,"state":true,"host":true,"policy":true,"region":true,"created_at":true,"ended_at":true,"member_count":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_SessionUpdate = validate158;
+export const v126 = validate158;
 const schema240 = {"type":"object","properties":{"name":{"type":"string","minLength":1,"maxLength":80},"policy":{"$ref":"#/$defs/SessionPolicy"}},"minProperties":1};
 
 function validate158(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -23450,7 +23450,7 @@ return errors === 0;
 }
 validate158.evaluated = {"props":{"name":true,"policy":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_JoinTokenRequest = validate159;
+export const v127 = validate159;
 const schema242 = {"type":"object","properties":{"caps":{"type":"array","items":{"type":"string"},"description":"Optional capabilities requested (e.g. resume)"}}};
 
 function validate159(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -23501,7 +23501,7 @@ return errors === 0;
 }
 validate159.evaluated = {"props":{"caps":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_JoinToken = validate160;
+export const v128 = validate160;
 const schema243 = {"type":"object","properties":{"ticket":{"type":"string","description":"Relay ticket JWT, aud centcom-relay, 60 s, single use"},"expires_in":{"type":"integer"},"relay_url":{"type":"string","format":"uri"},"region":{"type":"string"},"member":{"$ref":"#/$defs/MemberId"},"role":{"$ref":"#/$defs/SessionRole"},"caps":{"type":"array","items":{"type":"string"}}},"required":["ticket","expires_in","relay_url","member","role"]};
 
 function validate160(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -23674,7 +23674,7 @@ return errors === 0;
 }
 validate160.evaluated = {"props":{"ticket":true,"expires_in":true,"relay_url":true,"region":true,"member":true,"role":true,"caps":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_CtEnvelope = validate161;
+export const v129 = validate161;
 const schema246 = {"type":"object","properties":{"alg":{"type":"string","enum":["xchacha20poly1305"]},"kid":{"type":"string","pattern":"^k[0-9]+$"},"n":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"base64url without padding"},"c":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"base64url without padding"}},"required":["alg","kid","n","c"]};
 
 function validate161(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -23789,7 +23789,7 @@ return errors === 0;
 }
 validate161.evaluated = {"props":{"alg":true,"kid":true,"n":true,"c":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_HistoryFrame = validate162;
+export const v130 = validate162;
 const schema247 = {"type":"object","properties":{"v":{"type":"integer"},"t":{"type":"string"},"id":{"type":"string","description":"msg_ ULID"},"sid":{"$ref":"#/$defs/SessionId"},"from":{"$ref":"#/$defs/MemberId"},"ts":{"type":"string","format":"date-time"},"seq":{"type":"integer"},"k":{"type":"string"},"p":{"type":"object"},"ct":{"$ref":"#/$defs/CtEnvelope"},"sig":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"base64url without padding"}},"required":["v","t","id","sid","seq","ts"],"description":"Stored ciphertext frame (CT-WS-ENVELOPE shape). Never plaintext."};
 
 function validate162(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -24113,7 +24113,7 @@ return errors === 0;
 }
 validate162.evaluated = {"props":{"v":true,"t":true,"id":true,"sid":true,"from":true,"ts":true,"seq":true,"k":true,"p":true,"ct":true,"sig":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_HistoryPage = validate163;
+export const v131 = validate163;
 const schema251 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/HistoryFrame"}},"next_cursor":{"type":["string","null"]},"has_more":{"type":"boolean"},"head_seq":{"type":"integer"},"earliest_seq":{"type":"integer"}},"required":["data","next_cursor","has_more"]};
 
 function validate163(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -24230,7 +24230,7 @@ return errors === 0;
 }
 validate163.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true,"head_seq":true,"earliest_seq":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_SnapshotDescriptor = validate165;
+export const v132 = validate165;
 const schema252 = {"type":"object","properties":{"snp":{"$ref":"#/$defs/SnapshotId"},"seq":{"type":"integer"},"size":{"type":"integer"},"sha256":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$","description":"Hash in <alg>:<hex> form"},"kid":{"type":"string"},"created_at":{"type":"string","format":"date-time"},"download_url":{"type":"string","format":"uri","description":"Pre-signed GET"},"expires_in":{"type":"integer"}},"required":["snp","seq","size","sha256","kid"]};
 const pattern189 = new RegExp("^sha256:[0-9a-f]{64}$", "u");
 
@@ -24416,7 +24416,7 @@ return errors === 0;
 }
 validate165.evaluated = {"props":{"snp":true,"seq":true,"size":true,"sha256":true,"kid":true,"created_at":true,"download_url":true,"expires_in":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_SnapshotBegin = validate166;
+export const v133 = validate166;
 const schema254 = {"type":"object","properties":{"size":{"type":"integer","maximum":33554432,"description":"Expected size in bytes, <= 32 MiB"},"kid":{"type":"string"}}};
 
 function validate166(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -24475,7 +24475,7 @@ return errors === 0;
 }
 validate166.evaluated = {"props":{"size":true,"kid":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_SnapshotUpload = validate167;
+export const v134 = validate167;
 const schema255 = {"type":"object","properties":{"snp":{"$ref":"#/$defs/SnapshotId"},"upload_url":{"type":"string","format":"uri","description":"Pre-signed PUT"},"expires_in":{"type":"integer"}},"required":["snp","upload_url","expires_in"]};
 
 function validate167(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -24573,7 +24573,7 @@ return errors === 0;
 }
 validate167.evaluated = {"props":{"snp":true,"upload_url":true,"expires_in":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_SnapshotCommit = validate168;
+export const v135 = validate168;
 const schema257 = {"type":"object","properties":{"seq":{"type":"integer"},"sha256":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$","description":"Hash in <alg>:<hex> form"},"size":{"type":"integer"},"kid":{"type":"string"}},"required":["seq","sha256","size","kid"]};
 
 function validate168(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -24667,7 +24667,7 @@ return errors === 0;
 }
 validate168.evaluated = {"props":{"seq":true,"sha256":true,"size":true,"kid":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_ShareLinkCreate = validate169;
+export const v136 = validate169;
 const schema258 = {"type":"object","properties":{"expires_in_s":{"type":"integer","minimum":60,"maximum":86400,"default":86400}}};
 
 function validate169(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -24715,7 +24715,7 @@ return errors === 0;
 }
 validate169.evaluated = {"props":{"expires_in_s":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_ShareLink = validate170;
+export const v137 = validate170;
 const schema259 = {"type":"object","properties":{"token":{"type":"string"},"url":{"type":"string","format":"uri"},"session":{"$ref":"#/$defs/SessionId"},"created_at":{"type":"string","format":"date-time"},"expires_at":{"type":"string","format":"date-time"},"revoked_at":{"type":["string","null"],"format":"date-time"}},"required":["token","url","session","created_at","expires_at"]};
 
 function validate170(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -24884,7 +24884,7 @@ return errors === 0;
 }
 validate170.evaluated = {"props":{"token":true,"url":true,"session":true,"created_at":true,"expires_at":true,"revoked_at":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_ShareLinkJoin = validate171;
+export const v138 = validate171;
 const schema261 = {"type":"object","properties":{"display_name":{"type":"string","minLength":1,"maxLength":40}},"required":["display_name"]};
 
 function validate171(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -24939,7 +24939,7 @@ return errors === 0;
 }
 validate171.evaluated = {"props":{"display_name":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_EntLimits = validate172;
+export const v139 = validate172;
 const schema262 = {"type":"object","properties":{"relay_access":{"type":"boolean"},"lan_multiplayer":{"type":"boolean"},"max_seats":{"type":["integer","null"]},"max_session_members":{"type":"integer"},"max_concurrent_sessions":{"type":"integer"},"max_parallel_agents":{"type":"integer"},"history_days":{"type":"integer"},"queue_items_month":{"type":["integer","null"]},"audit_log_days":{"type":"integer"},"webhooks_max":{"type":"integer"},"api_keys_max":{"type":"integer"},"hosted_minutes_month":{"type":["integer","null"]}},"required":["relay_access","lan_multiplayer","max_seats","max_session_members","max_concurrent_sessions","max_parallel_agents","history_days","hosted_minutes_month","queue_items_month","audit_log_days","webhooks_max","api_keys_max"],"description":"null = unlimited; unknown keys must be tolerated."};
 
 function validate172(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -25136,7 +25136,7 @@ return errors === 0;
 }
 validate172.evaluated = {"props":{"relay_access":true,"lan_multiplayer":true,"max_seats":true,"max_session_members":true,"max_concurrent_sessions":true,"max_parallel_agents":true,"history_days":true,"queue_items_month":true,"audit_log_days":true,"webhooks_max":true,"api_keys_max":true,"hosted_minutes_month":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Entitlements = validate173;
+export const v140 = validate173;
 const schema263 = {"type":"object","properties":{"workspace":{"$ref":"#/$defs/WorkspaceId"},"rev":{"type":"integer"},"plan":{"type":"string","enum":["free","pro","team"]},"status":{"type":"string","enum":["active","trialing","past_due","canceled","none"]},"period":{"type":"object","properties":{"start":{"type":"string","format":"date-time"},"end":{"type":"string","format":"date-time"}},"required":["start","end"]},"limits":{"$ref":"#/$defs/EntLimits"},"usage":{"type":"object","properties":{"queue_items_month":{"type":"integer"},"seats":{"type":"integer"},"hosted_minutes_month":{"type":"integer"}}},"warnings":{"type":"array","items":{"type":"object","properties":{"limit":{"type":"string"},"pct":{"type":"integer"}},"required":["limit","pct"]}},"grace_until":{"type":["string","null"],"format":"date-time"}},"required":["workspace","rev","plan","status","limits"],"description":"CT-ENTITLEMENTS. Defined inline; no contracts/schemas/entitlements.schema.json existed when written."};
 
 function validate173(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -25657,7 +25657,7 @@ return errors === 0;
 }
 validate173.evaluated = {"props":{"workspace":true,"rev":true,"plan":true,"status":true,"period":true,"limits":true,"usage":true,"warnings":true,"grace_until":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Plan = validate174;
+export const v141 = validate174;
 const schema266 = {"type":"object","properties":{"id":{"type":"string","enum":["free","pro","team"]},"name":{"type":"string"},"prices":{"type":"array","items":{"type":"object","properties":{"interval":{"type":"string","enum":["month","year"]},"unit":{"type":"string","enum":["seat","workspace"]},"price":{"$ref":"#/$defs/Money"}},"required":["interval","price"]}},"limits":{"$ref":"#/$defs/EntLimits"}},"required":["id","name","prices","limits"]};
 
 function validate174(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -26042,7 +26042,7 @@ return errors === 0;
 }
 validate174.evaluated = {"props":{"id":true,"name":true,"prices":true,"limits":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Subscription = validate175;
+export const v142 = validate175;
 const schema269 = {"type":"object","properties":{"id":{"$ref":"#/$defs/SubscriptionId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"plan":{"type":"string","enum":["free","pro","team"]},"status":{"type":"string","enum":["active","trialing","past_due","canceled"]},"seats":{"type":"integer"},"interval":{"type":"string","enum":["month","year"]},"currency":{"type":"string","enum":["USD","EUR"]},"current_period_start":{"type":"string","format":"date-time"},"current_period_end":{"type":"string","format":"date-time"},"cancel_at_period_end":{"type":"boolean"},"trial_end":{"type":["string","null"],"format":"date-time"},"grace_until":{"type":["string","null"],"format":"date-time"}},"required":["id","workspace","plan","status","seats","current_period_end"]};
 
 function validate175(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -26326,7 +26326,7 @@ return errors === 0;
 }
 validate175.evaluated = {"props":{"id":true,"workspace":true,"plan":true,"status":true,"seats":true,"interval":true,"currency":true,"current_period_start":true,"current_period_end":true,"cancel_at_period_end":true,"trial_end":true,"grace_until":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_CheckoutRequest = validate176;
+export const v143 = validate176;
 const schema272 = {"type":"object","properties":{"plan":{"type":"string","enum":["pro","team"]},"seats":{"type":"integer","minimum":1},"interval":{"type":"string","enum":["month","year"]},"currency":{"type":"string","enum":["USD","EUR"]},"success_url":{"type":"string","format":"uri"},"cancel_url":{"type":"string","format":"uri"}},"required":["plan","interval"]};
 
 function validate176(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -26481,7 +26481,7 @@ return errors === 0;
 }
 validate176.evaluated = {"props":{"plan":true,"seats":true,"interval":true,"currency":true,"success_url":true,"cancel_url":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_UrlResponse = validate177;
+export const v144 = validate177;
 const schema273 = {"type":"object","properties":{"url":{"type":"string","format":"uri"},"expires_at":{"type":"string","format":"date-time"}},"required":["url"]};
 
 function validate177(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -26560,7 +26560,7 @@ return errors === 0;
 }
 validate177.evaluated = {"props":{"url":true,"expires_at":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_PortalRequest = validate178;
+export const v145 = validate178;
 const schema274 = {"type":"object","properties":{"return_url":{"type":"string","format":"uri"}}};
 
 function validate178(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -26604,7 +26604,7 @@ return errors === 0;
 }
 validate178.evaluated = {"props":{"return_url":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_SeatChange = validate179;
+export const v146 = validate179;
 const schema275 = {"type":"object","properties":{"seats":{"type":"integer","minimum":1}},"required":["seats"]};
 
 function validate179(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -26653,7 +26653,7 @@ return errors === 0;
 }
 validate179.evaluated = {"props":{"seats":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_SeatChangeResult = validate180;
+export const v147 = validate180;
 const schema276 = {"type":"object","properties":{"seats":{"type":"integer"},"preview":{"type":"boolean"},"proration":{"type":["object","null"],"properties":{"amount":{"$ref":"#/$defs/Money"},"effective_at":{"type":"string","format":"date-time"}},"required":["amount"]}},"required":["seats","preview"]};
 
 function validate180(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -26814,7 +26814,7 @@ return errors === 0;
 }
 validate180.evaluated = {"props":{"seats":true,"preview":true,"proration":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Invoice = validate181;
+export const v148 = validate181;
 const schema278 = {"type":"object","properties":{"id":{"type":"string","description":"Opaque invoice id (no CT-IDS prefix defined)"},"number":{"type":"string"},"status":{"type":"string","enum":["draft","open","paid","void","uncollectible"]},"amount_due":{"$ref":"#/$defs/Money"},"amount_paid":{"$ref":"#/$defs/Money"},"period_start":{"type":"string","format":"date-time"},"period_end":{"type":"string","format":"date-time"},"created_at":{"type":"string","format":"date-time"},"hosted_invoice_url":{"type":"string","format":"uri"},"pdf_url":{"type":"string","format":"uri"}},"required":["id","status","amount_due","amount_paid","created_at"]};
 
 function validate181(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -27121,7 +27121,7 @@ return errors === 0;
 }
 validate181.evaluated = {"props":{"id":true,"number":true,"status":true,"amount_due":true,"amount_paid":true,"period_start":true,"period_end":true,"created_at":true,"hosted_invoice_url":true,"pdf_url":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_CouponRedeem = validate182;
+export const v149 = validate182;
 const schema281 = {"type":"object","properties":{"code":{"type":"string","minLength":1,"maxLength":64}},"required":["code"]};
 
 function validate182(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -27176,7 +27176,7 @@ return errors === 0;
 }
 validate182.evaluated = {"props":{"code":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_UsageSummary = validate183;
+export const v150 = validate183;
 const schema282 = {"type":"object","properties":{"workspace":{"$ref":"#/$defs/WorkspaceId"},"period":{"type":"object","properties":{"start":{"type":"string","format":"date-time"},"end":{"type":"string","format":"date-time"}},"required":["start","end"]},"items":{"type":"array","items":{"type":"object","properties":{"metric":{"type":"string","enum":["agent_minutes","tokens","queue_items","relay_bytes","seats"]},"used":{"type":"integer"},"limit":{"type":["integer","null"]},"pct":{"type":["integer","null"]}},"required":["metric","used","limit"]}}},"required":["workspace","period","items"]};
 
 function validate183(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -27408,7 +27408,7 @@ return errors === 0;
 }
 validate183.evaluated = {"props":{"workspace":true,"period":true,"items":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_UsageEvent = validate184;
+export const v151 = validate184;
 const schema284 = {"type":"object","properties":{"id":{"type":"string","pattern":"^use_[0-9A-HJKMNP-TV-Z]{26}$","description":"Client-generated ULID with prefix use_ (CT-IDS)"},"type":{"type":"string","enum":["agent_minutes","tokens_in","tokens_out","queue_items","relay_bytes"]},"qty":{"type":"integer","minimum":0},"at":{"type":"string","format":"date-time"},"session_id":{"$ref":"#/$defs/SessionId"},"agent_id":{"$ref":"#/$defs/AgentId"}},"required":["id","type","qty","at"]};
 const pattern197 = new RegExp("^use_[0-9A-HJKMNP-TV-Z]{26}$", "u");
 
@@ -27584,7 +27584,7 @@ return errors === 0;
 }
 validate184.evaluated = {"props":{"id":true,"type":true,"qty":true,"at":true,"session_id":true,"agent_id":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_UsageBatch = validate185;
+export const v152 = validate185;
 const schema287 = {"type":"object","properties":{"events":{"type":"array","items":{"$ref":"#/$defs/UsageEvent"},"minItems":1,"maxItems":500}},"required":["events"]};
 
 function validate185(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -27654,7 +27654,7 @@ return errors === 0;
 }
 validate185.evaluated = {"props":{"events":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_UsageBatchResult = validate187;
+export const v153 = validate187;
 const schema288 = {"type":"object","properties":{"accepted":{"type":"integer"},"duplicates":{"type":"integer"},"rejected":{"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"code":{"type":"string"}},"required":["id","code"]}}},"required":["accepted","duplicates"]};
 
 function validate187(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -27780,7 +27780,7 @@ return errors === 0;
 }
 validate187.evaluated = {"props":{"accepted":true,"duplicates":true,"rejected":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_AuditEvent = validate188;
+export const v154 = validate188;
 const schema289 = {"type":"object","properties":{"id":{"$ref":"#/$defs/AuditEventId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"at":{"type":"string","format":"date-time"},"actor":{"type":"object","properties":{"type":{"type":"string","enum":["user","api_key","system"]},"id":{"type":"string"}},"required":["type"]},"action":{"type":"string","description":"e.g. member.removed"},"target":{"type":"object","properties":{"type":{"type":"string"},"id":{"type":"string"}}},"result":{"type":"string","enum":["allowed","denied"]},"metadata":{"type":"object"}},"required":["id","workspace","at","actor","action"]};
 
 function validate188(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -28034,7 +28034,7 @@ return errors === 0;
 }
 validate188.evaluated = {"props":{"id":true,"workspace":true,"at":true,"actor":true,"action":true,"target":true,"result":true,"metadata":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_AuditExportCreate = validate189;
+export const v155 = validate189;
 const schema292 = {"type":"object","properties":{"format":{"type":"string","enum":["csv","json"]},"from":{"type":"string","format":"date-time"},"to":{"type":"string","format":"date-time"},"actor":{"type":"string"},"action":{"type":"string"}},"required":["format"]};
 
 function validate189(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -28157,7 +28157,7 @@ return errors === 0;
 }
 validate189.evaluated = {"props":{"format":true,"from":true,"to":true,"actor":true,"action":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_AuditExport = validate190;
+export const v156 = validate190;
 const schema293 = {"type":"object","properties":{"id":{"$ref":"#/$defs/ExportId"},"status":{"type":"string","enum":["pending","ready","failed","expired"]},"format":{"type":"string","enum":["csv","json"]},"created_at":{"type":"string","format":"date-time"},"expires_at":{"type":["string","null"],"format":"date-time"},"download_url":{"type":["string","null"],"format":"uri"}},"required":["id","status","format","created_at"]};
 
 function validate190(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -28325,7 +28325,7 @@ return errors === 0;
 }
 validate190.evaluated = {"props":{"id":true,"status":true,"format":true,"created_at":true,"expires_at":true,"download_url":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Notification = validate191;
+export const v157 = validate191;
 const schema295 = {"type":"object","properties":{"id":{"$ref":"#/$defs/NotificationId"},"created_at":{"type":"string","format":"date-time"},"read_at":{"type":["string","null"],"format":"date-time"},"category":{"type":"string","enum":["approval_needed","queue_turn","mention","member_joined","member_left","agent_done","ci_failed","pr_merged","usage_warning","quota_reached","billing_issue","invite_received","update_available","security_alert"]},"title_key":{"type":"string"},"body_key":{"type":"string"},"params":{"type":"object","description":"Ids and enums only"},"action":{"type":"object","properties":{"type":{"type":"string"},"deeplink":{"type":"string"}},"required":["type"]},"priority":{"type":"string","enum":["low","normal","high"]}},"required":["id","created_at","read_at","category","title_key","body_key","priority"],"description":"CT-NOTIF-PAYLOAD. Defined inline; no contracts/schemas/notification.schema.json existed when written."};
 
 function validate191(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -28558,7 +28558,7 @@ return errors === 0;
 }
 validate191.evaluated = {"props":{"id":true,"created_at":true,"read_at":true,"category":true,"title_key":true,"body_key":true,"params":true,"action":true,"priority":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_ReadAllResult = validate192;
+export const v158 = validate192;
 const schema297 = {"type":"object","properties":{"updated":{"type":"integer"}},"required":["updated"]};
 
 function validate192(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -28598,7 +28598,7 @@ return errors === 0;
 }
 validate192.evaluated = {"props":{"updated":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_NotificationPreferences = validate193;
+export const v159 = validate193;
 const schema298 = {"type":"object","properties":{"channels":{"type":"object","properties":{"approval_needed":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"queue_turn":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"mention":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"member_joined":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"member_left":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"agent_done":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"ci_failed":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"pr_merged":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"usage_warning":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"quota_reached":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"billing_issue":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"invite_received":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"update_available":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"security_alert":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}}},"description":"Per category channel switches; os is client-local"},"quiet_hours":{"type":"object","properties":{"enabled":{"type":"boolean"},"start":{"type":"string","pattern":"^([01][0-9]|2[0-3]):[0-5][0-9]$"},"end":{"type":"string","pattern":"^([01][0-9]|2[0-3]):[0-5][0-9]$"},"timezone":{"type":"string","description":"IANA tz"},"allow_approval_needed":{"type":"boolean"}},"required":["enabled"]}},"required":["channels","quiet_hours"]};
 const pattern204 = new RegExp("^([01][0-9]|2[0-3]):[0-5][0-9]$", "u");
 
@@ -29704,7 +29704,7 @@ return errors === 0;
 }
 validate193.evaluated = {"props":{"channels":true,"quiet_hours":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_PushSubscription = validate194;
+export const v160 = validate194;
 const schema299 = {"type":"object","properties":{"id":{"$ref":"#/$defs/PushSubscriptionId"},"kind":{"type":"string","enum":["web_push","apns","fcm"]},"device":{"$ref":"#/$defs/DeviceId"},"created_at":{"type":"string","format":"date-time"}},"required":["id","kind","created_at"]};
 
 function validate194(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -29835,7 +29835,7 @@ return errors === 0;
 }
 validate194.evaluated = {"props":{"id":true,"kind":true,"device":true,"created_at":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_PushSubscriptionCreate = validate195;
+export const v161 = validate195;
 const schema302 = {"type":"object","properties":{"kind":{"type":"string","enum":["web_push","apns","fcm"]},"token":{"type":"string","description":"APNs/FCM token, or web-push endpoint URL"},"keys":{"type":"object","properties":{"p256dh":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"base64url without padding"},"auth":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"base64url without padding"}},"required":["p256dh","auth"]},"device":{"$ref":"#/$defs/DeviceId"}},"required":["kind","token"]};
 
 function validate195(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -29993,7 +29993,7 @@ return errors === 0;
 }
 validate195.evaluated = {"props":{"kind":true,"token":true,"keys":true,"device":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WebhookEventType = validate196;
+export const v162 = validate196;
 const schema304 = {"type":"string","enum":["workspace.member.joined","workspace.member.left","workspace.member.role_changed","workspace.invite.created","workspace.invite.accepted","workspace.invite.revoked","session.created","session.started","session.ended","session.member.joined","session.member.left","agent.completed","billing.subscription.updated","billing.invoice.paid","billing.invoice.payment_failed","usage.threshold","api_key.created","api_key.revoked"],"description":"Consumers must tolerate unknown values."};
 
 function validate196(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -30019,7 +30019,7 @@ return errors === 0;
 }
 validate196.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WebhookEventType__tolerant = validate197;
+export const v163 = validate197;
 const schema305 = {"type":"string","description":"Consumers must tolerate unknown values."};
 
 function validate197(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -30041,7 +30041,7 @@ return errors === 0;
 }
 validate197.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Webhook = validate198;
+export const v164 = validate198;
 const schema306 = {"type":"object","properties":{"id":{"$ref":"#/$defs/WebhookId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"url":{"type":"string","format":"uri","pattern":"^https://"},"events":{"type":"array","items":{"$ref":"#/$defs/WebhookEventType"}},"enabled":{"type":"boolean"},"status":{"type":"string","enum":["active","failing","disabled"]},"created_at":{"type":"string","format":"date-time"},"secret_rotated_at":{"type":["string","null"],"format":"date-time"},"secret_overlap_until":{"type":["string","null"],"format":"date-time"}},"required":["id","workspace","url","events","enabled","status","created_at"],"description":"Defined inline; no contracts/schemas/webhook.schema.json existed when written."};
 const pattern213 = new RegExp("^https://", "u");
 
@@ -30300,7 +30300,7 @@ return errors === 0;
 }
 validate198.evaluated = {"props":{"id":true,"workspace":true,"url":true,"events":true,"enabled":true,"status":true,"created_at":true,"secret_rotated_at":true,"secret_overlap_until":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Webhook__tolerant = validate199;
+export const v165 = validate199;
 const schema310 = {"type":"object","properties":{"id":{"$ref":"#/$defs/WebhookId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"url":{"type":"string","format":"uri","pattern":"^https://"},"events":{"type":"array","items":{"$ref":"#/$defs/WebhookEventType"}},"enabled":{"type":"boolean"},"status":{"type":"string","enum":["active","failing","disabled"]},"created_at":{"type":"string","format":"date-time"},"secret_rotated_at":{"type":["string","null"],"format":"date-time"},"secret_overlap_until":{"type":["string","null"],"format":"date-time"}},"required":["id","workspace","url","events","enabled","status","created_at"],"description":"Defined inline; no contracts/schemas/webhook.schema.json existed when written."};
 const schema311 = {"type":"string","pattern":"^whk_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a webhook endpoint.","examples":["whk_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 
@@ -30554,7 +30554,7 @@ return errors === 0;
 }
 validate199.evaluated = {"props":{"id":true,"workspace":true,"url":true,"events":true,"enabled":true,"status":true,"created_at":true,"secret_rotated_at":true,"secret_overlap_until":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WebhookCreate = validate200;
+export const v166 = validate200;
 const schema314 = {"type":"object","properties":{"url":{"type":"string","format":"uri","description":"HTTPS only (localhost allowed in test mode)"},"events":{"type":"array","items":{"$ref":"#/$defs/WebhookEventType"},"minItems":1}},"required":["url","events"]};
 
 function validate200(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -30651,7 +30651,7 @@ return errors === 0;
 }
 validate200.evaluated = {"props":{"url":true,"events":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WebhookCreate__tolerant = validate201;
+export const v167 = validate201;
 const schema316 = {"type":"object","properties":{"url":{"type":"string","format":"uri","description":"HTTPS only (localhost allowed in test mode)"},"events":{"type":"array","items":{"$ref":"#/$defs/WebhookEventType"},"minItems":1}},"required":["url","events"]};
 
 function validate201(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -30743,7 +30743,7 @@ return errors === 0;
 }
 validate201.evaluated = {"props":{"url":true,"events":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WebhookCreated = validate202;
+export const v168 = validate202;
 const schema318 = {"allOf":[{"$ref":"#/$defs/Webhook"},{"type":"object","properties":{"secret":{"type":"string","description":"Signing secret, shown once"}},"required":["secret"]}]};
 
 function validate202(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -30792,7 +30792,7 @@ return errors === 0;
 }
 validate202.evaluated = {"props":{"secret":true,"id":true,"workspace":true,"url":true,"events":true,"enabled":true,"status":true,"created_at":true,"secret_rotated_at":true,"secret_overlap_until":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WebhookCreated__tolerant = validate204;
+export const v169 = validate204;
 const schema319 = {"allOf":[{"$ref":"#/$defs/Webhook"},{"type":"object","properties":{"secret":{"type":"string","description":"Signing secret, shown once"}},"required":["secret"]}]};
 
 function validate204(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -30841,7 +30841,7 @@ return errors === 0;
 }
 validate204.evaluated = {"props":{"secret":true,"id":true,"workspace":true,"url":true,"events":true,"enabled":true,"status":true,"created_at":true,"secret_rotated_at":true,"secret_overlap_until":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WebhookUpdate = validate206;
+export const v170 = validate206;
 const schema320 = {"type":"object","properties":{"url":{"type":"string","format":"uri"},"events":{"type":"array","items":{"$ref":"#/$defs/WebhookEventType"},"minItems":1},"enabled":{"type":"boolean"},"rotate_secret":{"type":"boolean"}},"minProperties":1};
 
 function validate206(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -30963,7 +30963,7 @@ return errors === 0;
 }
 validate206.evaluated = {"props":{"url":true,"events":true,"enabled":true,"rotate_secret":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WebhookUpdate__tolerant = validate207;
+export const v171 = validate207;
 const schema322 = {"type":"object","properties":{"url":{"type":"string","format":"uri"},"events":{"type":"array","items":{"$ref":"#/$defs/WebhookEventType"},"minItems":1},"enabled":{"type":"boolean"},"rotate_secret":{"type":"boolean"}},"minProperties":1};
 
 function validate207(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -31080,7 +31080,7 @@ return errors === 0;
 }
 validate207.evaluated = {"props":{"url":true,"events":true,"enabled":true,"rotate_secret":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WebhookRotated = validate208;
+export const v172 = validate208;
 const schema324 = {"allOf":[{"$ref":"#/$defs/Webhook"},{"type":"object","properties":{"secret":{"type":"string","description":"Present only when rotate_secret was true; old secret stays valid 24 h"}}}]};
 
 function validate208(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -31122,7 +31122,7 @@ return errors === 0;
 }
 validate208.evaluated = {"props":{"secret":true,"id":true,"workspace":true,"url":true,"events":true,"enabled":true,"status":true,"created_at":true,"secret_rotated_at":true,"secret_overlap_until":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WebhookRotated__tolerant = validate210;
+export const v173 = validate210;
 const schema325 = {"allOf":[{"$ref":"#/$defs/Webhook"},{"type":"object","properties":{"secret":{"type":"string","description":"Present only when rotate_secret was true; old secret stays valid 24 h"}}}]};
 
 function validate210(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -31164,7 +31164,7 @@ return errors === 0;
 }
 validate210.evaluated = {"props":{"secret":true,"id":true,"workspace":true,"url":true,"events":true,"enabled":true,"status":true,"created_at":true,"secret_rotated_at":true,"secret_overlap_until":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WebhookDelivery = validate212;
+export const v174 = validate212;
 const schema326 = {"type":"object","properties":{"id":{"$ref":"#/$defs/DeliveryId"},"webhook":{"$ref":"#/$defs/WebhookId"},"event_type":{"$ref":"#/$defs/WebhookEventType"},"attempt":{"type":"integer"},"status":{"type":"string","enum":["pending","succeeded","failed"]},"response_status":{"type":["integer","null"]},"duration_ms":{"type":["integer","null"]},"created_at":{"type":"string","format":"date-time"},"next_attempt_at":{"type":["string","null"],"format":"date-time"}},"required":["id","webhook","event_type","attempt","status","created_at"]};
 
 function validate212(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -31379,7 +31379,7 @@ return errors === 0;
 }
 validate212.evaluated = {"props":{"id":true,"webhook":true,"event_type":true,"attempt":true,"status":true,"response_status":true,"duration_ms":true,"created_at":true,"next_attempt_at":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WebhookDelivery__tolerant = validate213;
+export const v175 = validate213;
 const schema330 = {"type":"object","properties":{"id":{"$ref":"#/$defs/DeliveryId"},"webhook":{"$ref":"#/$defs/WebhookId"},"event_type":{"$ref":"#/$defs/WebhookEventType"},"attempt":{"type":"integer"},"status":{"type":"string","enum":["pending","succeeded","failed"]},"response_status":{"type":["integer","null"]},"duration_ms":{"type":["integer","null"]},"created_at":{"type":"string","format":"date-time"},"next_attempt_at":{"type":["string","null"],"format":"date-time"}},"required":["id","webhook","event_type","attempt","status","created_at"]};
 const schema331 = {"type":"string","pattern":"^dlv_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a webhook delivery.","examples":["dlv_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 
@@ -31590,7 +31590,7 @@ return errors === 0;
 }
 validate213.evaluated = {"props":{"id":true,"webhook":true,"event_type":true,"attempt":true,"status":true,"response_status":true,"duration_ms":true,"created_at":true,"next_attempt_at":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_ReleaseManifest = validate214;
+export const v176 = validate214;
 const schema334 = {"type":"object","properties":{"channel":{"type":"string","enum":["stable","beta","nightly"]},"version":{"type":"string"},"released_at":{"type":"string","format":"date-time"},"min_supported_version":{"type":"string"},"notes_url":{"type":"string","format":"uri"},"artifacts":{"type":"array","items":{"type":"object","properties":{"platform":{"type":"string","enum":["linux","macos","windows"]},"arch":{"type":"string","enum":["x64","arm64"]},"kind":{"type":"string"},"url":{"type":"string","format":"uri"},"sha256":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$","description":"Hash in <alg>:<hex> form"},"size":{"type":"integer"},"signature":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"Ed25519 signature (64 bytes), base64url"}},"required":["platform","arch","url","sha256","signature"]}}},"required":["channel","version","released_at","artifacts"],"description":"Defined inline; no contracts/schemas/release-manifest.schema.json existed when written."};
 
 function validate214(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -31885,7 +31885,7 @@ return errors === 0;
 }
 validate214.evaluated = {"props":{"channel":true,"version":true,"released_at":true,"min_supported_version":true,"notes_url":true,"artifacts":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Flags = validate215;
+export const v177 = validate215;
 const schema335 = {"type":"object","properties":{"flags":{"type":"object","additionalProperties":{"type":["boolean","string","number","object","null"]}},"rev":{"type":"integer"},"ttl_s":{"type":"integer"}},"required":["flags","rev","ttl_s"]};
 
 function validate215(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -31974,7 +31974,7 @@ return errors === 0;
 }
 validate215.evaluated = {"props":{"flags":true,"rev":true,"ttl_s":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_StatusFeed = validate216;
+export const v178 = validate216;
 const schema336 = {"type":"object","properties":{"status":{"type":"string","enum":["operational","degraded","partial_outage","major_outage"]},"updated_at":{"type":"string","format":"date-time"},"components":{"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"name":{"type":"string"},"status":{"type":"string","enum":["operational","degraded","partial_outage","major_outage"]}},"required":["id","name","status"]}},"incidents":{"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"title":{"type":"string"},"status":{"type":"string"},"started_at":{"type":"string","format":"date-time"},"updates":{"type":"array","items":{"type":"object","properties":{"at":{"type":"string","format":"date-time"},"text":{"type":"string"}},"required":["at","text"]}}},"required":["id","title","status","started_at"]}},"min_client_version":{"type":"string"},"contract_version":{"type":"string"},"deprecations":{"type":"array","items":{"type":"object","properties":{"what":{"type":"string"},"sunset":{"type":"string","format":"date"}},"required":["what"]}}},"required":["status","updated_at","components","incidents","min_client_version","contract_version"]};
 const formats232 = require("ajv-formats/dist/formats").fullFormats.date;
 
@@ -32419,7 +32419,7 @@ return errors === 0;
 }
 validate216.evaluated = {"props":{"status":true,"updated_at":true,"components":true,"incidents":true,"min_client_version":true,"contract_version":true,"deprecations":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_HealthStatus = validate217;
+export const v179 = validate217;
 const schema337 = {"type":"object","properties":{"status":{"type":"string","enum":["ok","degraded"]},"checks":{"type":"object","additionalProperties":{"type":"string"}}},"required":["status"]};
 
 function validate217(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -32497,7 +32497,7 @@ return errors === 0;
 }
 validate217.evaluated = {"props":{"status":true,"checks":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_Jwks = validate218;
+export const v180 = validate218;
 const schema338 = {"type":"object","properties":{"keys":{"type":"array","items":{"type":"object","properties":{"kty":{"type":"string","enum":["OKP"]},"crv":{"type":"string","enum":["Ed25519"]},"kid":{"type":"string"},"use":{"type":"string","enum":["sig"]},"alg":{"type":"string","enum":["EdDSA"]},"x":{"type":"string","pattern":"^[A-Za-z0-9_-]{43}$","description":"32-byte raw key, base64url without padding"}},"required":["kty","crv","kid","x"]}}},"required":["keys"]};
 
 function validate218(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -32672,7 +32672,7 @@ return errors === 0;
 }
 validate218.evaluated = {"props":{"keys":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_TelemetryEvent = validate219;
+export const v181 = validate219;
 const schema339 = {"type":"object","properties":{"type":{"type":"string","enum":["app.start","app.exit","command.run","session.created","session.joined","agent.state_change","feature.used","error.shown","perf.startup","perf.frame","update.result"]},"at":{"type":"string","format":"date-time"},"props":{"type":"object","description":"Allowed props only: enums, counts, durations; never content, paths, names"}},"required":["type","at"]};
 
 function validate219(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -32759,7 +32759,7 @@ return errors === 0;
 }
 validate219.evaluated = {"props":{"type":true,"at":true,"props":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_TelemetryBatch = validate220;
+export const v182 = validate220;
 const schema340 = {"type":"object","properties":{"install_id":{"type":"string","pattern":"^[0-9A-HJKMNP-TV-Z]{26}$"},"app_version":{"type":"string"},"platform":{"type":"string"},"events":{"type":"array","items":{"$ref":"#/$defs/TelemetryEvent"},"minItems":1,"maxItems":100}},"required":["install_id","events"],"description":"<= 64 KiB. Defined inline; no contracts/schemas/telemetry.schema.json existed when written."};
 
 function validate220(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -32948,7 +32948,7 @@ return errors === 0;
 }
 validate220.evaluated = {"props":{"install_id":true,"app_version":true,"platform":true,"events":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_DeviceCodeRequest = validate221;
+export const v183 = validate221;
 const schema342 = {"type":"object","properties":{"client_id":{"type":"string","enum":["centcom-cli","centcom-web","centcom-tui"]},"scope":{"type":"string","description":"Space-separated scopes"},"device_name":{"type":"string","minLength":1,"maxLength":80},"device_pubkeys":{"type":"object","properties":{"x25519":{"type":"string","pattern":"^[A-Za-z0-9_-]{43}$","description":"32-byte raw key, base64url without padding"},"ed25519":{"type":"string","pattern":"^[A-Za-z0-9_-]{43}$","description":"32-byte raw key, base64url without padding"}},"required":["x25519","ed25519"]}},"required":["client_id","device_name","device_pubkeys"]};
 
 function validate221(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -33105,7 +33105,7 @@ return errors === 0;
 }
 validate221.evaluated = {"props":{"client_id":true,"scope":true,"device_name":true,"device_pubkeys":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_DeviceCodeResponse = validate222;
+export const v184 = validate222;
 const schema343 = {"type":"object","properties":{"device_code":{"type":"string"},"user_code":{"type":"string","pattern":"^[A-Z2-9]{4}-[A-Z2-9]{4}$"},"verification_uri":{"type":"string","format":"uri"},"verification_uri_complete":{"type":"string","format":"uri"},"expires_in":{"type":"integer"},"interval":{"type":"integer"}},"required":["device_code","user_code","verification_uri","verification_uri_complete","expires_in","interval"]};
 const pattern227 = new RegExp("^[A-Z2-9]{4}-[A-Z2-9]{4}$", "u");
 
@@ -33248,7 +33248,7 @@ return errors === 0;
 }
 validate222.evaluated = {"props":{"device_code":true,"user_code":true,"verification_uri":true,"verification_uri_complete":true,"expires_in":true,"interval":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_TokenRequest = validate223;
+export const v185 = validate223;
 const schema344 = {"oneOf":[{"type":"object","properties":{"grant_type":{"const":"urn:ietf:params:oauth:grant-type:device_code"},"device_code":{"type":"string"},"client_id":{"type":"string"}},"required":["grant_type","device_code","client_id"]},{"type":"object","properties":{"grant_type":{"const":"authorization_code"},"code":{"type":"string"},"code_verifier":{"type":"string","minLength":43,"maxLength":128},"redirect_uri":{"type":"string"},"client_id":{"type":"string"}},"required":["grant_type","code","code_verifier","redirect_uri","client_id"]},{"type":"object","properties":{"grant_type":{"const":"refresh_token"},"refresh_token":{"type":"string"},"client_id":{"type":"string"},"scope":{"type":"string"}},"required":["grant_type","refresh_token","client_id"]}],"discriminator":{"propertyName":"grant_type"},"description":"Sent as application/json or application/x-www-form-urlencoded. Web clients must send X-Centcom-Client: web."};
 
 function validate223(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -33520,7 +33520,7 @@ return errors === 0;
 }
 validate223.evaluated = {"dynamicProps":true,"dynamicItems":false};
 
-export const v_api_TokenResponse = validate224;
+export const v186 = validate224;
 const schema345 = {"type":"object","properties":{"access_token":{"type":"string","description":"EdDSA JWT, 15 min"},"token_type":{"type":"string","enum":["Bearer"]},"expires_in":{"type":"integer"},"refresh_token":{"type":"string","description":"Opaque rotating token"},"scope":{"type":"string"},"device":{"$ref":"#/$defs/DeviceId"},"user":{"$ref":"#/$defs/UserId"}},"required":["access_token","token_type","expires_in","refresh_token","scope"]};
 
 function validate224(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -33680,7 +33680,7 @@ return errors === 0;
 }
 validate224.evaluated = {"props":{"access_token":true,"token_type":true,"expires_in":true,"refresh_token":true,"scope":true,"device":true,"user":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_RevokeRequest = validate225;
+export const v187 = validate225;
 const schema348 = {"type":"object","properties":{"token":{"type":"string","description":"Refresh token to revoke"},"token_type_hint":{"type":"string","enum":["refresh_token"]},"device":{"$ref":"#/$defs/DeviceId"}},"description":"Provide token or device."};
 
 function validate225(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -33764,7 +33764,7 @@ return errors === 0;
 }
 validate225.evaluated = {"props":{"token":true,"token_type_hint":true,"device":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WorkspacePage = validate226;
+export const v188 = validate226;
 const schema350 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Workspace"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate226(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -33853,7 +33853,7 @@ return errors === 0;
 }
 validate226.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WorkspacePage__tolerant = validate228;
+export const v189 = validate228;
 const schema351 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Workspace"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate228(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -33942,7 +33942,7 @@ return errors === 0;
 }
 validate228.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_MemberPage = validate230;
+export const v190 = validate230;
 const schema352 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Member"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate230(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -34031,7 +34031,7 @@ return errors === 0;
 }
 validate230.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_MemberPage__tolerant = validate232;
+export const v191 = validate232;
 const schema353 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Member"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate232(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -34120,7 +34120,7 @@ return errors === 0;
 }
 validate232.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_InvitePage = validate234;
+export const v192 = validate234;
 const schema354 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Invite"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate234(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -34209,7 +34209,7 @@ return errors === 0;
 }
 validate234.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_ProjectPage = validate236;
+export const v193 = validate236;
 const schema355 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Project"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate236(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -34298,7 +34298,7 @@ return errors === 0;
 }
 validate236.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_SessionPage = validate238;
+export const v194 = validate238;
 const schema356 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Session"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate238(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -34387,7 +34387,7 @@ return errors === 0;
 }
 validate238.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_SessionMemberPage = validate240;
+export const v195 = validate240;
 const schema357 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/SessionMember"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate240(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -34476,7 +34476,7 @@ return errors === 0;
 }
 validate240.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_DevicePage = validate242;
+export const v196 = validate242;
 const schema358 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Device"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate242(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -34565,7 +34565,7 @@ return errors === 0;
 }
 validate242.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_ApiKeyPage = validate244;
+export const v197 = validate244;
 const schema359 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/ApiKey"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate244(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -34654,7 +34654,7 @@ return errors === 0;
 }
 validate244.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_InvoicePage = validate246;
+export const v198 = validate246;
 const schema360 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Invoice"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate246(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -34743,7 +34743,7 @@ return errors === 0;
 }
 validate246.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_AuditEventPage = validate248;
+export const v199 = validate248;
 const schema361 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/AuditEvent"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate248(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -34832,7 +34832,7 @@ return errors === 0;
 }
 validate248.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_NotificationPage = validate250;
+export const v200 = validate250;
 const schema362 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Notification"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate250(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -34921,7 +34921,7 @@ return errors === 0;
 }
 validate250.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WebhookPage = validate252;
+export const v201 = validate252;
 const schema363 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Webhook"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate252(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -35010,7 +35010,7 @@ return errors === 0;
 }
 validate252.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WebhookPage__tolerant = validate254;
+export const v202 = validate254;
 const schema364 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Webhook"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate254(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -35099,7 +35099,7 @@ return errors === 0;
 }
 validate254.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WebhookDeliveryPage = validate256;
+export const v203 = validate256;
 const schema365 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/WebhookDelivery"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate256(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -35188,7 +35188,7 @@ return errors === 0;
 }
 validate256.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
-export const v_api_WebhookDeliveryPage__tolerant = validate258;
+export const v204 = validate258;
 const schema366 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/WebhookDelivery"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate258(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -35279,209 +35279,209 @@ validate258.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true
 
 /** Every validator by schema key; `<key>#tolerant` exists only where an extensible enum is reachable. */
 export const VALIDATORS = Object.freeze({
-  "entitlements": v_entitlements,
-  "envelope": v_envelope,
-  "events": v_events,
-  "lan-pair": v_lan_pair,
-  "notification": v_notification,
-  "problem": v_problem,
-  "provider-policy": v_provider_policy,
-  "release-manifest": v_release_manifest,
-  "telemetry": v_telemetry,
-  "webhook": v_webhook,
-  "event/approval.request": v_event_approval_request,
-  "event/approval.decision": v_event_approval_decision,
-  "event/agent.spawn": v_event_agent_spawn,
-  "event/agent.state": v_event_agent_state,
-  "event/agent.exit": v_event_agent_exit,
-  "event/file.lock": v_event_file_lock,
-  "event/agent.handoff": v_event_agent_handoff,
-  "event/conflict.detected": v_event_conflict_detected,
-  "event/reaction": v_event_reaction,
-  "event/key.grant": v_event_key_grant,
-  "event/queue.submit": v_event_queue_submit,
-  "event/queue.cancel": v_event_queue_cancel,
-  "event/queue.approve": v_event_queue_approve,
-  "event/queue.reject": v_event_queue_reject,
-  "event/queue.reorder": v_event_queue_reorder,
-  "event/queue.drop": v_event_queue_drop,
-  "event/queue.claim": v_event_queue_claim,
-  "event/queue.done": v_event_queue_done,
-  "event/queue.state": v_event_queue_state,
-  "event/control.kick": v_event_control_kick,
-  "event/control.mute": v_event_control_mute,
-  "event/control.unmute": v_event_control_unmute,
-  "event/control.role": v_event_control_role,
-  "event/control.transfer_host": v_event_control_transfer_host,
-  "event/control.end": v_event_control_end,
-  "event/control.policy": v_event_control_policy,
-  "event/control.member_joined": v_event_control_member_joined,
-  "event/control.member_left": v_event_control_member_left,
-  "event/control.roster": v_event_control_roster,
-  "event/control.host_changed": v_event_control_host_changed,
-  "event/control.session_state": v_event_control_session_state,
-  "event/control.rotate_request": v_event_control_rotate_request,
-  "event/control.rotate_key": v_event_control_rotate_key,
-  "event/presence.update": v_event_presence_update,
-  "event/presence.nudge": v_event_presence_nudge,
-  "event-secret/message.user": v_event_secret_message_user,
-  "event-secret/message.assistant.delta": v_event_secret_message_assistant_delta,
-  "event-secret/message.assistant.done": v_event_secret_message_assistant_done,
-  "event-secret/message.system": v_event_secret_message_system,
-  "event-secret/tool.request": v_event_secret_tool_request,
-  "event-secret/approval.request": v_event_secret_approval_request,
-  "event-secret/approval.decision": v_event_secret_approval_decision,
-  "event-secret/tool.result": v_event_secret_tool_result,
-  "event-secret/agent.spawn": v_event_secret_agent_spawn,
-  "event-secret/agent.exit": v_event_secret_agent_exit,
-  "event-secret/branch.update": v_event_secret_branch_update,
-  "event-secret/file.lock": v_event_secret_file_lock,
-  "event-secret/agent.handoff": v_event_secret_agent_handoff,
-  "event-secret/conflict.detected": v_event_secret_conflict_detected,
-  "event-secret/diff.share": v_event_secret_diff_share,
-  "event-secret/comment.add": v_event_secret_comment_add,
-  "event-secret/key.grant": v_event_secret_key_grant,
-  "event-secret/queue.submit": v_event_secret_queue_submit,
-  "event-secret/queue.reject": v_event_secret_queue_reject,
-  "event-secret/presence.cursor": v_event_secret_presence_cursor,
-  "api/UserId": v_api_UserId,
-  "api/WorkspaceId": v_api_WorkspaceId,
-  "api/DeviceId": v_api_DeviceId,
-  "api/MemberId": v_api_MemberId,
-  "api/InviteId": v_api_InviteId,
-  "api/ApiKeyId": v_api_ApiKeyId,
-  "api/WebhookId": v_api_WebhookId,
-  "api/DeliveryId": v_api_DeliveryId,
-  "api/NotificationId": v_api_NotificationId,
-  "api/SnapshotId": v_api_SnapshotId,
-  "api/ProjectId": v_api_ProjectId,
-  "api/SessionId": v_api_SessionId,
-  "api/SubscriptionId": v_api_SubscriptionId,
-  "api/AuditEventId": v_api_AuditEventId,
-  "api/RequestId": v_api_RequestId,
-  "api/AgentId": v_api_AgentId,
-  "api/ExportId": v_api_ExportId,
-  "api/PushSubscriptionId": v_api_PushSubscriptionId,
-  "api/Money": v_api_Money,
-  "api/Role": v_api_Role,
-  "api/Role#tolerant": v_api_Role__tolerant,
-  "api/SessionRole": v_api_SessionRole,
-  "api/Scope": v_api_Scope,
-  "api/ProblemError": v_api_ProblemError,
-  "api/Problem": v_api_Problem,
-  "api/Page": v_api_Page,
-  "api/User": v_api_User,
-  "api/Me": v_api_Me,
-  "api/MeUpdate": v_api_MeUpdate,
-  "api/AccountDeletion": v_api_AccountDeletion,
-  "api/DataExport": v_api_DataExport,
-  "api/Device": v_api_Device,
-  "api/DeviceKeys": v_api_DeviceKeys,
-  "api/ApiKey": v_api_ApiKey,
-  "api/ApiKeyCreate": v_api_ApiKeyCreate,
-  "api/ApiKeyCreated": v_api_ApiKeyCreated,
-  "api/WorkspaceSettings": v_api_WorkspaceSettings,
-  "api/WorkspaceSettingsUpdate": v_api_WorkspaceSettingsUpdate,
-  "api/Workspace": v_api_Workspace,
-  "api/Workspace#tolerant": v_api_Workspace__tolerant,
-  "api/WorkspaceCreate": v_api_WorkspaceCreate,
-  "api/WorkspaceUpdate": v_api_WorkspaceUpdate,
-  "api/Member": v_api_Member,
-  "api/Member#tolerant": v_api_Member__tolerant,
-  "api/MemberUpdate": v_api_MemberUpdate,
-  "api/OwnershipTransfer": v_api_OwnershipTransfer,
-  "api/Invite": v_api_Invite,
-  "api/InviteCreate": v_api_InviteCreate,
-  "api/InviteCreated": v_api_InviteCreated,
-  "api/InvitePreview": v_api_InvitePreview,
-  "api/InviteAcceptance": v_api_InviteAcceptance,
-  "api/InviteAcceptance#tolerant": v_api_InviteAcceptance__tolerant,
-  "api/KeyBundle": v_api_KeyBundle,
-  "api/Project": v_api_Project,
-  "api/ProjectCreate": v_api_ProjectCreate,
-  "api/ProjectUpdate": v_api_ProjectUpdate,
-  "api/SessionPolicy": v_api_SessionPolicy,
-  "api/SessionMember": v_api_SessionMember,
-  "api/Session": v_api_Session,
-  "api/SessionCreate": v_api_SessionCreate,
-  "api/SessionCreated": v_api_SessionCreated,
-  "api/SessionUpdate": v_api_SessionUpdate,
-  "api/JoinTokenRequest": v_api_JoinTokenRequest,
-  "api/JoinToken": v_api_JoinToken,
-  "api/CtEnvelope": v_api_CtEnvelope,
-  "api/HistoryFrame": v_api_HistoryFrame,
-  "api/HistoryPage": v_api_HistoryPage,
-  "api/SnapshotDescriptor": v_api_SnapshotDescriptor,
-  "api/SnapshotBegin": v_api_SnapshotBegin,
-  "api/SnapshotUpload": v_api_SnapshotUpload,
-  "api/SnapshotCommit": v_api_SnapshotCommit,
-  "api/ShareLinkCreate": v_api_ShareLinkCreate,
-  "api/ShareLink": v_api_ShareLink,
-  "api/ShareLinkJoin": v_api_ShareLinkJoin,
-  "api/EntLimits": v_api_EntLimits,
-  "api/Entitlements": v_api_Entitlements,
-  "api/Plan": v_api_Plan,
-  "api/Subscription": v_api_Subscription,
-  "api/CheckoutRequest": v_api_CheckoutRequest,
-  "api/UrlResponse": v_api_UrlResponse,
-  "api/PortalRequest": v_api_PortalRequest,
-  "api/SeatChange": v_api_SeatChange,
-  "api/SeatChangeResult": v_api_SeatChangeResult,
-  "api/Invoice": v_api_Invoice,
-  "api/CouponRedeem": v_api_CouponRedeem,
-  "api/UsageSummary": v_api_UsageSummary,
-  "api/UsageEvent": v_api_UsageEvent,
-  "api/UsageBatch": v_api_UsageBatch,
-  "api/UsageBatchResult": v_api_UsageBatchResult,
-  "api/AuditEvent": v_api_AuditEvent,
-  "api/AuditExportCreate": v_api_AuditExportCreate,
-  "api/AuditExport": v_api_AuditExport,
-  "api/Notification": v_api_Notification,
-  "api/ReadAllResult": v_api_ReadAllResult,
-  "api/NotificationPreferences": v_api_NotificationPreferences,
-  "api/PushSubscription": v_api_PushSubscription,
-  "api/PushSubscriptionCreate": v_api_PushSubscriptionCreate,
-  "api/WebhookEventType": v_api_WebhookEventType,
-  "api/WebhookEventType#tolerant": v_api_WebhookEventType__tolerant,
-  "api/Webhook": v_api_Webhook,
-  "api/Webhook#tolerant": v_api_Webhook__tolerant,
-  "api/WebhookCreate": v_api_WebhookCreate,
-  "api/WebhookCreate#tolerant": v_api_WebhookCreate__tolerant,
-  "api/WebhookCreated": v_api_WebhookCreated,
-  "api/WebhookCreated#tolerant": v_api_WebhookCreated__tolerant,
-  "api/WebhookUpdate": v_api_WebhookUpdate,
-  "api/WebhookUpdate#tolerant": v_api_WebhookUpdate__tolerant,
-  "api/WebhookRotated": v_api_WebhookRotated,
-  "api/WebhookRotated#tolerant": v_api_WebhookRotated__tolerant,
-  "api/WebhookDelivery": v_api_WebhookDelivery,
-  "api/WebhookDelivery#tolerant": v_api_WebhookDelivery__tolerant,
-  "api/ReleaseManifest": v_api_ReleaseManifest,
-  "api/Flags": v_api_Flags,
-  "api/StatusFeed": v_api_StatusFeed,
-  "api/HealthStatus": v_api_HealthStatus,
-  "api/Jwks": v_api_Jwks,
-  "api/TelemetryEvent": v_api_TelemetryEvent,
-  "api/TelemetryBatch": v_api_TelemetryBatch,
-  "api/DeviceCodeRequest": v_api_DeviceCodeRequest,
-  "api/DeviceCodeResponse": v_api_DeviceCodeResponse,
-  "api/TokenRequest": v_api_TokenRequest,
-  "api/TokenResponse": v_api_TokenResponse,
-  "api/RevokeRequest": v_api_RevokeRequest,
-  "api/WorkspacePage": v_api_WorkspacePage,
-  "api/WorkspacePage#tolerant": v_api_WorkspacePage__tolerant,
-  "api/MemberPage": v_api_MemberPage,
-  "api/MemberPage#tolerant": v_api_MemberPage__tolerant,
-  "api/InvitePage": v_api_InvitePage,
-  "api/ProjectPage": v_api_ProjectPage,
-  "api/SessionPage": v_api_SessionPage,
-  "api/SessionMemberPage": v_api_SessionMemberPage,
-  "api/DevicePage": v_api_DevicePage,
-  "api/ApiKeyPage": v_api_ApiKeyPage,
-  "api/InvoicePage": v_api_InvoicePage,
-  "api/AuditEventPage": v_api_AuditEventPage,
-  "api/NotificationPage": v_api_NotificationPage,
-  "api/WebhookPage": v_api_WebhookPage,
-  "api/WebhookPage#tolerant": v_api_WebhookPage__tolerant,
-  "api/WebhookDeliveryPage": v_api_WebhookDeliveryPage,
-  "api/WebhookDeliveryPage#tolerant": v_api_WebhookDeliveryPage__tolerant,
+  "entitlements": v0,
+  "envelope": v1,
+  "events": v2,
+  "lan-pair": v3,
+  "notification": v4,
+  "problem": v5,
+  "provider-policy": v6,
+  "release-manifest": v7,
+  "telemetry": v8,
+  "webhook": v9,
+  "event/approval.request": v10,
+  "event/approval.decision": v11,
+  "event/agent.spawn": v12,
+  "event/agent.state": v13,
+  "event/agent.exit": v14,
+  "event/file.lock": v15,
+  "event/agent.handoff": v16,
+  "event/conflict.detected": v17,
+  "event/reaction": v18,
+  "event/key.grant": v19,
+  "event/queue.submit": v20,
+  "event/queue.cancel": v21,
+  "event/queue.approve": v22,
+  "event/queue.reject": v23,
+  "event/queue.reorder": v24,
+  "event/queue.drop": v25,
+  "event/queue.claim": v26,
+  "event/queue.done": v27,
+  "event/queue.state": v28,
+  "event/control.kick": v29,
+  "event/control.mute": v30,
+  "event/control.unmute": v31,
+  "event/control.role": v32,
+  "event/control.transfer_host": v33,
+  "event/control.end": v34,
+  "event/control.policy": v35,
+  "event/control.member_joined": v36,
+  "event/control.member_left": v37,
+  "event/control.roster": v38,
+  "event/control.host_changed": v39,
+  "event/control.session_state": v40,
+  "event/control.rotate_request": v41,
+  "event/control.rotate_key": v42,
+  "event/presence.update": v43,
+  "event/presence.nudge": v44,
+  "event-secret/message.user": v45,
+  "event-secret/message.assistant.delta": v46,
+  "event-secret/message.assistant.done": v47,
+  "event-secret/message.system": v48,
+  "event-secret/tool.request": v49,
+  "event-secret/approval.request": v50,
+  "event-secret/approval.decision": v51,
+  "event-secret/tool.result": v52,
+  "event-secret/agent.spawn": v53,
+  "event-secret/agent.exit": v54,
+  "event-secret/branch.update": v55,
+  "event-secret/file.lock": v56,
+  "event-secret/agent.handoff": v57,
+  "event-secret/conflict.detected": v58,
+  "event-secret/diff.share": v59,
+  "event-secret/comment.add": v60,
+  "event-secret/key.grant": v61,
+  "event-secret/queue.submit": v62,
+  "event-secret/queue.reject": v63,
+  "event-secret/presence.cursor": v64,
+  "api/UserId": v65,
+  "api/WorkspaceId": v66,
+  "api/DeviceId": v67,
+  "api/MemberId": v68,
+  "api/InviteId": v69,
+  "api/ApiKeyId": v70,
+  "api/WebhookId": v71,
+  "api/DeliveryId": v72,
+  "api/NotificationId": v73,
+  "api/SnapshotId": v74,
+  "api/ProjectId": v75,
+  "api/SessionId": v76,
+  "api/SubscriptionId": v77,
+  "api/AuditEventId": v78,
+  "api/RequestId": v79,
+  "api/AgentId": v80,
+  "api/ExportId": v81,
+  "api/PushSubscriptionId": v82,
+  "api/Money": v83,
+  "api/Role": v84,
+  "api/Role#tolerant": v85,
+  "api/SessionRole": v86,
+  "api/Scope": v87,
+  "api/ProblemError": v88,
+  "api/Problem": v89,
+  "api/Page": v90,
+  "api/User": v91,
+  "api/Me": v92,
+  "api/MeUpdate": v93,
+  "api/AccountDeletion": v94,
+  "api/DataExport": v95,
+  "api/Device": v96,
+  "api/DeviceKeys": v97,
+  "api/ApiKey": v98,
+  "api/ApiKeyCreate": v99,
+  "api/ApiKeyCreated": v100,
+  "api/WorkspaceSettings": v101,
+  "api/WorkspaceSettingsUpdate": v102,
+  "api/Workspace": v103,
+  "api/Workspace#tolerant": v104,
+  "api/WorkspaceCreate": v105,
+  "api/WorkspaceUpdate": v106,
+  "api/Member": v107,
+  "api/Member#tolerant": v108,
+  "api/MemberUpdate": v109,
+  "api/OwnershipTransfer": v110,
+  "api/Invite": v111,
+  "api/InviteCreate": v112,
+  "api/InviteCreated": v113,
+  "api/InvitePreview": v114,
+  "api/InviteAcceptance": v115,
+  "api/InviteAcceptance#tolerant": v116,
+  "api/KeyBundle": v117,
+  "api/Project": v118,
+  "api/ProjectCreate": v119,
+  "api/ProjectUpdate": v120,
+  "api/SessionPolicy": v121,
+  "api/SessionMember": v122,
+  "api/Session": v123,
+  "api/SessionCreate": v124,
+  "api/SessionCreated": v125,
+  "api/SessionUpdate": v126,
+  "api/JoinTokenRequest": v127,
+  "api/JoinToken": v128,
+  "api/CtEnvelope": v129,
+  "api/HistoryFrame": v130,
+  "api/HistoryPage": v131,
+  "api/SnapshotDescriptor": v132,
+  "api/SnapshotBegin": v133,
+  "api/SnapshotUpload": v134,
+  "api/SnapshotCommit": v135,
+  "api/ShareLinkCreate": v136,
+  "api/ShareLink": v137,
+  "api/ShareLinkJoin": v138,
+  "api/EntLimits": v139,
+  "api/Entitlements": v140,
+  "api/Plan": v141,
+  "api/Subscription": v142,
+  "api/CheckoutRequest": v143,
+  "api/UrlResponse": v144,
+  "api/PortalRequest": v145,
+  "api/SeatChange": v146,
+  "api/SeatChangeResult": v147,
+  "api/Invoice": v148,
+  "api/CouponRedeem": v149,
+  "api/UsageSummary": v150,
+  "api/UsageEvent": v151,
+  "api/UsageBatch": v152,
+  "api/UsageBatchResult": v153,
+  "api/AuditEvent": v154,
+  "api/AuditExportCreate": v155,
+  "api/AuditExport": v156,
+  "api/Notification": v157,
+  "api/ReadAllResult": v158,
+  "api/NotificationPreferences": v159,
+  "api/PushSubscription": v160,
+  "api/PushSubscriptionCreate": v161,
+  "api/WebhookEventType": v162,
+  "api/WebhookEventType#tolerant": v163,
+  "api/Webhook": v164,
+  "api/Webhook#tolerant": v165,
+  "api/WebhookCreate": v166,
+  "api/WebhookCreate#tolerant": v167,
+  "api/WebhookCreated": v168,
+  "api/WebhookCreated#tolerant": v169,
+  "api/WebhookUpdate": v170,
+  "api/WebhookUpdate#tolerant": v171,
+  "api/WebhookRotated": v172,
+  "api/WebhookRotated#tolerant": v173,
+  "api/WebhookDelivery": v174,
+  "api/WebhookDelivery#tolerant": v175,
+  "api/ReleaseManifest": v176,
+  "api/Flags": v177,
+  "api/StatusFeed": v178,
+  "api/HealthStatus": v179,
+  "api/Jwks": v180,
+  "api/TelemetryEvent": v181,
+  "api/TelemetryBatch": v182,
+  "api/DeviceCodeRequest": v183,
+  "api/DeviceCodeResponse": v184,
+  "api/TokenRequest": v185,
+  "api/TokenResponse": v186,
+  "api/RevokeRequest": v187,
+  "api/WorkspacePage": v188,
+  "api/WorkspacePage#tolerant": v189,
+  "api/MemberPage": v190,
+  "api/MemberPage#tolerant": v191,
+  "api/InvitePage": v192,
+  "api/ProjectPage": v193,
+  "api/SessionPage": v194,
+  "api/SessionMemberPage": v195,
+  "api/DevicePage": v196,
+  "api/ApiKeyPage": v197,
+  "api/InvoicePage": v198,
+  "api/AuditEventPage": v199,
+  "api/NotificationPage": v200,
+  "api/WebhookPage": v201,
+  "api/WebhookPage#tolerant": v202,
+  "api/WebhookDeliveryPage": v203,
+  "api/WebhookDeliveryPage#tolerant": v204,
 });

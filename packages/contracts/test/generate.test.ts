@@ -55,7 +55,8 @@ function cli(...args: string[]) {
 describe('committed output', () => {
   it('src/generated/ is identical to a fresh run (what `pnpm contracts:check` enforces)', { timeout: TIMEOUT }, () => {
     const { files, warnings } = generate();
-    expect(warnings).toEqual([]);
+    // The one known contract gap (see the queue.reject test in validate.test.ts).
+    expect(warnings).toEqual([expect.stringMatching(/queue\.reject is a clear kind .*\(contract gap\)$/)]);
     expect(diffOutput(files, DEFAULT_OUT_DIR)).toEqual([]);
     for (const [name, content] of files) {
       expect(content.startsWith('// GENERATED FILE - DO NOT EDIT.'), name).toBe(true);
@@ -75,6 +76,13 @@ describe('standalone validators (acceptance 8)', () => {
     for (const r of required) expect(r).toMatch(/^(ajv\/dist\/runtime\/[a-z0-9_]+|ajv-formats\/dist\/formats)$/);
     const imports = [...code.matchAll(/^import .* from '([^']+)';$/gm)].map((m) => m[1]);
     expect(imports).toEqual(['node:module']);
+  });
+
+  it('map validators by short names that secret scanners cannot mistake for credentials', () => {
+    const map = code.slice(code.indexOf('export const VALIDATORS = Object.freeze({'));
+    const entries = [...map.matchAll(/^ {2}"([^"]+)": (\w+),$/gm)];
+    expect(entries.length).toBeGreaterThan(200);
+    for (const [line, , ident] of entries) expect(ident, line).toMatch(/^v\d{1,4}$/);
   });
 
   it('run with runtime code generation disabled (--disallow-code-generation-from-strings)', { timeout: TIMEOUT }, () => {

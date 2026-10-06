@@ -6,7 +6,7 @@
  */
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { VALIDATORS } from '#generated/validators';
+import { VALIDATORS } from '../src/generated/validators.js';
 import {
   checkName,
   checkSlug,

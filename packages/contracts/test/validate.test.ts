@@ -162,6 +162,22 @@ describe('guarantees', () => {
   });
 });
 
+describe('queue.reject (contract gap: clear kind with a secret schema)', () => {
+  // 04-session-events.md lists queue.reject as clear but also a secret `note`; events.schema.json
+  // forbids ct for it yet defines s_queue_reject. The frame rule wins until a Contract PR decides.
+  it('is clear in the catalogue, and a frame carrying ct is rejected', () => {
+    expect(EVENT_CATALOGUE['queue.reject']).toMatchObject({ t: 'queue', mode: 'clear', secret: true });
+    const withCt = {
+      ...frame('queue.reject'),
+      ct: { alg: 'xchacha20poly1305', kid: 'k1', n: 'A'.repeat(32), c: 'AAAA' },
+      sig: 'AAAA',
+    };
+    expect(validate('envelope', withCt).ok).toBe(true); // a well-formed ct ...
+    expect(validateEnvelope(withCt)).toMatchObject({ ok: false, errors: [{ pointer: '', code: 'not_allowed' }] }); // ... that the kind forbids
+    expect(validateEnvelope(frame('queue.reject')).ok).toBe(true);
+  });
+});
+
 describe('named helpers', () => {
   it.each([
     [validateLanPair, 'lan', 'pair1.json'],

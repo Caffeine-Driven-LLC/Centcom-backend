@@ -596,7 +596,10 @@ export interface EventSecrets {
   "presence.cursor": PresenceCursorSecret;
 }
 
-/** One catalogue entry: frame type, payload mode and the cleartext fields the relay may read. */
+/**
+ * One catalogue entry: frame type, payload mode, the cleartext fields the relay may read, and
+ * whether the contract defines a secret schema (sendable only when the mode is encrypted or hybrid).
+ */
 export interface EventCatalogueEntry {
   readonly t: string;
   readonly mode: PayloadMode;

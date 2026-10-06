@@ -78,12 +78,25 @@ How the generator works:
   checkers (`date`, `date-time`, `email`, `uri`), which is why `ajv` and `ajv-formats` are runtime
   dependencies.
 - **Plain JavaScript.** `validators.js` is JavaScript because its functions are too long for the
-  TypeScript compiler (it overflows its stack). It is imported through the package alias
-  `#generated/validators`, so the same specifier works from `src/` (tests) and `dist/` (builds).
+  TypeScript compiler (it overflows its stack), so `tsc` only ever reads `validators.d.ts`. `tsc` does
+  not emit them either: the package build (`tsc -b && node scripts/copy-validators.mjs`, and the root
+  `pnpm build` through `build:assets`) copies both files into `dist/generated/`, so `dist/` is
+  self-contained. `test/dist.test.ts` compiles into a directory with no `src/` and imports it.
+- **Short export names.** The validators are exported as `v0`, `v1`, ... and reached through
+  `VALIDATORS`. Long identifiers next to keys like `"api/JoinToken"` looked like credentials to the
+  CI secret scanner (gitleaks `generic-api-key`).
 - **Strict input.** The generator accepts only an explicit list of JSON Schema keywords and
   formats. Anything else, a missing machine file, or a malformed event rule fails generation, names
   the file and keyword, and writes nothing. `openapi.yaml` and `errors.json` are skipped with a
   warning while absent.
+
+## Known contract gap
+
+`queue.reject` is a clear kind: `events.schema.json` forbids `ct` for it, so the relay rejects a
+`queue.reject` frame that carries one. Yet `$defs/s_queue_reject` and the 04-session-events table
+also give it a secret `note`, which therefore can never be sent. The generator prints a warning for
+this on every run, and `test/validate.test.ts` pins the current behaviour (the frame rule wins). The
+fix belongs in a Contract PR: either make the kind hybrid or drop `note`.
 
 ## Configuration
 

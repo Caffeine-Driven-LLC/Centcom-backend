@@ -5,7 +5,7 @@
  * tolerant validation, and the frame / event payload helpers.
  * Must not: compile schemas at runtime, throw on any input, or mutate the value it validates.
  */
-import { VALIDATORS, type AjvErrorObject, type RawValidator } from '#generated/validators';
+import { VALIDATORS, type AjvErrorObject, type RawValidator } from './generated/validators.js';
 import {
   EVENT_CATALOGUE,
   type Entitlements,

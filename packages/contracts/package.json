@@ -13,11 +13,9 @@
       "default": "./dist/index.js"
     }
   },
-  "imports": {
-    "#generated/validators": "./src/generated/validators.js"
-  },
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && node scripts/copy-validators.mjs",
+    "build:assets": "node scripts/copy-validators.mjs",
     "contracts:gen": "tsx scripts/generate.ts",
     "contracts:check": "tsx scripts/generate.ts --check"
   },

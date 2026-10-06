@@ -308,7 +308,7 @@ function loadContracts(dir: string, warnings: string[]): Contracts {
 // ---------------------------------------------------------------------------------------------
 // The event catalogue (CT-WS-SESSION-EVENTS)
 
-function readCatalogue(events: SchemaFile | undefined): EventKindInfo[] {
+function readCatalogue(events: SchemaFile | undefined, warnings: string[]): EventKindInfo[] {
   if (!events) return [];
   const where = `contracts/schemas/${events.file}`;
   const defs = isObject(events.schema.$defs) ? events.schema.$defs : {};
@@ -345,6 +345,11 @@ function readCatalogue(events: SchemaFile | undefined): EventKindInfo[] {
       clearDef = `p_${suffix}`;
     }
     const secretDef = isObject(defs[`s_${suffix}`]) ? `s_${suffix}` : null;
+    if (mode === 'clear' && secretDef) {
+      warnings.push(
+        `${where}: ${kind} is a clear kind (ct is forbidden) but $defs/${secretDef} defines a secret payload that can never be sent; the frame rule wins (contract gap)`,
+      );
+    }
     const clearNode = clearDef ? defs[clearDef] : undefined;
     const clearFields = isObject(clearNode) && isObject(clearNode.properties) ? Object.keys(clearNode.properties) : [];
     return { kind, t: tNode.const, mode, clearDef, secretDef, clearFields };
@@ -553,7 +558,10 @@ function emitWireTypes(c: Contracts, catalogue: EventKindInfo[]): string {
       .filter((k) => k.secretDef)
       .map((k) => `  ${JSON.stringify(k.kind)}: ${defName.get(k.secretDef ?? '')};`)
       .join('\n')}\n}\n`,
-    '/** One catalogue entry: frame type, payload mode and the cleartext fields the relay may read. */',
+    '/**',
+    ' * One catalogue entry: frame type, payload mode, the cleartext fields the relay may read, and',
+    ' * whether the contract defines a secret schema (sendable only when the mode is encrypted or hybrid).',
+    ' */',
     'export interface EventCatalogueEntry {\n  readonly t: string;\n  readonly mode: PayloadMode;\n  readonly clearFields: readonly string[];\n  readonly secret: boolean;\n}\n',
     '/** The event catalogue, generated from contracts/schemas/events.schema.json. */',
     `export const EVENT_CATALOGUE = {\n${catalogue
@@ -675,15 +683,19 @@ function emitValidators(c: Contracts, catalogue: EventKindInfo[]): { js: string;
 
   const exportsByIdent: Record<string, string> = {};
   const keyToIdent: Array<[string, string]> = [];
-  const register = (key: string, ref: string, tolerantRef: string | null, node: Json, doc: { id: string; root: JsonObject }): void => {
-    const ident = `v_${key.replace(/[^A-Za-z0-9]+/g, '_')}`;
-    if (ident in exportsByIdent) throw new GenerateError(`two schema keys map to the export name ${ident}`);
+  // Export names are short and sequential (v0, v1, ...): a long identifier next to a key such as
+  // "api/JoinToken" looks like a credential to secret scanners (gitleaks generic-api-key).
+  const seenKeys = new Set<string>();
+  const exportAs = (key: string, ref: string): void => {
+    if (seenKeys.has(key)) throw new GenerateError(`schema key ${key} is generated twice`);
+    seenKeys.add(key);
+    const ident = `v${keyToIdent.length}`;
     exportsByIdent[ident] = ref;
     keyToIdent.push([key, ident]);
-    if (tolerantRef && reachesExtensible(node, doc, docs)) {
-      exportsByIdent[`${ident}__tolerant`] = tolerantRef;
-      keyToIdent.push([`${key}#tolerant`, `${ident}__tolerant`]);
-    }
+  };
+  const register = (key: string, ref: string, tolerantRef: string | null, node: Json, doc: { id: string; root: JsonObject }): void => {
+    exportAs(key, ref);
+    if (tolerantRef && reachesExtensible(node, doc, docs)) exportAs(`${key}#tolerant`, tolerantRef);
   };
   for (const s of c.schemas) {
     register(s.stem, s.id, new URL(s.file, TOLERANT_BASE).href, s.schema, { id: s.id, root: s.schema });
@@ -723,7 +735,7 @@ function emitValidators(c: Contracts, catalogue: EventKindInfo[]): { js: string;
   }
   const body = code.replace(/^"use strict";\n?/, '');
   // Plain JavaScript on purpose: the TypeScript compiler overflows its stack on functions this long,
-  // so it only ever sees validators.d.ts. Imported through the package alias #generated/validators.
+  // so it only ever sees validators.d.ts. The package build copies both files into dist/generated/.
   const js = [
     BANNER(c.version),
     '// Precompiled Ajv standalone validators (JSON Schema 2020-12). Runtime helpers come from',
@@ -830,7 +842,7 @@ function emitMeta(c: Contracts): string {
 export function generate(contractsDir: string = DEFAULT_CONTRACTS_DIR): GenerateResult {
   const warnings: string[] = [];
   const c = loadContracts(contractsDir, warnings);
-  const catalogue = readCatalogue(c.schemas.find((s) => s.stem === 'events'));
+  const catalogue = readCatalogue(c.schemas.find((s) => s.stem === 'events'), warnings);
   const validators = emitValidators(c, catalogue);
   const files = new Map<string, string>([
     ['api.ts', emitApiTypes(c)],
