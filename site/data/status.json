@@ -6,10 +6,6 @@
    "why": "it passes its tests against Codex's published protocol schema and the real handshake, but no real model turn has run yet (C103); needs a Codex account"
   },
   {
-   "title": "Confirm the first CI run is green (C002)",
-   "why": "the workflow is written and every step passes locally, but GitHub has not run it yet"
-  },
-  {
    "title": "C003 generate protocol types from `contracts/`",
    "why": "event and message shapes are hand-typed today (C101, C102, C103 depend on this)"
   },
