@@ -1,5 +1,7 @@
 # Centcom Backend
 
+<p align="left"><img src="assets/brand/icon.png" alt="Centcom Backend: Cento with sunglasses" width="128" height="128"></p>
+
 Private server side of Centcom: REST API, WebSocket relay, workers, billing, notifications, infrastructure.
 
 > Status: planning complete and the contracts are frozen and locked; implementation has not started (gate **G0** also needs the CI lane B002). See [Progress](#progress) for what is next. Everything you need is in [`plan/`](plan/README.md) and [`contracts/`](contracts/README.md).
