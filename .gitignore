@@ -1,7 +1,18 @@
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Python tooling (tools/plan)
 __pycache__/
 *.pyc
-node_modules/
+
+# Secrets: only the names-only example is committed (B004)
 .env
 .env.*
 !.env.example
+
+# OS and editor noise
 .DS_Store
+Thumbs.db

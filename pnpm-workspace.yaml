@@ -1,0 +1,24 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Settings (pnpm 11+ reads these here, not from .npmrc).
+# No dependency lifecycle scripts run; exceptions need a reviewed allow-list (B001 guardrail).
+ignoreScripts: true
+# Install fails fast on an unsupported Node version instead of a cryptic build error.
+engineStrict: true
+# `pnpm add` writes exact versions; ranges are rejected by `pnpm lint` (tools/repo/check-exact-pins.mjs).
+saveExact: true
+minimumReleaseAgeExclude:
+  - '@typescript-eslint/eslint-plugin@8.71.1'
+  - '@typescript-eslint/parser@8.71.1'
+  - '@typescript-eslint/project-service@8.71.1'
+  - '@typescript-eslint/scope-manager@8.71.1'
+  - '@typescript-eslint/tsconfig-utils@8.71.1'
+  - '@typescript-eslint/type-utils@8.71.1'
+  - '@typescript-eslint/types@8.71.1'
+  - '@typescript-eslint/typescript-estree@8.71.1'
+  - '@typescript-eslint/utils@8.71.1'
+  - '@typescript-eslint/visitor-keys@8.71.1'
+  - typescript-eslint@8.71.1
+  - vite@8.3.3

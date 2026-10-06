@@ -1,0 +1,29 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "apps/api"
+    },
+    {
+      "path": "apps/relay"
+    },
+    {
+      "path": "apps/worker"
+    },
+    {
+      "path": "apps/admin"
+    },
+    {
+      "path": "packages/contracts"
+    },
+    {
+      "path": "packages/core"
+    },
+    {
+      "path": "packages/db"
+    },
+    {
+      "path": "packages/testkit"
+    }
+  ]
+}
