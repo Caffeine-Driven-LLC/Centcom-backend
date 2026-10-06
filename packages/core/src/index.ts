@@ -1,6 +1,5 @@
 /**
- * @centcom/core: Config, logging, errors, RBAC, rate limiting, Redis and email primitives.
- *
- * Placeholder entry from B001 (monorepo scaffold); it exports nothing yet. Later lanes add modules here.
+ * @centcom/core: shared platform primitives. Today: configuration (B004). Logging (B005), errors
+ * (B006), Redis (B009) and the rest arrive with their lanes.
  */
-export {};
+export * from './config/index.js';

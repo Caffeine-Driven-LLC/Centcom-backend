@@ -32,13 +32,12 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 | Lane | What | Done | Note |
 |---|---|--:|---|
-| [B003](plan/backend/B003.md) | Contract codegen package (types and validators from contracts/) | 90% | in review: generator, validators, helpers and tests done |
+| [B004](plan/backend/B004.md) | Typed configuration and secrets loader | 90% | in review: loader, secrets, base config, docs and lint rule done |
 
 ### Ready to pick up (all dependencies done)
 
 | Lane | What | Size | Milestone |
 |---|---|---|---|
-| [B004](plan/backend/B004.md) | Typed configuration and secrets loader | S | M0 |
 | [B091](plan/backend/B091.md) | Infrastructure as code: environments dev, stage, prod | L | M3 |
 | [B097](plan/backend/B097.md) | Security hardening: headers, WAF rules, secret scanning, dependency policy | M | M6 |
 

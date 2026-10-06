@@ -4,6 +4,33 @@ import js from '@eslint/js';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 
+const WORKSPACE_IMPORT_PATTERNS = [
+  {
+    group: ['@centcom/*/*'],
+    message:
+      'Import a workspace package by its name only; its package.json "exports" map is the public surface.',
+  },
+  {
+    group: ['**/apps/*/**', '**/packages/*/**'],
+    message: 'Do not reach into another workspace by path; depend on it by package name.',
+  },
+];
+
+// B004: configuration is read once, by the config loader, at the entrypoint. (Core ESLint's
+// no-process-env is deprecated, so the same rule is built from no-restricted-* rules.)
+const ENV_MESSAGE =
+  'Read configuration with defineConfig() from @centcom/core (B004); only the config loader and apps/*/src/main.ts read process.env.';
+
+// Ways around no-restricted-properties: aliasing `process`, reaching it through `globalThis` or
+// `global`, and computed access (`process[key]`). A guardrail against mistakes, not a sandbox:
+// `Reflect.get(process, 'env')` and similar indirection are left to review.
+const ENV_SYNTAX = [
+  "VariableDeclarator[id.type='Identifier'][init.type='Identifier'][init.name='process']",
+  "AssignmentExpression[right.type='Identifier'][right.name='process']",
+  "MemberExpression[object.name=/^(globalThis|global)$/][property.name='process']",
+  "MemberExpression[object.name='process'][computed=true]",
+].map((selector) => ({ selector, message: ENV_MESSAGE }));
+
 export default defineConfig([
   globalIgnores([
     '**/node_modules/',
@@ -28,19 +55,27 @@ export default defineConfig([
       'no-restricted-imports': [
         'error',
         {
-          patterns: [
-            {
-              group: ['@centcom/*/*'],
-              message:
-                'Import a workspace package by its name only; its package.json "exports" map is the public surface.',
-            },
-            {
-              group: ['**/apps/*/**', '**/packages/*/**'],
-              message: 'Do not reach into another workspace by path; depend on it by package name.',
-            },
+          paths: [
+            { name: 'process', importNames: ['env'], message: ENV_MESSAGE },
+            { name: 'node:process', importNames: ['env'], message: ENV_MESSAGE },
           ],
+          patterns: WORKSPACE_IMPORT_PATTERNS,
         },
       ],
+      'no-restricted-properties': [
+        'error',
+        { object: 'process', property: 'env', message: ENV_MESSAGE },
+      ],
+      'no-restricted-syntax': ['error', ...ENV_SYNTAX],
+    },
+  },
+  {
+    // The config loader (B004), service entrypoints and repo tooling may read the environment.
+    files: ['apps/*/src/main.ts', 'packages/core/src/config/**', 'tools/**'],
+    rules: {
+      'no-restricted-properties': 'off',
+      'no-restricted-syntax': 'off',
+      'no-restricted-imports': ['error', { patterns: WORKSPACE_IMPORT_PATTERNS }],
     },
   },
   {
