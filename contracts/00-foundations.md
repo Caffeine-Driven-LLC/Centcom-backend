@@ -176,3 +176,4 @@ JSON bodies ≤ 256 KiB except `POST /v1/usage/events` (≤ 1 MiB) and snapshot 
 }
 ```
 Incident `status` is one of `investigating | identified | monitoring | resolved`. Cached 15 s at the edge. Clients show degraded/outage banners from this and MUST NOT block local or LAN use because of it.
+ 
