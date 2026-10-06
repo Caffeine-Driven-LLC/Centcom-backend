@@ -88,6 +88,43 @@ and add `security / codeql` to the required checks at the same time. Until then 
   leads after the Contract PR process, not by a lane.
 - **Plan PRs** (titles without a lane ID) fail `pr-title` by design; the same applies.
 
+## Claude PR pipeline (`claude-pr.yml`)
+
+Reviews, fixes and merges lane PRs labelled `claude-automerge`, so PRs that an unattended local
+Claude Code session opens overnight can land without a human. Every trigger (a push, a finished
+`ci`/`security`/`pr-title` run, a dispatch, or the 30-minute sweep) re-reads the PR, and
+`tools/ci/claude-pr-state.mjs` picks one step, in this order:
+
+| State of the head SHA                                        | Step                                      |
+| ------------------------------------------------------------ | ----------------------------------------- |
+| not opted in, draft, fork, `do-not-merge`, changes requested | skip                                      |
+| touches a CODEOWNERS path (except `plan/STATUS.json`)        | hand off to a human                       |
+| conflicts with main                                          | Claude merges main, resolving conflicts   |
+| a required check failed                                      | Claude reads the log and fixes the code   |
+| no `claude-review` status                                    | Claude reviews; fixes blocking findings   |
+| approved, checks still running                               | wait                                      |
+| approved, green, behind main                                 | first in the queue: merge main; else wait |
+| approved, green, up to date                                  | squash-merge, one PR at a time            |
+
+- **Review rounds:** Claude approves only a commit it did not write; when it pushes fixes, the
+  next run reviews them. Nits are comments only. After three Claude fix commits (titles ending
+  `(claude)`) it reviews without fixing, and anything still failing goes to a human.
+- **Handoff:** the PR gets `claude-needs-human` and a comment saying why. Remove the label after
+  dealing with it to put the PR back in the pipeline.
+- **Pause:** set the repository variable `CLAUDE_AUTOMERGE` to `off`.
+- **Merge queue:** when several ready PRs are behind main, only the lowest-numbered one merges main
+  (a clean merge keeps its approval); the others wait, so CI does not re-run on all of them after
+  every merge.
+- **Shared with Centcom:** the scripts and prompts are identical in both repositories;
+  `tools/ci/claude-pr.config.json` holds this repository's checks, lane pattern and gates.
+- **Dependencies** may merge unattended: CI enforces exact pins, the 24 h release age, the
+  licence allow-list and the audit. `pnpm-workspace.yaml`, which holds those settings, may not.
+- **Local sessions** follow the lane loop in [`CLAUDE.md`](../CLAUDE.md): open the PR, add the
+  label last, then wait with `node tools/ci/claude-pr-wait.mjs <pr>` (exit 0 merged, 2 handed off,
+  3 closed, 4 timed out, 5 not opted in).
+- **Merges** use `GITHUB_TOKEN`, which starts no `push` workflows, so the pipeline dispatches `ci`
+  and `security` on `main` after each merge.
+
 ## Local equivalents
 
 ```bash

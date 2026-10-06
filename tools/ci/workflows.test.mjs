@@ -26,8 +26,13 @@ const jobIds = (yml) =>
   [...(yml.split(/^jobs:\s*$/m)[1] ?? '').matchAll(/^ {2}([\w-]+):\s*$/gm)].map((m) => m[1]);
 
 describe('workflow guardrails', () => {
-  it('has the ci, security and pr-title workflows', () => {
-    expect(Object.keys(workflows).sort()).toEqual(['ci.yml', 'pr-title.yml', 'security.yml']);
+  it('has the ci, security, pr-title and claude-pr workflows', () => {
+    expect(Object.keys(workflows).sort()).toEqual([
+      'ci.yml',
+      'claude-pr.yml',
+      'pr-title.yml',
+      'security.yml',
+    ]);
   });
 
   it.each(Object.keys(actionFiles))('%s pins every third-party action to a full SHA', (file) => {

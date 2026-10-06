@@ -6,6 +6,7 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch: # claude-merge.yml runs main's checks after a merge made with GITHUB_TOKEN
 
 permissions:
   contents: read
