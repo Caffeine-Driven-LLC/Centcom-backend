@@ -84,7 +84,10 @@ pnpm web:app     # same, as a chromeless app window</code></pre>
 <ul><li><strong>Start on web</strong> opens the workspace in the current browser tab.</li><li><strong>Start as app</strong> opens a window with no tabs or address bar, using its own browser profile at <code>~/.centcom/app-profile</code>. It needs Chrome, Chromium, Brave or Edge. A packaged desktop app is on the plan.</li></ul>
 <p>Both views show the same running agent. Close the workspace with the back arrow; the agent session ends.</p>
 <h3>The workspace</h3>
-<ul><li>A composer with the model menu, permission-mode menu and auto-skills toggle built in.</li><li>Tool cards you can expand, with a spinner while running and a tag when waiting for you.</li><li>An approval card with the exact command or diff, and the same Allow, Always this session and Decline choices as the terminal.</li><li>A side panel with Cento and every agent's state.</li></ul>
+<ul><li>A composer with the model menu, permission-mode menu and auto-skills toggle built in.</li><li>Tool cards you can expand, with a spinner while running and a tag when waiting for you.</li><li>An approval card with the exact command or diff, and the same Allow, Always this session and Decline choices as the terminal.</li><li>A side panel with Cento and every agent's state. Hide it with <kbd>ctrl</kbd>+<kbd>b</kbd>.</li>
+<li>A status bar with the context window, your session and weekly limits (with time until they reset), tokens, estimated cost, model and permission mode.</li>
+<li>A command palette (<kbd>ctrl</kbd>+<kbd>k</kbd>) for every command, model, mode and setting, a shortcuts screen (<kbd>?</kbd>), the Cento animation gallery (<code>/cento</code>), and a dark, light or system theme.</li>
+<li>Every slash command works in the browser exactly as in the terminal.</li></ul>
 <div class="note"><p>The server only accepts connections to <code>127.0.0.1</code> and <code>localhost</code> on its own port, checks the <code>Host</code> and <code>Origin</code> headers, and requires a secret token. See <a href="#security">Security</a>. If port 58008 is taken, set <code>CENTCOM_PORT</code>.</p></div></section>
 
 <section id="models"><h2>Models</h2>
