@@ -1,0 +1,6 @@
+# Store and check out text as LF on every platform. contracts/CONTRACTS.lock hashes
+# the exact bytes, so CRLF conversion on Windows would break `lock.py --check`.
+* text=auto eol=lf
+*.png binary
+*.woff2 binary
+*.ico binary

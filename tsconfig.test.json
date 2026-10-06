@@ -1,0 +1,35 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": true,
+    "paths": {
+      "@centcom/admin": ["./apps/admin/src/index.ts"],
+      "@centcom/api": ["./apps/api/src/index.ts"],
+      "@centcom/relay": ["./apps/relay/src/index.ts"],
+      "@centcom/worker": ["./apps/worker/src/index.ts"],
+      "@centcom/contracts": ["./packages/contracts/src/index.ts"],
+      "@centcom/core": ["./packages/core/src/index.ts"],
+      "@centcom/db": ["./packages/db/src/index.ts"],
+      "@centcom/testkit": ["./packages/testkit/src/index.ts"]
+    }
+  },
+  "include": [
+    "apps/*/test/**/*.ts",
+    "apps/*/src/**/*.test.ts",
+    "apps/*/scripts/**/*.ts",
+    "packages/*/test/**/*.ts",
+    "packages/*/src/**/*.test.ts",
+    "packages/*/scripts/**/*.ts",
+    "packages/*/*.config.ts",
+    "packages/*/vitest.setup.ts",
+    "tools/repo/**/*.ts",
+    "tools/repo/**/*.mjs",
+    "vitest.workspace.ts"
+  ],
+  "exclude": ["**/node_modules", "**/dist"]
+}

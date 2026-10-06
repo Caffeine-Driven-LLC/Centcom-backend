@@ -1,0 +1,12 @@
+# Shared, locked or generated files: formatting them would break the contract lock or the plan.
+contracts/
+plan/
+site/
+tools/plan/
+pnpm-lock.yaml
+dist/
+coverage/
+packages/contracts/src/generated/
+# Generated in part by tools/plan/progress.py.
+/README.md
+docs/progress.svg

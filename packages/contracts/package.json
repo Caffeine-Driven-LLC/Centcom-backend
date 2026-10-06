@@ -1,0 +1,21 @@
+{
+  "name": "@centcom/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Types, validators and helpers generated from contracts/.",
+  "type": "module",
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "contracts:gen": "node -e \"console.error('contracts:gen is not implemented yet: lane B003 (contract codegen) provides it.'); process.exit(1)\"",
+    "contracts:check": "python3 ../../tools/plan/lock.py --check"
+  }
+}
