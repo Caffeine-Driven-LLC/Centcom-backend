@@ -19,9 +19,14 @@ full commit SHAs, every workflow defaults to `permissions: contents: read`, and 
 | `security / codeql`   | CodeQL (JavaScript/TypeScript)                                             | **skipped** until enabled (see below)                                                                             |
 | `pr-title / pr-title` | `tools/ci/check-lane-title.mjs`                                            | the title does not start with `B###: `                                                                            |
 
-The required set from the B002 card is `ci / typecheck`, `ci / lint`, `ci / test`,
-`ci / build`, `ci / contract-lock`, `security / audit`, `security / secrets`,
-`security / codeql` and `pr-title`.
+**Required checks today:** `ci / typecheck`, `ci / lint`, `ci / test`, `ci / build`,
+`ci / integration`, `ci / contract-lock`, `security / audit`, `security / secrets` and
+`pr-title / pr-title`.
+
+**`security / codeql` is not a required check yet**, although the B002 card lists it. While the
+job is gated off it reports _skipped_, and GitHub treats a skipped required check as passing, so
+listing it would claim a scan that is not running. Add it to the required set in the same change
+that sets `CODEQL_ENABLED` (below).
 
 ### Branch protection is not available yet
 
@@ -42,7 +47,9 @@ only when the repository variable `CODEQL_ENABLED` is `true`:
 gh variable set CODEQL_ENABLED --body true --repo Caffeine-Driven-LLC/Centcom-backend
 ```
 
-Set it only after Code Security is enabled for the repository (or the repository becomes public).
+Set it only after Code Security is enabled for the repository (or the repository becomes public),
+and add `security / codeql` to the required checks at the same time. Until then the repository has
+**no static analysis (SAST)** beyond ESLint; B097 (security hardening) should revisit this.
 
 ## Supply chain
 
@@ -87,18 +94,35 @@ node tools/ci/check-lane-title.mjs "B002: CI pipeline"
 
 Recorded on 2026-10-06 while B002 was built. Each case is a scratch pull request into the B002
 branch (#3 to #6, never merged). On the B002 branch itself every check passed (CodeQL skipped).
+Each dependency case uses an exact pin, so the only red check is the gate under test.
 
-| Case                                            | PR  | Expected                                 | Result                                                                 |
-| ----------------------------------------------- | --- | ---------------------------------------- | ---------------------------------------------------------------------- |
-| One byte added to `contracts/00-foundations.md` | #3  | `ci / contract-lock` fails within 2 min  | failed in 7 s (`DRIFT 00-foundations.md`)                              |
-| Fake AWS access key in a new file               | #4  | `security / secrets` fails               | failed (`aws-access-token`, `generic-api-key`)                         |
-| GPL-3.0 production dependency in `apps/api`     | #5  | licence step of `security / audit` fails | `pnpm audit` passed, licence step failed naming `dryrun-gpl (GPL-3.0)` |
-| MIT production dependency in `apps/api`         | #6  | `security / audit` passes                | passed                                                                 |
-| Title without a lane ID                         | #6  | `pr-title` fails                         | failed                                                                 |
+| Case                                            | PR  | Expected                                 | Result                                                                                                                   | Other red checks                                      |
+| ----------------------------------------------- | --- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| One byte added to `contracts/00-foundations.md` | #3  | `ci / contract-lock` fails within 2 min  | failed in 7 s (`DRIFT 00-foundations.md`)                                                                                | `ci / test`, `ci / integration` (expected, see below) |
+| Fake AWS access key in a new file               | #4  | `security / secrets` fails               | failed (`aws-access-token`, `generic-api-key`)                                                                           | none; PR closed and branch deleted afterwards         |
+| `glpk.js@5.0.0` (GPL-3.0) in `apps/api`         | #5  | licence step of `security / audit` fails | `pnpm audit` passed; licence step failed naming `glpk.js@5.0.0 (GPL-3.0)` and its dependency `pako@2.2.0 (MIT AND Zlib)` | none                                                  |
+| `ms@2.1.3` (MIT) in `apps/api`                  | #6  | `security / audit` passes                | passed                                                                                                                   | `pr-title` only (next row)                            |
+| Title without a lane ID                         | #6  | `pr-title` fails                         | failed                                                                                                                   | none                                                  |
 
-Also measured on the B002 branch: the whole `ci` workflow took 67 s with the pnpm store restored
-from cache (limit 10 min). The integration job logged both services healthy before steps ran, then
-`DATABASE_URL: localhost:5432 reachable.` and `REDIS_URL: localhost:6379 reachable.`
+In #3, `ci / test` and `ci / integration` also fail, and that is expected: the repo test
+`contracts:check runs the contract lock check` (tools/repo/repo-layout.test.ts) runs
+`tools/plan/lock.py --check`, which fails on the edited contract. It is the same failure seen
+through the test suite, not a separate problem.
+
+`pako` is flagged because `Zlib` is not on the allow-list (GUIDELINES §3.9 lists MIT, Apache-2.0,
+BSD and ISC). Zlib is a permissive licence; adding it would be a GUIDELINES change, not a CI one.
+
+### Timing and cache (acceptance 5)
+
+- First run, cold cache: the `security / audit` job (run 37482920063) found no pnpm-store cache, installed, and
+  its post step logged `Cache saved with the key: node-cache-Linux-x64-pnpm-918787f7…`.
+- Every later run restored that key, for example `ci` run 37483154266: `Cache restored from key:
+node-cache-Linux-x64-pnpm-918787f7…` and `Cache hit occurred on the primary key …, not saving cache`
+  in each job. The key changes only when `pnpm-lock.yaml` changes.
+- The whole `ci` workflow took 67 s on the B002 branch (limit 10 min).
+
+The integration job logged `postgres service is healthy.` and `redis service is healthy.` before any
+step ran, then `DATABASE_URL: localhost:5432 reachable.` and `REDIS_URL: localhost:6379 reachable.`
 
 The dry runs found two bugs, fixed before merge:
 
