@@ -130,6 +130,24 @@ describe('root toolchain', () => {
     expect(yaml).toMatch(/^engineStrict: true$/m);
   });
 
+  it('gates fresh releases strictly; each exclusion carries a removal date', () => {
+    const yaml = read('pnpm-workspace.yaml');
+    expect(yaml).toMatch(/^minimumReleaseAge: \d+$/m);
+    expect(yaml).toMatch(/^minimumReleaseAgeStrict: true$/m);
+    const block = /^minimumReleaseAgeExclude:\n((?:[ \t]+.*\n?)*)/m.exec(yaml)?.[1] ?? '';
+    let comment = '';
+    for (const line of block.split('\n')) {
+      const t = line.trim();
+      if (t.startsWith('#')) comment += `${t}\n`;
+      else if (t.startsWith('- ')) {
+        expect(comment, `${t} needs a reason and "Remove after YYYY-MM-DD"`).toMatch(
+          /Remove after \d{4}-\d{2}-\d{2}/,
+        );
+        comment = '';
+      }
+    }
+  });
+
   it('pnpm itself resolves ignoreScripts to true', { timeout: 30_000 }, () => {
     const r = spawnSync('pnpm', ['config', 'get', 'ignoreScripts'], {
       cwd: root,
@@ -139,5 +157,27 @@ describe('root toolchain', () => {
     });
     expect(r.status).toBe(0);
     expect(r.stdout.trim()).toBe('true');
+  });
+});
+
+describe('contracts scripts before B003', () => {
+  const pnpm = (script: string) =>
+    spawnSync('pnpm', ['-s', script], {
+      cwd: root,
+      encoding: 'utf8',
+      shell: process.platform === 'win32',
+      timeout: 30_000,
+    });
+
+  it('contracts:check runs the contract lock check', { timeout: 30_000 }, () => {
+    const r = pnpm('contracts:check');
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('contracts lock OK');
+  });
+
+  it('contracts:gen fails and names the lane that provides it', { timeout: 30_000 }, () => {
+    const r = pnpm('contracts:gen');
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toContain('lane B003');
   });
 });

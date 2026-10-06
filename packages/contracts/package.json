@@ -14,6 +14,8 @@
     }
   },
   "scripts": {
-    "build": "tsc -b"
+    "build": "tsc -b",
+    "contracts:gen": "node -e \"console.error('contracts:gen is not implemented yet: lane B003 (contract codegen) provides it.'); process.exit(1)\"",
+    "contracts:check": "python3 ../../tools/plan/lock.py --check"
   }
 }

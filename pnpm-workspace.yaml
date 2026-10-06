@@ -9,16 +9,14 @@ ignoreScripts: true
 engineStrict: true
 # `pnpm add` writes exact versions; ranges are rejected by `pnpm lint` (tools/repo/check-exact-pins.mjs).
 saveExact: true
+
+# Supply-chain delay: never install a version published less than 24 h ago. Strict mode makes
+# pnpm fail instead of silently adding entries to minimumReleaseAgeExclude.
+minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true
+# Every exclusion needs a reason and a removal date; delete it once the version is older than 24 h.
 minimumReleaseAgeExclude:
-  - '@typescript-eslint/eslint-plugin@8.71.1'
-  - '@typescript-eslint/parser@8.71.1'
-  - '@typescript-eslint/project-service@8.71.1'
-  - '@typescript-eslint/scope-manager@8.71.1'
-  - '@typescript-eslint/tsconfig-utils@8.71.1'
-  - '@typescript-eslint/type-utils@8.71.1'
-  - '@typescript-eslint/types@8.71.1'
-  - '@typescript-eslint/typescript-estree@8.71.1'
-  - '@typescript-eslint/utils@8.71.1'
-  - '@typescript-eslint/visitor-keys@8.71.1'
-  - typescript-eslint@8.71.1
+  # Added 2026-10-06. vite shipped same-day patches on every supported line (8.3.3, 8.2.4, 8.1.6,
+  # 7.3.7, 6.4.4), which usually means a security fix, so we take it instead of 8.3.2.
+  # Remove after 2026-10-07T04:10Z (published 2026-10-06T04:10Z).
   - vite@8.3.3
