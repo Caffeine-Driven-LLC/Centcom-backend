@@ -59,7 +59,7 @@ pnpm web:app     # same, as a chromeless app window</code></pre>
 <p>Pick a folder, choose Claude Code or Codex, then <strong>Start on web</strong> or <strong>Start as app</strong>.</p></section>
 
 <section id="terminal"><h2>Terminal app</h2>
-<p>The layout adapts to your terminal size. At 120 columns and 34 rows or more you get the large Cento, the fleet panel and the full transcript. Smaller windows get a small Cento, then none, and the minimum usable size is 60 by 14.</p>
+<p>The layout adapts to your terminal size. At 120 columns and 34 rows or more you get the large Cento and the full transcript. A panel listing everyone in the session appears only when more than one person or agent has joined. Smaller windows get a small Cento, then none, and the minimum usable size is 60 by 14.</p>
 <ul><li><strong>Transcript.</strong> Your messages, streamed replies with markdown, thinking summaries, and tool calls with results and diffs. It stays put when you scroll up and shows how many new lines arrived.</li>
 <li><strong>Live strip.</strong> Cento, the current activity, elapsed time and tokens.</li>
 <li><strong>Prompt.</strong> Multi-line input, history, paste, and a slash-command popup. End a line with <code>\</code> and press <kbd>Enter</kbd> for a new line.</li>
@@ -70,7 +70,7 @@ pnpm web:app     # same, as a chromeless app window</code></pre>
 <table><thead><tr><th>Key</th><th>Action</th></tr></thead><tbody>
 <tr><td><kbd>Enter</kbd></td><td>Send</td></tr><tr><td><kbd>ctrl</kbd>+<kbd>j</kbd></td><td>New line</td></tr><tr><td><kbd>Esc</kbd></td><td>Interrupt the agent, or close a panel</td></tr>
 <tr><td><kbd>ctrl</kbd>+<kbd>c</kbd></td><td>Interrupt; press twice to quit</td></tr><tr><td><kbd>shift</kbd>+<kbd>tab</kbd></td><td>Cycle the permission mode</td></tr>
-<tr><td><kbd>ctrl</kbd>+<kbd>k</kbd></td><td>Command palette</td></tr><tr><td><kbd>ctrl</kbd>+<kbd>o</kbd></td><td>Choose the model</td></tr><tr><td><kbd>ctrl</kbd>+<kbd>t</kbd></td><td>Show or hide the fleet panel</td></tr>
+<tr><td><kbd>ctrl</kbd>+<kbd>k</kbd></td><td>Command palette</td></tr><tr><td><kbd>ctrl</kbd>+<kbd>o</kbd></td><td>Choose the model</td></tr><tr><td><kbd>ctrl</kbd>+<kbd>t</kbd></td><td>Show or hide the session panel (shown once others join)</td></tr>
 <tr><td><kbd>?</kbd></td><td>Help (when the prompt is empty)</td></tr><tr><td><kbd>PageUp</kbd> / <kbd>PageDown</kbd></td><td>Scroll the transcript</td></tr><tr><td><kbd>shift</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd></td><td>Scroll three lines</td></tr>
 <tr><td><kbd>End</kbd></td><td>Jump to the latest message</td></tr><tr><td><kbd>↑</kbd> / <kbd>↓</kbd></td><td>Prompt history</td></tr>
 <tr><td><kbd>ctrl</kbd>+<kbd>a</kbd> / <kbd>e</kbd></td><td>Start / end of line</td></tr><tr><td><kbd>ctrl</kbd>+<kbd>w</kbd> / <kbd>u</kbd></td><td>Delete word / to line start</td></tr><tr><td><kbd>alt</kbd>+<kbd>b</kbd> / <kbd>f</kbd></td><td>Word left / right</td></tr>
@@ -84,7 +84,7 @@ pnpm web:app     # same, as a chromeless app window</code></pre>
 <ul><li><strong>Start on web</strong> opens the workspace in the current browser tab.</li><li><strong>Start as app</strong> opens a window with no tabs or address bar, using its own browser profile at <code>~/.centcom/app-profile</code>. It needs Chrome, Chromium, Brave or Edge. A packaged desktop app is on the plan.</li></ul>
 <p>Both views show the same running agent. Close the workspace with the back arrow; the agent session ends.</p>
 <h3>The workspace</h3>
-<ul><li>A composer with the model menu, permission-mode menu and auto-skills toggle built in.</li><li>Tool cards you can expand, with a spinner while running and a tag when waiting for you.</li><li>An approval card with the exact command or diff, and the same Allow, Always this session and Decline choices as the terminal.</li><li>A side panel with Cento and every agent's state. Hide it with <kbd>ctrl</kbd>+<kbd>b</kbd>.</li>
+<ul><li>A composer with the model menu, permission-mode menu and auto-skills toggle built in.</li><li>Tool cards you can expand, with a spinner while running and a tag when waiting for you.</li><li>An approval card with the exact command or diff, and the same Allow, Always this session and Decline choices as the terminal.</li><li>A side panel with your Cento and its state; when others join it also lists everyone in the session. Hide it with <kbd>ctrl</kbd>+<kbd>b</kbd>.</li>
 <li>A status bar with the context window, your session and weekly limits (with time until they reset), tokens, estimated cost, model and permission mode.</li>
 <li>A command palette (<kbd>ctrl</kbd>+<kbd>k</kbd>) for every command, model, mode and setting, a shortcuts screen (<kbd>?</kbd>), the Cento animation gallery (<code>/cento</code>), and a dark, light or system theme.</li>
 <li>Every slash command works in the browser exactly as in the terminal.</li></ul>
