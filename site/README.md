@@ -32,4 +32,4 @@ Rules for editing copy: every feature is tagged **Available now** or **Planned**
 
 ## Credits
 
-Built by **Caffeine Driven LLC**. GitHub: [Caffeine-Driven-LLC](https://github.com/Caffeine-Driven-LLC). Lead developer: Alexander Gese, [@AlexanderGese](https://github.com/AlexanderGese). Fonts: Instrument Sans, JetBrains Mono (SIL Open Font License, licenses in `public/fonts`). Cento and the Abyss/Shallows design system come from the client repo's `assets/`.
+Built by **Caffeine Driven LLC**. GitHub: [Caffeine-Driven-LLC](https://github.com/Caffeine-Driven-LLC). Lead developer: Alexander Gese, [@AlexanderGese](https://github.com/AlexanderGese). Fonts: Instrument Sans, JetBrains Mono (SIL Open Font License, licenses in `public/fonts`). Cento and the Graphite/Paper design system come from the client repo's `assets/`.

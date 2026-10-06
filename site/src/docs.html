@@ -3,7 +3,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Centcom documentation</title>
 <meta name="description" content="Install, configure and use Centcom: the terminal app, the local web app, Claude Code and Codex engines, permissions, auto skills, security and troubleshooting.">
-<meta name="theme-color" content="#07091A">
+<meta name="theme-color" content="#0A0A0C">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Crect x='2' y='1' width='4' height='5' fill='%237C5CFF'/%3E%3Crect x='1' y='3' width='6' height='2' fill='%237C5CFF'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/site.css">
 </head><body>
@@ -64,7 +64,7 @@ pnpm web:app     # same, as a chromeless app window</code></pre>
 <li><strong>Live strip.</strong> Cento, the current activity, elapsed time and tokens.</li>
 <li><strong>Prompt.</strong> Multi-line input, history, paste, and a slash-command popup. End a line with <code>\</code> and press <kbd>Enter</kbd> for a new line.</li>
 <li><strong>Status line.</strong> Permission mode, agent state, tokens, estimated cost and your 5-hour limit when the provider reports it.</li>
-<li><strong>Appearance.</strong> Abyss (dark) and Shallows (light) themes; truecolor, 256, 16 or no color (<code>NO_COLOR</code> is honored); reduced motion.</li></ul></section>
+<li><strong>Appearance.</strong> Graphite (dark) and Paper (light) themes; truecolor, 256, 16 or no color (<code>NO_COLOR</code> is honored); reduced motion.</li></ul></section>
 
 <section id="keys"><h2>Keys</h2>
 <table><thead><tr><th>Key</th><th>Action</th></tr></thead><tbody>
@@ -169,7 +169,7 @@ pnpm centcom --engine codex</code></pre>
 <tr><td><code>--dangerously-skip-permissions</code>, <code>--yolo</code></td><td>Never ask; see <a href="#skip">above</a></td></tr>
 <tr><td><code>--mascot &lt;large|small|off&gt;</code></td><td>Cento size (default: automatic from terminal height)</td></tr>
 <tr><td><code>--cento-color &lt;violet|red|yellow|green|brown&gt;</code></td><td>Cento's color</td></tr>
-<tr><td><code>--theme &lt;dark|light&gt;</code></td><td>Abyss (dark) or Shallows (light)</td></tr>
+<tr><td><code>--theme &lt;dark|light&gt;</code></td><td>Graphite (dark) or Paper (light)</td></tr>
 <tr><td><code>--colors &lt;truecolor|256|16|never&gt;</code></td><td>Force a color depth</td></tr>
 <tr><td><code>--no-motion</code></td><td>Turn animation off</td></tr>
 <tr><td><code>provider status</code></td><td>Show whether Claude Code and Codex are installed and signed in</td></tr>
@@ -226,7 +226,7 @@ pnpm centcom --engine codex</code></pre>
 <p>The work is split into 100+ independent lanes per side, each with a goal, contracts, acceptance criteria and tests. Start with <code>plan/START_HERE.md</code> in either repository, pick a lane from the "Ready to pick up" list in the README, and update <code>plan/STATUS.json</code> when you finish or advance one. Run <code>pnpm typecheck && pnpm test</code> before opening a pull request.</p></section>
 
 <section id="credits"><h2>Credits and legal</h2>
-<p><strong>Centcom is built by Caffeine Driven LLC.</strong> Lead developer: Alexander Gese (<a href="https://github.com/AlexanderGese" rel="noopener">@AlexanderGese</a>). Organization: <a href="https://github.com/Caffeine-Driven-LLC" rel="noopener">github.com/Caffeine-Driven-LLC</a>. The pixel octopus Cento, the Abyss and Shallows themes and the spinner lines were created for this project.</p>
+<p><strong>Centcom is built by Caffeine Driven LLC.</strong> Lead developer: Alexander Gese (<a href="https://github.com/AlexanderGese" rel="noopener">@AlexanderGese</a>). Organization: <a href="https://github.com/Caffeine-Driven-LLC" rel="noopener">github.com/Caffeine-Driven-LLC</a>. The pixel octopus Cento, the Graphite and Paper themes and the spinner lines were created for this project.</p>
 <p>The bundled centcom-master skills belong to their original authors and are fetched from their public repositories under their own terms; Centcom does not redistribute them. Fonts: Instrument Sans and JetBrains Mono (SIL Open Font License).</p>
 <p>Claude and Claude Code are trademarks of Anthropic, PBC. Codex and OpenAI are trademarks of OpenAI. Centcom is not affiliated with or endorsed by either company. © {{year}} Caffeine Driven LLC. All rights reserved.</p></section>
 </article>

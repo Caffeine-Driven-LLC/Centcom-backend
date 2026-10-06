@@ -1,7 +1,7 @@
 @font-face { font-family: "Instrument"; src: url(/fonts/instrument-sans-latin-wght-normal.woff2) format("woff2"); font-weight: 400 700; font-display: swap; }
 @font-face { font-family: "Mono"; src: url(/fonts/jetbrains-mono-latin-wght-normal.woff2) format("woff2"); font-weight: 100 800; font-display: swap; }
 :root {
-  --abyss-950: #07091A; --abyss-900: #0B1026; --abyss-850: #0F1632; --abyss-800: #141C3E; --abyss-700: #1C2650; --abyss-600: #2A3568; --abyss-400: #7384CC; --abyss-300: #A9B6E8; --abyss-200: #C9D2F5; --abyss-100: #E6EBFF;
+  --abyss-950: #0A0A0C; --abyss-900: #101012; --abyss-850: #151518; --abyss-800: #1B1B1F; --abyss-700: #26262B; --abyss-600: #34343B; --abyss-400: #8A8A94; --abyss-300: #B6B6BE; --abyss-200: #D4D4DA; --abyss-100: #ECECEF;
   --cento: #7C5CFF; --cento-hi: #A892FF; --glow: #3DF2C8; --warn: #FFD166; --danger: #FF5C5C; --ok: #4ADE80;
   --display: "Instrument", system-ui, -apple-system, "Segoe UI", sans-serif; --body: "Instrument", system-ui, -apple-system, "Segoe UI", sans-serif; --mono: "Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --wrap: 1160px; --ease: cubic-bezier(.2, .7, .2, 1);
@@ -35,7 +35,7 @@ code, kbd, pre { font-family: var(--mono); } code { font-size: .88em; background
 .term { border: 1px solid var(--abyss-600); border-radius: 4px; background: var(--abyss-900); box-shadow: 0 0 0 1px rgb(255 255 255 / .04), 0 24px 60px -24px rgb(0 0 0 / .8); overflow: hidden; }
 .term-bar { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; background: var(--abyss-850); border-bottom: 1px solid var(--abyss-700); font: 12.5px var(--mono); color: var(--abyss-400); } .term-bar i { width: 11px; height: 11px; border-radius: 50%; background: var(--abyss-600); } .term-bar span { margin-left: 10px; }
 .term-body { display: grid; grid-template-columns: 1fr 250px; min-height: 440px; } .feed { padding: 20px 24px; font: 14px/1.7 var(--mono); display: flex; flex-direction: column; gap: 8px; } .side { border-left: 1px solid var(--abyss-700); background: var(--abyss-850); padding: 18px; display: grid; align-content: start; gap: 14px; justify-items: center; }
-.tl { opacity: 0; animation: tl .15s linear forwards; } @keyframes tl { to { opacity: 1; } } .tl .u { color: var(--cento-hi); font-weight: 600; } .tl .m { color: var(--abyss-400); } .tl .t { color: var(--abyss-100); font-weight: 600; } .tl .ok { color: var(--ok); } .tl .path { color: #7DBAFF; }
+.tl { opacity: 0; animation: tl .15s linear forwards; } @keyframes tl { to { opacity: 1; } } .tl .u { color: var(--cento-hi); font-weight: 600; } .tl .m { color: var(--abyss-400); } .tl .t { color: var(--abyss-100); font-weight: 600; } .tl .ok { color: var(--ok); } .tl .path { color: #A892FF; }
 .dif { border: 1px solid var(--abyss-700); border-radius: 3px; overflow: hidden; background: var(--abyss-950); } .dif div { padding: 0 12px; white-space: pre; font-size: 13px; } .dif .a { background: rgb(74 222 128 / .14); } .dif .d { background: rgb(255 92 92 / .14); } .dif .h { color: var(--abyss-400); }
 .apr { border: 1px solid var(--warn); border-radius: 3px; padding: 12px 14px; background: var(--abyss-900); } .apr b { color: var(--warn); } .apr .keys { margin-top: 8px; color: var(--abyss-300); } .apr kbd { color: var(--ok); font-weight: 700; }
 .state { text-align: center; font: 13px var(--mono); color: var(--abyss-300); } .state b { color: var(--glow); font-weight: 600; }

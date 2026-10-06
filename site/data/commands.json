@@ -29,7 +29,7 @@
  {
   "name": "theme",
   "args": "[dark|light]",
-  "desc": "Switch Abyss / Shallows"
+  "desc": "Switch Graphite / Paper"
  },
  {
   "name": "motion",
