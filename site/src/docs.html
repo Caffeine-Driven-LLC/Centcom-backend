@@ -13,7 +13,7 @@
   <input id="q" type="search" placeholder="Search docs  (press /)" aria-label="Search the documentation" autocomplete="off">
   <p id="nohit" class="muted" hidden>Nothing matches. Try a shorter word.</p>
   <h5>Start</h5><a href="#overview">Overview</a><a href="#install">Install</a><a href="#quickstart">Quick start</a>
-  <h5>Using Centcom</h5><a href="#terminal">Terminal app</a><a href="#keys">Keys</a><a href="#commands">Slash commands</a><a href="#web">Web and desktop app</a><a href="#models">Models</a>
+  <h5>Using Centcom</h5><a href="#terminal">Terminal app</a><a href="#keys">Keys</a><a href="#commands">Slash commands</a><a href="#web">Web and desktop app</a><a href="#sessions">Saved conversations</a><a href="#scripting">Scripting</a><a href="#models">Models</a>
   <h5>Agents</h5><a href="#agents">Claude Code and Codex</a><a href="#permissions">Permissions</a><a href="#skip">Dangerously skip permissions</a><a href="#skills">Auto skills</a>
   <h5>Trust</h5><a href="#security">Security and privacy</a><a href="#whopays">Who pays</a>
   <h5>Coming</h5><a href="#multiplayer">Multiplayer and teams</a><a href="#plans">Plans and limits</a>
@@ -89,6 +89,22 @@ pnpm web:app     # same, as a chromeless app window</code></pre>
 <li>A command palette (<kbd>ctrl</kbd>+<kbd>k</kbd>) for every command, model, mode and setting, a shortcuts screen (<kbd>?</kbd>), the Cento animation gallery (<code>/cento</code>), and a dark, light or system theme.</li>
 <li>Every slash command works in the browser exactly as in the terminal.</li></ul>
 <div class="note"><p>The server only accepts connections to <code>127.0.0.1</code> and <code>localhost</code> on its own port, checks the <code>Host</code> and <code>Origin</code> headers, and requires a secret token. See <a href="#security">Security</a>. If port 58008 is taken, set <code>CENTCOM_PORT</code>.</p></div></section>
+
+<section id="sessions"><h2>Saved conversations</h2>
+<p>Every conversation is saved as you go, in <code>~/.centcom/sessions</code> (private files, written atomically, one small file per conversation plus its transcript). Closing the app, or the browser, loses nothing.</p>
+<ul><li><code>centcom -c</code> (or <code>--continue</code>) reopens the most recent conversation in this folder. <code>--resume &lt;id&gt;</code> picks a specific one.</li>
+<li><code>/resume</code> lists the saved conversations for this folder; <code>/resume 2</code> switches to the second. In the web app they are in the command palette (<kbd>ctrl</kbd>+<kbd>k</kbd>), and the launcher offers "Continue last conversation".</li>
+<li><code>/new</code> (or <code>/clear</code>) starts with an empty context. The old conversation stays saved.</li>
+<li><code>--no-save</code> keeps a session in memory only.</li></ul>
+<p>Resuming works through the agent's own session (Claude Code's <code>--resume</code>), so it genuinely remembers earlier messages, not just the text on screen. Half-finished work, such as a command that was running or an approval that was pending, is shown as canceled rather than replayed. Large command output and diffs are trimmed to keep files small.</p></section>
+
+<section id="scripting"><h2>Scripting</h2>
+<pre><code>centcom -p "summarise this repo"
+cat error.log | centcom -p "what went wrong?"
+centcom -p "list the TODOs" --output-format json</code></pre>
+<p><code>-p</code> (or <code>--print</code>) runs one task without a screen and exits. Text goes to stdout, problems to stderr. Piped input is appended to your prompt. Formats: <code>text</code> (streamed as it arrives), <code>json</code> (one object with the result, model, token usage, an estimated cost, the session id and anything declined) and <code>stream-json</code> (one normalised event per line).</p>
+<p>Nobody is there to approve, so anything that needs an approval is <strong>declined</strong> and listed on stderr. Allow it deliberately with <code>--mode acceptEdits</code> (edits) or <code>--dangerously-skip-permissions</code> (everything).</p>
+<table><thead><tr><th>Exit code</th><th>Meaning</th></tr></thead><tbody><tr><td>0</td><td>Done</td></tr><tr><td>1</td><td>An error (not signed in, provider error)</td></tr><tr><td>2</td><td>Nothing to do: no prompt given</td></tr><tr><td>3</td><td>Finished, but an action needed an approval and was declined</td></tr></tbody></table></section>
 
 <section id="models"><h2>Models</h2>
 <p>Press <kbd>ctrl</kbd>+<kbd>o</kbd>, use <code>/model</code>, or open the model menu in the web composer. A change applies from your next message; a running turn keeps its model. <code>/model &lt;id&gt;</code> accepts any model id your CLI understands.</p>
@@ -166,6 +182,11 @@ pnpm centcom --engine codex</code></pre>
 
 <section id="flags"><h2>Command-line flags</h2>
 <table><thead><tr><th>Flag</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>-p</code>, <code>--print</code> [prompt]</td><td>Run once, print, exit (see <a href="#scripting">Scripting</a>)</td></tr>
+<tr><td><code>--output-format &lt;text|json|stream-json&gt;</code></td><td>What <code>-p</code> prints</td></tr>
+<tr><td><code>-c</code>, <code>--continue</code> / <code>--resume &lt;id&gt;</code></td><td>Continue a saved conversation</td></tr>
+<tr><td><code>--no-save</code></td><td>Do not save this conversation</td></tr>
+<tr><td><code>--model &lt;name&gt;</code></td><td>Model to use</td></tr>
 <tr><td><code>--demo</code></td><td>Scripted demo agent; no login or model</td></tr>
 <tr><td><code>--engine &lt;claude-code|codex|demo&gt;</code></td><td>Choose the agent (default: Claude Code if installed)</td></tr>
 <tr><td><code>--mode &lt;default|acceptEdits|plan|bypassPermissions&gt;</code></td><td>Start in a permission mode</td></tr>
@@ -183,6 +204,7 @@ pnpm centcom --engine codex</code></pre>
 <section id="env"><h2>Files and environment</h2>
 <table><thead><tr><th>Item</th><th>Purpose</th></tr></thead><tbody>
 <tr><td><code>~/.centcom/token</code></td><td>Secret for the local web server (mode 0600)</td></tr>
+<tr><td><code>~/.centcom/sessions</code></td><td>Saved conversations</td></tr>
 <tr><td><code>~/.centcom/recent.json</code></td><td>Recent project folders in the launcher</td></tr>
 <tr><td><code>~/.centcom/app-profile</code></td><td>Browser profile for "Start as app"</td></tr>
 <tr><td><code>~/.centcom/master</code>, <code>skills-cache</code></td><td>Bundled skills and their source clones</td></tr>
@@ -222,7 +244,7 @@ pnpm centcom --engine codex</code></pre>
 <p>Run <code>/skills</code> to see what was found and <code>/auto on</code> to make sure matching is enabled. Run <code>pnpm skills:sync</code> once to fetch the bundled library.</p></section>
 
 <section id="status"><h2>Status and next steps</h2>
-<p>About 29% of the client is built (weighted by lane size), as of {{updated}}. The live bar is in the <a href="https://github.com/Caffeine-Driven-LLC/Centcom#progress" rel="noopener">client README</a>. Next up:</p>
+<p>About 32% of the client is built (weighted by lane size), as of {{updated}}. The live bar is in the <a href="https://github.com/Caffeine-Driven-LLC/Centcom#progress" rel="noopener">client README</a>. Next up:</p>
 <ol>{{next_steps}}</ol></section>
 
 <section id="contributing"><h2>Contributing</h2>
