@@ -1,6 +1,15 @@
 {
  "updated": "2026-10-06",
- "lanes": {},
+ "lanes": {
+  "B001": {
+   "pct": 1,
+   "note": "merged in #1"
+  },
+  "B002": {
+   "pct": 0.9,
+   "note": "PR #2 in review: all checks green, dry runs recorded in docs/ci.md"
+  }
+ },
  "next": [
   {
    "title": "B001 monorepo scaffold, then B002 CI and B003 contract codegen",

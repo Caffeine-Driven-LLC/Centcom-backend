@@ -1,0 +1,11 @@
+# gitleaks findings accepted by fingerprint (commit:file:rule:line), so each entry covers exactly one
+# occurrence. Every entry is a deliberate test value; anything new is still reported. Added by B002.
+#
+# CT-CRYPTO known-answer vectors ("Fixed test keys; NEVER use these keys anywhere real").
+391d7576bff7e73fa5e74a0e46d8af8ce21be3b5:contracts/fixtures/crypto/vectors.json:generic-api-key:5
+391d7576bff7e73fa5e74a0e46d8af8ce21be3b5:contracts/fixtures/crypto/vectors.json:generic-api-key:8
+391d7576bff7e73fa5e74a0e46d8af8ce21be3b5:contracts/fixtures/crypto/vectors.json:generic-api-key:16
+# Fake AWS-shaped strings used to test the credential-leak guard (CT-PROVIDER fixtures, lane B101).
+c5a1eff1dfe7301923c4ff9e4bfbdbfb90d87eb3:contracts/fixtures/providers/secret-patterns.json:aws-access-token:37
+c5a1eff1dfe7301923c4ff9e4bfbdbfb90d87eb3:plan/backend/B101.md:aws-access-token:80
+c5a1eff1dfe7301923c4ff9e4bfbdbfb90d87eb3:plan/lanes/backend/B101.json:aws-access-token:73

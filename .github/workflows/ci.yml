@@ -1,0 +1,120 @@
+# B002 CI: typecheck, lint, unit tests with coverage, build, integration tests against
+# Postgres 16 and Redis 7, and the contract-lock check. Check names: `ci / <job>`.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: pnpm typecheck
+
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: pnpm lint
+
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: pnpm test
+
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: pnpm build
+
+  integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # Steps start only after both services report healthy. A service that is not healthy within
+    # 12 retries x 5 s = 60 s fails the job during container setup, and its log is printed there.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: centcom
+          POSTGRES_PASSWORD: centcom # CI-only throwaway database; not a secret
+          POSTGRES_DB: centcom_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U centcom -d centcom_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      DATABASE_URL: postgres://centcom:centcom@localhost:5432/centcom_test
+      REDIS_URL: redis://localhost:6379/0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Services reachable
+        run: node tools/ci/wait-for-services.mjs
+      - name: Tests with DATABASE_URL and REDIS_URL
+        run: pnpm test
+
+  contract-lock:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Lock tool present
+        run: |
+          if [ ! -f tools/plan/lock.py ]; then
+            echo "::error file=tools/plan/lock.py::tools/plan/lock.py is missing; the contract-lock check cannot run."
+            exit 1
+          fi
+      - name: contracts/ matches CONTRACTS.lock
+        run: python3 tools/plan/lock.py --check
+      - name: No change to contracts/ in this pull request
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          changed="$(git diff --name-only "$BASE_SHA"...HEAD -- contracts/)"
+          if [ -n "$changed" ]; then
+            echo "::error::contracts/ is read-only in lanes (GUIDELINES §2.1). Changed files:"
+            echo "$changed"
+            echo "Contract changes go through a Contract PR (GUIDELINES §9)."
+            exit 1
+          fi

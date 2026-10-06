@@ -1,0 +1,82 @@
+# B002 security: dependency audit + licence allow-list, secret scan, and CodeQL.
+# Check names: `security / audit`, `security / secrets`, `security / codeql`.
+name: security
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 6 * * 1' # weekly, so new advisories surface without a code change
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      # Fails closed: a high/critical advisory or an unreachable audit service turns this red.
+      - name: Audit production dependencies (high and critical)
+        run: pnpm audit --prod --audit-level high
+      - name: Licence allow-list (MIT, Apache-2.0, BSD, ISC)
+        if: ${{ !cancelled() }}
+        run: node tools/ci/check-licences.mjs
+
+  secrets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      # gitleaks CLI (MIT). The gitleaks GitHub Action needs a licence key for organisation repos,
+      # so the release binary is used directly and verified against its published checksum.
+      GITLEAKS_VERSION: 8.30.1
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Install gitleaks
+        run: |
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/$archive" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" gitleaks
+      # Scan only history reachable from the checked-out commit (for a PR, its merge commit).
+      # Without --log-opts gitleaks walks every fetched ref (`git log --all`), so a secret pushed
+      # to any branch would fail every other pull request too.
+      - name: Scan git history for secrets
+        run: |
+          "$RUNNER_TEMP/gitleaks" git --log-opts="HEAD" --redact --verbose --exit-code 1 --no-banner .
+
+  codeql:
+    # CodeQL's licence does not cover private, non-open-source code without GitHub Code Security.
+    # The job is skipped until the repository variable CODEQL_ENABLED is set to 'true' (docs/ci.md).
+    if: vars.CODEQL_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          languages: javascript-typescript
+          build-mode: none
+      - uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          category: /language:javascript-typescript
