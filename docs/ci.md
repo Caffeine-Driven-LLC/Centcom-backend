@@ -88,6 +88,92 @@ and add `security / codeql` to the required checks at the same time. Until then 
   leads after the Contract PR process, not by a lane.
 - **Plan PRs** (titles without a lane ID) fail `pr-title` by design; the same applies.
 
+## Claude PR pipeline (`claude-pr.yml`)
+
+Reviews, fixes and merges lane PRs labelled `claude-automerge`, so PRs that an unattended local
+Claude Code session opens overnight (see [`CLAUDE.md`](../CLAUDE.md)) can land without a human.
+Every trigger re-reads the PR, and `tools/ci/claude-pr-state.mjs` picks one step:
+
+| State of the head SHA                                                | Step                                        |
+| -------------------------------------------------------------------- | ------------------------------------------- |
+| not opted in, draft, fork, `do-not-merge`, a standing change request | skip                                        |
+| touches a protected path, or its files cannot all be listed          | hand off to a human                         |
+| conflicts with main                                                  | merge main; Claude resolves real conflicts  |
+| a required check failed                                              | Claude reads the job log and fixes the code |
+| no `claude-review` status from this pipeline                         | Claude reviews; fixes blocking findings     |
+| approved, checks still running                                       | wait                                        |
+| approved, green, behind main                                         | first in the queue: merge main; others wait |
+| approved, green, up to date                                          | squash-merge, one PR at a time              |
+
+Protected paths are `protectedPaths` and `protectedNames` in `tools/ci/claude-pr.config.json`:
+`contracts/`, `plan/` (a lane may only modify `plan/STATUS.json`), `.github/`, `tools/plan/`,
+`tools/ci/`, `pnpm-workspace.yaml`, Claude's own configuration (`CLAUDE.md` anywhere, `.claude/`,
+`.mcp.json`) and the package-manager hooks (`.npmrc`, `.pnpmfile.*`). Renames count on both sides.
+
+**How it fits together**
+
+- **Triggers.** PR events go through `claude-pr-trigger.yml`, which only relays them, so
+  `claude-pr.yml` always runs as it is on main and a PR cannot change the pipeline that judges it.
+  Finished `ci`/`security`/`pr-title` runs on `lane/` branches, dispatches, and a sweep every four
+  hours also re-plan. Every run re-derives the step, so a lost event only costs time.
+- **Reviews run no PR code.** A review job installs nothing and Claude may not run builds or tests,
+  so the code under review cannot forge the verdict. Fix and conflict-resolution jobs may run the
+  gates, but their results never approve anything: Claude approves only a commit it did not write,
+  and its fixes are reviewed by the next run after CI has checked them. Nits are comments only.
+- **The record job** writes `claude-review` on the planned head. It runs no PR code, and the merge
+  gate only accepts a `claude-review` posted by this pipeline (`github-actions[bot]`). A merge of
+  main keeps an approval only if the merged head's changes against main equal the approved
+  commit's changes against their merge base (checked by patch-id, outside Claude's job).
+- **Fix rounds.** After three Claude fix commits (subjects ending `(claude)`), Claude reviews
+  without fixing and anything still failing goes to a human.
+- **Merge queue.** When several approved PRs are behind main, only the lowest-numbered one merges
+  main; the others wait, so CI does not re-run on all of them after every merge. Merges happen one
+  at a time.
+- **Progress bookkeeping.** Lane PRs do not touch `plan/STATUS.json`, README's progress block or
+  `docs/progress.svg`. After each merge the merge job marks the PR's lanes merged in
+  `plan/STATUS.json` on main and regenerates the other two. When an older PR conflicts in those
+  files, `tools/ci/claude-pr-bookkeeping.mjs` resolves them without Claude.
+- **Merges** use `GITHUB_TOKEN`, which starts no `push` workflows, so the merge job dispatches `ci`
+  and `security` on main itself.
+- **Tripwire.** A push to main by the Claude App means something bypassed the merge gate; the
+  workflow opens an issue and fails.
+- **Shared with Centcom.** The scripts and prompts are identical in both repositories;
+  `tools/ci/claude-pr.config.json` holds each repository's checks, lane pattern and gates.
+
+**Setup** (once per repository)
+
+1. The official Claude GitHub App is installed on the organisation (all repositories). An
+   organisation owner approves any new permissions it asks for.
+2. Repository secret `CLAUDE_CODE_OAUTH_TOKEN`, from `claude setup-token` (a Pro or Max plan; the
+   token lasts a year and uses that person's Claude limits). Organisation secrets do not reach
+   private repositories on GitHub Free. To use an API key instead, store `ANTHROPIC_API_KEY` and
+   change the action's `claude_code_oauth_token` input to `anthropic_api_key`.
+3. Labels `claude-automerge`, `claude-needs-human` and `do-not-merge` (the pipeline creates
+   `claude-needs-human` itself if it is missing).
+4. Optional repository variable `CLAUDE_AUTOMERGE`: `off` pauses every decision. Runs still start
+   (and bill a minute each); `gh workflow disable claude-pr.yml` stops them too.
+
+**Costs.** GitHub Free gives the organisation 2,000 Actions minutes a month for private
+repositories, each job billed as at least one minute, and the organisation's budget is $0, so
+running out stops all CI until the month resets. Expect about 1 minute per plan (one per relayed
+PR event and per finished CI workflow on a lane branch), up to 25 minutes per Claude job, plus
+normal CI. The sweep costs about 180 minutes a month. Check usage in the organisation's billing
+settings, and raise the Actions budget if overnight runs are routine.
+
+**When Claude hands a PR to a human**, the PR gets `claude-needs-human` and a comment naming the
+reason. Removing the label re-plans the PR at once, so deal with the reason first:
+
+- _Protected paths, or files that could not be listed:_ a human reviews and merges it.
+- _Claude's review rejected the head SHA:_ push a fix (it gets a fresh review), or merge it by hand
+  if you disagree. A `claude-review` status you post yourself does not count: the gate accepts
+  only this pipeline's.
+- _Out of fix rounds with a check still failing:_ push a fix, or re-run a flaky job until it is
+  green; then remove the label.
+- _Anything else_ (a failed Claude step, a fix-ci or conflict answer, a push that never landed):
+  deal with the cause, then remove the label; the pipeline picks up from the PR's current state.
+
+To take a PR out of automation, add `do-not-merge` (a local session never touches that label).
+
 ## Local equivalents
 
 ```bash

@@ -1,0 +1,46 @@
+{
+  "$comment": "Per-repository settings for the Claude PR pipeline (claude-pr-state.mjs, claude-prompts/). The scripts are identical in Centcom and Centcom-backend; only this file differs.",
+  "lanePattern": "B\\d{3}",
+  "laneCardDir": "plan/lanes/backend",
+  "requiredChecks": [
+    "ci / typecheck",
+    "ci / lint",
+    "ci / test",
+    "ci / build",
+    "ci / integration",
+    "ci / contract-lock",
+    "security / audit",
+    "security / secrets",
+    "pr-title / pr-title"
+  ],
+  "titleCheck": "pr-title / pr-title",
+  "protectedPaths": [
+    "contracts/",
+    "plan/",
+    ".github/",
+    "tools/plan/",
+    "tools/ci/",
+    "pnpm-workspace.yaml",
+    ".claude/",
+    ".claude.json",
+    ".mcp.json",
+    ".husky/",
+    ".gitmodules",
+    ".ripgreprc",
+    ".npmrc",
+    ".pnpmfile.cjs",
+    ".pnpmfile.mjs"
+  ],
+  "protectedNames": ["CLAUDE.md", "CLAUDE.local.md"],
+  "laneOwnedPaths": ["plan/STATUS.json"],
+  "gates": "`pnpm typecheck`, `pnpm lint` and `pnpm test` (integration tests run in CI only)",
+  "execTools": [
+    "Bash(pnpm install --frozen-lockfile)",
+    "Bash(pnpm typecheck)",
+    "Bash(pnpm lint)",
+    "Bash(pnpm test)",
+    "Bash(pnpm build)",
+    "Bash(pnpm exec prettier --write:*)"
+  ],
+  "mainWorkflows": ["ci.yml", "security.yml"]
+}
