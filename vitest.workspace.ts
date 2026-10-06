@@ -3,7 +3,7 @@
  * `test.projects`, so this file is a full root config and `pnpm test` passes it via
  * `--config`. One project per workspace plus `repo` for the repository checks in tools/repo.
  */
-import { resolve } from 'node:path';
+import { basename, resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
 
 const root = import.meta.dirname;
@@ -20,6 +20,14 @@ const workspaces = [
 ];
 
 export default defineConfig({
+  // A workspace imported by package name resolves to its source, as in tsconfig.test.json, so
+  // tests need no build first (their package.json "exports" point at dist/).
+  resolve: {
+    alias: workspaces.map((dir) => ({
+      find: new RegExp(`^@centcom/${basename(dir)}$`),
+      replacement: resolve(root, dir, 'src/index.ts'),
+    })),
+  },
   test: {
     passWithNoTests: true,
     projects: [

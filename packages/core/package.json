@@ -18,9 +18,12 @@
     "gen:config-docs": "tsx scripts/gen-config-docs.ts"
   },
   "dependencies": {
+    "@centcom/contracts": "workspace:*",
+    "pino": "10.4.0",
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "fast-check": "4.10.2",
     "tsx": "4.23.15"
   }
 }
