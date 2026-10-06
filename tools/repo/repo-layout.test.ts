@@ -160,24 +160,31 @@ describe('root toolchain', () => {
   });
 });
 
-describe('contracts scripts before B003', () => {
-  const pnpm = (script: string) =>
-    spawnSync('pnpm', ['-s', script], {
-      cwd: root,
-      encoding: 'utf8',
-      shell: process.platform === 'win32',
-      timeout: 30_000,
-    });
-
-  it('contracts:check runs the contract lock check', { timeout: 30_000 }, () => {
-    const r = pnpm('contracts:check');
-    expect(r.status).toBe(0);
-    expect(r.stdout).toContain('contracts lock OK');
+describe('contracts scripts', () => {
+  it('root contracts:gen and contracts:check delegate to @centcom/contracts (B003)', () => {
+    const rootScripts = readJson('package.json').scripts as Record<string, string>;
+    expect(rootScripts['contracts:gen']).toBe('pnpm --filter @centcom/contracts run contracts:gen');
+    expect(rootScripts['contracts:check']).toBe(
+      'pnpm --filter @centcom/contracts run contracts:check',
+    );
+    const pkg = readJson('packages/contracts/package.json').scripts as Record<string, string>;
+    expect(pkg['contracts:gen']).toBe('tsx scripts/generate.ts');
+    expect(pkg['contracts:check']).toBe('tsx scripts/generate.ts --check');
   });
 
-  it('contracts:gen fails and names the lane that provides it', { timeout: 30_000 }, () => {
-    const r = pnpm('contracts:gen');
-    expect(r.status).not.toBe(0);
-    expect(r.stderr).toContain('lane B003');
-  });
+  // contracts:gen is not run here: it rewrites src/generated/ while other test files read it.
+  it(
+    'contracts:check reports the committed generated code as up to date',
+    { timeout: 60_000 },
+    () => {
+      const r = spawnSync('pnpm', ['-s', 'contracts:check'], {
+        cwd: root,
+        encoding: 'utf8',
+        shell: process.platform === 'win32',
+        timeout: 60_000,
+      });
+      expect(r.status, r.stderr).toBe(0);
+      expect(r.stdout).toContain('Generated contract code is up to date');
+    },
+  );
 });

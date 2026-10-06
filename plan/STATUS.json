@@ -6,8 +6,12 @@
    "note": "merged in #1"
   },
   "B002": {
+   "pct": 1,
+   "note": "merged in #2"
+  },
+  "B003": {
    "pct": 0.9,
-   "note": "PR #2 in review: all checks green, dry runs recorded in docs/ci.md"
+   "note": "in review: generator, validators, helpers and tests done"
   }
  },
  "next": [

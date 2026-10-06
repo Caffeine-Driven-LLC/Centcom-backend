@@ -13,9 +13,21 @@
       "default": "./dist/index.js"
     }
   },
+  "imports": {
+    "#generated/validators": "./src/generated/validators.js"
+  },
   "scripts": {
     "build": "tsc -b",
-    "contracts:gen": "node -e \"console.error('contracts:gen is not implemented yet: lane B003 (contract codegen) provides it.'); process.exit(1)\"",
-    "contracts:check": "python3 ../../tools/plan/lock.py --check"
+    "contracts:gen": "tsx scripts/generate.ts",
+    "contracts:check": "tsx scripts/generate.ts --check"
+  },
+  "dependencies": {
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1"
+  },
+  "devDependencies": {
+    "fast-check": "4.10.2",
+    "tsx": "4.23.15",
+    "yaml": "2.9.1"
   }
 }

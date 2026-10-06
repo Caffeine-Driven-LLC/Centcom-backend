@@ -42,15 +42,15 @@ source through `paths`, so tests type-check without a prior build.
 
 ## Root scripts
 
-| Script                                   | What it does                                                                                                   |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `pnpm build`                             | `tsc -b`: builds every workspace into its `dist/`                                                              |
-| `pnpm typecheck`                         | `tsc -b --noEmit` for sources, then `tsconfig.test.json` for tests, scripts and `tools/repo`                   |
-| `pnpm lint`                              | ESLint, then `tools/repo/check-exact-pins.mjs` (fails on any version range)                                    |
-| `pnpm test`                              | Vitest with v8 coverage; 80 % line coverage is the hard floor                                                  |
-| `pnpm format`                            | Prettier, writing in place                                                                                     |
-| `pnpm contracts:gen` / `contracts:check` | delegate to `@centcom/contracts`; until B003, `check` runs the contract lock check and `gen` fails naming B003 |
-| `pnpm dev:up`                            | runs `tools/dev/up.sh` (provided by B012)                                                                      |
+| Script                                   | What it does                                                                                                                        |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm build`                             | `tsc -b`: builds every workspace into its `dist/`                                                                                   |
+| `pnpm typecheck`                         | `tsc -b --noEmit` for sources, then `tsconfig.test.json` for tests, scripts and `tools/repo`                                        |
+| `pnpm lint`                              | ESLint, then `tools/repo/check-exact-pins.mjs` (fails on any version range)                                                         |
+| `pnpm test`                              | Vitest with v8 coverage; 80 % line coverage is the hard floor                                                                       |
+| `pnpm format`                            | Prettier, writing in place                                                                                                          |
+| `pnpm contracts:gen` / `contracts:check` | regenerate `packages/contracts/src/generated/` from `contracts/` / exit 1 if it is stale (B003; see `packages/contracts/README.md`) |
+| `pnpm dev:up`                            | runs `tools/dev/up.sh` (provided by B012)                                                                                           |
 
 ## Rules the toolchain enforces
 
