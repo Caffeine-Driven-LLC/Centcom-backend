@@ -5,7 +5,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { findViolations, isAllowedExpression } from './check-licences.mjs';
+import { PNPM_LICENCE_ARGS, findViolations, isAllowedExpression } from './check-licences.mjs';
 
 const script = join(import.meta.dirname, 'check-licences.mjs');
 const dir = mkdtempSync(join(tmpdir(), 'licences-'));
@@ -65,6 +65,11 @@ describe('findViolations', () => {
 });
 
 describe('check-licences CLI', () => {
+  it('lists licences recursively, so workspace packages are included', () => {
+    // Regression: without -r, pnpm reports only the root package and app dependencies slip through.
+    expect(PNPM_LICENCE_ARGS).toEqual(['-r', 'licenses', 'list', '--prod', '--json']);
+  });
+
   it('fails on a GPL-3.0 production dependency', () => {
     const r = runWith({
       'GPL-3.0': [{ name: 'copyleft', versions: ['2.1.0'], license: 'GPL-3.0' }],

@@ -5,7 +5,8 @@
  * allowed, `AND` only if all are, and `WITH <exception>` is judged by its base licence.
  *
  * Usage: node tools/ci/check-licences.mjs [--report <pnpm-licenses.json>]
- * Without --report it runs `pnpm licenses list --prod --json`. Exits 1 listing each violation.
+ * Without --report it runs `pnpm -r licenses list --prod --json` (every workspace package, not just
+ * the root). Exits 1 listing each violation.
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -89,13 +90,16 @@ export function findViolations(report) {
   return out.sort();
 }
 
+/** pnpm arguments for the report; `-r` is required, or only the root package's deps are listed. */
+export const PNPM_LICENCE_ARGS = ['-r', 'licenses', 'list', '--prod', '--json'];
+
 /** @returns {LicenceReport} */
 function readReport() {
   const i = process.argv.indexOf('--report');
   const reportPath = i === -1 ? undefined : process.argv[i + 1];
   const json = reportPath
     ? readFileSync(reportPath, 'utf8')
-    : execFileSync('pnpm', ['licenses', 'list', '--prod', '--json'], {
+    : execFileSync('pnpm', PNPM_LICENCE_ARGS, {
         encoding: 'utf8',
         shell: process.platform === 'win32',
         timeout: 120_000,
