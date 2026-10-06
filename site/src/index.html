@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Centcom: command many hands</title>
+<meta name="description" content="Centcom is a terminal and web app that runs the Claude Code and Codex you already use, shows every change as a diff you approve, and lets teams share one session. Built by Caffeine Driven.">
+<meta name="theme-color" content="#07091A"><meta property="og:title" content="Centcom: command many hands"><meta property="og:description" content="A terminal and web app for the coding agents you already use. Your login, your machine, your approvals.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Crect x='2' y='1' width='4' height='5' fill='%237C5CFF'/%3E%3Crect x='1' y='3' width='6' height='2' fill='%237C5CFF'/%3E%3Crect x='2' y='3' width='1' height='1' fill='%2307091A'/%3E%3Crect x='5' y='3' width='1' height='1' fill='%2307091A'/%3E%3C/svg%3E">
+<link rel="preload" href="/fonts/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/site.css">
+</head><body>
+{{nav}}
+<main id="main">
+<div class="hero"><div class="wrap">
+  <span class="eyebrow"><i></i>Early development · built by Caffeine Driven</span>
+  <h1>Command <em>many hands.</em></h1>
+  <p class="lede">Centcom runs the Claude Code and Codex you already use, shows every change as a diff you approve, and is built so a whole team can share one session. Your login stays in your own CLI.</p>
+  <div class="cta"><a class="btn primary" href="/docs/#install">Run it from source</a><a class="btn" href="/docs/">Read the docs</a><a class="btn" href="https://github.com/Caffeine-Driven-LLC/Centcom" rel="noopener">View on GitHub</a></div>
+  <ul class="facts"><li>Works with Claude Code and Codex</li><li>Terminal app and local web app</li><li>Tested on Linux</li><li>Never sees your credentials</li></ul>
+
+  <div class="stage reveal" aria-label="A scripted example session">
+    <div class="term"><div class="term-bar"><i></i><i></i><i></i><span>centcom · ~/projects/api · Claude Code</span></div>
+      <div class="term-body"><div style="overflow:auto;max-height:520px"><div class="feed" id="feed" aria-live="off"></div></div>
+        <div class="side"><canvas id="hcento" class="pixels" width="210" height="150" role="img" aria-label="Cento"></canvas><div class="state" id="hstate"></div>
+          <div class="meterrow"><span>context</span><i id="hmeter"></i></div></div></div></div>
+    <p class="muted" style="font-size:14px;margin-top:12px">This is a scripted replay of the real interface, with the real Cento animations. Nothing here is a recording of a customer.</p>
+  </div>
+</div></div>
+
+<section id="story"><div class="wrap story">
+  <div class="beats">
+    <article class="beat on" data-anim="look_around" data-cap="Cento: ready when you are"><span class="kicker">Bring your own agent</span><h3>The tools you already pay for.</h3><p>Centcom drives your installed Claude Code and Codex. It never asks for, stores or sees a password or API key. If your CLI is signed in, Centcom works. If it is not, Centcom tells you which command to run.</p></article>
+    <article class="beat" data-anim="tool_approve" data-cap="Cento: waiting for you"><span class="kicker">See it, then approve it</span><h3>Every change is a diff you can read.</h3><p>Edits and commands arrive as a card with the exact diff, a risk label, and a clear Allow or Decline. Destructive commands need a second confirmation. You choose how strict to be, per session.</p></article>
+    <article class="beat" data-anim="approve_together" data-cap="Cento: teaming up (planned)"><span class="kicker">Many hands <span class="chip soon">Planned</span></span><h3>One session, the whole team.</h3><p>Two machines on the same Wi-Fi share a session with no account and no server. A hosted relay will do the same across the internet, end-to-end encrypted. Each person's agent runs on their own account.</p></article>
+    <article class="beat" data-anim="celebrate" data-cap="Cento: shipped"><span class="kicker">Ship it</span><h3>Tests green. Commit when you are ready.</h3><p>Cento reacts to what the agent is really doing: thinking, reading, running, waiting for you, done. You can tell at a glance across a room, or turn the animation off entirely.</p></article>
+  </div>
+  <div class="pin" aria-hidden="false"><canvas id="pin" class="pixels" width="210" height="240" role="img" aria-label="Cento"></canvas><div class="cap" id="pincap">Cento: ready when you are</div></div>
+</div></section>
+
+<section id="features" style="background:linear-gradient(180deg,var(--abyss-950),var(--abyss-900))"><div class="wrap">
+  <span class="kicker">Product</span><h2 class="big">Built for people who already work with agents.</h2>
+  <p class="lead">Everything below is labeled honestly: <span class="chip now">Available now</span> works today in the repository, <span class="chip soon">Planned</span> has a written plan and contracts but is not built yet.</p>
+  <div class="grid">
+    <div class="card reveal"><span class="chip now">Available now</span><h3>Claude Code and Codex</h3><p>One interface for both. Switch the agent in the launcher or with <code>--engine</code>. Model picker, token and limit display, interrupt, and resume tokens included.</p></div>
+    <div class="card reveal"><span class="chip now">Available now</span><h3>Real approvals</h3><p>Centcom bridges the agent's own permission prompts into one dialog with diff, risk level and "always this session". If Centcom cannot be reached, the answer is deny.</p></div>
+    <div class="card reveal"><span class="chip now">Available now</span><h3>Terminal and web app</h3><p>A full-screen terminal UI, plus a local web app at <code>127.0.0.1:58008</code> you can open in a tab or as a chromeless app window. Same agent, same session.</p></div>
+    <div class="card reveal"><span class="chip now">Available now</span><h3>Auto skills</h3><p>Before each message, Centcom matches your installed skills and commands against it and applies the best few. A bundled library of 200+ design, backend and security skills ships as one router.</p></div>
+    <div class="card reveal"><span class="chip now">Available now</span><h3>Four permission modes</h3><p>Ask first, accept edits, plan (read-only), or dangerously skip permissions when you are in a sandbox. The dangerous mode is explicit, confirmed, and impossible to miss.</p></div>
+    <div class="card reveal"><span class="chip now">Available now</span><h3>Cento, everywhere</h3><p>319 pixel animations in five colors, driven by real agent state, with reduced-motion and no-color modes. Browse them all with <code>/cento</code>.</p></div>
+    <div class="card reveal"><span class="chip soon">Planned</span><h3>LAN multiplayer</h3><p>Pair with a code, queue prompts, approve as host. Direct between machines, no account, no server, encrypted end to end.</p></div>
+    <div class="card reveal"><span class="chip soon">Planned</span><h3>Hosted relay and teams</h3><p>Accounts, workspaces, roles, history, notifications and an audit log, with a relay that routes only ciphertext.</p></div>
+    <div class="card reveal"><span class="chip soon">Planned</span><h3>Parallel agents in worktrees</h3><p>A fleet of agents on isolated git worktrees, with file locks and a board that shows who needs you.</p></div>
+  </div>
+</div></section>
+
+<section><div class="wrap"><div class="split">
+  <div class="reveal"><span class="kicker">Control</span><h2 class="big">You decide how much to trust.</h2><p class="lead">Permissions are a first-class setting, not a buried flag. Change them mid-session with <kbd>Shift</kbd>+<kbd>Tab</kbd> or the mode menu.</p>
+    <div class="modes"><div class="mode"><b>Ask first</b><span>Every edit and command waits for you.</span></div><div class="mode"><b>Accept edits</b><span>Edits go through; commands still ask.</span></div><div class="mode"><b>Plan</b><span>Read-only. Nothing is changed.</span></div><div class="mode danger"><b>Skip permissions</b><span>Never ask. For sandboxes you can afford to break. Shows a red banner while on.</span></div></div></div>
+  <div class="shot reveal"><img src="/img/approval.png" width="1080" height="722" loading="lazy" alt="The Centcom terminal app showing an approval dialog with a diff of src/auth/session.ts, a medium risk label, and keys to allow or decline."></div>
+</div></div></section>
+
+<section style="background:var(--abyss-900)"><div class="wrap"><div class="split">
+  <div class="shot reveal"><img src="/img/claude-approval.png" width="1080" height="722" loading="lazy" alt="Centcom driving a real Claude Code session and asking approval before creating a file."></div>
+  <div class="reveal"><span class="kicker">How it works</span><h2 class="big">Centcom stands next to your CLI, not in front of it.</h2>
+    <div class="steps" style="grid-template-columns:1fr"><div class="step"><h3>1. You sign in once, the usual way</h3><p><code>claude auth login</code> or <code>codex login</code>. Centcom only checks the status the CLI reports.</p></div>
+    <div class="step"><h3>2. Centcom starts the CLI for you</h3><p>It speaks each tool's documented machine interface and turns the stream into one set of events: text, tool calls, diffs, approvals, usage.</p></div>
+    <div class="step"><h3>3. You see and steer everything</h3><p>Approve, interrupt, switch model, or hand the same session to the web app. Model usage is billed to your own provider account, as before.</p></div></div></div>
+</div></div></section>
+
+<section id="pricing"><div class="wrap"><span class="kicker">Pricing</span><h2 class="big">Free on your network. Paid when you need the cloud.</h2>
+  <p class="lead">Prices are announced at launch. The limits below are the reference values in our billing contract and may change before then. Centcom does not sell or meter model usage; that stays with the provider account that makes the call.</p>
+  <div class="plans">
+    <div class="plan reveal"><h3>Free</h3><span class="price">Always free</span><ul><li>Terminal and local web app</li><li>Claude Code and Codex</li><li>LAN sessions <span class="chip soon">Planned</span></li><li>Up to 8 people per LAN session</li><li>Up to 4 parallel agents</li><li class="no">Hosted relay</li><li class="no">Session history</li></ul></div>
+    <div class="plan hl reveal"><span class="chip soon">Planned</span><h3>Pro</h3><span class="price">Price at launch</span><ul><li>Everything in Free</li><li>Hosted relay, from anywhere</li><li>2 concurrent hosted sessions</li><li>Up to 4 people per session</li><li>Up to 8 parallel agents</li><li>7 days of history</li><li>100 hosted hours per month</li><li>2 webhooks, 5 API keys</li></ul></div>
+    <div class="plan reveal"><span class="chip soon">Planned</span><h3>Team</h3><span class="price">Price at launch</span><ul><li>Everything in Pro</li><li>5 seats, add-on seats available</li><li>10 concurrent sessions, 12 people each</li><li>Up to 16 parallel agents</li><li>30 days of history</li><li>500 pooled hosted hours per month</li><li>90-day audit log</li><li>20 webhooks, 50 API keys</li></ul></div>
+  </div></div></section>
+
+<section id="progress" style="background:var(--abyss-900)"><div class="wrap"><span class="kicker">Progress</span><h2 class="big">Where we are, in public.</h2>
+  <p class="lead">The client is about 29% built, weighted by the size of each planned piece. The terminal app, both engines, approvals and the local web app work today. Multiplayer, accounts and the hosted backend are planned and not started.</p>
+  <div class="prog reveal"><img src="/img/progress.svg" width="760" height="258" loading="lazy" alt="Progress by milestone: Centcom client 29% built; solo agent in the terminal 66%; LAN multiplayer 1%; accounts and relay 0%."></div>
+  <p class="muted" style="margin-top:14px;font-size:14px">Snapshot of {{updated}}. The live numbers are in the client README and update with every release.</p>
+  <h3 style="margin-top:44px">Next steps</h3><ol class="lead" style="display:grid;gap:10px;padding-left:22px">{{next_steps}}</ol>
+</div></section>
+
+<section id="faq"><div class="wrap" style="max-width:860px"><span class="kicker">FAQ</span><h2 class="big">Straight answers.</h2>
+  <details><summary>Does Centcom use my Claude or ChatGPT subscription?</summary><p>It uses whatever your own installed CLI is signed in with. Centcom starts the CLI and never touches your credentials. Whether a shared or team setup is permitted under your provider's terms is your provider's call, so we default to the safe behavior and plan to get written confirmation before enabling shared subscription use.</p></details>
+  <details><summary>Is Centcom affiliated with Anthropic or OpenAI?</summary><p>No. It is an independent project by Caffeine Driven. Claude, Claude Code, Codex and OpenAI are trademarks of their owners.</p></details>
+  <details><summary>Can I try it today?</summary><p>Yes, from source. Clone the repository, run <code>pnpm install</code>, then <code>pnpm dev</code> for a scripted demo or <code>pnpm centcom</code> for your real agent. There is no packaged installer yet.</p></details>
+  <details><summary>Is the multiplayer part real yet?</summary><p>Not yet. The protocol, encryption and billing contracts are written and frozen, and the build plan is public. LAN and hosted sessions are the next big milestone, and the page above shows exactly how far along they are.</p></details>
+  <details><summary>What does "dangerously skip permissions" do?</summary><p>It turns off every approval. Cento runs commands and edits files immediately, including destructive ones. It is for sandboxes and throwaway projects. Centcom asks you to confirm, shows a red banner while it is on, and switches back with one click.</p></details>
+  <details><summary>Does it work on Windows or macOS?</summary><p>It is built and tested on Linux. The code is plain Node and should run elsewhere, but we have not tested those platforms and will not claim support before we have.</p></details>
+  <details><summary>Who makes Centcom?</summary><p>Caffeine Driven LLC. Lead developer Alexander Gese (<a href="https://github.com/AlexanderGese" rel="noopener">@AlexanderGese</a>). Our work lives at <a href="https://github.com/Caffeine-Driven-LLC" rel="noopener">github.com/Caffeine-Driven-LLC</a>.</p></details>
+</div></section>
+
+<section style="background:linear-gradient(180deg,var(--abyss-900),var(--abyss-950));text-align:center"><div class="wrap"><h2 class="big" style="margin-inline:auto;max-width:16ch">Try Cento on a real project.</h2><p class="lead" style="margin:0 auto 28px">Five minutes from clone to your first approved diff.</p><div class="cta" style="justify-content:center"><a class="btn primary" href="/docs/#install">Run it from source</a><a class="btn" href="https://github.com/Caffeine-Driven-LLC" rel="noopener">Follow Caffeine Driven on GitHub</a></div></div></section>
+</main>
+{{footer}}
+<script type="module" src="/home.js"></script>
+</body></html>

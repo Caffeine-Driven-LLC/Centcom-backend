@@ -5,6 +5,10 @@ Private server side of Centcom: REST API, WebSocket relay, workers, billing, not
 > Status: planning complete and the contracts are frozen and locked; implementation has not started (gate **G0** also needs the CI lane B002). See [Progress](#progress) for what is next. Everything you need is in [`plan/`](plan/README.md) and [`contracts/`](contracts/README.md).
 
 
+## Website and documentation
+
+The public sales site and the full documentation live in [`site/`](site/README.md): static, no build tooling beyond `python3 site/build.py`. Built by Caffeine Driven LLC.
+
 <!-- progress:start -->
 
 ## Progress

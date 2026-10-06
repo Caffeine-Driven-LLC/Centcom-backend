@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Centcom documentation</title>
+<meta name="description" content="Install, configure and use Centcom: the terminal app, the local web app, Claude Code and Codex engines, permissions, auto skills, security and troubleshooting.">
+<meta name="theme-color" content="#07091A">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Crect x='2' y='1' width='4' height='5' fill='%237C5CFF'/%3E%3Crect x='1' y='3' width='6' height='2' fill='%237C5CFF'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/site.css">
+</head><body>
+{{nav}}
+<main id="main"><div class="wrap docs">
+<aside class="toc" aria-label="Documentation contents">
+  <input id="q" type="search" placeholder="Search docs  (press /)" aria-label="Search the documentation" autocomplete="off">
+  <p id="nohit" class="muted" hidden>Nothing matches. Try a shorter word.</p>
+  <h5>Start</h5><a href="#overview">Overview</a><a href="#install">Install</a><a href="#quickstart">Quick start</a>
+  <h5>Using Centcom</h5><a href="#terminal">Terminal app</a><a href="#keys">Keys</a><a href="#commands">Slash commands</a><a href="#web">Web and desktop app</a><a href="#models">Models</a>
+  <h5>Agents</h5><a href="#agents">Claude Code and Codex</a><a href="#permissions">Permissions</a><a href="#skip">Dangerously skip permissions</a><a href="#skills">Auto skills</a>
+  <h5>Trust</h5><a href="#security">Security and privacy</a><a href="#whopays">Who pays</a>
+  <h5>Coming</h5><a href="#multiplayer">Multiplayer and teams</a><a href="#plans">Plans and limits</a>
+  <h5>Reference</h5><a href="#flags">Command-line flags</a><a href="#env">Files and environment</a><a href="#architecture">Architecture</a><a href="#troubleshooting">Troubleshooting</a>
+  <h5>Project</h5><a href="#status">Status and next steps</a><a href="#contributing">Contributing</a><a href="#credits">Credits and legal</a>
+</aside>
+
+<article class="doc">
+<span class="kicker">Documentation</span><h1>Centcom docs</h1>
+<p class="lead">Everything you need to run, configure and trust Centcom. Pages marked <span class="chip soon">Planned</span> describe features that are designed and contracted but not built yet.</p>
+
+<section id="overview"><h2>Overview</h2>
+<p>Centcom is a terminal and web app for coding agents. It starts the <strong>Claude Code</strong> or <strong>Codex</strong> you already have installed, turns their output into one consistent interface, and puts every edit and command behind an approval you control. A pixel octopus called <strong>Cento</strong> shows what the agent is doing.</p>
+<ul><li><strong>Your login stays yours.</strong> Centcom never reads, stores or sends credentials. It runs your CLI and asks it for its status.</li>
+<li><strong>Two front ends, one agent.</strong> A full-screen terminal app and a local web app that can open as an app window.</li>
+<li><strong>Built for teams later.</strong> LAN and hosted multiplayer are designed in public contracts; they are <span class="chip soon">Planned</span>.</li></ul>
+<div class="note warn"><p><strong>Early development.</strong> Centcom runs from source today. There is no packaged installer, and some parts of the plan are not built. See <a href="#status">Status</a>.</p></div></section>
+
+<section id="install"><h2>Install</h2>
+<p>You need Node.js 22 or newer, <a href="https://pnpm.io/installation" rel="noopener">pnpm</a>, git, and at least one agent CLI that is installed and signed in: <code>claude</code> (Claude Code) or <code>codex</code> (Codex). Linux is the tested platform.</p>
+<pre><code>git clone git@github.com:Caffeine-Driven-LLC/Centcom.git
+cd Centcom
+pnpm install</code></pre>
+<p>Check what Centcom can see:</p>
+<pre><code>pnpm centcom provider status</code></pre>
+<p>It prints whether each CLI is installed and whether it reports being signed in. If a CLI is missing, install it from its vendor and sign in the way its documentation describes.</p></section>
+
+<section id="quickstart"><h2>Quick start</h2>
+<h3>Try the demo (no login, no model)</h3>
+<pre><code>pnpm dev</code></pre>
+<p>A scripted agent plays a realistic session. Type <code>/demo fix</code>, <code>/demo search</code> or <code>/demo delete</code> and press <kbd>y</kbd> or <kbd>n</kbd> at the approval cards.</p>
+<h3>Use your real agent in the terminal</h3>
+<p>Centcom works in the folder you start it from, so run it from your project. Until there is a packaged installer, the simplest setup is an alias that points at your clone:</p>
+<pre><code># add to ~/.bashrc or ~/.zshrc, adjusting the path
+alias centcom='/path/to/Centcom/node_modules/.bin/tsx /path/to/Centcom/apps/cli/src/main.tsx'
+
+cd ~/your-project
+centcom                    # Claude Code
+centcom --engine codex     # Codex</code></pre>
+<h3>Use the web app</h3>
+<pre><code>pnpm web         # opens http://127.0.0.1:58008 with the launcher
+pnpm web:app     # same, as a chromeless app window</code></pre>
+<p>Pick a folder, choose Claude Code or Codex, then <strong>Start on web</strong> or <strong>Start as app</strong>.</p></section>
+
+<section id="terminal"><h2>Terminal app</h2>
+<p>The layout adapts to your terminal size. At 120 columns and 34 rows or more you get the large Cento, the fleet panel and the full transcript. Smaller windows get a small Cento, then none, and the minimum usable size is 60 by 14.</p>
+<ul><li><strong>Transcript.</strong> Your messages, streamed replies with markdown, thinking summaries, and tool calls with results and diffs. It stays put when you scroll up and shows how many new lines arrived.</li>
+<li><strong>Live strip.</strong> Cento, the current activity, elapsed time and tokens.</li>
+<li><strong>Prompt.</strong> Multi-line input, history, paste, and a slash-command popup. End a line with <code>\</code> and press <kbd>Enter</kbd> for a new line.</li>
+<li><strong>Status line.</strong> Permission mode, agent state, tokens, estimated cost and your 5-hour limit when the provider reports it.</li>
+<li><strong>Appearance.</strong> Abyss (dark) and Shallows (light) themes; truecolor, 256, 16 or no color (<code>NO_COLOR</code> is honored); reduced motion.</li></ul></section>
+
+<section id="keys"><h2>Keys</h2>
+<table><thead><tr><th>Key</th><th>Action</th></tr></thead><tbody>
+<tr><td><kbd>Enter</kbd></td><td>Send</td></tr><tr><td><kbd>ctrl</kbd>+<kbd>j</kbd></td><td>New line</td></tr><tr><td><kbd>Esc</kbd></td><td>Interrupt the agent, or close a panel</td></tr>
+<tr><td><kbd>ctrl</kbd>+<kbd>c</kbd></td><td>Interrupt; press twice to quit</td></tr><tr><td><kbd>shift</kbd>+<kbd>tab</kbd></td><td>Cycle the permission mode</td></tr>
+<tr><td><kbd>ctrl</kbd>+<kbd>k</kbd></td><td>Command palette</td></tr><tr><td><kbd>ctrl</kbd>+<kbd>o</kbd></td><td>Choose the model</td></tr><tr><td><kbd>ctrl</kbd>+<kbd>t</kbd></td><td>Show or hide the fleet panel</td></tr>
+<tr><td><kbd>?</kbd></td><td>Help (when the prompt is empty)</td></tr><tr><td><kbd>PageUp</kbd> / <kbd>PageDown</kbd></td><td>Scroll the transcript</td></tr><tr><td><kbd>shift</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd></td><td>Scroll three lines</td></tr>
+<tr><td><kbd>End</kbd></td><td>Jump to the latest message</td></tr><tr><td><kbd>↑</kbd> / <kbd>↓</kbd></td><td>Prompt history</td></tr>
+<tr><td><kbd>ctrl</kbd>+<kbd>a</kbd> / <kbd>e</kbd></td><td>Start / end of line</td></tr><tr><td><kbd>ctrl</kbd>+<kbd>w</kbd> / <kbd>u</kbd></td><td>Delete word / to line start</td></tr><tr><td><kbd>alt</kbd>+<kbd>b</kbd> / <kbd>f</kbd></td><td>Word left / right</td></tr>
+<tr><td><kbd>y</kbd> <kbd>a</kbd> <kbd>n</kbd></td><td>At an approval: allow, always this session, decline</td></tr></tbody></table></section>
+
+<section id="commands"><h2>Slash commands</h2><p>Type <code>/</code> in the prompt to see them. This table is generated from the application's own command list.</p>
+<table><thead><tr><th>Command</th><th>What it does</th></tr></thead><tbody>{{commands}}</tbody></table></section>
+
+<section id="web"><h2>Web and desktop app</h2>
+<p><code>pnpm web</code> starts a local server on <code>127.0.0.1:58008</code> and opens the launcher. The launcher shows whether Claude Code and Codex are installed and signed in, lets you browse to a project folder or pick a recent one, and offers two ways to start:</p>
+<ul><li><strong>Start on web</strong> opens the workspace in the current browser tab.</li><li><strong>Start as app</strong> opens a window with no tabs or address bar, using its own browser profile at <code>~/.centcom/app-profile</code>. It needs Chrome, Chromium, Brave or Edge. A packaged desktop app is on the plan.</li></ul>
+<p>Both views show the same running agent. Close the workspace with the back arrow; the agent session ends.</p>
+<h3>The workspace</h3>
+<ul><li>A composer with the model menu, permission-mode menu and auto-skills toggle built in.</li><li>Tool cards you can expand, with a spinner while running and a tag when waiting for you.</li><li>An approval card with the exact command or diff, and the same Allow, Always this session and Decline choices as the terminal.</li><li>A side panel with Cento and every agent's state.</li></ul>
+<div class="note"><p>The server only accepts connections to <code>127.0.0.1</code> and <code>localhost</code> on its own port, checks the <code>Host</code> and <code>Origin</code> headers, and requires a secret token. See <a href="#security">Security</a>. If port 58008 is taken, set <code>CENTCOM_PORT</code>.</p></div></section>
+
+<section id="models"><h2>Models</h2>
+<p>Press <kbd>ctrl</kbd>+<kbd>o</kbd>, use <code>/model</code>, or open the model menu in the web composer. A change applies from your next message; a running turn keeps its model. <code>/model &lt;id&gt;</code> accepts any model id your CLI understands.</p>
+<table><thead><tr><th>Name</th><th>Id passed to the CLI</th><th>Note</th></tr></thead><tbody>{{models}}</tbody></table>
+<p>For Codex, the list comes from the Codex app server for your account, so it shows exactly what you can use.</p></section>
+
+<section id="agents"><h2>Claude Code and Codex</h2>
+<h3>Claude Code</h3>
+<p>Centcom runs <code>claude -p</code> with streaming JSON output and resumes the same session between messages. Approvals are bridged with a small local tool passed through <code>--permission-prompt-tool</code> (see <a href="#security">Security</a>). Sign in with <code>claude auth login</code>.</p>
+<h3>Codex</h3>
+<p>Centcom starts <code>codex app-server</code> and talks JSON-RPC over stdio. Streaming text, reasoning, shell commands, file changes, usage and rate limits all map onto the same interface, and file and command approvals go through the same dialog. Sign in with <code>codex login</code>.</p>
+<div class="note warn"><p><strong>Codex status.</strong> The Codex adapter is built against Codex's published protocol schema and passes its tests against a protocol-faithful stand-in and the real handshake. It has not yet completed a real model turn, because no signed-in Codex account was available during development. If your login has expired you will see "Codex is not signed in, or the login has expired"; run <code>codex login</code>.</p></div>
+<h3>Choosing the agent</h3>
+<pre><code>pnpm centcom --engine claude-code   # default
+pnpm centcom --engine codex</code></pre>
+<p>In the web launcher use the Claude Code / Codex switch. If neither CLI is installed, Centcom falls back to the demo agent and says so.</p></section>
+
+<section id="permissions"><h2>Permissions</h2>
+<table><thead><tr><th>Mode</th><th>Centcom behavior</th><th>Claude Code flag</th><th>Codex policy</th></tr></thead><tbody>
+<tr><td>Ask first</td><td>Every edit and command waits for you. Read-only actions pass.</td><td><code>--permission-mode manual</code></td><td><code>untrusted</code> + workspace-write</td></tr>
+<tr><td>Accept edits</td><td>Edits go through; commands still ask. High-risk commands always ask.</td><td><code>acceptEdits</code></td><td><code>on-request</code> + workspace-write</td></tr>
+<tr><td>Plan</td><td>Read-only; writes are declined without a prompt.</td><td><code>plan</code></td><td><code>on-request</code> + read-only</td></tr>
+<tr><td>Skip permissions</td><td>Never ask. See below.</td><td><code>bypassPermissions</code></td><td><code>never</code> + danger-full-access</td></tr></tbody></table>
+<p>Change mode with <kbd>shift</kbd>+<kbd>tab</kbd>, <code>/mode</code>, or the web mode menu. <strong>Ask first</strong> is passed to Claude explicitly. Otherwise your own Claude settings, such as <code>defaultMode: auto</code>, could silently approve things.</p>
+<h3>Risk labels</h3>
+<p>Commands are classified <em>low</em> (read-only like <code>ls</code>, <code>git status</code>), <em>medium</em> (most things) or <em>high</em> (<code>rm -rf</code>, <code>sudo</code>, force-push, <code>curl | sh</code>, <code>git reset --hard</code>, and similar). Unknown commands are medium. High-risk approvals need a second confirmation in the terminal and can never be set to "always".</p>
+<h3>Always this session</h3>
+<p>Choosing <kbd>a</kbd> remembers the same tool and command or path for the rest of the session. It is never offered for high-risk actions.</p></section>
+
+<section id="skip"><h2>Dangerously skip permissions</h2>
+<div class="note danger"><p><strong>This turns off every approval.</strong> Cento will run commands and edit files immediately, including destructive ones. Use it in a sandbox, a container or a throwaway checkout, not on work you cannot recover.</p></div>
+<pre><code>pnpm centcom --dangerously-skip-permissions     # alias: --yolo
+# or inside the app
+/mode bypass          # aliases: yolo, skip, dangerous</code></pre>
+<p>In the web app open the mode menu, choose <em>Dangerously skip permissions</em>, and confirm. While it is on you get a warning in the transcript, a red banner across the top of the web workspace, a red composer and a <code>⚠ NO APPROVALS</code> status in the terminal. Switch back with <code>/mode default</code>, <kbd>shift</kbd>+<kbd>tab</kbd> (one press leaves it) or the banner's button.</p>
+<p>In the terminal, <kbd>shift</kbd>+<kbd>tab</kbd> only cycles <em>into</em> this mode if you started with the flag; otherwise you must type the command on purpose.</p></section>
+
+<section id="skills"><h2>Auto skills</h2>
+<p>Before each message is sent, Centcom scores your installed skills and commands against it, locally and without calling a model. It applies the best one to three and shows what it picked and why. Your message appears exactly as you typed it.</p>
+<ul><li><strong>Where skills come from:</strong> <code>~/.claude/skills</code>, installed plugins, the project's <code>.claude/skills</code> and <code>.claude/commands</code>, and the bundled <em>centcom-master</em> library.</li>
+<li><strong>Control:</strong> <code>/auto on|off</code>, the Auto skills toggle in the web composer, and <code>/skills [filter]</code> to list. <code>/skills enable &lt;id&gt;</code> and <code>/skills disable &lt;id&gt;</code> turn bundled skills on or off.</li></ul>
+<h3>centcom-master</h3>
+<p>A curated library of design, backend, security and workflow skills, exposed as one router skill plus an index so the agent never loads them all. Fetch it with:</p>
+<pre><code>pnpm skills:sync</code></pre>
+<p>It clones the source repositories listed in <code>packages/skills/catalog.tsv</code> into <code>~/.centcom/master</code>, keeps <strong>text files only</strong> (scripts are left out), pins each skill to a commit, and scans for prompt-injection and obfuscation. Skills from publishers outside the trusted list, skills that need hooks or an MCP server, and overlapping alternates are off by default. Anything the scanner blocks stays quarantined until you enable it by hand.</p>
+<div class="note"><p>The skill descriptions come from third parties. Centcom treats them as data, scans them, and never runs bundled scripts. Read a skill before you enable one you do not recognize.</p></div></section>
+
+<section id="security"><h2>Security and privacy</h2>
+<ul><li><strong>No credentials.</strong> Centcom never reads or stores your Claude or Codex login. It asks the CLI for status and passes your environment through unchanged.</li>
+<li><strong>Approval bridge (Claude Code).</strong> Centcom creates a private temporary folder (mode 0700) with a Unix socket and a config for a tiny MCP tool. Claude calls that tool when it needs permission; the tool forwards the question to Centcom over the socket. If Centcom cannot be reached, the answer is <strong>deny</strong>. The folder is deleted when the session ends.</li>
+<li><strong>Web server.</strong> Binds to <code>127.0.0.1</code> only. Rejects any <code>Host</code> other than <code>127.0.0.1:PORT</code> or <code>localhost:PORT</code> (so DNS-rebinding fails), requires a secret cookie, checks the WebSocket <code>Origin</code>, serves a strict Content-Security-Policy and never serves files outside its own build folder. The token lives in <code>~/.centcom/token</code> with mode 0600.</li>
+<li><strong>Redaction.</strong> Error text from the CLIs is passed through a redactor that removes key-like strings before it is shown.</li>
+<li><strong>Bundled skills.</strong> Text only, scanned, pinned, and off by default unless from a trusted publisher.</li>
+<li><strong>Telemetry.</strong> None today.</li></ul>
+<p>Multiplayer will add end-to-end encryption (XChaCha20-Poly1305 with Ed25519 and X25519 keys) so a hosted relay only sees ciphertext and a small set of routing metadata. <span class="chip soon">Planned</span></p></section>
+
+<section id="whopays"><h2>Who pays</h2>
+<p>Model usage is billed to the provider account that signed in to the CLI that made the call. Centcom does not resell, meter or proxy model usage. The costs Centcom shows are estimates from the CLI's own reports.</p>
+<p>For multiplayer, the planned rule is simple: a person's agent runs on that person's own account. Sharing one subscription across a team is a question for your provider's terms; Centcom will default to blocking subscription-backed engines in shared command posts until that is confirmed in writing.</p></section>
+
+<section id="multiplayer"><h2>Multiplayer and teams <span class="chip soon">Planned</span></h2>
+<p>Designed and contracted, not built yet:</p>
+<ul><li><strong>LAN mode (free).</strong> Machines on the same Wi-Fi discover each other, pair with a short code, and share one session. No account, no server. The host approves; everyone sees one transcript.</li>
+<li><strong>Hosted relay (paid).</strong> The same experience from anywhere, with accounts, workspaces, roles, invites, history, notifications and an audit log. The relay routes ciphertext and cannot read your code or prompts.</li>
+<li><strong>Fleet.</strong> Parallel agents in isolated git worktrees with file locks and a board showing who needs you.</li></ul>
+<p>The wire formats, error codes and entitlements are frozen in the public <code>contracts/</code> folder of both repositories, so the client and server can be built independently.</p></section>
+
+<section id="plans"><h2>Plans and limits <span class="chip soon">Planned</span></h2>
+<p>Reference limits from the billing contract. Prices are announced at launch and limits may change.</p>
+<table><thead><tr><th>Limit</th><th>Free</th><th>Pro</th><th>Team</th></tr></thead><tbody>
+<tr><td>Hosted relay</td><td>No</td><td>Yes</td><td>Yes</td></tr><tr><td>Seats</td><td>1</td><td>1</td><td>5 (+ add-ons)</td></tr><tr><td>People per session</td><td>8 (LAN)</td><td>4</td><td>12</td></tr>
+<tr><td>Concurrent hosted sessions</td><td>0</td><td>2</td><td>10</td></tr><tr><td>Parallel agents</td><td>4</td><td>8</td><td>16</td></tr><tr><td>History</td><td>None</td><td>7 days</td><td>30 days</td></tr>
+<tr><td>Hosted hours per month</td><td>0</td><td>100</td><td>500 (pooled)</td></tr><tr><td>Audit log</td><td>No</td><td>No</td><td>90 days</td></tr><tr><td>Webhooks / API keys</td><td>0 / 1</td><td>2 / 5</td><td>20 / 50</td></tr></tbody></table>
+<p>LAN and local use are never blocked by a quota.</p></section>
+
+<section id="flags"><h2>Command-line flags</h2>
+<table><thead><tr><th>Flag</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>--demo</code></td><td>Scripted demo agent; no login or model</td></tr>
+<tr><td><code>--engine &lt;claude-code|codex|demo&gt;</code></td><td>Choose the agent (default: Claude Code if installed)</td></tr>
+<tr><td><code>--mode &lt;default|acceptEdits|plan|bypassPermissions&gt;</code></td><td>Start in a permission mode</td></tr>
+<tr><td><code>--dangerously-skip-permissions</code>, <code>--yolo</code></td><td>Never ask; see <a href="#skip">above</a></td></tr>
+<tr><td><code>--mascot &lt;large|small|off&gt;</code></td><td>Cento size (default: automatic from terminal height)</td></tr>
+<tr><td><code>--cento-color &lt;violet|red|yellow|green|brown&gt;</code></td><td>Cento's color</td></tr>
+<tr><td><code>--theme &lt;dark|light&gt;</code></td><td>Abyss (dark) or Shallows (light)</td></tr>
+<tr><td><code>--colors &lt;truecolor|256|16|never&gt;</code></td><td>Force a color depth</td></tr>
+<tr><td><code>--no-motion</code></td><td>Turn animation off</td></tr>
+<tr><td><code>provider status</code></td><td>Show whether Claude Code and Codex are installed and signed in</td></tr>
+<tr><td><code>-v</code>, <code>-h</code></td><td>Version, help</td></tr></tbody></table>
+<h3>Scripts</h3>
+<table><tbody><tr><td><code>pnpm dev</code></td><td>Terminal app with the demo agent</td></tr><tr><td><code>pnpm centcom</code></td><td>Terminal app</td></tr><tr><td><code>pnpm web</code> / <code>web:app</code></td><td>Build and start the web app / open it as an app window</td></tr><tr><td><code>pnpm skills:sync</code></td><td>Fetch the bundled skills</td></tr><tr><td><code>pnpm typecheck</code> / <code>test</code></td><td>Checks</td></tr><tr><td><code>python3 tools/plan/progress.py</code></td><td>Regenerate the progress bar and next steps</td></tr></tbody></table></section>
+
+<section id="env"><h2>Files and environment</h2>
+<table><thead><tr><th>Item</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>~/.centcom/token</code></td><td>Secret for the local web server (mode 0600)</td></tr>
+<tr><td><code>~/.centcom/recent.json</code></td><td>Recent project folders in the launcher</td></tr>
+<tr><td><code>~/.centcom/app-profile</code></td><td>Browser profile for "Start as app"</td></tr>
+<tr><td><code>~/.centcom/master</code>, <code>skills-cache</code></td><td>Bundled skills and their source clones</td></tr>
+<tr><td><code>CENTCOM_PORT</code></td><td>Web server port (default 58008)</td></tr>
+<tr><td><code>CENTCOM_REDUCE_MOTION=1</code></td><td>Same as <code>--no-motion</code></td></tr>
+<tr><td><code>NO_COLOR</code></td><td>Disable color in the terminal app</td></tr></tbody></table></section>
+
+<section id="architecture"><h2>Architecture</h2>
+<p>The client is a TypeScript pnpm monorepo. Packages depend in one direction only.</p>
+<table><thead><tr><th>Package</th><th>Role</th></tr></thead><tbody>
+<tr><td><code>@centcom/theme</code></td><td>Color tokens and terminal color tiers</td></tr>
+<tr><td><code>@centcom/mascot</code></td><td>Cento sprite engine, scenes, state driver, 319 baked animations</td></tr>
+<tr><td><code>@centcom/agent</code></td><td>The <code>AgentEngine</code> interface and normalised events; Claude Code, Codex and demo engines; approval bridge; risk classifier</td></tr>
+<tr><td><code>@centcom/skills</code></td><td>Skill discovery, matching and the centcom-master library</td></tr>
+<tr><td><code>@centcom/tui</code></td><td>Ink components and the controller shared by both front ends</td></tr>
+<tr><td><code>apps/cli</code></td><td>The <code>centcom</code> command</td></tr>
+<tr><td><code>apps/web</code></td><td>Local server and React web client</td></tr></tbody></table>
+<p>Every engine produces the same event stream (<code>text.delta</code>, <code>tool.requested</code>, <code>approval.requested</code>, <code>tool.result</code>, <code>usage.report</code>, <code>limits.report</code>, <code>turn.done</code> and so on). The controller turns events into state; the terminal and web UIs only render state. That is why both behave the same.</p>
+<p>The client and the backend are built separately and meet only at the versioned <code>contracts/</code>, locked by <code>CONTRACTS.lock</code> and identical in both repositories.</p></section>
+
+<section id="troubleshooting"><h2>Troubleshooting</h2>
+<h3>"Codex is not signed in, or the login has expired"</h3>
+<p><code>codex login status</code> only checks that credentials exist. If the stored token can no longer refresh, Codex's server reports no account. Run <code>codex login</code> again.</p>
+<h3>"Claude Code was not found"</h3>
+<p>Install Claude Code and make sure <code>claude</code> is on your <code>PATH</code>, then run <code>claude auth login</code>. Until then Centcom shows the demo agent.</p>
+<h3>Ask first is not asking</h3>
+<p>Update Centcom: it now passes <code>--permission-mode manual</code> explicitly. Older builds inherited your own Claude default mode.</p>
+<h3>The web app says it is starting forever</h3>
+<p>Update and restart the server. An older build cleared its state when the workspace opened and only recovered if the agent was busy.</p>
+<h3>Port 58008 is in use</h3>
+<p>Centcom is probably already running; open the printed URL. Otherwise set <code>CENTCOM_PORT</code>.</p>
+<h3>"Start as app" opens a normal browser</h3>
+<p>No Chrome, Chromium, Brave or Edge was found. Install one, or use <strong>Start on web</strong>.</p>
+<h3>Strange characters in the terminal</h3>
+<p>Use a font with box-drawing and block characters, such as a Nerd Font. Try <code>--colors 256</code> if colors look wrong, or <code>--mascot off</code> in tiny windows.</p>
+<h3>Skills are not applied</h3>
+<p>Run <code>/skills</code> to see what was found and <code>/auto on</code> to make sure matching is enabled. Run <code>pnpm skills:sync</code> once to fetch the bundled library.</p></section>
+
+<section id="status"><h2>Status and next steps</h2>
+<p>About 29% of the client is built (weighted by lane size), as of {{updated}}. The live bar is in the <a href="https://github.com/Caffeine-Driven-LLC/Centcom#progress" rel="noopener">client README</a>. Next up:</p>
+<ol>{{next_steps}}</ol></section>
+
+<section id="contributing"><h2>Contributing</h2>
+<p>The work is split into 100+ independent lanes per side, each with a goal, contracts, acceptance criteria and tests. Start with <code>plan/START_HERE.md</code> in either repository, pick a lane from the "Ready to pick up" list in the README, and update <code>plan/STATUS.json</code> when you finish or advance one. Run <code>pnpm typecheck && pnpm test</code> before opening a pull request.</p></section>
+
+<section id="credits"><h2>Credits and legal</h2>
+<p><strong>Centcom is built by Caffeine Driven LLC.</strong> Lead developer: Alexander Gese (<a href="https://github.com/AlexanderGese" rel="noopener">@AlexanderGese</a>). Organization: <a href="https://github.com/Caffeine-Driven-LLC" rel="noopener">github.com/Caffeine-Driven-LLC</a>. The pixel octopus Cento, the Abyss and Shallows themes and the spinner lines were created for this project.</p>
+<p>The bundled centcom-master skills belong to their original authors and are fetched from their public repositories under their own terms; Centcom does not redistribute them. Fonts: Bricolage Grotesque, Instrument Sans and JetBrains Mono (SIL Open Font License).</p>
+<p>Claude and Claude Code are trademarks of Anthropic, PBC. Codex and OpenAI are trademarks of OpenAI. Centcom is not affiliated with or endorsed by either company. © {{year}} Caffeine Driven LLC. All rights reserved.</p></section>
+</article>
+</div></main>
+{{footer}}
+<script type="module" src="/docs.js"></script>
+</body></html>
