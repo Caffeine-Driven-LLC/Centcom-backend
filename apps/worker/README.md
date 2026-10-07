@@ -111,3 +111,17 @@ registerInvitePurgeHook(hooks, createInviteStore(db)); // before startWorkspaceP
 - **Tests:** `test/invite-expiry.test.ts`: the processor, the schedule, the retries and dead
   letter, and the purge hook; on Redis 7 (CI), one scheduler with the retry options, a run, and a
   failing run dead-lettered after 3 attempts.
+
+## `projects` purge hook (B035)
+
+`registerProjectPurgeHook` adds the `projects` hook to B027's purge registry: it deletes a purged
+workspace's projects (`deleteForWorkspace`) before `workspace-purge` removes the workspace row,
+which the foreign key requires. Like every hook it is idempotent.
+
+```ts
+registerProjectPurgeHook(hooks, createProjectStore(db)); // before startWorkspacePurgeWorker
+```
+
+Tests: `test/projects.purge-hook.test.ts` (registration, order before the purge, a harmless
+re-run); the rows going on Postgres is checked in
+`apps/api/test/modules/projects/projects.postgres.test.ts`.

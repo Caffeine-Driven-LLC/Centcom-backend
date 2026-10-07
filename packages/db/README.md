@@ -184,6 +184,22 @@ and `createInviteStore(db)` (`src/repos/invites.ts`) is its SQL.
   worker's `invites` purge hook) before B027's purge; deleting a user who created or accepted an
   invite is refused (B026's job).
 
+## Projects (B035)
+
+[`migrations/20260102000900_projects.sql`](migrations/20260102000900_projects.sql) creates
+`projects`; `src/schema/projects.ts` types it (`ProjectDatabase` = `CoreDatabase` plus this
+table), and `createProjectStore(db)` (`src/repos/projects.ts`) is its SQL.
+
+- **Names:** 1-60 characters, unique per workspace ignoring case
+  (`projects_workspace_id_name_key` on `(workspace_id, lower(name))`); an insert or rename that
+  meets it writes nothing (`insert` and `update` return null), never a raw unique violation.
+- **`repo_ref`:** opaque, 1-128 characters or null; the API checks what it may hold.
+- **`version`** is the ETag: 1 on insert, moved on by every `update`.
+- **Live workspaces only:** `findById`, `list` and `lockById` see projects of live workspaces;
+  `lockLiveWorkspace` share-locks the workspace row for a create.
+- **Foreign keys** restrict: a purged workspace's projects go through `deleteForWorkspace` (the
+  worker's `projects` purge hook) before B027's purge.
+
 ## Tests
 
 `test/runner/` holds the tests of the client and the runner, `test/schema/` those of the schemas.
