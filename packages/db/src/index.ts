@@ -6,8 +6,8 @@
  * identities (B015) in `schema/identities.ts`, refresh tokens (B017) in
  * `schema/refresh-tokens.ts`, e-mail sign-in links (B014) in
  * `schema/login-tokens.ts`, the audit log (B036) in `schema/audit-events.ts`, invites (B029) in
- * `schema/invites.ts`; repositories (B013 on, workspaces from B027, members from B028, invites
- * from B029) in `repos/`.
+ * `schema/invites.ts`, projects (B035) in `schema/projects.ts`; repositories (B013 on, workspaces
+ * from B027, members from B028, invites from B029, projects from B035) in `repos/`.
  */
 export {
   ACQUIRE_BUCKETS_S,
@@ -76,6 +76,17 @@ export {
   type NewInvite,
 } from './repos/invites.js';
 export {
+  createProjectStore,
+  PROJECT_LIST_SORTS,
+  projectOperations,
+  PROJECTS_NAME_KEY,
+  type NewProject,
+  type ProjectChanges,
+  type ProjectRecord,
+  type ProjectStore,
+  type ProjectTx,
+} from './repos/projects.js';
+export {
   createMemberStore,
   MEMBER_LIST_SORTS,
   memberOperations,
@@ -106,6 +117,7 @@ export {
 } from './repos/users.js';
 export type { AuditDatabase, AuditEventsTable } from './schema/audit-events.js';
 export type { InviteDatabase, InvitesDatabase, InvitesTable } from './schema/invites.js';
+export type { ProjectDatabase, ProjectsDatabase, ProjectsTable } from './schema/projects.js';
 export type {
   IdentitiesDatabase,
   IdentitiesTable,
