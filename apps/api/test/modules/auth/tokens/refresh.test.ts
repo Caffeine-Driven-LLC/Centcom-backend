@@ -270,9 +270,12 @@ describe.runIf(ADMIN_URL !== undefined)('the Postgres store on Postgres 16', () 
     const won = results.filter((r) => r.status === 'fulfilled');
     expect(won).toHaveLength(1);
     const lost = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
-    expect(new Set(lost.map((r) => (r.reason as { code?: string }).code))).toEqual(
-      new Set(['refresh_reuse_detected']),
-    );
+    const codes = lost.map((r) => (r.reason as { code?: string }).code);
+    // The first loser finds the token spent and revokes the family (reuse). Losers that take the
+    // row lock after that commit find it spent and revoked, which decideRotation answers with
+    // invalid_grant ("a spent and revoked token" above). How many land on each side is timing.
+    expect(codes).toContain('refresh_reuse_detected');
+    for (const code of codes) expect(['refresh_reuse_detected', 'invalid_grant']).toContain(code);
     const familyId = won[0]?.status === 'fulfilled' ? won[0].value.familyId : '';
     expect(
       await db
