@@ -13,7 +13,21 @@
       "default": "./dist/index.js"
     }
   },
+  "bin": {
+    "centcom-db": "./dist/cli.js"
+  },
   "scripts": {
-    "build": "tsc -b"
+    "build": "tsc -b",
+    "migrate": "node dist/cli.js migrate",
+    "migrate:status": "node dist/cli.js status",
+    "migrate:new": "node dist/cli.js new"
+  },
+  "dependencies": {
+    "@centcom/core": "workspace:*",
+    "kysely": "0.29.6",
+    "pg": "8.23.1"
+  },
+  "devDependencies": {
+    "@types/pg": "8.23.1"
   }
 }
