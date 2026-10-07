@@ -1,7 +1,8 @@
 # @centcom/api
 
 The Fastify REST API (`/v1/*`, CT-API). It is assembled lane by lane; today it holds the request
-context plugin (B005), the error handler plugin (B006) and the users module (B013). Logging and the error types themselves
+context plugin (B005), the error handler plugin (B006), the users module (B013) and social login
+(B015). Logging and the error types themselves
 live in `@centcom/core` ([`packages/core/README.md`](../../packages/core/README.md#logging-b005),
 [errors](../../packages/core/README.md#errors-b006)).
 
@@ -171,3 +172,89 @@ await users.updateProfile(user.id, { locale: 'en-GB' });
 
 The real-Postgres cases run where `DATABASE_URL` is set (CI's integration job), each file in a
 throwaway `test_<time>_<random>` database migrated to the latest version.
+
+## Social login (B015)
+
+`src/modules/auth/social/` signs users in with GitHub or Google (authorization code with PKCE,
+as an OAuth client). `src/routes/login-social.ts` serves the browser routes, outside the /v1
+contract.
+
+```ts
+import {
+  createIdentityRepo,
+  loadSocialConfig,
+  SocialLoginService,
+} from './modules/auth/social/index.js';
+import { socialLoginRoutes } from './routes/login-social.js';
+
+const config = loadSocialConfig(process.env, (warning) => log.warn(warning)); // in main.ts
+const social = new SocialLoginService({
+  config,
+  users: userService,
+  identities: createIdentityRepo(db),
+});
+await app.register(socialLoginRoutes, { social, completer, logger: log }); // completer: B018's web session
+```
+
+| Route                                               | What it does                                                                                         |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `GET /login/{github\|google}?return_to=`            | Sets the signed state cookie, answers 302 to the provider's authorize URL                            |
+| `GET /login/{github\|google}/callback?code=&state=` | Checks the callback, signs the user in, hands over to `LoginCompleter.complete` (303 to `return_to`) |
+
+- **State:** a random `state`, the PKCE verifier (S256) and Google's `nonce` travel in
+  `centcom_oauth`, a cookie signed with HMAC-SHA256 (`SOCIAL_STATE_SECRET`).
+  - The cookie is valid 10 minutes, `HttpOnly`, `SameSite=Lax`, `Path=/login` and `Secure`.
+  - A missing, forged, expired or mismatched state is refused before any provider call.
+- **GitHub:** scopes `read:user user:email`. The account's numeric id comes from `GET /user`.
+  The e-mail is the primary address from `GET /user/emails`, used only when GitHub marks it
+  verified.
+- **Google:** scopes `openid email profile`. The ID token is verified in full: RS256 by a key of
+  Google's JWKS (one refetch for an unknown `kid`, at most once a minute), `iss`, `aud`, `exp`
+  (60 s skew), our `nonce`, and `email_verified` true.
+- **Matching:** `identities(provider, subject, user_id)`.
+  - An account seen before signs in as its user, whatever its e-mail is now.
+  - Otherwise its verified e-mail is the user's: B013's `getOrCreateByEmail` finds or creates
+    that user, and the account is linked to it.
+  - Concurrent first logins end with one user and one identity; the identities primary key
+    decides who links first.
+- **Nothing kept from the provider** but the account id. Codes, tokens and the client secret are
+  used in memory only. Logs carry the provider and outcome (`auth.social_login`,
+  `auth.social_login_failed` with `reason` and `status`), never codes, tokens or addresses.
+- **Failures** get a plain page:
+  - 400: state, declined, no verified e-mail, an invalid identity;
+  - 502: the provider was down or slower than 5 s (`PROVIDER_TIMEOUT_MS`).
+
+  No account changes on any failure. A provider without its client id or secret is off: its
+  routes answer 404 and a warning is logged at startup.
+
+- **`return_to`** (`src/modules/auth/return-to.ts`, shared with B014) must be exactly one of
+  `LOGIN_RETURN_TO_ALLOWLIST`. Anything else, such as `//evil.example`, `javascript:`, other hosts
+  or paths, becomes the list's first entry.
+
+### Configuration
+
+The keys are declared in `config.ts` (`socialEnvSchema`, read by `loadSocialConfig()`); like
+B017's, they are not in `docs/config.md` yet.
+
+| Key                                        | Secret    | What it is                                                                   |
+| ------------------------------------------ | --------- | ---------------------------------------------------------------------------- |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | `_SECRET` | GitHub OAuth app; both needed or GitHub is off                               |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | `_SECRET` | Google OAuth client; both needed or Google is off                            |
+| `SOCIAL_REDIRECT_BASE_URL`                 | no        | Public API base; callbacks are `<base>/login/<provider>/callback`            |
+| `SOCIAL_STATE_SECRET`                      | yes       | At least 32 characters, the same on every instance; signs the state cookie   |
+| `LOGIN_RETURN_TO_ALLOWLIST`                | no        | Comma-separated URLs a login may return to (exact); the first is the default |
+
+### Tests
+
+`test/modules/auth/social/`:
+
+- **`state.test.ts`:** authorize URLs, PKCE, signature, expiry, tampering.
+- **`google.test.ts`:** the ID-token matrix with a test JWKS.
+- **`github.test.ts`:** e-mail rules, exchange, failures, the time limit.
+- **`linking.test.ts`:** matching and races, in memory and on Postgres.
+- **`redirect.test.ts`:** `return_to` and configuration.
+- **`routes.test.ts`:** the HTTP side.
+- **`leak.test.ts`:** nothing secret in logs, pages or the database.
+
+The providers are a fake behind an injected `fetch` (canned JSON, a test RSA key), with no real
+credentials.
