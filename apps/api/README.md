@@ -1,8 +1,8 @@
 # @centcom/api
 
 The Fastify REST API (`/v1/*`, CT-API). It is assembled lane by lane; today it holds the request
-context plugin (B005), the error handler plugin (B006), the users module (B013) and social login
-(B015). Logging and the error types themselves
+context plugin (B005), the error handler plugin (B006), the users module (B013), social login
+(B015) and the RBAC plugin (B021). Logging and the error types themselves
 live in `@centcom/core` ([`packages/core/README.md`](../../packages/core/README.md#logging-b005),
 [errors](../../packages/core/README.md#errors-b006)).
 
@@ -258,3 +258,30 @@ B017's, they are not in `docs/config.md` yet.
 
 The providers are a fake behind an injected `fetch` (canned JSON, a test RSA key), with no real
 credentials.
+
+## RBAC plugin (B021)
+
+`src/plugins/rbac.ts` connects routes to the RBAC engine of `@centcom/core`: register it with
+the authorizer and a way to find a request's actor (the auth plugin's principal, once B017 is in),
+then guard routes with preHandlers instead of comparing roles.
+
+```ts
+await app.register(rbacPlugin, { authorizer, actor: (request) => actorOf(request) });
+app.patch(
+  '/v1/workspaces/:id',
+  {
+    preHandler: [
+      requireScope('workspaces:write'),
+      requirePermission('workspace.update', (req) => ({ workspaceId: req.params.id })),
+    ],
+  },
+  handler,
+);
+```
+
+- **No actor:** 401 `unauthorized`.
+- **A missing scope or a denied action:** 403 `forbidden` with a fixed detail; the authorizer
+  audits privileged denials.
+- **`requirePermission(…, { hideAs404: true })`** answers 404 `not_found` instead, for resources
+  whose existence is not the caller's business.
+- **Tests:** `test/rbac-plugin.test.ts`.

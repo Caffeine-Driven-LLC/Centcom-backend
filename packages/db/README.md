@@ -35,6 +35,7 @@ const { ok, migrationsAtExpected } = await healthCheck(db); // for /readyz
 | `MigrationError`, `isConnectionError`, `isSerializationFailure`         | Typed runner errors (`code`: `checksum_mismatch`, `lock_timeout`, `migration_failed`, ...) and error classifiers                                                                       |
 | `Database`, `SchemaMigrationsTable`, `DbConfig`, ...                    | Types; `Database` holds the tables this package owns (`schema_migrations`); schema lanes pass their own database type to `createDb<DB>()`                                              |
 | `createUserRepo(db)`, `User`, `NewUser`, `ProfilePatch`, `isEmailTaken` | The users repository (B013): `create`, `findById`, `findByEmail` (case-insensitive), `updateProfile`, `markDeletionRequested`, `markDeleted`, `listByIds`; selects only `USER_COLUMNS` |
+| `createMembershipRepo(db)`                                              | The RBAC `MembershipReader` (B021): a member's workspace role (none in a soft-deleted workspace) and most powerful live session seat; wrap it in `cachedMembershipReader`              |
 
 ## Client
 

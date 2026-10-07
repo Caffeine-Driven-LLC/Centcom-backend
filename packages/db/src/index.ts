@@ -57,6 +57,7 @@ export {
   type HealthOptions,
   type HealthReport,
 } from './health.js';
+export { createMembershipRepo } from './repos/memberships.js';
 export {
   createUserRepo,
   isEmailTaken,
