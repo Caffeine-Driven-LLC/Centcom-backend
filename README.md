@@ -17,7 +17,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 ![Progress](docs/progress.svg)
 
-**15% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
+**16% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
 
 ## Next steps
 
@@ -34,14 +34,14 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 |---|---|---|---|
 | [B010](plan/backend/B010.md) | Test harness: containers, factories, contract test runner | M | M0 |
 | [B012](plan/backend/B012.md) | Local dev environment: compose stack, seed data, one-command up | S | M0 |
+| [B028](plan/backend/B028.md) | Membership and workspace role management | M | M3 |
 | [B091](plan/backend/B091.md) | Infrastructure as code: environments dev, stage, prod | L | M3 |
 | [B017](plan/backend/B017.md) | Token service: JWT issue, refresh rotation with reuse detection, JWKS, revocation | L | M3 |
 | [B026](plan/backend/B026.md) | Account deletion and data export | M | M3 |
 | [B037](plan/backend/B037.md) | Relay service skeleton: ws server, health, graceful shutdown | M | M3 |
-| [B027](plan/backend/B027.md) | Workspace CRUD endpoints | M | M3 |
+| [B034](plan/backend/B034.md) | Workspace settings and policies | S | M4 |
+| [B035](plan/backend/B035.md) | Projects registry | S | M4 |
 | [B069](plan/backend/B069.md) | Plans and entitlements model | M | M4 |
-| [B063](plan/backend/B063.md) | Notification dispatcher core: events to channels | M | M4 |
-| [B084](plan/backend/B084.md) | Release manifest and update channel service | M | M5 |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
 
