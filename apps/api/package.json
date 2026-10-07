@@ -21,6 +21,7 @@
     "@centcom/core": "workspace:*",
     "@centcom/db": "workspace:*",
     "fastify": "5.12.5",
+    "jose": "6.2.12",
     "kysely": "0.29.6"
   }
 }

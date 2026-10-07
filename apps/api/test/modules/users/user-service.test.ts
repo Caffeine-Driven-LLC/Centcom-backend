@@ -138,7 +138,9 @@ describe('the service without a database', () => {
       query.sql.startsWith('insert into "workspaces"') ? down : { rows: [userRow()] },
     );
     const service = new UserService({ db, repo: fakeRepo(), newId, now: () => NOW });
-    const err: unknown = await service.getOrCreateByEmail('down@example.test').catch((e: unknown) => e);
+    const err: unknown = await service
+      .getOrCreateByEmail('down@example.test')
+      .catch((e: unknown) => e);
     expect(err).toBeInstanceOf(AppError);
     expect(err).toMatchObject({ code: 'service_unavailable', status: 503 });
     expect(statements.at(-1)).toBe('rollback');
