@@ -1,6 +1,7 @@
 /**
  * @centcom/worker: BullMQ jobs: webhooks, notifications, billing, retention. Today: the email
- * delivery job (B032) and the workspace purge (B027). Later lanes add theirs under `src/jobs/`.
+ * delivery job (B032), the workspace purge (B027) and invite expiry (B029). Later lanes add theirs
+ * under `src/jobs/`.
  */
 export {
   createEmailQueue,
@@ -34,3 +35,22 @@ export {
   type WorkspacePurgeQueueOptions,
   type WorkspacePurgeWorkerOptions,
 } from './jobs/workspace-purge.js';
+export {
+  createInviteExpiryQueue,
+  INVITE_EXPIRY_ATTEMPTS,
+  INVITE_EXPIRY_BACKOFF_BASE_MS,
+  INVITE_EXPIRY_EVERY_MS,
+  INVITE_EXPIRY_FAILED_RETENTION_S,
+  INVITE_EXPIRY_QUEUE,
+  INVITE_EXPIRY_SCHEDULER_ID,
+  INVITE_PURGE_HOOK,
+  inviteExpiryJobOptions,
+  onInviteExpiryFailed,
+  processInviteExpiry,
+  registerInvitePurgeHook,
+  scheduleInviteExpiry,
+  startInviteExpiryWorker,
+  type InviteExpiryDeps,
+  type InviteExpiryQueueOptions,
+  type InviteExpiryWorkerOptions,
+} from './jobs/invite-expiry.js';

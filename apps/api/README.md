@@ -624,3 +624,76 @@ user, role?, at}` on `centcom:membership`, and the member's cached role is dropp
 - **`members.events.test.ts`:** announcements, audit rows (denied too), transfers, retries.
 - **`members.list.test.ts`:** paging and who sees addresses.
 - **`members.postgres.test.ts`:** the routes and the 50-attempt storm over Postgres (CI).
+
+## Invites (B029)
+
+Workspace invites (`src/modules/invites/`, CT-API-WORKSPACES). The SQL is `createInviteStore` in
+@centcom/db; the expiry job and the purge hook are `invite-expiry` in @centcom/worker.
+
+```ts
+app.decorate('seatGate', seatGate); // B030: refuses a member when no seat is free
+const invites = new InviteService({
+  store: createInviteStore(db),
+  members, // B028's MembershipService
+  urls: inviteUrlBuilder, // B033: inviteUrl(token), joinUrl(token)
+  email: emailService, // B032: queues workspace_invite
+  logger,
+  metrics,
+});
+// after the member routes' plugins; the idempotency plugin needs its encryptionKey:
+await app.register(inviteRoutes, { service: invites, workspaces, cursorKeys });
+```
+
+| Route                                | Scope              | Who                   | Answers                                                     |
+| ------------------------------------ | ------------------ | --------------------- | ----------------------------------------------------------- |
+| `POST /v1/workspaces/{id}/invites`   | `workspaces:write` | owner, admin          | 201 with `token` and `url`; `Idempotency-Key` required      |
+| `GET /v1/workspaces/{id}/invites`    | `workspaces:read`  | owner, admin          | Pending invites, oldest first (CT-PAGE), without tokens     |
+| `DELETE /v1/invites/{id}`            | `workspaces:write` | owner, admin          | 204; from then on every use of the invite is a 410          |
+| `GET /v1/invites/{token}`            | none               | anyone                | Workspace and inviter names, role, expiry, `has_key_bundle` |
+| `POST /v1/invites/{token}/accept`    | `profile`          | users                 | 201 `{workspace, member}`; `Idempotency-Key` accepted       |
+| `PUT /v1/invites/{id}/key-bundle`    | `sessions:host`    | a host of the space   | 204                                                         |
+| `GET /v1/invites/{token}/key-bundle` | `profile`          | the user who accepted | `{bundle}`, once; then 410                                  |
+
+- **Tokens:** 160 bits from the CSPRNG, base64url; only their sha256 is stored, and invites are
+  found by it. A token is in the create response and the invite e-mail, nowhere else: logs carry
+  route templates, and the create's idempotency record keeps its copy encrypted
+  (`sensitiveResponse`). The key in a link's fragment (`#k=`) never reaches the server: a `k`
+  query parameter is a 400.
+- **Create:** the seat gate is asked, an address that is a member's is a 409 `member_exists`, a
+  second pending invite for an address a 409 (without the first one's id), and the invite is
+  inserted and audited (`invite.create`, `meta.role` and `meta.kind`), in one transaction. After
+  the commit an address invite queues `workspace_invite` (its idempotency key is the invite id);
+  a mail that cannot be queued is logged and counted (`invite_mail_failures_total`), and the
+  invite stands.
+- **Statuses:** pending until accepted, revoked or expired, at `expires_at` exactly (7 days).
+  Unknown tokens are a 404 `invite_invalid`; expired, revoked and used invites a 410
+  (`invite_expired`, `invite_revoked`, `gone`). The preview counts in the anonymous rate-limit
+  bucket (30 a minute per address).
+- **Accept:** locks the invite row (the same user again gets the same membership), checks the
+  address binding (403), locks the workspace row (a member already: 409), marks the invite
+  accepted, asks the seat gate (a refusal is a 403 of the entitlement family that changes
+  nothing) and adds the member (`member.add`, `via: invite`), auditing `invite.accept`, in one
+  transaction. Accepts for the last seat take turns on the workspace row: one wins.
+- **Key bundles (CT-CRYPTO §4):** opaque bytes, at least 48 (a sealed box's overhead), at most
+  16 KiB of base64url (413 beyond). A host of a pending, live or paused session of the workspace
+  stores one while the invite is pending, or after acceptance until it is fetched, for 15 minutes
+  (403 `host_required` for anyone else, 410 when too late). Only the user who accepted fetches it
+  (403 for anyone else: the token alone is not enough), once. It goes when fetched, revoked or
+  expired, or 15 minutes after acceptance. It is never logged.
+- **Fail closed:** registering `inviteRoutes` without the `seatGate` decorator throws, so the API
+  cannot start without seat checks.
+
+### Tests
+
+`test/modules/invites/`:
+
+- **`invites.lifecycle.test.ts`:** create, list, preview, accept, revoke and expiry with a fake
+  clock, the role matrix, contract validation.
+- **`invites.token-secrecy.test.ts`:** no token in rows, audit events, logs, lists, error bodies
+  or the idempotency record; `?k=` refused.
+- **`invites.seat-race.test.ts`:** refusals, 10 parallel accepts for the last seat, B030's count.
+- **`invites.key-bundle.test.ts`:** sizes, hosts only, fetch once, deletion on revocation, expiry
+  and 15 minutes after acceptance.
+- **`invites.idempotency.test.ts`**, **`invites.ratelimit.test.ts`**.
+- **`invites.postgres.test.ts`:** the routes over Postgres, a table dump without tokens, and the
+  seat race against the database's locks (CI).

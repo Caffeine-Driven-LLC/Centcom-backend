@@ -97,6 +97,11 @@ export class MemoryMemberStore implements MemberStore {
     };
   }
 
+  /** The member operations inside `trx`, a transaction of the shared state (B029's invites). */
+  operations(trx: AuditDb): MemberTx {
+    return this.#tx(trx);
+  }
+
   async transaction<T>(fn: (tx: MemberTx) => Promise<T>): Promise<T> {
     if (this.gate !== undefined) {
       this.waiting += 1;

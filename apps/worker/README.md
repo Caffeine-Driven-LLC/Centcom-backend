@@ -77,3 +77,37 @@ const worker = startWorkspacePurgeWorker({
   `workspace_purge_failed_total` and logged as `workspace.purge_failed`.
 - **Idempotent:** a job run twice purges once; the second run's store purge finds nothing.
 - **Logs:** workspace ids, hook names and error kinds only.
+
+## `invite-expiry` (B029)
+
+Every 5 minutes, marks lapsed pending invites expired and drops their key bundles, and drops key
+bundles past their own time (15 minutes after acceptance, never fetched): a bundle outlives its
+invite by 5 minutes at most. The same file registers the `invites` purge hook, which deletes a
+purged workspace's invites before `workspace-purge` removes its row.
+
+```ts
+const queue = createInviteExpiryQueue({ connection, prefix });
+await scheduleInviteExpiry(queue); // one scheduler per queue, however often it is called
+const worker = startInviteExpiryWorker({
+  connection,
+  prefix,
+  store: createInviteStore(db),
+  logger,
+  metrics,
+});
+registerInvitePurgeHook(hooks, createInviteStore(db)); // before startWorkspacePurgeWorker
+```
+
+- **Idempotent:** a run changes only what is due, so a repeated or overlapping run is harmless.
+- **Retries:** 3 attempts (`inviteExpiryJobOptions()`, on the queue's defaults and the
+  scheduler's template), waiting between half and all of `10 s · 2^(n-1)` (BullMQ's exponential
+  backoff, jitter 0.5); then the run stays in the failed set (dead letter, kept 7 days), counted
+  in `invite_expiry_failed_total` and logged as `invite.expiry_failed`. The next scheduled run
+  comes all the same: BullMQ queues it when a run starts.
+- **Metrics and logs:** `invites_expired_total`, `invite_key_bundles_dropped_total`,
+  `invite_expiry_failed_total`; `invite.expiry_swept` with the counts only, and
+  `invite.expiry_retry` / `invite.expiry_failed` with the job id, the attempts and the error's
+  kind. Bundles are never read or logged.
+- **Tests:** `test/invite-expiry.test.ts`: the processor, the schedule, the retries and dead
+  letter, and the purge hook; on Redis 7 (CI), one scheduler with the retry options, a run, and a
+  failing run dead-lettered after 3 attempts.
