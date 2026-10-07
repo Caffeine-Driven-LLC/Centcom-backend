@@ -10,8 +10,10 @@
  * personal workspace.
  */
 import type { IdPrefix } from '@centcom/contracts';
+import { unavailable } from '@centcom/core';
 import {
   createUserRepo,
+  isConnectionError,
   isEmailTaken,
   withTransaction,
   type CoreDatabase,
@@ -44,6 +46,17 @@ export interface SignInResult {
 export const personalSlug = (workspaceId: string): string =>
   `p-${workspaceId.slice(4).toLowerCase()}`;
 
+/** A lost database connection becomes a 503 (the transaction never committed); other errors pass. */
+async function guarded<T>(run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (err) {
+    if (!isConnectionError(err)) throw err;
+    // The cause is a bare copy: driver errors can carry connection details.
+    throw unavailable(undefined, undefined, { cause: new Error('database unavailable') });
+  }
+}
+
 /** Users: sign-in bootstrap and profile updates. */
 export class UserService {
   private readonly db: Kysely<CoreDatabase>;
@@ -66,11 +79,15 @@ export class UserService {
    */
   async getOrCreateByEmail(email: string, hints: { name?: string } = {}): Promise<SignInResult> {
     const address = validateEmail(email);
+    return guarded(() => this.getOrCreate(address, hints.name));
+  }
+
+  private async getOrCreate(address: string, name: string | undefined): Promise<SignInResult> {
     const existing = await this.repo.findByEmail(address);
     if (existing !== null) return { user: existing, created: false };
     try {
       const user = await withTransaction(this.db, (trx) =>
-        this.createWithWorkspace(trx, address, hints.name),
+        this.createWithWorkspace(trx, address, name),
       );
       return { user, created: true };
     } catch (err) {
@@ -84,7 +101,8 @@ export class UserService {
 
   /** Checks and applies a profile patch; a validation AppError names every bad field. */
   async updateProfile(id: string, patch: ProfilePatch): Promise<User> {
-    return this.repo.updateProfile(id, validateProfilePatch(patch));
+    const checked = validateProfilePatch(patch);
+    return guarded(() => this.repo.updateProfile(id, checked));
   }
 
   private async createWithWorkspace(

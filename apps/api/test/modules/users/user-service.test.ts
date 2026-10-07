@@ -130,6 +130,30 @@ describe('the service without a database', () => {
     await expect(ghost.getOrCreateByEmail('ghost@example.test')).rejects.toBe(lost);
   });
 
+  it('answers a lost database connection with a 503 and leaves no partial user', async () => {
+    const down = Object.assign(new Error('connect ECONNREFUSED 127.0.0.1:5432'), {
+      code: 'ECONNREFUSED',
+    });
+    const { db, statements } = scriptedDb((query) =>
+      query.sql.startsWith('insert into "workspaces"') ? down : { rows: [userRow()] },
+    );
+    const service = new UserService({ db, repo: fakeRepo(), newId, now: () => NOW });
+    const err: unknown = await service.getOrCreateByEmail('down@example.test').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(AppError);
+    expect(err).toMatchObject({ code: 'service_unavailable', status: 503 });
+    expect(statements.at(-1)).toBe('rollback');
+
+    const lookup = new UserService({
+      db: scriptedDb().db,
+      repo: { ...fakeRepo(), findByEmail: () => Promise.reject(down) },
+      newId,
+      now: () => NOW,
+    });
+    await expect(lookup.getOrCreateByEmail('down@example.test')).rejects.toMatchObject({
+      code: 'service_unavailable',
+    });
+  });
+
   it('checks a profile patch before it reaches the repository', async () => {
     const repo = fakeRepo();
     const service = new UserService({ db: scriptedDb().db, repo, newId, now: () => NOW });
