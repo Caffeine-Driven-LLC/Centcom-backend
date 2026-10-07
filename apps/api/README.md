@@ -2,8 +2,8 @@
 
 The Fastify REST API (`/v1/*`, CT-API). It is assembled lane by lane; today it holds the request
 context plugin (B005), the error handler plugin (B006), the users module (B013), social login
-(B015), the RBAC plugin (B021), the account routes (B022) and the rate-limit plugin (B023).
-Logging and the error types themselves live in `@centcom/core`
+(B015), the RBAC plugin (B021), the account routes (B022), the rate-limit plugin (B023) and the
+idempotency plugin (B024). Logging and the error types themselves live in `@centcom/core`
 ([`packages/core/README.md`](../../packages/core/README.md#logging-b005),
 [errors](../../packages/core/README.md#errors-b006)).
 
@@ -364,3 +364,42 @@ app.post('/v1/usage/events', { config: { rateLimit: { bucket: 'usage' } } }, han
   - Without a `principal` function, everyone counts as anonymous.
 - **Tests:** `test/rate-limit.test.ts` covers acceptance 1-9 end to end, the guardrails and the
   route config checks.
+
+## Idempotency plugin (B024)
+
+`src/plugins/idempotency.ts` applies CT-PAGE's `Idempotency-Key` to POST routes that declare
+it; the records behind it are in `@centcom/core`
+([README](../../packages/core/README.md#idempotency-b024)).
+
+```ts
+await app.register(idempotencyPlugin, {
+  kv: redis.kv,
+  ...idempotencyConfig(), // IDEMPOTENCY_ENCRYPTION_KEY, for sensitiveResponse routes
+  principal: (request) => principalIdOf(request), // the auth plugin's principal, once B017 is in
+  logger,
+  metrics,
+}); // after the request context, error handler and auth plugins; before any route
+app.post('/v1/workspaces/:id/invites', { config: { idempotency: 'required' } }, handler);
+app.post('/v1/keys', { config: { idempotency: 'required', sensitiveResponse: true } }, handler);
+```
+
+- **Route config:** `idempotency: 'required' | 'accepted'`, `sensitiveResponse?` and
+  `maxStoredBytes?` (default 256 KiB, at most 1 MiB). Anything the plugin cannot honour fails at
+  startup: a non-POST route, `sensitiveResponse` without a key, a bad size.
+- **A request with a key**, after parsing and before the handler:
+  - the first request runs, and its response (2xx and 4xx, never 5xx) is kept for 24 h;
+  - the same request again gets that response with `Idempotency-Replayed: true`, and the handler
+    does not run;
+  - a different request under the key: 409 `idempotency_conflict`;
+  - a duplicate of a request still running waits up to 10 s, then gets 409 `conflict` with
+    `Retry-After: 1`.
+- **Keys:** a missing key on a `required` route is 400 `idempotency_key_required`. A key that is
+  not one ULID or UUID (at most 64 characters) is 422 with `errors[].pointer`
+  `/headers/idempotency-key`. Keys are scoped by principal, method and route template.
+- **Store down:** `required` routes answer 503 with `retry_after_s: 1` and never run unprotected.
+  `accepted` routes run without the guarantee (`idempotency_unprotected_total`, and
+  `idempotency.unprotected` at most once a minute).
+- **Responses that cannot be kept** are still served, and their key is freed: oversized, streamed,
+  hijacked, or a failed write (`idempotency_store_errors_total`, `idempotency.store_failed`).
+- **Tests:** `test/idempotency.test.ts` covers acceptance 1-9 end to end, the guardrails, the
+  failure policy and the route config checks.
