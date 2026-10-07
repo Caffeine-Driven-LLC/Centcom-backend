@@ -316,12 +316,13 @@ describe.runIf(ADMIN_URL !== undefined)('the invite store on Postgres 16', () =>
     const owner = await addUser();
     const wsp = await workspace(owner);
     const address = `${owner.toLowerCase()}@example.test`;
+    const elsewhere = await workspace(await addUser());
     await invites.transaction(async (tx) => {
       expect(await tx.emailOf(owner)).toBe(address);
       expect(await tx.emailOf(newId('usr'))).toBeNull();
       expect(await tx.isMemberEmail(wsp, address.toUpperCase())).toBe(true);
       expect(await tx.isMemberEmail(wsp, 'nobody@example.test')).toBe(false);
-      expect(await tx.isMemberEmail(await workspace(await addUser()), address)).toBe(false);
+      expect(await tx.isMemberEmail(elsewhere, address)).toBe(false);
       // The member operations share the transaction.
       expect(await tx.members.lockWorkspace(wsp)).toBe(true);
     });
