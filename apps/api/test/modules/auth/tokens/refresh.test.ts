@@ -20,7 +20,16 @@ import {
   type RefreshGrant,
 } from '../../../../src/modules/auth/tokens/index.js';
 import { ADMIN_URL, migratedDatabase, type TestDatabase } from '../../users/helpers.js';
-import { DAY_MS, memoryTokens, memoryUser, seedUser, singleKey, T0, testClock } from './helpers.js';
+import {
+  DAY_MS,
+  memoryTokens,
+  memoryUser,
+  newId,
+  seedUser,
+  singleKey,
+  T0,
+  testClock,
+} from './helpers.js';
 
 const row = (overrides: Partial<Parameters<typeof decideRotation>[0] & object> = {}) => ({
   revoked_at: null,
@@ -302,7 +311,7 @@ describe.runIf(ADMIN_URL !== undefined)('the Postgres store on Postgres 16', () 
     await expect(store.rotate(token, 'centcom-web')).rejects.toMatchObject({
       code: 'invalid_grant',
     });
-    expect(await store.revokeByToken(token, 'usr_01JA3Z8K2M5N7P9Q0R1S2T3V4W')).toBe(false);
+    expect(await store.revokeByToken(token, newId('usr'))).toBe(false);
     const other = await store.issue(grant);
     expect(await store.revokeByToken(other, grant.userId)).toBe(true);
     await expect(store.rotate(other, 'centcom-cli')).rejects.toMatchObject({
