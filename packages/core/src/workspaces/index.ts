@@ -46,8 +46,11 @@ export interface WorkspacePurgeJobData {
   workspaceId: string;
 }
 
-/** One purge job per workspace: adding it again while it exists does nothing. */
-export const workspacePurgeJobId = (workspaceId: string): string => `purge:${workspaceId}`;
+/**
+ * One purge job per workspace: adding it again while it exists does nothing. BullMQ rejects ":" in
+ * custom job ids, so the separator is "-".
+ */
+export const workspacePurgeJobId = (workspaceId: string): string => `purge-${workspaceId}`;
 
 /** Options of a purge job: 5 attempts with the worker's backoff, dead letters kept 7 days. */
 export function workspacePurgeJobOptions(): {

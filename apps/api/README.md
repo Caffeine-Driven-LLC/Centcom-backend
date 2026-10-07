@@ -549,7 +549,7 @@ Crème` → `cafe-creme`), with the next free numeric suffix; a slug race retrie
   (`service.extensions.register({key, parse, apply})`) own fields such as `settings`.
 - **Delete:** hides the workspace and writes `workspace.delete` (account-level, so it outlives the
   purge) in one transaction; then announces `workspace.deleted` on `centcom:workspace-events`,
-  drops cached roles (`rbac:invalidate`) and queues `workspace-purge` (job `purge:<wsp>`). Their
+  drops cached roles (`rbac:invalidate`) and queues `workspace-purge` (job `purge-<wsp>`). Their
   failures are logged and counted (`workspace_announce_failures_total`,
   `workspace_purge_enqueue_failures_total`); the purge job announces again first.
 - **Audit:** `workspace.create`, `workspace.update` (`meta.fields`) and `workspace.delete`, each

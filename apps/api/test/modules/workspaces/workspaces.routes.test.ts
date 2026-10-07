@@ -371,7 +371,7 @@ describe('GET, PATCH and DELETE /v1/workspaces/{id}', () => {
         name: WORKSPACE_PURGE_QUEUE,
         data: { workspaceId: id },
         opts: expect.objectContaining({
-          jobId: `purge:${id}`,
+          jobId: `purge-${id}`,
           attempts: WORKSPACE_PURGE_ATTEMPTS,
         }) as unknown,
       },
