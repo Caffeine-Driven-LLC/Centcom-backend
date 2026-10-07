@@ -171,7 +171,8 @@ reason. Removing the label re-plans the PR at once, so deal with the reason firs
   only this pipeline's.
 - _Out of fix rounds with a check still failing:_ push a fix, or re-run a flaky job until it is
   green; then remove the label.
-- _Anything else_ (a failed Claude step, a fix-ci or conflict answer, a push that never landed):
+- _Anything else_ (a failed Claude step, whose comment quotes Claude's error, a fix-ci or conflict
+  answer, a push that never landed):
   deal with the cause, then remove the label; the pipeline picks up from the PR's current state.
 
 To take a PR out of automation, add `do-not-merge` (a local session never touches that label).
