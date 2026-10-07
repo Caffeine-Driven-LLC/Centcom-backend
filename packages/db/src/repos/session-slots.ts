@@ -2,11 +2,11 @@
  * Member slots (B031): the Postgres side of the relay's slot service.
  *
  * `assign` runs in one transaction that first locks the session's row, so concurrent assigns for
- * one session take turns on every relay node: the member's existing slot is returned, else the
- * next one (slots are never freed, so the lowest free slot is one past the highest) is inserted,
- * up to `cap`. Assigns for different sessions do not wait for each other. The unique constraints
- * stay as a second line of defence: a violation surfaces as SQLSTATE 23505 for the caller to
- * retry. Statements are bounded to 2 s.
+ * one session take turns on every relay node. One more statement then returns the member's
+ * existing slot, else inserts the next one (slots are never freed, so the lowest free slot is one
+ * past the highest), up to `cap`. Assigns for different sessions do not wait for each other. The
+ * unique constraints stay as a second line of defence: a violation surfaces as SQLSTATE 23505 for
+ * the caller to retry. Statements are bounded to 2 s.
  *
  * Owns: the SQL of slots. Must not: store anything but ids and slot numbers.
  */
@@ -46,24 +46,25 @@ export function createSessionSlotStore(db: Kysely<SessionSlotDatabase>): Session
           .forUpdate()
           .executeTakeFirst();
         if (session === undefined) return { kind: 'no_session' };
-        const held = await trx
-          .selectFrom('session_member_slots')
-          .select('slot')
-          .where('session_id', '=', sessionId)
-          .where('member_id', '=', memberId)
-          .executeTakeFirst();
-        if (held !== undefined) return { kind: 'assigned', slot: held.slot, existing: true };
-        const { next } = await trx
-          .selectFrom('session_member_slots')
-          .select(sql<number>`coalesce(max(slot) + 1, 0)::int`.as('next'))
-          .where('session_id', '=', sessionId)
-          .executeTakeFirstOrThrow();
-        if (next >= cap) return { kind: 'full' };
-        await trx
-          .insertInto('session_member_slots')
-          .values({ session_id: sessionId, member_id: memberId, slot: next })
-          .execute();
-        return { kind: 'assigned', slot: next, existing: false };
+        // One round trip under the lock: the member's slot, or the next one inserted below the cap.
+        const { rows } = await sql<{ held: number | null; inserted: number | null }>`
+          with cur as (
+            select max(slot) filter (where member_id = ${memberId}) as held,
+                   coalesce(max(slot) + 1, 0)::int as next
+            from session_member_slots
+            where session_id = ${sessionId}
+          ), ins as (
+            insert into session_member_slots (session_id, member_id, slot)
+            select ${sessionId}, ${memberId}, next from cur where held is null and next < ${cap}
+            returning slot
+          )
+          select cur.held, (select slot from ins) as inserted from cur
+        `.execute(trx);
+        // `cur` aggregates, so there is always one row.
+        const { held, inserted } = rows[0] ?? { held: null, inserted: null };
+        if (held !== null) return { kind: 'assigned', slot: held, existing: true };
+        if (inserted !== null) return { kind: 'assigned', slot: inserted, existing: false };
+        return { kind: 'full' };
       });
     },
 
