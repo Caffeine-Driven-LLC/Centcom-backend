@@ -134,6 +134,24 @@ them for Kysely (`createDb<CoreDatabase>(...)`). Enumerated columns use the cont
   it) and fails with "permission denied to create extension" otherwise.
 - A later lane that needs another column adds its own migration; this file never changes.
 
+## Refresh tokens (B017)
+
+[`migrations/20260102000000_refresh_tokens.sql`](migrations/20260102000000_refresh_tokens.sql)
+creates `refresh_tokens` for the API's token service; `src/schema/refresh-tokens.ts` types it
+(`TokenDatabase` = `CoreDatabase` plus this table).
+
+- **No token is stored.** A row is keyed by the token's SHA-256 (`token_hash`, hex), the only
+  thing a presented token is looked up by. Rows are never exposed, so they have no CT-IDS id; the
+  `family_id` that every rotation of one sign-in shares is 128 random bits (hex).
+- **Lifetimes:** `expires_at` (30 days after the rotation that issued the token, sliding) never
+  passes `absolute_expires_at` (180 days after the family's first token): a CHECK holds it.
+- **References:** `user_id`, `device_id`, `workspace_id` and `parent_hash` (the token this one
+  replaced), all `on delete restrict`; indexes on `family_id`, `user_id` and `device_id`.
+- **Retention:** the purge job (B090) removes rows past `absolute_expires_at`.
+
+The core schema tests stop the runner at the core version (`target`), so later migrations such
+as this one do not change what they check.
+
 ## Identities (B015)
 
 [`migrations/20260102000400_identities.sql`](migrations/20260102000400_identities.sql) creates

@@ -1,10 +1,10 @@
 # @centcom/api
 
 The Fastify REST API (`/v1/*`, CT-API). It is assembled lane by lane; today it holds the request
-context plugin (B005), the error handler plugin (B006), the users module (B013), social login
-(B015), e-mail sign-in (B014), the RBAC plugin (B021), the account routes (B022), the rate-limit
-plugin (B023), the idempotency plugin (B024) and the pagination plugin (B025). Logging and the
-error types themselves live in `@centcom/core`
+context plugin (B005), the error handler plugin (B006), the users module (B013), e-mail sign-in
+(B014), social login (B015), the token service with the auth plugin (B017), the RBAC plugin
+(B021), the account routes (B022), the rate-limit plugin (B023), the idempotency plugin (B024)
+and the pagination plugin (B025). Logging and the error types themselves live in `@centcom/core`
 ([`packages/core/README.md`](../../packages/core/README.md#logging-b005),
 [errors](../../packages/core/README.md#errors-b006)).
 
@@ -174,6 +174,113 @@ await users.updateProfile(user.id, { locale: 'en-GB' });
 
 The real-Postgres cases run where `DATABASE_URL` is set (CI's integration job), each file in a
 throwaway `test_<time>_<random>` database migrated to the latest version.
+
+## Tokens and authentication (B017)
+
+`src/modules/auth/tokens/` is the one token service (CT-AUTH): EdDSA access tokens, rotating
+refresh tokens with reuse detection, revocation, relay tickets and the JWKS.
+`src/plugins/auth.ts` authenticates every other request through it.
+
+```ts
+import { createMemoryRedis } from '@centcom/core';
+import { loadTokenKeys, TokenService } from './modules/auth/tokens/index.js';
+import { authPlugin } from './plugins/auth.js';
+import { revokeRoutes } from './routes/auth/revoke.js';
+import { tokenRoutes } from './routes/auth/token.js';
+import { wellKnownRoutes } from './routes/well-known.js';
+
+const tokens = new TokenService({ db, keys: loadTokenKeys(), kv: redis.kv, logger: log, metrics });
+await app.register(requestContextPlugin, { logger: log, metrics }); // first
+await app.register(errorHandlerPlugin, { logger: log }); // then
+await app.register(authPlugin, { tokens }); // then, before any route
+await app.register(tokenRoutes, { tokens });
+await app.register(revokeRoutes, { tokens });
+await app.register(wellKnownRoutes, { tokens });
+app.get(
+  '/v1/me',
+  { config: { auth: { scopes: ['profile'] } } },
+  async (request) => request.principal,
+);
+```
+
+| Endpoint                     | Auth              | What it does                                                                                                                                                                   |
+| ---------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `POST /v1/auth/token`        | public            | Form or JSON; `client_id` one of `centcom-cli`, `centcom-web` (with `X-Centcom-Client: web`), `centcom-tui`; dispatches `grant_type` to its handler; `Cache-Control: no-store` |
+| `POST /v1/auth/revoke`       | bearer, `profile` | RFC 7009: `{token}` revokes that refresh token's family, `{device}` the device, both only the caller's; always 200, empty                                                      |
+| `GET /.well-known/jwks.json` | public            | The public keys (`OKP`/`Ed25519`, never `d`), active key first; `Cache-Control: public, max-age=300`                                                                           |
+
+- **Access tokens:** JWT, `alg` EdDSA with `kid` and `typ` `at+jwt`, 15 min. The claims are
+  `iss` `https://api.centcom.dev`, `sub`, `aud` `centcom-api`, `exp`, `iat`, `jti`, `scp`, `dev`,
+  `wsp`, `plan` and `ent` (from an `EntitlementsLookup`; default `free`/0).
+  - Verification accepts only EdDSA by a published key, the issuer, audience and type, and 60 s
+    of clock skew.
+  - It then checks the Redis flags (`revoked:jti:<jti>`, `revoked:dev:<id>`, 16 min).
+  - A failure is `token_expired`, `token_invalid`, `token_revoked` or `device_revoked`: one body
+    per code.
+- **Refresh tokens:** 32 random bytes (base64url), stored only as SHA-256 in `refresh_tokens`
+  ([db README](../../packages/db/README.md#refresh-tokens-b017)).
+  - Every use rotates the token in one transaction that locks its row, sliding 30 days within
+    180 days absolute.
+  - A spent token presented again revokes the whole family (`refresh_reuse_detected`, logged as
+    `auth.refresh_reuse_detected` with the family id).
+  - Every other problem is one `invalid_grant` body.
+  - `scope` on a refresh may narrow the access token, never widen it.
+- **Hooks for other lanes:**
+  - `issueTokens({userId, deviceId, scopes, workspaceId?, clientId?})` for grant handlers;
+  - `registerGrantHandler(grantType, handler)` (B016, B018);
+  - `registerPrincipalResolver(prefix, resolver)` (B019, `cen_`);
+  - `revokeDevice(deviceId)` (B020);
+  - `revokeFamily`, `revokeAccessJti(jti, expUnix)`;
+  - `mintRelayTicket({sid, mid, role, dev, caps})` (60 s, `aud` `centcom-relay`).
+- **Auth plugin:**
+  - Routes authenticate unless `config: { auth: false }`; `config: { auth: { scopes } }` adds
+    required scopes (403 `forbidden`).
+  - No or malformed `Authorization: Bearer` header: 401 `unauthorized`.
+  - 401s carry `WWW-Authenticate`.
+  - Unmatched routes stay 404.
+- **Redis down:** tokens with the `admin` scope fail closed (503). The rest fail open until they
+  expire, counted in `auth_revocation_unavailable_total` and logged (ids only) once a minute.
+- **Never logged or echoed:** tokens. The flow test captures every log line and checks.
+
+### Configuration
+
+The lane's keys are declared in `config.ts` (`tokenEnvSchema`, read by `loadTokenKeys()`).
+`docs/config.md` cannot list them yet: its generator lives in `@centcom/core`, which cannot
+import the API.
+
+| Key                 | Secret | What it is                                                                                                                 |
+| ------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `AUTH_SIGNING_KEYS` | yes    | JSON array of Ed25519 JWKs `{kty: "OKP", crv: "Ed25519", kid, x, d}`; keys without `d` are published for verification only |
+| `AUTH_SIGNING_KID`  | no     | `kid` of the key that signs new tokens; it must have `d`                                                                   |
+
+Without a key that can sign, `loadTokenKeys()` throws a `ConfigError` and the API does not start.
+A new key: `generateSigningJwk('<kid>')` from the module (keep the output secret).
+
+**Rotation** (at least every 90 days):
+
+1. Add the new key to `AUTH_SIGNING_KEYS` and deploy: it is published but does not sign.
+2. After at least 5 minutes (the JWKS cache), point `AUTH_SIGNING_KID` at it and deploy.
+3. After 15 minutes more (the old key's last tokens expired), remove the old key's `d`; drop the
+   old key at the next rotation.
+
+### Tests
+
+`test/modules/auth/tokens/`:
+
+- **`jwt.test.ts`:** claims, skew, `none`/HS256, keys, audiences, types.
+- **`jwks.test.ts`:** public keys only, rotation overlap, the route.
+- **`refresh.test.ts`:**
+  - the rotation table;
+  - in-memory flows: rotation, reuse, sliding and absolute expiry on a moved clock, scopes, issue checks;
+  - real Postgres: rotation, reuse, 100 parallel refreshes, expiry, devices, hashes only.
+- **`revocation.test.ts`:** jti, device, family, TTLs, Redis down.
+- **`auth-plugin.test.ts`:** headers, principal, scopes, resolvers.
+- **`errors.test.ts`:** uniform bodies.
+- **`routes.test.ts`:** the endpoints and a full flow whose logs hold no token.
+- **`relay-ticket.test.ts`** and **`config.test.ts`.**
+
+The in-memory refresh store in `helpers.ts` decides with the same `decideRotation` as the
+Postgres one. The Postgres cases run where `DATABASE_URL` is set (CI's integration job).
 
 ## Social login (B015)
 
