@@ -2,7 +2,7 @@
 
 The Fastify REST API (`/v1/*`, CT-API). It is assembled lane by lane; today it holds the request
 context plugin (B005), the error handler plugin (B006), the users module (B013), social login
-(B015) and the RBAC plugin (B021). Logging and the error types themselves
+(B015), the RBAC plugin (B021) and the account routes (B022). Logging and the error types themselves
 live in `@centcom/core` ([`packages/core/README.md`](../../packages/core/README.md#logging-b005),
 [errors](../../packages/core/README.md#errors-b006)).
 
@@ -285,3 +285,43 @@ app.patch(
 - **`requirePermission(…, { hideAs404: true })`** answers 404 `not_found` instead, for resources
   whose existence is not the caller's business.
 - **Tests:** `test/rbac-plugin.test.ts`.
+
+## Account: `/v1/me` (B022)
+
+`src/routes/me.ts` serves CT-API-ACCOUNTS' `/v1/me` over `src/modules/me/`. Both routes need the
+`profile` scope and a user (API keys get 403); the caller comes from `caller(request)`, the
+auth plugin's principal once B017 is in, which also raises the 401 token errors.
+
+```ts
+const me = new MeService({
+  store: createAccountStore(db),
+  audit,
+  entitlements: withFreePlanFallback(billing, { logger }),
+});
+await app.register(meRoutes, { me, caller: (request) => callerOf(request) });
+```
+
+| Route          | Answers                                                                                                                                                       |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /v1/me`   | 200 `{user, plan, active_workspace, ent}` (the contract's `Me`) with `ETag`; 404 for a deleted account                                                        |
+| `PATCH /v1/me` | Any of `{display_name, locale, avatar, telemetry}` (B013's rules, pointers by API name; unknown fields ignored, `{}` is 422) → 200 `User` with the new `ETag` |
+
+- **ETag and If-Match:** the ETag is `"v<µs of updated_at>"`, a strong ETag naming the user row's
+  version.
+  - With `If-Match` (strong ETags, or `*`), the update is one compare-and-set statement: two
+    writers holding the same ETag cannot both win, and the loser gets 412 `precondition_failed`
+    with nothing changed.
+  - A no-op patch still honours `If-Match`.
+- **Active workspace:** the token's `wsp` claim while the user is still a member of that live
+  workspace, else the personal workspace (the first live workspace they created and own; B013
+  makes it with the account), else `null`.
+- **Plan and `ent`:** from an `EntitlementsLookup` (default: `free`, revision 0).
+  `withFreePlanFallback` answers the free plan when billing fails, logging
+  `entitlements_unavailable` at most once a minute.
+- **Audit:** every successful change records `account.updated` with the field names, never the
+  values. A failing sink is logged (`me.audit_failed`) and does not fail the request.
+- **Failures:** a deleted account is 404; a pending deletion shows `deletion_scheduled_for` (30
+  days after the request); a database timeout or outage is 503 with `retry_after_s: 1`.
+- **Responses:** `Cache-Control: private, no-cache`. Email, id and status are never writable.
+- **Tests:** `test/routes/me.test.ts` (both routes over an in-memory store) and
+  `test/routes/me-store.test.ts` (ETags; the Postgres store and the race, in CI).
