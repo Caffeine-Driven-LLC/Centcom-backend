@@ -17,8 +17,10 @@ Start with `gh pr list --state all --limit 200 --json number,title,state`, then
 `git fetch origin main` (in that order, so a PR that merges in between still shows up in one of
 them). A lane is **done** if any of these holds:
 
-- a subject line in `git log origin/main --format=%s` carries its ID;
-- a merged PR's title carries its ID;
+- a subject line in `git log origin/main --format=%s` starts with it (`B005: …`, or a combined
+  `B005+B006: …`), or is a `Progress: …` commit naming it (other text that mentions an ID does
+  not count);
+- a merged PR's title starts with it in the same way;
 - its entry in `plan/STATUS.json` on origin/main has `pct` 0.95 or more.
 
 A lane is **eligible** when all of these hold:
@@ -30,7 +32,9 @@ A lane is **eligible** when all of these hold:
   that was handed to a human, and so blocks everything that depends on it;
 - none of its `deliverables` sit under a protected path (see Rules), and its `acceptance` and
   `scope_in` do not require a new or changed workflow, CI job or schedule that a test cannot
-  provide. Leave those lanes for a session a human is watching.
+  provide. Skip a lane whose acceptance needs external infrastructure, credentials or a human
+  action (a real cloud account, an owner-run `terraform apply`, a signing key). Leave those lanes
+  for a session a human is watching.
 
 Take eligible lanes in the order their IDs first appear in the `next` titles of `plan/STATUS.json`
 (a range such as `B004-B006` counts as each ID in it), then by lowest ID. If none is eligible,
