@@ -508,3 +508,65 @@ await app.register(emailLoginRoutes, { magicLink, completer, ttlS: config.ttlS, 
 - **`redirect.test.ts`:** the `return_to` matrix.
 - **`prefetch.test.ts`:** GETs change nothing; the page headers.
 - **`store.test.ts`:** the Postgres store and the whole flow with B013 (CI).
+
+## Workspaces (B027)
+
+Workspace CRUD (`src/modules/workspaces/`, CT-API-WORKSPACES). The SQL is `createWorkspaceStore` in
+@centcom/db; the purge job is `workspace-purge` in @centcom/worker.
+
+```ts
+const service = new WorkspaceService({
+  store: createWorkspaceStore(db),
+  events: redis.pubsub,
+  purgeQueue: createWorkspacePurgeQueue({ connection, prefix }), // @centcom/worker
+  maxOwned: loadWorkspacesConfig().maxOwned, // WORKSPACES_MAX_OWNED
+  logger,
+  metrics,
+});
+service.extensions.register(settingsExtension); // B034: owns PATCH `settings`
+// after the request-context, error-handler, idempotency, RBAC and audit plugins:
+await app.register(workspaceRoutes, { service, cursorKeys: paginationConfig().signingKeys });
+```
+
+| Route                        | Scope              | Who     | Answers                                                                |
+| ---------------------------- | ------------------ | ------- | ---------------------------------------------------------------------- |
+| `GET /v1/workspaces`         | `workspaces:read`  | any     | The caller's workspaces, newest first (CT-PAGE; an API key's: its own) |
+| `POST /v1/workspaces`        | `workspaces:write` | users   | 201 with the caller as owner, `ETag`, `Location`; `Idempotency-Key` OK |
+| `GET /v1/workspaces/{id}`    | `workspaces:read`  | member+ | The workspace and its `ETag`; a guest sees `{id, name}`                |
+| `PATCH /v1/workspaces/{id}`  | `workspaces:write` | admin+  | `If-Match` required (400 without, 412 stale); 200 with the new `ETag`  |
+| `DELETE /v1/workspaces/{id}` | `workspaces:write` | owner   | 204; from then on every read is a 404 and the purge is queued          |
+
+- **Who may know:** authorisation is B021's RBAC only. A caller who is not a member (or whose
+  workspace was deleted) gets 404 `not_found` whatever they asked; a member whose role falls short
+  gets 403, and privileged denials are audited.
+- **Create:** the workspace and its `owner` membership in one transaction (one owner per workspace
+  is also a unique index). The slug is the caller's (taken: 409) or made from the name (`Café
+Crème` → `cafe-creme`), with the next free numeric suffix; a slug race retries up to 5 times,
+  then 409. A user owns at most `WORKSPACES_MAX_OWNED` live workspaces (409 beyond).
+- **Update:** the row is locked and the ETag checked, then the name and the extension fields
+  change and the version moves on, in one transaction: of two PATCHes with one ETag exactly one
+  wins. Unknown fields are ignored; a body with nothing to change is a 422. Extensions
+  (`service.extensions.register({key, parse, apply})`) own fields such as `settings`.
+- **Delete:** hides the workspace and writes `workspace.delete` (account-level, so it outlives the
+  purge) in one transaction; then announces `workspace.deleted` on `centcom:workspace-events`,
+  drops cached roles (`rbac:invalidate`) and queues `workspace-purge` (job `purge:<wsp>`). Their
+  failures are logged and counted (`workspace_announce_failures_total`,
+  `workspace_purge_enqueue_failures_total`); the purge job announces again first.
+- **Audit:** `workspace.create`, `workspace.update` (`meta.fields`) and `workspace.delete`, each
+  written in its change's transaction through `request.audit`.
+
+### Configuration
+
+| Key                    | Default | Required | What it is                                                  |
+| ---------------------- | ------- | -------- | ----------------------------------------------------------- |
+| `WORKSPACES_MAX_OWNED` | `20`    | no       | Live workspaces one user may own (1 to 1000); more is a 409 |
+
+### Tests
+
+`test/modules/workspaces/`:
+
+- **`workspaces.routes.test.ts`:** CRUD, ETag and If-Match, the role matrix, 404s, delete and
+  purge queueing, limits, idempotent replays, API keys, failure modes, contract validation.
+- **`workspaces.pagination.test.ts`:** 120 workspaces, limits, cursors across changes and callers.
+- **`workspaces.validation.test.ts`:** names, slugs (property tests).
+- **`workspaces.postgres.test.ts`:** the routes over the SQL store (CI).

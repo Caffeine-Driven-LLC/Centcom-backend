@@ -219,6 +219,10 @@ importers:
       kysely:
         specifier: 0.29.6
         version: 0.29.6
+    devDependencies:
+      fast-check:
+        specifier: 4.10.2
+        version: 4.10.2
 
   apps/relay: {}
 

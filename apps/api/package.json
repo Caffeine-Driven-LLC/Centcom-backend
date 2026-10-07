@@ -23,5 +23,8 @@
     "fastify": "5.12.5",
     "jose": "6.2.12",
     "kysely": "0.29.6"
+  },
+  "devDependencies": {
+    "fast-check": "4.10.2"
   }
 }

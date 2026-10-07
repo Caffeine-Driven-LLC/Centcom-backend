@@ -47,3 +47,33 @@ const worker = startEmailWorker({
   - Locally: the processor, the backoff and the dead-letter accounting.
   - On Redis 7 (CI's integration job): delivery through the service, idempotency end to end, 5
     attempts then the dead-letter set, a permanent rejection, and a Retry-After wait.
+
+## `workspace-purge` (B027)
+
+Removes a workspace the API deleted (and hid at once). For each job `{workspaceId}`:
+
+1. announces `workspace.deleted` on `centcom:workspace-events` again;
+2. runs the purge hooks in registration order (`registry.register(name, hook)`: session history,
+   snapshots, billing wind-down; each must be idempotent);
+3. hard-deletes the workspace's audit events (through `purge_audit_events`), sessions,
+   memberships and row (@centcom/db `createWorkspaceStore(db).purge`; a live workspace is refused).
+
+```ts
+const hooks = createPurgeHookRegistry();
+hooks.register('history', purgeHistory); // later lanes
+const worker = startWorkspacePurgeWorker({
+  connection,
+  prefix,
+  hooks,
+  store: createWorkspaceStore(db),
+  events: redis.pubsub,
+  logger,
+  metrics,
+});
+```
+
+- **Retries:** 5 attempts, waiting between half and all of `10 s · 2^(n-1)` (at most 10 min);
+  then the job stays in the failed set (dead letter, kept 7 days), counted in
+  `workspace_purge_failed_total` and logged as `workspace.purge_failed`.
+- **Idempotent:** a job run twice purges once; the second run's store purge finds nothing.
+- **Logs:** workspace ids, hook names and error kinds only.
