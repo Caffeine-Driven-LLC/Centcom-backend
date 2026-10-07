@@ -57,10 +57,11 @@ const LIST_SPEC = { sorts: ['joined'], defaultSort: 'joined' } as const;
 const LIST_FILTERS = defineFilters({ workspace: idFilter('wsp') });
 
 /** How much of a member a viewer sees. */
-type View = 'full' | 'no_address' | 'limited';
+export type MemberView = 'full' | 'no_address' | 'limited';
+type View = MemberView;
 
 /** A member as CT-API-WORKSPACES `Member`, cut to what `view` allows. */
-function memberBody(member: MemberRecord, view: View): Api.Member | Record<string, unknown> {
+export function memberBody(member: MemberRecord, view: View): Api.Member | Record<string, unknown> {
   if (view === 'limited') {
     return { id: member.id, display_name: member.displayName, role: member.role };
   }

@@ -39,17 +39,18 @@ export const readerOf = (actor: Actor): Reader =>
     : { kind: 'api_key', workspaceId: actor.workspaceId };
 
 /**
- * Lets the request at workspace `:id` for `action` on `resource` (ids from the route and server
- * state only): 404 when the caller may not know the workspace exists, 403 (audited) when their
- * role or the action's conditions fall short. `limited` is a guest's read.
+ * Lets the request at workspace `workspaceId` (default the route's `:id`) for `action` on
+ * `resource` (ids from the route and server state only): 404 when the caller may not know the
+ * workspace exists, 403 (audited) when their role or the action's conditions fall short.
+ * `limited` is a guest's read.
  */
 export async function workspaceAccess(
   request: FastifyRequest,
   action: Action,
   resource: Omit<Resource, 'workspaceId'> = {},
+  workspaceId: unknown = (request.params as Record<string, unknown>)['id'],
 ): Promise<{ actor: Actor; workspaceId: string; limited: boolean }> {
   const actor = actorOf(request);
-  const workspaceId = (request.params as Record<string, unknown>)['id'];
   if (!isId('wsp', workspaceId)) throw notFound(WORKSPACE_DETAILS.notFound);
   const full: Resource = { ...resource, workspaceId };
   const { authorizer } = request.server.rbac;

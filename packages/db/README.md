@@ -149,6 +149,23 @@ them for Kysely (`createDb<CoreDatabase>(...)`). Enumerated columns use the cont
 The core schema tests stop the runner at the core version (`target`), so later migrations do not
 change what they check.
 
+## Invites (B029)
+
+[`migrations/20260102000800_invites.sql`](migrations/20260102000800_invites.sql) creates
+`invites`; `src/schema/invites.ts` types it (`InviteDatabase` = `CoreDatabase` plus this table),
+and `createInviteStore(db)` (`src/repos/invites.ts`) is its SQL.
+
+- **Tokens:** only `token_hash` (sha256, 32 bytes, unique) is stored; invites are found by it.
+- **One pending invite per address per workspace:** a partial unique index on
+  `(workspace_id, email)`; an insert that meets it writes nothing (`insert` returns null).
+- **Status** comes from `accepted_at`, `revoked_at`, `expired_at` and `expires_at`
+  (`inviteStatus`); `sweep(now)` sets `expired_at` on lapsed invites.
+- **Key bundles:** opaque `key_bundle` bytes (48 to 12 288) with their `key_bundle_expires_at`;
+  `takeKeyBundle` hands one out once, while it lasts; revocation, expiry and the sweep drop them.
+- **Foreign keys** restrict: a purged workspace's invites go through `deleteForWorkspace` (the
+  worker's `invites` purge hook) before B027's purge; deleting a user who created or accepted an
+  invite is refused (B026's job).
+
 ## Tests
 
 `test/runner/` holds the tests of the client and the runner, `test/schema/` those of the schemas.

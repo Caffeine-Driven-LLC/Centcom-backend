@@ -4,8 +4,9 @@
  * (`src/cli.ts`) runs migrations as a deploy step. Conventions for schema work:
  * packages/db/CONVENTIONS.md. Table types: the core schema (B008) in `schema/core.ts`, social-login
  * identities (B015) in `schema/identities.ts`, e-mail sign-in links (B014) in
- * `schema/login-tokens.ts`, the audit log (B036) in `schema/audit-events.ts`; repositories (B013
- * on, workspaces from B027, members from B028) in `repos/`.
+ * `schema/login-tokens.ts`, the audit log (B036) in `schema/audit-events.ts`, invites (B029) in
+ * `schema/invites.ts`; repositories (B013 on, workspaces from B027, members from B028, invites
+ * from B029) in `repos/`.
  */
 export {
   ACQUIRE_BUCKETS_S,
@@ -61,6 +62,19 @@ export {
 } from './health.js';
 export { createMembershipRepo } from './repos/memberships.js';
 export {
+  createInviteStore,
+  INVITE_LIST_SORTS,
+  inviteOperations,
+  inviteStatus,
+  type InvitePreviewRow,
+  type InviteRecord,
+  type InviteRole,
+  type InviteStatus,
+  type InviteStore,
+  type InviteTx,
+  type NewInvite,
+} from './repos/invites.js';
+export {
   createMemberStore,
   MEMBER_LIST_SORTS,
   memberOperations,
@@ -90,6 +104,7 @@ export {
   type UserRepo,
 } from './repos/users.js';
 export type { AuditDatabase, AuditEventsTable } from './schema/audit-events.js';
+export type { InviteDatabase, InvitesDatabase, InvitesTable } from './schema/invites.js';
 export type {
   IdentitiesDatabase,
   IdentitiesTable,

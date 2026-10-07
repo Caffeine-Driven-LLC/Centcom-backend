@@ -11,6 +11,8 @@ import {
   createAuditEmitter,
   createAuthorizer,
   createMemoryRedis,
+  DEFAULT_EXEMPT_ROUTES,
+  defaultBuckets,
   paginateArray,
   rbacAuditSink,
   Secret,
@@ -19,6 +21,7 @@ import {
   type AuditEmitter,
   type MembershipReader,
   type PubSub,
+  type RateLimitPrincipal,
   type RedisBackend,
   type SigningKeys,
   type WorkspaceRole,
@@ -35,6 +38,7 @@ import type { CompiledQuery, QueryResult } from 'kysely';
 import { auditPlugin } from '../../../src/plugins/audit.js';
 import { errorHandlerPlugin } from '../../../src/plugins/error-handler.js';
 import { idempotencyPlugin } from '../../../src/plugins/idempotency.js';
+import { rateLimitPlugin } from '../../../src/plugins/rate-limit.js';
 import { rbacPlugin } from '../../../src/plugins/rbac.js';
 import { requestContextPlugin } from '../../../src/plugins/request-context.js';
 import {
@@ -370,6 +374,8 @@ export interface WorkspacesAppOptions {
   clock?: () => number;
   /** Where detached audit events go; default a recording pool (`detached`). */
   auditPool?: AuditDb;
+  /** Registers B023's rate limiter with CT-PAGE's buckets (callers by their test headers). */
+  rateLimit?: boolean;
   /** Registers more routes on the same stack, before the app is ready (B028's member routes). */
   beforeReady?: (
     app: FastifyInstance,
@@ -436,8 +442,22 @@ export async function buildWorkspacesApp<S extends WorkspaceStore>(
   const app = fastify({ logger: false });
   await app.register(requestContextPlugin, { logger: captured.logger });
   await app.register(errorHandlerPlugin, { logger: captured.logger });
+  if (options.rateLimit === true) {
+    await app.register(rateLimitPlugin, {
+      store: redis.rateLimit,
+      config: { buckets: defaultBuckets, trustedHops: 0, exempt: DEFAULT_EXEMPT_ROUTES },
+      principal: (request): RateLimitPrincipal | null => {
+        const actor = actorOf(request.headers);
+        if (actor?.kind === 'user') return { kind: 'user', userId: actor.userId };
+        if (actor?.kind === 'api_key') return { kind: 'api_key', keyId: actor.keyId };
+        return null;
+      },
+    });
+  }
   await app.register(idempotencyPlugin, {
     kv: redis.kv,
+    // For routes whose responses carry a secret (B029's invite token).
+    encryptionKey: new Secret(new Uint8Array(randomBytes(32))),
     principal: (request) => {
       const actor = actorOf(request.headers);
       return actor === null ? null : actor.kind === 'user' ? actor.userId : actor.keyId;

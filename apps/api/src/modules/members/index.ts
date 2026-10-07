@@ -17,4 +17,4 @@ export {
   type AssignableRole,
 } from './input.js';
 export { MEMBER_DETAILS, MembershipService, type MembershipServiceOptions } from './service.js';
-export { memberRoutes, type MemberRouteOptions } from './routes.js';
+export { memberBody, memberRoutes, type MemberRouteOptions, type MemberView } from './routes.js';
