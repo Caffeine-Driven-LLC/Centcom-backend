@@ -1,12 +1,32 @@
 /**
- * Workspace lifecycle names (B027) shared by the API, which deletes workspaces, and the worker,
- * which purges them: the Redis channel `workspace.deleted` is announced on, and the
- * `workspace-purge` queue with its job options.
+ * Workspace lifecycle names (B027, B028) shared by the API, which changes workspaces and their
+ * members, and the services that react: the Redis channels `workspace.deleted` and membership
+ * changes are announced on (the relay listens), and the `workspace-purge` queue with its job
+ * options (the worker purges).
  *
- * Owns: the channel, the message shape, the queue name and the job options. Must not: carry
- * anything but ids and times in a message or a job.
+ * Owns: the channels, the message shapes, the queue name and the job options. Must not: carry
+ * anything but ids, roles and times in a message or a job.
  */
+import type { WorkspaceRole } from '../rbac/actions.js';
 import type { PubSub } from '../redis/types.js';
+
+/** Redis pub/sub channel of membership changes (the relay re-checks the member's live role). */
+export const MEMBERSHIP_EVENTS_CHANNEL = 'centcom:membership';
+
+/** A membership change: `role_changed` (with the new role), `removed` by someone else, or `left`. */
+export interface MembershipEvent {
+  type: 'role_changed' | 'removed' | 'left';
+  /** The workspace (`wsp_`). */
+  wsp: string;
+  /** The membership (`mem_`). */
+  mem: string;
+  /** The member (`usr_`). */
+  user: string;
+  /** The new role (`role_changed` only). */
+  role?: WorkspaceRole;
+  /** RFC 3339. */
+  at: string;
+}
 
 /** Redis pub/sub channel of workspace lifecycle events (the relay drops a deleted workspace's sessions). */
 export const WORKSPACE_EVENTS_CHANNEL = 'centcom:workspace-events';

@@ -570,3 +570,57 @@ Crème` → `cafe-creme`), with the next free numeric suffix; a slug race retrie
 - **`workspaces.pagination.test.ts`:** 120 workspaces, limits, cursors across changes and callers.
 - **`workspaces.validation.test.ts`:** names, slugs (property tests).
 - **`workspaces.postgres.test.ts`:** the routes over the SQL store (CI).
+
+## Members (B028)
+
+Workspace members (`src/modules/members/`, CT-API-WORKSPACES). The SQL is `createMemberStore` in
+@centcom/db; `memberOperations(trx)` gives the same operations inside another lane's transaction.
+
+```ts
+const members = new MembershipService({
+  store: createMemberStore(db),
+  events: redis.pubsub,
+  logger,
+  metrics,
+});
+// after the workspace routes' plugins (request context, errors, idempotency, RBAC, audit):
+await app.register(memberRoutes, { members, workspaces: createWorkspaceStore(db), cursorKeys });
+// B029, accepting an invite inside its own transaction:
+await withTransaction(db, (trx) =>
+  members.add(memberOperations(trx), wspId, userId, 'member', ctx),
+);
+```
+
+| Route                                         | Who                   | Answers                                                 |
+| --------------------------------------------- | --------------------- | ------------------------------------------------------- |
+| `GET /v1/workspaces/{id}/members`             | member+               | Oldest first (CT-PAGE); addresses for owners and admins |
+| `PATCH /v1/workspaces/{id}/members/{mem}`     | owner, admin          | `{role}` (never `owner`): 200 with the member           |
+| `DELETE /v1/workspaces/{id}/members/{mem}`    | owner, admin, or self | 204; the owner leaving is a 409 (transfer first)        |
+| `POST /v1/workspaces/{id}/transfer-ownership` | owner                 | `{to_member}` (an admin): 200 with the workspace        |
+
+- **RBAC (CT-RBAC):** the owner gives any role but owner to anyone else; an admin gives member,
+  billing or guest to members, billing and guests, and removes them; anyone but the owner leaves.
+  Outsiders get 404; refusals are 403, audited as `permission.denied`.
+- **Concurrency:** each change locks the target's row and answers 409 if its role moved since the
+  caller read it. Removals and transfers lock the workspace row first, so they take turns: of two
+  transfers, one wins and the other is a 409. One owner per workspace is also a unique index
+  (B027), and a transfer demotes before it promotes. A deadlocked transfer is retried once.
+- **Views:** owners and admins see `{id, user, display_name, email, role, joined_at}`; members and
+  billing the same without `email`; guests `{id, display_name, role}` (CT-RBAC).
+- **After each change** (after the commit): `{type: 'role_changed' | 'removed' | 'left', wsp, mem,
+user, role?, at}` on `centcom:membership`, and the member's cached role is dropped
+  (`rbac:invalidate`). A publish that fails is retried 3 times with jitter, then counted
+  (`membership_event_publish_failed_total`) and logged.
+- **Audit:** `member.role_change` (a transfer writes two), `member.remove` (`meta.self` when
+  leaving), `member.add`; refused owner-rule attempts (leaving as owner, a transfer that cannot
+  happen) are audited with outcome `denied`.
+
+### Tests
+
+`test/modules/members/`:
+
+- **`members.rbac.matrix.test.ts`:** every actor role × target role × change and removal.
+- **`members.owner-invariant.test.ts`:** 50 concurrent transfers and removals, one owner after.
+- **`members.events.test.ts`:** announcements, audit rows (denied too), transfers, retries.
+- **`members.list.test.ts`:** paging and who sees addresses.
+- **`members.postgres.test.ts`:** the routes and the 50-attempt storm over Postgres (CI).
