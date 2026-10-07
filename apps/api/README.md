@@ -1,17 +1,11 @@
 # @centcom/api
 
 The Fastify REST API (`/v1/*`, CT-API). It is assembled lane by lane; today it holds the request
-<<<<<<< HEAD
-context plugin (B005), the error handler plugin (B006), the users module (B013) and the token
-service with the auth plugin (B017). Logging and the error types themselves
-live in `@centcom/core` ([`packages/core/README.md`](../../packages/core/README.md#logging-b005),
-=======
-context plugin (B005), the error handler plugin (B006), the users module (B013), social login
-(B015), e-mail sign-in (B014), the RBAC plugin (B021), the account routes (B022), the rate-limit
-plugin (B023), the idempotency plugin (B024) and the pagination plugin (B025). Logging and the
-error types themselves live in `@centcom/core`
+context plugin (B005), the error handler plugin (B006), the users module (B013), e-mail sign-in
+(B014), social login (B015), the token service with the auth plugin (B017), the RBAC plugin
+(B021), the account routes (B022), the rate-limit plugin (B023), the idempotency plugin (B024)
+and the pagination plugin (B025). Logging and the error types themselves live in `@centcom/core`
 ([`packages/core/README.md`](../../packages/core/README.md#logging-b005),
->>>>>>> origin/main
 [errors](../../packages/core/README.md#errors-b006)).
 
 ```ts
@@ -181,7 +175,6 @@ await users.updateProfile(user.id, { locale: 'en-GB' });
 The real-Postgres cases run where `DATABASE_URL` is set (CI's integration job), each file in a
 throwaway `test_<time>_<random>` database migrated to the latest version.
 
-<<<<<<< HEAD
 ## Tokens and authentication (B017)
 
 `src/modules/auth/tokens/` is the one token service (CT-AUTH): EdDSA access tokens, rotating
@@ -288,7 +281,7 @@ A new key: `generateSigningJwk('<kid>')` from the module (keep the output secret
 
 The in-memory refresh store in `helpers.ts` decides with the same `decideRotation` as the
 Postgres one. The Postgres cases run where `DATABASE_URL` is set (CI's integration job).
-=======
+
 ## Social login (B015)
 
 `src/modules/auth/social/` signs users in with GitHub or Google (authorization code with PKCE,
@@ -811,4 +804,3 @@ await app.register(inviteRoutes, { service: invites, workspaces, cursorKeys });
 - **`invites.idempotency.test.ts`**, **`invites.ratelimit.test.ts`**.
 - **`invites.postgres.test.ts`:** the routes over Postgres, a table dump without tokens, and the
   seat race against the database's locks (CI).
->>>>>>> origin/main

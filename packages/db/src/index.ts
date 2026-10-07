@@ -2,16 +2,12 @@
  * @centcom/db (B007): the Postgres client (Kysely over `pg`), the forward-only migration runner,
  * transactions with serialization retry, and the health probe for `/readyz`. The `centcom-db` CLI
  * (`src/cli.ts`) runs migrations as a deploy step. Conventions for schema work:
-<<<<<<< HEAD
- * packages/db/CONVENTIONS.md. Table types: the core schema (B008) in `schema/core.ts`, refresh tokens
- * (B017) in `schema/refresh-tokens.ts`; repositories (B013 on) in `repos/`.
-=======
  * packages/db/CONVENTIONS.md. Table types: the core schema (B008) in `schema/core.ts`, social-login
- * identities (B015) in `schema/identities.ts`, e-mail sign-in links (B014) in
+ * identities (B015) in `schema/identities.ts`, refresh tokens (B017) in
+ * `schema/refresh-tokens.ts`, e-mail sign-in links (B014) in
  * `schema/login-tokens.ts`, the audit log (B036) in `schema/audit-events.ts`, invites (B029) in
  * `schema/invites.ts`; repositories (B013 on, workspaces from B027, members from B028, invites
  * from B029) in `repos/`.
->>>>>>> origin/main
  */
 export {
   ACQUIRE_BUCKETS_S,
