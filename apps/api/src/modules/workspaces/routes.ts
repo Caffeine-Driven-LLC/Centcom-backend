@@ -20,28 +20,22 @@
  * Owns: the HTTP side of workspaces. Must not: compare roles itself, or cache a response in
  * shared caches.
  */
-import { isId, type Api } from '@centcom/contracts';
+import type { Api } from '@centcom/contracts';
 import {
   AppError,
   defineFilters,
   idFilter,
   notFound,
   parsePageQuery,
-  type Action,
-  type Actor,
   type SigningKeys,
 } from '@centcom/core';
 import type { WorkspaceView } from '@centcom/db';
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyPluginAsync, FastifyReply } from 'fastify';
 import { requireScope } from '../../plugins/rbac.js';
 import { computeEtag, parseIfMatch } from '../me/etag.js';
+import { actorOf, ctxOf, readerOf, UNAUTHENTICATED_DETAIL, workspaceAccess } from './access.js';
 import { parseCreate, parseUpdate } from './input.js';
-import {
-  WORKSPACE_DETAILS,
-  type Reader,
-  type RequestCtx,
-  type WorkspaceService,
-} from './service.js';
+import { WORKSPACE_DETAILS, type WorkspaceService } from './service.js';
 
 /** Options for `workspaceRoutes`. */
 export interface WorkspaceRouteOptions {
@@ -54,7 +48,7 @@ export interface WorkspaceRouteOptions {
 
 /** The details of the routes' own refusals (GUIDELINES §3.4). */
 export const WORKSPACE_ROUTE_DETAILS = Object.freeze({
-  unauthenticated: 'Authentication is required.',
+  unauthenticated: UNAUTHENTICATED_DETAIL,
   usersOnly: 'Only a user can create a workspace.',
   ifMatchRequired: 'If-Match is required: send the ETag of the workspace you read.',
 } as const);
@@ -62,53 +56,8 @@ export const WORKSPACE_ROUTE_DETAILS = Object.freeze({
 const LIST_SPEC = { sorts: ['created'], defaultSort: 'created' } as const;
 /** A cursor is bound to the member whose list it pages: another caller's cursor is a 400. */
 const LIST_FILTERS = defineFilters({ member: idFilter('usr') });
-/** Denials answered with 404: the workspace's existence is not the caller's business. */
-const HIDDEN_REASONS: ReadonlySet<string> = new Set([
-  'not_a_member',
-  'other_workspace',
-  'unknown_actor',
-]);
-
-/** The request's actor, or a 401. */
-function actorOf(request: FastifyRequest): Actor {
-  const actor = request.server.rbac.actor(request);
-  if (actor === null) {
-    throw new AppError('unauthorized', { detail: WORKSPACE_ROUTE_DETAILS.unauthenticated });
-  }
-  return actor;
-}
-
-const readerOf = (actor: Actor): Reader =>
-  actor.kind === 'user'
-    ? { kind: 'user', userId: actor.userId }
-    : { kind: 'api_key', workspaceId: actor.workspaceId };
-
-/**
- * Lets the request at workspace `:id` for `action`: 404 when the caller may not know it exists,
- * 403 (audited by the authorizer) when their role falls short. `limited` is a guest's read.
- */
-async function access(
-  request: FastifyRequest,
-  action: Action,
-): Promise<{ actor: Actor; workspaceId: string; limited: boolean }> {
-  const actor = actorOf(request);
-  const workspaceId = (request.params as Record<string, unknown>)['id'];
-  if (!isId('wsp', workspaceId)) throw notFound(WORKSPACE_DETAILS.notFound);
-  const { authorizer } = request.server.rbac;
-  const decision = await authorizer.decide(actor, action, { workspaceId });
-  if (decision.allow) return { actor, workspaceId, limited: decision.limited === true };
-  if (HIDDEN_REASONS.has(decision.reason)) throw notFound(WORKSPACE_DETAILS.notFound);
-  // Records the denial (privileged actions) and throws 403; resolves only if the role changed since.
-  await authorizer.authorize(actor, action, { workspaceId });
-  return { actor, workspaceId, limited: false };
-}
-
-const ctxOf = (request: FastifyRequest): RequestCtx => ({
-  audit: (trx, input) => request.audit(trx, input),
-});
-
 /** A workspace as CT-API-WORKSPACES `Workspace`; a guest's view is `{id, name}` (CT-RBAC). */
-function workspaceBody(
+export function workspaceBody(
   view: WorkspaceView,
   limited: boolean,
 ): Api.Workspace | { id: string; name: string } {
@@ -176,7 +125,7 @@ export const workspaceRoutes: FastifyPluginAsync<WorkspaceRouteOptions> = async 
     '/v1/workspaces/:id',
     { preHandler: requireScope('workspaces:read') },
     async (request, reply) => {
-      const { actor, workspaceId, limited } = await access(request, 'workspace.read');
+      const { actor, workspaceId, limited } = await workspaceAccess(request, 'workspace.read');
       const view = await service.get(workspaceId, readerOf(actor));
       if (view === null) throw notFound(WORKSPACE_DETAILS.notFound);
       privateHeaders(reply, view.version);
@@ -188,7 +137,7 @@ export const workspaceRoutes: FastifyPluginAsync<WorkspaceRouteOptions> = async 
     '/v1/workspaces/:id',
     { preHandler: requireScope('workspaces:write') },
     async (request, reply) => {
-      const { actor, workspaceId } = await access(request, 'workspace.update');
+      const { actor, workspaceId } = await workspaceAccess(request, 'workspace.update');
       const ifMatch = parseIfMatch(request.headers['if-match']);
       if (ifMatch === undefined) {
         throw new AppError('invalid_request', { detail: WORKSPACE_ROUTE_DETAILS.ifMatchRequired });
@@ -206,7 +155,7 @@ export const workspaceRoutes: FastifyPluginAsync<WorkspaceRouteOptions> = async 
     '/v1/workspaces/:id',
     { preHandler: requireScope('workspaces:write') },
     async (request, reply) => {
-      const { workspaceId } = await access(request, 'workspace.delete');
+      const { workspaceId } = await workspaceAccess(request, 'workspace.delete');
       await service.softDelete(
         workspaceId,
         parseIfMatch(request.headers['if-match']),

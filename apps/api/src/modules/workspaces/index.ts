@@ -3,6 +3,7 @@
  * and the PATCH extension registry (B034 adds `settings` through it), slugs, and configuration.
  * The purge job and its hook registry are in @centcom/worker; the SQL in @centcom/db.
  */
+export { actorOf, ctxOf, readerOf, UNAUTHENTICATED_DETAIL, workspaceAccess } from './access.js';
 export {
   DEFAULT_WORKSPACES_MAX_OWNED,
   loadWorkspacesConfig,
@@ -29,4 +30,9 @@ export {
   type RequestCtx,
   type WorkspaceServiceOptions,
 } from './service.js';
-export { WORKSPACE_ROUTE_DETAILS, workspaceRoutes, type WorkspaceRouteOptions } from './routes.js';
+export {
+  WORKSPACE_ROUTE_DETAILS,
+  workspaceBody,
+  workspaceRoutes,
+  type WorkspaceRouteOptions,
+} from './routes.js';

@@ -5,7 +5,7 @@
  * packages/db/CONVENTIONS.md. Table types: the core schema (B008) in `schema/core.ts`, social-login
  * identities (B015) in `schema/identities.ts`, e-mail sign-in links (B014) in
  * `schema/login-tokens.ts`, the audit log (B036) in `schema/audit-events.ts`; repositories (B013
- * on, workspaces from B027) in `repos/`.
+ * on, workspaces from B027, members from B028) in `repos/`.
  */
 export {
   ACQUIRE_BUCKETS_S,
@@ -60,6 +60,15 @@ export {
   type HealthReport,
 } from './health.js';
 export { createMembershipRepo } from './repos/memberships.js';
+export {
+  createMemberStore,
+  MEMBER_LIST_SORTS,
+  memberOperations,
+  type MemberRecord,
+  type MemberStore,
+  type MemberTx,
+  type NewMember,
+} from './repos/members.js';
 export {
   createWorkspaceStore,
   PURGE_AUDIT_BATCH,

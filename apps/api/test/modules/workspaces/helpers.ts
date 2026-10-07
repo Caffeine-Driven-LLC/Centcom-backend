@@ -18,6 +18,7 @@ import {
   type AuditDb,
   type AuditEmitter,
   type MembershipReader,
+  type PubSub,
   type RedisBackend,
   type SigningKeys,
   type WorkspaceRole,
@@ -71,16 +72,20 @@ interface Row {
   deletedAt: Date | null;
 }
 
-interface Membership {
+/** A membership as the store keeps it. */
+export interface Membership {
   id: string;
   workspaceId: string;
   userId: string;
   role: WorkspaceRole;
+  joinedAt: Date;
 }
 
 /** The in-memory store; its state is public for tests to look at and arrange. */
 export class MemoryWorkspaceStore implements WorkspaceStore {
   readonly users = new Set<string>();
+  /** Users' names and addresses (B028's member lists). */
+  readonly profiles = new Map<string, { displayName: string; email: string }>();
   workspaces = new Map<string, Row>();
   memberships: Membership[] = [];
   /** Audit rows of committed transactions. */
@@ -93,16 +98,25 @@ export class MemoryWorkspaceStore implements WorkspaceStore {
   slugRaces = 0;
   #turn: Promise<unknown> = Promise.resolve();
 
-  /** Adds a user who can create workspaces. */
+  /** Adds a user who can create workspaces (named `User <n>`, at `<id>@example.test`). */
   addUser(userId = newId('usr')): string {
     this.users.add(userId);
+    if (!this.profiles.has(userId)) {
+      this.profiles.set(userId, {
+        displayName: `User ${this.profiles.size + 1}`,
+        email: `${userId.toLowerCase()}@example.test`,
+      });
+    }
     return userId;
   }
 
-  /** Makes `userId` a member of `workspaceId` with `role`. */
-  join(workspaceId: string, userId: string, role: WorkspaceRole): void {
-    this.users.add(userId);
-    this.memberships.push({ id: newId('mem'), workspaceId, userId, role });
+  /** Makes `userId` a member of `workspaceId` with `role`; returns the `mem_` id. */
+  join(workspaceId: string, userId: string, role: WorkspaceRole): string {
+    this.addUser(userId);
+    this.now += 1;
+    const id = newId('mem');
+    this.memberships.push({ id, workspaceId, userId, role, joinedAt: new Date(this.now) });
+    return id;
   }
 
   /** B021's MembershipReader over this store (no role in a deleted workspace). */
@@ -118,6 +132,15 @@ export class MemoryWorkspaceStore implements WorkspaceStore {
   };
 
   transaction<T>(fn: (tx: WorkspaceTx) => Promise<T>): Promise<T> {
+    return this.exclusive((trx) => fn(this.#tx(trx)));
+  }
+
+  /**
+   * Runs `fn` as one transaction over this store's state: one at a time, as Postgres's row locks
+   * serialise the changes that matter; rolled back when it throws; its audit rows (written
+   * through `trx`) kept only when it commits.
+   */
+  exclusive<T>(fn: (trx: AuditDb) => Promise<T>): Promise<T> {
     const run = async (): Promise<T> => {
       const saved = {
         workspaces: new Map([...this.workspaces].map(([k, v]) => [k, { ...v }])),
@@ -133,7 +156,7 @@ export class MemoryWorkspaceStore implements WorkspaceStore {
         },
       };
       try {
-        const result = await fn(this.#tx(trx));
+        const result = await fn(trx);
         this.audit.push(...pending);
         return result;
       } catch (err) {
@@ -202,6 +225,7 @@ export class MemoryWorkspaceStore implements WorkspaceStore {
           workspaceId: input.id,
           userId: input.ownerId,
           role: 'owner',
+          joinedAt: new Date(this.now),
         });
         return Promise.resolve(this.#record(row));
       },
@@ -346,6 +370,15 @@ export interface WorkspacesAppOptions {
   clock?: () => number;
   /** Where detached audit events go; default a recording pool (`detached`). */
   auditPool?: AuditDb;
+  /** Registers more routes on the same stack, before the app is ready (B028's member routes). */
+  beforeReady?: (
+    app: FastifyInstance,
+    ctx: {
+      events: PubSub;
+      captured: ReturnType<typeof captureLogger>;
+      recorded: ReturnType<typeof recordingMetrics>;
+    },
+  ) => Promise<void>;
 }
 
 /** The workspace routes on the API's plugin stack, over a fresh in-memory store. */
@@ -420,6 +453,7 @@ export async function buildWorkspacesApp<S extends WorkspaceStore>(
     cursorKeys: KEYS,
     ...(options.clock === undefined ? {} : { clock: options.clock }),
   });
+  await options.beforeReady?.(app, { events, captured, recorded });
   await app.ready();
   return {
     app,
