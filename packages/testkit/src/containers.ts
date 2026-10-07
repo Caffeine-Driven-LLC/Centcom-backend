@@ -320,9 +320,24 @@ async function createStack(opts: TestStackOptions, onStop?: () => void): Promise
         where schemaname = 'public' and tablename <> 'schema_migrations'
       `.execute(db);
       if (rows.length > 0) {
-        await sql`truncate table ${sql.join(rows.map((r) => sql.table(r.name)))} restart identity cascade`.execute(
-          db,
-        );
+        const hasAudit = rows.some((r) => r.name === 'audit_events');
+        // audit_events refuses TRUNCATE (append-only trigger), also when a cascade reaches it. The
+        // test database is disposable, so lift the trigger for this one transaction.
+        await db.transaction().execute(async (trx) => {
+          if (hasAudit) {
+            await sql`alter table audit_events disable trigger audit_events_append_only`.execute(
+              trx,
+            );
+          }
+          await sql`truncate table ${sql.join(rows.map((r) => sql.table(r.name)))} restart identity cascade`.execute(
+            trx,
+          );
+          if (hasAudit) {
+            await sql`alter table audit_events enable trigger audit_events_append_only`.execute(
+              trx,
+            );
+          }
+        });
       }
       await clearNamespace(servers.redisUrl, redisKeyPrefix);
     },
