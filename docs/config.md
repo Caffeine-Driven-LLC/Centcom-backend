@@ -33,3 +33,16 @@ Owner: B004, `baseConfig()` in `@centcom/core`.
 | `TRUSTED_PROXY_HOPS` | integer 0..10 | `1` | no | no | Number of reverse proxies in front of the service whose X-Forwarded-For is trusted. |
 | `REQUEST_TIMEOUT_MS` | integer 100..600000 | `30000` | no | no | Server-side timeout for one request, in milliseconds. |
 | `ALLOW_INSECURE_BACKENDS` | boolean (0, 1, true, false) | `false` | no | no | Allows plain-text Postgres and Redis in production. For emergencies only. |
+
+## Rate limits
+
+Owner: B023, `rateLimitConfig()` in `@centcom/core`.
+
+| Key | Type | Default | Required | Secret | Description |
+|---|---|---|---|---|---|
+| `RATELIMIT_ANONYMOUS_LIMIT` | integer 1..5000 | `30` | no | no | Requests per window from one client address without credentials. |
+| `RATELIMIT_USER_LIMIT` | integer 1..5000 | `600` | no | no | Requests per window from one user, from any address. |
+| `RATELIMIT_API_KEY_LIMIT` | integer 1..5000 | `1200` | no | no | Requests per window with one API key. |
+| `RATELIMIT_AUTH_LIMIT` | integer 1..5000 | `20` | no | no | Requests per window from one client address to the auth endpoints (/v1/auth/*). |
+| `RATELIMIT_USAGE_LIMIT` | integer 1..5000 | `60` | no | no | Usage-ingest requests per window from one device. |
+| `RATELIMIT_WINDOW_S` | integer 10..3600 | `60` | no | no | Length of every bucket's sliding window, in seconds. |
