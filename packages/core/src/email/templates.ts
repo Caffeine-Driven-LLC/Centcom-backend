@@ -30,6 +30,12 @@ export interface TemplateParams {
 /** A template id. */
 export type TemplateId = keyof TemplateParams;
 
+/**
+ * The ids of this lane's templates. Typed apart from TemplateId, which grows as lanes add
+ * templates (B014 adds `magic_link`), so the built-in set never has to list theirs.
+ */
+export type BuiltInTemplateId = 'workspace_invite' | 'account_deletion_scheduled' | 'export_ready';
+
 /** How a parameter is checked: text (escaped), a link (https, used as given), or a date. */
 export type ParamKind = 'text' | 'url' | 'date';
 
@@ -124,55 +130,56 @@ const link = (url: string, label: string): SafeHtml => markup`<p><a href="${url}
 const paragraphs = (...lines: string[]): string => lines.join('\n\n');
 
 /** This lane's templates. */
-export const BUILT_IN_TEMPLATES: { readonly [T in TemplateId]: EmailTemplate<TemplateParams[T]> } =
-  Object.freeze({
-    workspace_invite: {
-      params: { inviterName: 'text', workspaceName: 'text', url: 'url', expiresAt: 'date' },
-      subject: (p) => `${p.inviterName} invited you to ${p.workspaceName} on Centcom`,
-      html: (p) =>
-        markup`<p>${p.inviterName} invited you to join <strong>${p.workspaceName}</strong> on Centcom.</p>
+export const BUILT_IN_TEMPLATES: {
+  readonly [T in BuiltInTemplateId]: EmailTemplate<TemplateParams[T]>;
+} = Object.freeze({
+  workspace_invite: {
+    params: { inviterName: 'text', workspaceName: 'text', url: 'url', expiresAt: 'date' },
+    subject: (p) => `${p.inviterName} invited you to ${p.workspaceName} on Centcom`,
+    html: (p) =>
+      markup`<p>${p.inviterName} invited you to join <strong>${p.workspaceName}</strong> on Centcom.</p>
 ${link(p.url, 'Accept the invitation')}
 <p>The invitation expires on ${formatDate(p.expiresAt)}. If you did not expect it, you can ignore this email.</p>`,
-      text: (p) =>
-        paragraphs(
-          `${p.inviterName} invited you to join ${p.workspaceName} on Centcom.`,
-          `Accept the invitation: ${p.url}`,
-          `The invitation expires on ${formatDate(p.expiresAt)}. If you did not expect it, you can ignore this email.`,
-        ),
-    },
-    account_deletion_scheduled: {
-      params: { displayName: 'text', deletionDate: 'date', restoreUrl: 'url' },
-      subject: () => 'Your Centcom account is scheduled for deletion',
-      html: (p) =>
-        markup`<p>Hello ${p.displayName},</p>
+    text: (p) =>
+      paragraphs(
+        `${p.inviterName} invited you to join ${p.workspaceName} on Centcom.`,
+        `Accept the invitation: ${p.url}`,
+        `The invitation expires on ${formatDate(p.expiresAt)}. If you did not expect it, you can ignore this email.`,
+      ),
+  },
+  account_deletion_scheduled: {
+    params: { displayName: 'text', deletionDate: 'date', restoreUrl: 'url' },
+    subject: () => 'Your Centcom account is scheduled for deletion',
+    html: (p) =>
+      markup`<p>Hello ${p.displayName},</p>
 <p>Your Centcom account and its data will be deleted on ${formatDate(p.deletionDate)}.</p>
 ${link(p.restoreUrl, 'Keep my account')}
 <p>If you change your mind before then, follow the link to restore it.</p>`,
-      text: (p) =>
-        paragraphs(
-          `Hello ${p.displayName},`,
-          `Your Centcom account and its data will be deleted on ${formatDate(p.deletionDate)}.`,
-          `Keep my account: ${p.restoreUrl}`,
-          'If you change your mind before then, follow the link to restore it.',
-        ),
-    },
-    export_ready: {
-      params: { displayName: 'text', url: 'url', expiresAt: 'date' },
-      subject: () => 'Your Centcom data export is ready',
-      html: (p) =>
-        markup`<p>Hello ${p.displayName},</p>
+    text: (p) =>
+      paragraphs(
+        `Hello ${p.displayName},`,
+        `Your Centcom account and its data will be deleted on ${formatDate(p.deletionDate)}.`,
+        `Keep my account: ${p.restoreUrl}`,
+        'If you change your mind before then, follow the link to restore it.',
+      ),
+  },
+  export_ready: {
+    params: { displayName: 'text', url: 'url', expiresAt: 'date' },
+    subject: () => 'Your Centcom data export is ready',
+    html: (p) =>
+      markup`<p>Hello ${p.displayName},</p>
 <p>The export of your Centcom data is ready.</p>
 ${link(p.url, 'Download the export')}
 <p>The link expires on ${formatDate(p.expiresAt)}.</p>`,
-      text: (p) =>
-        paragraphs(
-          `Hello ${p.displayName},`,
-          'The export of your Centcom data is ready.',
-          `Download the export: ${p.url}`,
-          `The link expires on ${formatDate(p.expiresAt)}.`,
-        ),
-    },
-  });
+    text: (p) =>
+      paragraphs(
+        `Hello ${p.displayName},`,
+        'The export of your Centcom data is ready.',
+        `Download the export: ${p.url}`,
+        `The link expires on ${formatDate(p.expiresAt)}.`,
+      ),
+  },
+});
 
 /** A set of templates; each EmailService has its own (no process-wide registry). */
 export interface TemplateRegistry {

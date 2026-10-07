@@ -3,7 +3,8 @@
  * transactions with serialization retry, and the health probe for `/readyz`. The `centcom-db` CLI
  * (`src/cli.ts`) runs migrations as a deploy step. Conventions for schema work:
  * packages/db/CONVENTIONS.md. Table types: the core schema (B008) in `schema/core.ts`, social-login
- * identities (B015) in `schema/identities.ts`; repositories (B013 on) in `repos/`.
+ * identities (B015) in `schema/identities.ts`, e-mail sign-in links (B014) in
+ * `schema/login-tokens.ts`; repositories (B013 on) in `repos/`.
  */
 export {
   ACQUIRE_BUCKETS_S,
@@ -74,6 +75,11 @@ export type {
   IdentityProvider,
   SocialDatabase,
 } from './schema/identities.js';
+export type {
+  LoginTokensDatabase,
+  LoginTokensTable,
+  MagicLinkDatabase,
+} from './schema/login-tokens.js';
 export type {
   CoreDatabase,
   CreatedAt,

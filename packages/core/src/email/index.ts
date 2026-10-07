@@ -50,6 +50,7 @@ export {
   formatDate,
   markup,
   renderTemplate,
+  type BuiltInTemplateId,
   type EmailTemplate,
   type ParamKind,
   type RenderedContent,
