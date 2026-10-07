@@ -1,7 +1,7 @@
 # @centcom/api
 
 The Fastify REST API (`/v1/*`, CT-API). It is assembled lane by lane; today it holds the request
-context plugin (B005) and the error handler plugin (B006). Logging and the error types themselves
+context plugin (B005), the error handler plugin (B006) and the users module (B013). Logging and the error types themselves
 live in `@centcom/core` ([`packages/core/README.md`](../../packages/core/README.md#logging-b005),
 [errors](../../packages/core/README.md#errors-b006)).
 
@@ -123,3 +123,51 @@ for the errors Fastify raises before routing; pass it when creating the server.
   schema failures with JSON Pointers (2), retry hints (3), unexpected errors (4), 404, 405, 413,
   400 and 415 (5), no request secret in any response or log line (6), errors before routing, only
   registry codes for any thrown value, uniform authentication failures, and the failure modes
+
+## Users module (B013)
+
+`src/modules/users/` holds the user service over B008's `users` table and the profile field
+rules; the SQL is `createUserRepo` in `@centcom/db` (`packages/db/src/repos/users.ts`). Login
+methods (B014, B015) call `getOrCreateByEmail`; `/v1/me` (B022) calls `updateProfile`.
+
+```ts
+import { newId } from '@centcom/contracts';
+import { UserService } from './modules/users/index.js';
+
+const users = new UserService({ db, newId, now: () => new Date() });
+const { user, created } = await users.getOrCreateByEmail('Ada@Example.COM', { name: 'Ada' });
+await users.updateProfile(user.id, { locale: 'en-GB' });
+```
+
+- **First sign-in.** `getOrCreateByEmail` normalises the address (NFC, lower case) and returns
+  the existing user with `created: false`. Otherwise it creates the user, a personal workspace
+  named after them (slug `p-<workspace ULID>`) and their `owner` membership, all in one
+  transaction. Concurrent first sign-ins for one address end with one user: the losers' inserts
+  hit `users_email_key`, roll back whole and return the winner.
+- **Display name.** The login method's hint, with control characters dropped and cut to 40 code
+  points; without a usable hint, the address's local part, cut the same way.
+- **Field rules** (`validation.ts`):
+  - display name: 1-40 code points after NFC, no control characters;
+  - locale: a BCP 47 tag with a 2-3 letter language, stored canonically (`en-gb` becomes `en-GB`; `english` is refused); `en` when unset;
+  - avatar slot: 1-64 characters or null;
+  - e-mail: at most 254 characters, one `@` with something on each side.
+
+  A bad field is a 422 `validation_failed` AppError whose `errors[]` points at it (`/display_name`), never quoting the value. `validateProfilePatch` reports every bad or unknown field at once.
+
+- **Statuses.** Users pending deletion or deleted are still found by id and by e-mail, with their
+  `status`; callers decide what that means.
+- **Never logged:** e-mail addresses. The module logs nothing; callers log `usr_` ids.
+
+### Tests
+
+- **`test/modules/users/validation.test.ts`:** the field rules, table-driven.
+- **`user-repo.test.ts`:**
+  - the exact column list and no query for an impossible address (scripted driver);
+  - CRUD, case-insensitive lookups, deletion states, and no extra column after the table grows one (real Postgres).
+- **`user-service.test.ts`:**
+  - existing users, invalid addresses, the creation race and failure paths (scripted driver);
+  - one user for any case of an address, 50 concurrent first sign-ins, and the profile rules end to end (real Postgres).
+- **`personal-workspace.test.ts`:** atomic creation, and rollback when the workspace or the membership insert fails (real Postgres).
+
+The real-Postgres cases run where `DATABASE_URL` is set (CI's integration job), each file in a
+throwaway `test_<time>_<random>` database migrated to the latest version.

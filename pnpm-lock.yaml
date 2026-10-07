@@ -207,9 +207,15 @@ importers:
       '@centcom/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@centcom/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       fastify:
         specifier: 5.12.5
         version: 5.12.5
+      kysely:
+        specifier: 0.29.6
+        version: 0.29.6
 
   apps/relay: {}
 

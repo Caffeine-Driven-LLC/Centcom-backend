@@ -19,6 +19,8 @@
   "dependencies": {
     "@centcom/contracts": "workspace:*",
     "@centcom/core": "workspace:*",
-    "fastify": "5.12.5"
+    "@centcom/db": "workspace:*",
+    "fastify": "5.12.5",
+    "kysely": "0.29.6"
   }
 }
