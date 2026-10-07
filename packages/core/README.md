@@ -1,7 +1,7 @@
 # @centcom/core
 
-Shared platform primitives for the backend services. Today this is configuration (lane B004) and
-logging (B005). Errors (B006), Redis (B009) and the rest arrive with their lanes.
+Shared platform primitives for the backend services. Today this is configuration (lane B004),
+logging (B005) and errors (B006). Redis (B009) and the rest arrive with their lanes.
 
 ## Configuration (B004)
 
@@ -205,3 +205,98 @@ unredacted logger to reach for. The request id, context and access log for the A
 
 Tests capture lines by passing a `Writable` as `destination`, fix the clock with `now`, and count
 metrics with a recording `Metrics`.
+
+## Errors (B006)
+
+Code throws typed errors that carry a CT-ERR registry code, never strings or bare `Error`s
+(GUIDELINES §3.4). `toProblem` turns anything thrown into the RFC 9457 problem body CT-ERR defines
+([`contracts/00-foundations.md`](../../contracts/00-foundations.md)). The API's error handler
+plugin sends it as `application/problem+json`
+([`apps/api/README.md`](../../apps/api/README.md#error-handler-plugin-b006)); the relay sends the
+same body in its `sys.error` frames.
+
+```ts
+import { validate } from '@centcom/contracts';
+import { forbidden, tooManyRequests, validationFailed } from '@centcom/core';
+
+const batch = validate('api/UsageBatch', request.body);
+if (!batch.ok) throw validationFailed(batch.errors); // 422, errors[0].pointer "/events/3/qty"
+if (!member) throw forbidden(); // 403
+if (!allowed) throw tooManyRequests(30); // 429, retry_after_s 30
+```
+
+### Public interface
+
+| Export                                                                                                | What it is                                                                                                                                                      |
+| ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `new AppError(code, {detail?, errors?, retryAfterS?, status?, cause?})`                               | An error with a registry code; `code`, `status`, `detail`, `errors`, `retryAfterS` are read-only. The code is typed `ErrorCode`, so only registry codes compile |
+| `badRequest`, `unauthorized`, `forbidden`, `notFound`, `conflict`, `unprocessable(detail?, {cause?})` | 400 `invalid_request`, 401 `unauthorized`, 403 `forbidden`, 404 `not_found`, 409 `conflict`, 422 `validation_failed`                                            |
+| `tooManyRequests(retryAfterS, detail?)`, `unavailable(retryAfterS?, detail?)`                         | 429 `rate_limited` and 503 `service_unavailable`, with the retry hint                                                                                           |
+| `validationFailed(errors, detail?)`                                                                   | 422 `validation_failed` with `errors[]`; takes the issues a `@centcom/contracts` validator returns as they are                                                  |
+| `toProblem(err, {requestId, instance?})`                                                              | The problem body for anything thrown. Pure: logs nothing, changes nothing                                                                                       |
+| `isRetryable(status, method, hasIdempotencyKey)`                                                      | The CT-ERR retry table (below)                                                                                                                                  |
+| `ERROR_CODES`, `isErrorCode`, `errorEntry(code)`, `codeForStatus(status)`, `isErrorStatus`            | The registry, from `contracts/errors.json` through B003's generated module: status, area, default title, retryability and `type` per code                       |
+| `ErrorCode`, `Problem`, `FieldError`                                                                  | Types generated from the contracts (never hand-written, GUIDELINES §2.2)                                                                                        |
+| `ERROR_DETAILS`                                                                                       | The error layer's own user-facing details (one message table)                                                                                                   |
+| `fallbackProblemBody(requestId)`, `PROBLEM_CONTENT_TYPE`, `DEFAULT_RETRY_AFTER_S`, ...                | The static 500 body for when building a problem fails, the media type, and the limits below                                                                     |
+
+### What a problem holds
+
+- **`type`, `title`, `status`, `code`** come from the registry, so `code` is always a registry code.
+  An AppError whose code is not in the registry (only possible through a cast) goes out as the
+  generic code of its status class, `invalid_request` or `internal_error` (CT-ERR rule 7).
+- **`detail`** only when the error has one. It passes through the log redaction patterns (API
+  keys, JWTs, `Bearer` credentials become `[redacted]`) and is cut at 2 000 characters, as a safety
+  net.
+- **`instance`** when the caller knows the route: the route template (`/v1/sessions/:id`), never
+  the raw URL.
+- **`request_id`**, always.
+- **`retry_after_s`** exactly for 429, 503 and retryable codes (CT-ERR rule 6), which includes
+  `internal_error`, `bad_gateway`, `timeout`, `session_paused`, `authorization_pending` and
+  `slow_down`: the error's `retryAfterS` rounded up to whole seconds, else 1 s
+  (`DEFAULT_RETRY_AFTER_S`), at most 366 days (`MAX_RETRY_AFTER_S`). Other codes never carry it,
+  even if the error has a hint.
+- **`errors[]`**, at most 100 entries (`MAX_FIELD_ERRORS`), each `{pointer, code, detail?}`.
+- **Anything that is not an AppError** (a `TypeError`, a string, a library error, an object that
+  merely looks like an AppError) becomes a 500 `internal_error` with a generic detail. Its message,
+  stack and properties never reach the body: log the error instead.
+
+### Rules for callers
+
+- **Throw AppErrors**, from the helpers or `new AppError(code)`, and pick the most specific code
+  (`role_insufficient` rather than `forbidden`).
+- **`detail` is shown to users** (CT-ERR rule 2): English from your message table, never secrets,
+  other users' data, internal paths, SQL or values copied from the request. The scrubbing above is
+  a safety net, not a licence.
+- **Authentication failures look alike.** Throw `unauthorized()` with the same detail (or none)
+  whatever the cause, so the body never tells whether a user exists.
+- **`status` is for statuses without a code of their own** (405, 414), sent with that class's
+  generic code. An override from another class (a 4xx code as a 500) is ignored.
+
+### Retry table
+
+`isRetryable(status, method, hasIdempotencyKey)` answers whether a failed request may be sent
+again; clients and the server obey the same table:
+
+| Status                            | Retried                                                                         |
+| --------------------------------- | ------------------------------------------------------------------------------- |
+| 400, 401, 403, 404, 409, 410, 422 | Never: fix the request (a 401 means refresh the token once, then log in)        |
+| 408, 425, 429                     | Yes, honouring `Retry-After`                                                    |
+| 500, 502, 503, 504                | Idempotent requests only: GET, HEAD, OPTIONS, PUT, DELETE, or a POST with a key |
+| Anything else                     | Never                                                                           |
+
+A POST without an `Idempotency-Key` is never retried (CT-PAGE defines the key for POST only, so a
+PATCH is never idempotent).
+
+### Tests
+
+`test/errors/` covers:
+
+- **`problem.test.ts`:** the shape for every registry code (table-driven, validated against
+  `problem.schema.json`), the `quota.json` and `validation.json` fixtures reproduced byte for byte,
+  rules 6 and 7, unknown errors (property-tested: their message never reaches the body), every
+  output valid for any code and options (property), detail scrubbing and the caps
+- **`app-error.test.ts`:** every helper's code and status, copied and frozen field errors, the
+  status override and stray codes
+- **`registry.test.ts`:** the registry against `contracts/errors.json`, and `codeForStatus`
+- **`retry-table.test.ts`:** the CT-ERR retry table as a matrix of statuses, methods and keys
