@@ -2,7 +2,7 @@
  * @centcom/db (B007): the Postgres client (Kysely over `pg`), the forward-only migration runner,
  * transactions with serialization retry, and the health probe for `/readyz`. The `centcom-db` CLI
  * (`src/cli.ts`) runs migrations as a deploy step. Conventions for schema work:
- * packages/db/CONVENTIONS.md.
+ * packages/db/CONVENTIONS.md. Table types: the core schema (B008) in `schema/core.ts`.
  */
 export {
   ACQUIRE_BUCKETS_S,
@@ -56,3 +56,18 @@ export {
   type HealthOptions,
   type HealthReport,
 } from './health.js';
+export type {
+  CoreDatabase,
+  CreatedAt,
+  DevicesTable,
+  FixedId,
+  JsonObject,
+  MembershipsTable,
+  NullableTimestamp,
+  SessionMembersTable,
+  SessionsTable,
+  UpdatedAt,
+  UsersTable,
+  UserStatus,
+  WorkspacesTable,
+} from './schema/core.js';

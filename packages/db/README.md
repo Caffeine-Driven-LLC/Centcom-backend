@@ -107,9 +107,35 @@ A serialization failure (SQLSTATE 40001) from `fn` or the commit runs `fn` again
 times with a short random pause, then the error is rethrown; no other error is retried. Passing a
 transaction, or opening one inside another, throws a `TypeError`: pass `trx` on instead.
 
+## Core schema (B008)
+
+[`migrations/20260101000000_core_schema.sql`](migrations/20260101000000_core_schema.sql) creates
+the tables every identity, workspace and session lane builds on; `src/schema/core.ts` describes
+them for Kysely (`createDb<CoreDatabase>(...)`). Enumerated columns use the contract's types
+(`Api.Role`, `Api.SessionRole`, ...), so a value the contract does not know does not compile.
+
+| Table             | Holds                                                    | Rules beyond the column types                                                                                      |
+| ----------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `users`           | accounts                                                 | `usr_` id; e-mail `citext`, unique ignoring case, at most 254; display name 1-40; BCP 47 `locale` (`en`); `status` |
+| `devices`         | each signed-in CLI, TUI or browser, with its public keys | `dev_` id; name 1-80; `platform` from CT-API-ACCOUNTS; 43-character base64url keys; fingerprint `ABCD-EFGH-IJKL`   |
+| `workspaces`      | team spaces, soft-deleted through `deleted_at`           | `wsp_` id; name 1-60; slug `[a-z0-9-]{3,40}`, unique even among deleted ones; `settings` a JSON object; `version`  |
+| `memberships`     | a user's role in a workspace                             | `mem_` id; CT-RBAC role; one per (workspace, user)                                                                 |
+| `sessions`        | command-post metadata (never content)                    | `ses_` id; name 1-80; state `pending`, `live`, `paused`, `ended` or `expired`; region such as `eu`                 |
+| `session_members` | who sits in which slot of a session, on which device     | `mem_` id; `host`, `editor` or `viewer`; slot 0 or more, unique per session                                        |
+
+- **Nothing cascades from users.** Deleting a user fails while a device, membership, workspace
+  or session refers to it; account deletion is a job (B026).
+- **Indexes:** `devices.user_id`, `memberships.user_id`, `sessions.workspace_id`, plus the unique
+  ones on `users.email`, `workspaces.slug`, `memberships (workspace_id, user_id)` (which also serves
+  lookups by workspace) and `session_members (session_id, slot)`.
+- **citext:** the migration creates the extension; it needs CREATE on the database (the owner has
+  it) and fails with "permission denied to create extension" otherwise.
+- A later lane that needs another column adds its own migration; this file never changes.
+
 ## Tests
 
-`test/runner/` holds every test. The real-Postgres cases run when `DATABASE_URL` is set (CI's
+`test/runner/` holds the tests of the client and the runner, `test/schema/` those of the schemas.
+The real-Postgres cases run when `DATABASE_URL` is set (CI's
 `integration` job uses a Postgres 16 service container; locally, any server where the user may
 `CREATE DATABASE`); each test gets a throwaway database, dropped afterwards. Without it they are
 skipped, and the same cases still run against an in-memory fake dialect (`fake-postgres.ts`) and,
@@ -126,3 +152,6 @@ for the driver paths, a minimal wire-protocol stub (`wire-server.ts`).
 - **`cli.test.ts`:** usage, `new`, `migrate`, `status`, configuration and connection errors
 - **`files.test.ts`**, **`conventions.test.ts`:** naming, checksums, ordering, and the CONVENTIONS
   checks on every file in `migrations/`
+- **`schema/core.test.ts`:** the core schema: six tables and an idempotent re-run, the constraint
+  matrix, the Kysely types against `information_schema` (and, through tsc, against a sample query),
+  and the citext permission failure

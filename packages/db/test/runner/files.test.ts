@@ -139,12 +139,14 @@ describe('expectedMigrationVersion', () => {
   it('is the newest file version of the directory', () => {
     expect(expectedMigrationVersion(FIXTURES.sample)).toBe(SAMPLE_VERSIONS[2]);
     expect(expectedMigrationVersion(FIXTURES.slow)).toBe('20260101000100');
+    // This package's own migrations (B008 added the first).
+    expect(expectedMigrationVersion(MIGRATIONS_DIR)).toMatch(/^\d{14}$/);
+    expect(expectedMigrationVersion()).toBe(expectedMigrationVersion(MIGRATIONS_DIR));
   });
 
-  it("is '' for a directory without migrations, such as this package's today", async () => {
+  it("is '' for a directory without migrations", async () => {
     const dir = await dirWith({ 'README.md': 'no migrations yet' });
     expect(expectedMigrationVersion(dir)).toBe('');
-    expect(() => expectedMigrationVersion(MIGRATIONS_DIR)).not.toThrow();
   });
 
   it('throws for a missing directory or a bad name', async () => {
