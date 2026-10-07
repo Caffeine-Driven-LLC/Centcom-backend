@@ -92,9 +92,16 @@ async function postgresBackend(): Promise<Backend> {
     rows: () =>
       onDatabase(
         url,
-        async (c) =>
-          (await c.query('select version, name, checksum from schema_migrations order by version'))
-            .rows,
+        async (c) => {
+          // Like the fake: no table yet (nothing got past the lock) means no rows.
+          const { rows: present } = await c.query(
+            "select to_regclass('schema_migrations') is not null as present",
+          );
+          if (present[0]?.present !== true) return [];
+          return (
+            await c.query('select version, name, checksum from schema_migrations order by version')
+          ).rows;
+        },
       ),
     holdLock: async () => {
       const db = createDb<Database>({ url, poolMax: 1 });
