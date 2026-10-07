@@ -36,12 +36,12 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 | [B012](plan/backend/B012.md) | Local dev environment: compose stack, seed data, one-command up | S | M0 |
 | [B091](plan/backend/B091.md) | Infrastructure as code: environments dev, stage, prod | L | M3 |
 | [B017](plan/backend/B017.md) | Token service: JWT issue, refresh rotation with reuse detection, JWKS, revocation | L | M3 |
-| [B036](plan/backend/B036.md) | Audit event emitter library | S | M3 |
+| [B026](plan/backend/B026.md) | Account deletion and data export | M | M3 |
 | [B037](plan/backend/B037.md) | Relay service skeleton: ws server, health, graceful shutdown | M | M3 |
+| [B027](plan/backend/B027.md) | Workspace CRUD endpoints | M | M3 |
 | [B069](plan/backend/B069.md) | Plans and entitlements model | M | M4 |
+| [B063](plan/backend/B063.md) | Notification dispatcher core: events to channels | M | M4 |
 | [B084](plan/backend/B084.md) | Release manifest and update channel service | M | M5 |
-| [B085](plan/backend/B085.md) | Telemetry ingest: schema validation, PII scrub, retention | M | M5 |
-| [B097](plan/backend/B097.md) | Security hardening: headers, WAF rules, secret scanning, dependency policy | M | M6 |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
 
