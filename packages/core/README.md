@@ -1,8 +1,8 @@
 # @centcom/core
 
 Shared platform primitives for the backend services. Today this is configuration (lane B004),
-logging (B005), errors (B006) and Redis (B009,
-[`src/redis/README.md`](src/redis/README.md)). The rest arrive with their lanes.
+logging (B005), errors (B006), Redis (B009, [`src/redis/README.md`](src/redis/README.md)) and
+RBAC (B021). The rest arrive with their lanes.
 
 ## Configuration (B004)
 
@@ -301,3 +301,73 @@ PATCH is never idempotent).
   status override and stray codes
 - **`registry.test.ts`:** the registry against `contracts/errors.json`, and `codeForStatus`
 - **`retry-table.test.ts`:** the CT-ERR retry table as a matrix of statuses, methods and keys
+
+## RBAC (B021)
+
+One engine answers every authorisation question from the CT-RBAC matrix (`src/rbac/`). REST
+routes (through `apps/api/src/plugins/rbac.ts`) and the relay call it; no other code compares role
+strings.
+
+```ts
+import { cachedMembershipReader, createAuthorizer, subscribeInvalidations } from '@centcom/core';
+import { createMembershipRepo } from '@centcom/db';
+
+const memberships = cachedMembershipReader(createMembershipRepo(db)); // roles reused at most 2 s
+await subscribeInvalidations(redis.pubsub, memberships); // rbac:invalidate drops them at once
+const authorizer = createAuthorizer({ memberships, audit, logger, metrics });
+
+await authorizer.authorize(actor, 'workspace.update', { workspaceId }); // or throws 403 forbidden
+```
+
+### Public interface
+
+| Export                                                                                        | What it is                                                                                                                                           |
+| --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Action`, `ACTIONS`, `WORKSPACE_ACTIONS`, `SESSION_ACTIONS`                                   | The catalogue: 16 workspace actions (`workspace.read` … `workspace.delete`) and 11 session actions (`session.message.send` … `session.history.read`) |
+| `MATRIX`                                                                                      | One rule per action, citing its CT-RBAC row: the roles allowed and under which condition, whether a denial is audited, the API-key scope             |
+| `can(actor, action, resource, {workspaceRole?, sessionRole?, delegatedApprover?})`            | The pure decision: `{allow: true, limited?}` or `{allow: false, reason}`; never throws                                                               |
+| `createAuthorizer({memberships, audit, logger?, metrics?})`                                   | `authorize` (loads roles, decides, audits privileged denials, throws 403) and `decide`                                                               |
+| `MembershipReader`, `cachedMembershipReader`, `subscribeInvalidations`, `publishInvalidation` | Role lookups (Postgres: `createMembershipRepo` in `@centcom/db`), the 2 s cache and the `rbac:invalidate` channel                                    |
+| `SCOPES`, `hasScope`, `hasScopes`                                                             | CT-AUTH scopes; exact names only                                                                                                                     |
+| `defaultSessionRole(role)`                                                                    | owner, admin, member: `editor`; guest (and billing): `viewer`                                                                                        |
+
+### Rules
+
+- **Default deny.** Each of these is denied:
+  - an unknown action, actor or role, or a missing role;
+  - a condition that is not met, or cannot be checked because the resource lacks the fact;
+  - an API key on any session action, on another workspace, or without the action's scope.
+- **Roles come from membership state only** (rule 1). The resource carries ids and server-side
+  facts (the target member's role, an invitation, the session mode); an actor's claimed role
+  counts for nothing.
+- **Conditions** (resolved details of v1.1.0):
+  - **Guests:** a guest's read is `limited`; a guest joins as viewer only when invited.
+  - **Owner:** assigns any role but a second owner, removes anyone but themselves, and is the
+    only one who grants or removes `admin`.
+  - **Admin:** moves members between `member`, `billing` and `guest` only.
+  - **Members:** manage their own API keys only; anyone but the owner may leave
+    (CT-API-WORKSPACES "self").
+  - **Sessions:** spawning a branch agent needs a branch-mode session, and delegated approvers
+    may approve tool calls.
+- **Denials:** `authorize` throws 403 `forbidden` with one fixed detail.
+  - Denials of privileged actions (all but `workspace.read`, `session.history.read`,
+    `session.presence`, `session.react` and `session.comment`) write one `rbac.denied` audit
+    record with actor, action and resource ids (rule 6).
+  - A failing audit sink does not turn a denial into an allow (counted in
+    `rbac_audit_failures_total`, logged as `rbac.audit_failed`).
+- **Membership unreadable:** a 503, never an allow. Answers are reused at most 2 s (rule 2) and
+  dropped at once on `rbac:invalidate` (`{userId?, workspaceId?, sessionId?}`); code that
+  changes a membership publishes one.
+
+### Tests
+
+`test/rbac/`:
+
+- **`matrix.test.ts`:** reads both tables from `contracts/01-auth-rbac.md` and checks every cell,
+  conditional cells with the condition met and not met; an unknown cell text fails.
+- **`coverage.test.ts`:** a rule for every action, every rule citing a real row, every row covered.
+- **`scopes.test.ts`:** scope subsets, and API keys.
+- **`can.fuzz.test.ts`:** default deny, and 1 000 seeded fuzzed combinations that neither throw
+  nor allow.
+- **`membership-cache.test.ts`:** 2 s, invalidation through B009's pub/sub, failures uncached.
+- **`authorize.test.ts`:** audit records, 503 on unreadable membership, audit sink down.
