@@ -34,14 +34,14 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 |---|---|---|---|
 | [B010](plan/backend/B010.md) | Test harness: containers, factories, contract test runner | M | M0 |
 | [B012](plan/backend/B012.md) | Local dev environment: compose stack, seed data, one-command up | S | M0 |
+| [B015](plan/backend/B015.md) | Social login providers (GitHub, Google) | M | M3 |
 | [B025](plan/backend/B025.md) | Pagination and filtering library | S | M3 |
 | [B091](plan/backend/B091.md) | Infrastructure as code: environments dev, stage, prod | L | M3 |
-| [B013](plan/backend/B013.md) | User model and repository | S | M3 |
+| [B017](plan/backend/B017.md) | Token service: JWT issue, refresh rotation with reuse detection, JWKS, revocation | L | M3 |
 | [B021](plan/backend/B021.md) | RBAC engine: roles, permission checks, policy tests | M | M3 |
 | [B023](plan/backend/B023.md) | Rate limiting and abuse protection middleware | M | M3 |
 | [B024](plan/backend/B024.md) | Idempotency-Key middleware | S | M3 |
 | [B032](plan/backend/B032.md) | Transactional email service with templates and provider abstraction | M | M3 |
-| [B036](plan/backend/B036.md) | Audit event emitter library | S | M3 |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
 
