@@ -62,3 +62,14 @@ Owner: B025, `paginationConfig()` in `@centcom/core`.
 | Key | Type | Default | Required | Secret | Description |
 |---|---|---|---|---|---|
 | `CURSOR_SIGNING_KEYS` | id:secret list |  | yes | yes | Keys that sign list cursors, newest first: `id:secret[,id:secret...]`, each secret at least 32 characters. The first signs, all verify; to rotate, put the new key first and drop the old one after 24 hours. |
+
+## Email
+
+Owner: B032, `emailConfig()` in `@centcom/core`.
+
+| Key | Type | Default | Required | Secret | Description |
+|---|---|---|---|---|---|
+| `EMAIL_PROVIDER` | `postmark` \| `memory` \| `console` | `console` | no | no | Who sends email: postmark (production), memory (tests: kept in memory) or console (logs the template only). |
+| `EMAIL_FROM` | sender |  | yes | no | Sender of every email: `address` or `Display Name <address>`. |
+| `POSTMARK_SERVER_TOKEN` | string |  | no | yes | Postmark server token; required when EMAIL_PROVIDER is postmark. |
+| `EMAIL_TIMEOUT_MS` | integer 1000..60000 | `10000` | no | no | Longest wait for one provider call, in milliseconds; slower calls are retried. |

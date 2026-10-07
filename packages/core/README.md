@@ -2,8 +2,8 @@
 
 Shared platform primitives for the backend services. Today this is configuration (lane B004),
 logging (B005), errors (B006), Redis (B009, [`src/redis/README.md`](src/redis/README.md)), RBAC
-(B021), rate limiting (B023), idempotency (B024) and pagination (B025). The rest arrive with their
-lanes.
+(B021), rate limiting (B023), idempotency (B024), pagination (B025) and email (B032). The rest
+arrive with their lanes.
 
 ## Configuration (B004)
 
@@ -590,3 +590,86 @@ return reply.page(result.data, result.next_cursor);
 - **`keyset.test.ts`:** the SQL `paginate` builds, page assembly, and `paginateArray`.
 - **Postgres:** the same guarantees against Postgres are in
   `apps/api/test/pagination.test.ts` (CI).
+
+## Email (B032)
+
+Transactional email (`src/email/`): typed templates with escaping, input rules, providers, and the
+service that queues emails for the `email-send` job in `apps/worker`
+([README](../../apps/worker/README.md)).
+
+```ts
+import { Queue } from 'bullmq';
+import { createEmailService, EMAIL_QUEUE, emailConfig } from '@centcom/core';
+
+const config = emailConfig(); // EMAIL_PROVIDER, EMAIL_FROM, POSTMARK_SERVER_TOKEN, EMAIL_TIMEOUT_MS
+const email = createEmailService({
+  queue: new Queue(EMAIL_QUEUE, { connection, prefix: 'ct:production:bull' }),
+  rateLimit: redis.rateLimit,
+  kv: redis.kv,
+  from: config.from,
+  logger,
+  metrics,
+});
+await email.send(
+  'workspace_invite',
+  to,
+  { inviterName, workspaceName, url, expiresAt },
+  { idempotencyKey },
+);
+```
+
+### Public interface
+
+| Export                                                                                  | What it is                                                                                                                  |
+| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `createEmailService({queue, rateLimit, kv, from, templates?, ...})`                     | `send(id, to, params, {idempotencyKey?})` queues; `render(id, params)` previews                                             |
+| `TemplateParams`, `TemplateId`, `createTemplateRegistry()`, `markup`, `escapeHtml`      | Templates: `workspace_invite`, `account_deletion_scheduled`, `export_ready`; later lanes add theirs with `registerTemplate` |
+| `PostmarkProvider`, `MemoryEmailProvider`, `ConsoleEmailProvider`, `EmailProviderError` | Providers: Postmark over `fetch`, in memory (`sent`), and logs only                                                         |
+| `emailConfig(env?)`, `createEmailProvider(config, logger)`                              | Configuration ([docs/config.md](../../docs/config.md#email))                                                                |
+
+### Rules
+
+- **Escaping:** every parameter is escaped by `markup` (named so, not `html`, because Prettier
+  reformats `html` template literals). Callers cannot pass HTML: parameters are checked by kind.
+  - Text is 1 to 200 characters without line breaks or control characters.
+  - Links must be https (http only for localhost), have no credentials, and are used exactly as
+    given (no tracking, no redirect).
+  - Dates are formatted like `7 October 2026` (UTC). The plain-text part is always there.
+- **Headers:** a CR or LF in the recipient, the sender, the subject or any name is refused (422)
+  before anything is queued.
+  - The recipient is lower-cased and at most 254 characters.
+  - Subjects are cut to 150 characters.
+- **Limits:** 5 emails of one template to one address per hour; the 6th is a 429 with
+  `retry_after_s`.
+- **Queue:** every job carries its BullMQ options (`emailJobOptions()`: 5 attempts, the `email`
+  backoff, removal rules), so any BullMQ queue named `email-send` works; the worker's
+  `createEmailQueue` is one.
+- **Idempotency:** the same idempotency key, template and recipient within 24 hours queue nothing
+  more.
+  - The job id is derived from the key, so a concurrent duplicate is dropped by BullMQ.
+  - If the key cannot be remembered after queueing, the send still succeeds
+    (`email_idempotency_unrecorded_total`).
+- **Failures:**
+  - An unknown template throws at `send`, never at delivery.
+  - Redis or the queue failing is a 503 with `retry_after_s: 1`; nothing is ever sent inline.
+- **Logs and metrics:** only the template and job id are logged (`email.queued`), never the
+  recipient, a parameter, a link or the body. Metrics: `email_queued_total{template}` and
+  `email_rate_limited_total{template}`.
+- **Postmark:** `POST /email` with the server token in its header, `TrackOpens: false` and
+  `TrackLinks: None`.
+  - 429 and 5xx are retryable (Retry-After honoured), as are timeouts and network errors; other
+    4xx are permanent.
+  - Errors carry the status only: never the token, the recipient or Postmark's own text.
+
+### Tests
+
+`test/email/`:
+
+- **`render.test.ts`:** golden HTML and text per template (`golden/*.golden`), escaping with a
+  property test, links, the subject limit, and the registry.
+- **`validation.test.ts`:** header injection and address limits.
+- **`postmark.test.ts`:** a local HTTP stub answering 200, 4xx, 429 and 5xx, a timeout, a closed
+  port, and malformed replies.
+- **`service.test.ts`:** queueing, the per-recipient limit, idempotency keys, Redis and queue
+  failures, and logging.
+- **`config.test.ts`:** the configuration, and the memory and console providers.
