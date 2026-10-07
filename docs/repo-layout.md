@@ -27,7 +27,13 @@ through its `exports` map), `tsconfig.json` extending `tsconfig.base.json`, and 
 Tests live in `<workspace>/test/**/*.test.ts` or next to the code as `src/**/*.test.ts`.
 Workspace `tsconfig.json` files build `src/` only (colocated tests excluded from `dist/`); the root
 `tsconfig.test.json` type-checks every workspace's tests and scripts, plus `tools/repo`, against
-source through `paths`, so tests type-check without a prior build.
+source through `paths`, and `vitest.workspace.ts` resolves `@centcom/*` imports to each
+workspace's `src/index.ts`, so tests type-check and run without a prior build.
+
+A workspace that imports another lists it in `dependencies` as `workspace:*` and adds it to
+`references` in its `tsconfig.json`, so `tsc -b` builds the dependency first (`@centcom/api`
+references `@centcom/core` and `@centcom/contracts`; `@centcom/core` references
+`@centcom/contracts`).
 
 ## Toolchain
 
@@ -45,12 +51,15 @@ source through `paths`, so tests type-check without a prior build.
 | Script                                   | What it does                                                                                                                        |
 | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `pnpm build`                             | `tsc -b` into each `dist/`, then each package's `build:assets` (contracts: copies its generated validators)                         |
-| `pnpm typecheck`                         | `tsc -b --noEmit` for sources, then `tsconfig.test.json` for tests, scripts and `tools/repo`                                        |
+| `pnpm typecheck`                         | `tsc -b` for sources, then `tsconfig.test.json` for tests, scripts and `tools/repo` (see below)                                     |
 | `pnpm lint`                              | ESLint, then `tools/repo/check-exact-pins.mjs` (fails on any version range)                                                         |
 | `pnpm test`                              | Vitest with v8 coverage; 80 % line coverage is the hard floor                                                                       |
 | `pnpm format`                            | Prettier, writing in place                                                                                                          |
 | `pnpm contracts:gen` / `contracts:check` | regenerate `packages/contracts/src/generated/` from `contracts/` / exit 1 if it is stale (B003; see `packages/contracts/README.md`) |
 | `pnpm dev:up`                            | runs `tools/dev/up.sh` (provided by B012)                                                                                           |
+
+`pnpm typecheck` emits into the (git-ignored) `dist/` folders like `pnpm build`: `tsc -b --noEmit`
+fails once one workspace references another (TS6310, a referenced project may not disable emit).
 
 ## Rules the toolchain enforces
 

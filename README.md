@@ -17,7 +17,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 ![Progress](docs/progress.svg)
 
-**3% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
+**4% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
 
 ## Next steps
 
@@ -28,17 +28,15 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 5. **B016 device authorization grant and B017 token service** — the terminal client's `centcom login` needs these first (client lane C052)
 6. **Relay lanes (see plan/ROADMAP.md M2-M3)** — the backend should be ready by the time the client reaches M3; start the relay while identity is in review
 
-### Started, not finished
-
-| Lane | What | Done | Note |
-|---|---|--:|---|
-| [B004](plan/backend/B004.md) | Typed configuration and secrets loader | 90% | in review: loader, secrets, base config, docs and lint rule done |
-
 ### Ready to pick up (all dependencies done)
 
 | Lane | What | Size | Milestone |
 |---|---|---|---|
+| [B007](plan/backend/B007.md) | Database package: Postgres client, migration runner, conventions | M | M0 |
+| [B009](plan/backend/B009.md) | Redis abstraction: pub/sub, KV, rate-limit primitives (in-memory + Redis impls) | M | M0 |
+| [B006](plan/backend/B006.md) | Error layer: problem+json, error registry, error handler | M | M0 |
 | [B091](plan/backend/B091.md) | Infrastructure as code: environments dev, stage, prod | L | M3 |
+| [B037](plan/backend/B037.md) | Relay service skeleton: ws server, health, graceful shutdown | M | M3 |
 | [B097](plan/backend/B097.md) | Security hardening: headers, WAF rules, secret scanning, dependency policy | M | M6 |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.

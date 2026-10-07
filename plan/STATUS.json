@@ -14,8 +14,12 @@
    "note": "merged in #8"
   },
   "B004": {
-   "pct": 0.9,
-   "note": "in review: loader, secrets, base config, docs and lint rule done"
+   "pct": 1,
+   "note": "merged in #9"
+  },
+  "B005": {
+   "pct": 1,
+   "note": "merged in #10"
   }
  },
  "next": [
