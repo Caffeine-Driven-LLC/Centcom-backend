@@ -255,6 +255,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@centcom/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       '@centcom/core':
         specifier: workspace:*
         version: link:../core

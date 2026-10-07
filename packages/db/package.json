@@ -23,6 +23,7 @@
     "migrate:new": "node dist/cli.js new"
   },
   "dependencies": {
+    "@centcom/contracts": "workspace:*",
     "@centcom/core": "workspace:*",
     "kysely": "0.29.6",
     "pg": "8.23.1"
