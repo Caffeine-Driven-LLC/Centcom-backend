@@ -35,6 +35,8 @@ import {
 import { ADMIN_URL, onDatabase, tempDatabase } from '../runner/helpers.js';
 
 const FILE = '20260101000000_core_schema.sql';
+/** This file's version: the tests stop the runner here, so later lanes' migrations (B017 on) do not change them. */
+const CORE_VERSION = '20260101000000';
 const TABLES = ['devices', 'memberships', 'session_members', 'sessions', 'users', 'workspaces'];
 
 type Udt = 'text' | 'citext' | 'timestamptz' | 'bool' | 'int4' | 'jsonb';
@@ -200,7 +202,7 @@ describe.runIf(ADMIN_URL !== undefined)('core schema on Postgres 16', () => {
     const { url, drop } = await tempDatabase();
     const db = createDb<CoreDatabase>({ url });
     cleanups.push(drop, () => closeDb(db));
-    await migrate(db, MIGRATIONS_DIR);
+    await migrate(db, MIGRATIONS_DIR, { target: CORE_VERSION });
     return { url, db };
   }
 
@@ -288,7 +290,7 @@ describe.runIf(ADMIN_URL !== undefined)('core schema on Postgres 16', () => {
     );
     expect(tables).toEqual([...TABLES, 'schema_migrations'].sort());
     const before = await snapshot();
-    expect(await migrate(db, MIGRATIONS_DIR)).toEqual({ applied: [] });
+    expect(await migrate(db, MIGRATIONS_DIR, { target: CORE_VERSION })).toEqual({ applied: [] });
     expect(await snapshot()).toEqual(before);
   });
 

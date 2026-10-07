@@ -133,6 +133,21 @@ them for Kysely (`createDb<CoreDatabase>(...)`). Enumerated columns use the cont
   it) and fails with "permission denied to create extension" otherwise.
 - A later lane that needs another column adds its own migration; this file never changes.
 
+## Identities (B015)
+
+[`migrations/20260102000400_identities.sql`](migrations/20260102000400_identities.sql) creates
+`identities(provider, subject, user_id, created_at)` for social login.
+`src/schema/identities.ts` types it (`SocialDatabase` = `CoreDatabase` plus this table).
+
+- **Contents:** only the provider (`github`, `google`) and its stable account id (`subject`) per
+  user. No provider token, code or e-mail address.
+- **Key:** the natural pair `(provider, subject)`, so a second link of one account fails with
+  `identities_pkey`; the rows are never exposed, so there is no CT-IDS id.
+- **`user_id`:** `on delete restrict`, indexed.
+
+The core schema tests stop the runner at the core version (`target`), so later migrations do not
+change what they check.
+
 ## Tests
 
 `test/runner/` holds the tests of the client and the runner, `test/schema/` those of the schemas.
