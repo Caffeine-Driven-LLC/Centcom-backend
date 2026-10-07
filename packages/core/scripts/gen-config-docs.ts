@@ -11,6 +11,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import { baseEnvSchema } from '../src/config/base.js';
+import { idempotencyEnvSchema } from '../src/idempotency/crypto.js';
 import { rateLimitEnvSchema } from '../src/ratelimit/buckets.js';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -34,6 +35,11 @@ export const SECTIONS: readonly ConfigSection[] = [
     title: 'Rate limits',
     owner: 'B023, `rateLimitConfig()` in `@centcom/core`',
     schema: rateLimitEnvSchema,
+  },
+  {
+    title: 'Idempotency',
+    owner: 'B024, `idempotencyConfig()` in `@centcom/core`',
+    schema: idempotencyEnvSchema,
   },
 ];
 

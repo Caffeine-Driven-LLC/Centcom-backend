@@ -46,3 +46,11 @@ Owner: B023, `rateLimitConfig()` in `@centcom/core`.
 | `RATELIMIT_AUTH_LIMIT` | integer 1..5000 | `20` | no | no | Requests per window from one client address to the auth endpoints (/v1/auth/*). |
 | `RATELIMIT_USAGE_LIMIT` | integer 1..5000 | `60` | no | no | Usage-ingest requests per window from one device. |
 | `RATELIMIT_WINDOW_S` | integer 10..3600 | `60` | no | no | Length of every bucket's sliding window, in seconds. |
+
+## Idempotency
+
+Owner: B024, `idempotencyConfig()` in `@centcom/core`.
+
+| Key | Type | Default | Required | Secret | Description |
+|---|---|---|---|---|---|
+| `IDEMPOTENCY_ENCRYPTION_KEY` | base64 (32 bytes) |  | no | yes | Key (32 bytes, base64; e.g. `openssl rand -base64 32`) that encrypts stored responses of sensitive routes. Without it, routes flagged sensitiveResponse refuse to start. |

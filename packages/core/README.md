@@ -2,7 +2,7 @@
 
 Shared platform primitives for the backend services. Today this is configuration (lane B004),
 logging (B005), errors (B006), Redis (B009, [`src/redis/README.md`](src/redis/README.md)), RBAC
-(B021) and rate limiting (B023). The rest arrive with their lanes.
+(B021), rate limiting (B023) and idempotency (B024). The rest arrive with their lanes.
 
 ## Configuration (B004)
 
@@ -442,3 +442,67 @@ const decision = await limiter.check({ bucket: 'default', principal, ip }); // a
 - **`abuse-block.test.ts`:** the block, its expiry, and sharing between instances.
 - **`concurrency.test.ts`:** 100 parallel requests never exceed the limit, on the fallback too.
 - **Redis:** the last two also run against Redis 7 in CI.
+
+## Idempotency (B024)
+
+What CT-PAGE's `Idempotency-Key` keeps, and how (`src/idempotency/`). The Fastify plugin that
+applies it is `apps/api/src/plugins/idempotency.ts`.
+
+```ts
+import {
+  createIdempotencyStore,
+  fingerprintRequest,
+  idempotencyConfig,
+  storeKeyFor,
+} from '@centcom/core';
+
+const store = createIdempotencyStore({ kv: redis.kv, ...idempotencyConfig(), logger, metrics });
+const key = storeKeyFor(principalId, 'POST', '/v1/invites', idempotencyKey);
+const claim = await store.claim(key, fingerprintRequest('POST', '/v1/invites', params, body));
+// claimed: run, then store.complete(key, fp, response) | replay | conflict | in_flight
+```
+
+### Public interface
+
+| Export                                                                                  | What it is                                                                                                                   |
+| --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `parseIdempotencyKey(header)`                                                           | The key (one ULID or UUID, at most 64 characters), or a 422 pointing at `/headers/idempotency-key`                           |
+| `storeKeyFor(principal, method, route, key)`                                            | `idem:<sha256>` of the scope: one caller's key never meets another's                                                         |
+| `fingerprintRequest(method, route, params, body)`, `canonicalJson`, `fingerprintsEqual` | `sha256:<hex>` of the request (keys sorted at every depth), compared in constant time                                        |
+| `createIdempotencyStore({kv, clock?, encryptionKey?, ...})`                             | `claim`, `complete` and `release` over B009's KeyValue                                                                       |
+| `sealBody`, `openBody`, `idempotencyConfig(env?)`                                       | AES-256-GCM for sensitive bodies, keyed by `IDEMPOTENCY_ENCRYPTION_KEY` ([docs/config.md](../../docs/config.md#idempotency)) |
+
+### Rules
+
+- **Records:** one store key per (principal, method, route template, key).
+  - Claiming writes an in-flight lock atomically (`setIfAbsent`, 30 s), which outlives a crashed
+    process by at most that long.
+  - Completing replaces the lock with the response for 24 hours: the status, the body, and only
+    `content-type`, `content-language`, `location`, `etag` and `last-modified`. `Set-Cookie`, auth
+    and every other header are never kept.
+  - 5xx responses, bodies over the route's limit (256 KiB by default, 1 MiB at most) and records
+    over B009's value limit are not kept: the lock is released, so a retry runs again.
+- **Claims:**
+  - the same fingerprint replays the response;
+  - a different fingerprint is a conflict;
+  - the same fingerprint while the first request runs waits up to 10 s (polling) for its result,
+    then is `in_flight`;
+  - a released key is claimed again by the waiting duplicate.
+- **Sensitive bodies:** sealed with AES-256-GCM. Each record gets a fresh IV, and its store key is
+  the associated data, so a sealed body opens only where it was stored.
+- **Unreadable records:** a record that does not parse or verify (tampered, sealed under another
+  key) is never replayed. It is deleted, counted in `idempotency_invalid_records_total` and logged
+  as `idempotency.invalid_record`; the request runs as new, as after an evicted key.
+
+### Tests
+
+`test/idempotency/`:
+
+- **`fingerprint.test.ts`:** canonical JSON and key-order independence, as property tests.
+- **`crypto.test.ts`:** round trips, tamper detection and the env key.
+- **`store.test.ts`:** claims, replays, conflicts, the in-flight wait, what is never kept, sealed
+  bodies, unreadable records and the header parser.
+- **`expiry.test.ts`:** 24 h and 30 s on a fake clock.
+- **`concurrency.test.ts`:** 20 parallel claims leave one runner.
+- **`principal-isolation.test.ts`:** store keys, including a property test.
+- **Redis:** `store.test.ts` and `concurrency.test.ts` also run against Redis 7 in CI.
