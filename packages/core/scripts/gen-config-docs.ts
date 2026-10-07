@@ -11,6 +11,10 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import { baseEnvSchema } from '../src/config/base.js';
+import { emailEnvSchema } from '../src/email/config.js';
+import { idempotencyEnvSchema } from '../src/idempotency/crypto.js';
+import { paginationEnvSchema } from '../src/pagination/cursor.js';
+import { rateLimitEnvSchema } from '../src/ratelimit/buckets.js';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const COMMAND = 'pnpm --filter @centcom/core gen:config-docs';
@@ -28,6 +32,26 @@ export const SECTIONS: readonly ConfigSection[] = [
     title: 'Base configuration',
     owner: 'B004, `baseConfig()` in `@centcom/core`',
     schema: baseEnvSchema,
+  },
+  {
+    title: 'Rate limits',
+    owner: 'B023, `rateLimitConfig()` in `@centcom/core`',
+    schema: rateLimitEnvSchema,
+  },
+  {
+    title: 'Idempotency',
+    owner: 'B024, `idempotencyConfig()` in `@centcom/core`',
+    schema: idempotencyEnvSchema,
+  },
+  {
+    title: 'Pagination',
+    owner: 'B025, `paginationConfig()` in `@centcom/core`',
+    schema: paginationEnvSchema,
+  },
+  {
+    title: 'Email',
+    owner: 'B032, `emailConfig()` in `@centcom/core`',
+    schema: emailEnvSchema,
   },
 ];
 

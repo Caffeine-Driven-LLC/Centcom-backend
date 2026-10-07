@@ -35,6 +35,7 @@ const { ok, migrationsAtExpected } = await healthCheck(db); // for /readyz
 | `MigrationError`, `isConnectionError`, `isSerializationFailure`         | Typed runner errors (`code`: `checksum_mismatch`, `lock_timeout`, `migration_failed`, ...) and error classifiers                                                                       |
 | `Database`, `SchemaMigrationsTable`, `DbConfig`, ...                    | Types; `Database` holds the tables this package owns (`schema_migrations`); schema lanes pass their own database type to `createDb<DB>()`                                              |
 | `createUserRepo(db)`, `User`, `NewUser`, `ProfilePatch`, `isEmailTaken` | The users repository (B013): `create`, `findById`, `findByEmail` (case-insensitive), `updateProfile`, `markDeletionRequested`, `markDeleted`, `listByIds`; selects only `USER_COLUMNS` |
+| `createMembershipRepo(db)`                                              | The RBAC `MembershipReader` (B021): a member's workspace role (none in a soft-deleted workspace) and most powerful live session seat; wrap it in `cachedMembershipReader`              |
 
 ## Client
 
@@ -133,6 +134,7 @@ them for Kysely (`createDb<CoreDatabase>(...)`). Enumerated columns use the cont
   it) and fails with "permission denied to create extension" otherwise.
 - A later lane that needs another column adds its own migration; this file never changes.
 
+<<<<<<< HEAD
 ## Refresh tokens (B017)
 
 [`migrations/20260102000000_refresh_tokens.sql`](migrations/20260102000000_refresh_tokens.sql)
@@ -150,6 +152,39 @@ creates `refresh_tokens` for the API's token service; `src/schema/refresh-tokens
 
 The core schema tests stop the runner at the core version (`target`), so later migrations such
 as this one do not change what they check.
+=======
+## Identities (B015)
+
+[`migrations/20260102000400_identities.sql`](migrations/20260102000400_identities.sql) creates
+`identities(provider, subject, user_id, created_at)` for social login.
+`src/schema/identities.ts` types it (`SocialDatabase` = `CoreDatabase` plus this table).
+
+- **Contents:** only the provider (`github`, `google`) and its stable account id (`subject`) per
+  user. No provider token, code or e-mail address.
+- **Key:** the natural pair `(provider, subject)`, so a second link of one account fails with
+  `identities_pkey`; the rows are never exposed, so there is no CT-IDS id.
+- **`user_id`:** `on delete restrict`, indexed.
+
+The core schema tests stop the runner at the core version (`target`), so later migrations do not
+change what they check.
+
+## Invites (B029)
+
+[`migrations/20260102000800_invites.sql`](migrations/20260102000800_invites.sql) creates
+`invites`; `src/schema/invites.ts` types it (`InviteDatabase` = `CoreDatabase` plus this table),
+and `createInviteStore(db)` (`src/repos/invites.ts`) is its SQL.
+
+- **Tokens:** only `token_hash` (sha256, 32 bytes, unique) is stored; invites are found by it.
+- **One pending invite per address per workspace:** a partial unique index on
+  `(workspace_id, email)`; an insert that meets it writes nothing (`insert` returns null).
+- **Status** comes from `accepted_at`, `revoked_at`, `expired_at` and `expires_at`
+  (`inviteStatus`); `sweep(now)` sets `expired_at` on lapsed invites.
+- **Key bundles:** opaque `key_bundle` bytes (48 to 12 288) with their `key_bundle_expires_at`;
+  `takeKeyBundle` hands one out once, while it lasts; revocation, expiry and the sweep drop them.
+- **Foreign keys** restrict: a purged workspace's invites go through `deleteForWorkspace` (the
+  worker's `invites` purge hook) before B027's purge; deleting a user who created or accepted an
+  invite is refused (B026's job).
+>>>>>>> origin/main
 
 ## Tests
 

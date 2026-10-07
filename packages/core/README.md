@@ -1,8 +1,9 @@
 # @centcom/core
 
 Shared platform primitives for the backend services. Today this is configuration (lane B004),
-logging (B005), errors (B006) and Redis (B009,
-[`src/redis/README.md`](src/redis/README.md)). The rest arrive with their lanes.
+logging (B005), errors (B006), Redis (B009, [`src/redis/README.md`](src/redis/README.md)), RBAC
+(B021), rate limiting (B023), idempotency (B024), pagination (B025) and email (B032). The rest
+arrive with their lanes.
 
 ## Configuration (B004)
 
@@ -301,3 +302,374 @@ PATCH is never idempotent).
   status override and stray codes
 - **`registry.test.ts`:** the registry against `contracts/errors.json`, and `codeForStatus`
 - **`retry-table.test.ts`:** the CT-ERR retry table as a matrix of statuses, methods and keys
+
+## RBAC (B021)
+
+One engine answers every authorisation question from the CT-RBAC matrix (`src/rbac/`). REST
+routes (through `apps/api/src/plugins/rbac.ts`) and the relay call it; no other code compares role
+strings.
+
+```ts
+import { cachedMembershipReader, createAuthorizer, subscribeInvalidations } from '@centcom/core';
+import { createMembershipRepo } from '@centcom/db';
+
+const memberships = cachedMembershipReader(createMembershipRepo(db)); // roles reused at most 2 s
+await subscribeInvalidations(redis.pubsub, memberships); // rbac:invalidate drops them at once
+const authorizer = createAuthorizer({ memberships, audit, logger, metrics });
+
+await authorizer.authorize(actor, 'workspace.update', { workspaceId }); // or throws 403 forbidden
+```
+
+### Public interface
+
+| Export                                                                                        | What it is                                                                                                                                           |
+| --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Action`, `ACTIONS`, `WORKSPACE_ACTIONS`, `SESSION_ACTIONS`                                   | The catalogue: 16 workspace actions (`workspace.read` … `workspace.delete`) and 11 session actions (`session.message.send` … `session.history.read`) |
+| `MATRIX`                                                                                      | One rule per action, citing its CT-RBAC row: the roles allowed and under which condition, whether a denial is audited, the API-key scope             |
+| `can(actor, action, resource, {workspaceRole?, sessionRole?, delegatedApprover?})`            | The pure decision: `{allow: true, limited?}` or `{allow: false, reason}`; never throws                                                               |
+| `createAuthorizer({memberships, audit, logger?, metrics?})`                                   | `authorize` (loads roles, decides, audits privileged denials, throws 403) and `decide`                                                               |
+| `MembershipReader`, `cachedMembershipReader`, `subscribeInvalidations`, `publishInvalidation` | Role lookups (Postgres: `createMembershipRepo` in `@centcom/db`), the 2 s cache and the `rbac:invalidate` channel                                    |
+| `SCOPES`, `hasScope`, `hasScopes`                                                             | CT-AUTH scopes; exact names only                                                                                                                     |
+| `defaultSessionRole(role)`                                                                    | owner, admin, member: `editor`; guest (and billing): `viewer`                                                                                        |
+
+### Rules
+
+- **Default deny.** Each of these is denied:
+  - an unknown action, actor or role, or a missing role;
+  - a condition that is not met, or cannot be checked because the resource lacks the fact;
+  - an API key on any session action, on another workspace, or without the action's scope.
+- **Roles come from membership state only** (rule 1). The resource carries ids and server-side
+  facts (the target member's role, an invitation, the session mode); an actor's claimed role
+  counts for nothing.
+- **Conditions** (resolved details of v1.1.0):
+  - **Guests:** a guest's read is `limited`; a guest joins as viewer only when invited.
+  - **Owner:** assigns any role but a second owner, removes anyone but themselves, and is the
+    only one who grants or removes `admin`.
+  - **Admin:** moves members between `member`, `billing` and `guest` only.
+  - **Members:** manage their own API keys only; anyone but the owner may leave
+    (CT-API-WORKSPACES "self").
+  - **Sessions:** spawning a branch agent needs a branch-mode session, and delegated approvers
+    may approve tool calls.
+- **Denials:** `authorize` throws 403 `forbidden` with one fixed detail.
+  - Denials of privileged actions (all but `workspace.read`, `session.history.read`,
+    `session.presence`, `session.react` and `session.comment`) write one `rbac.denied` audit
+    record with actor, action and resource ids (rule 6).
+  - A failing audit sink does not turn a denial into an allow (counted in
+    `rbac_audit_failures_total`, logged as `rbac.audit_failed`).
+- **Membership unreadable:** a 503, never an allow. Answers are reused at most 2 s (rule 2) and
+  dropped at once on `rbac:invalidate` (`{userId?, workspaceId?, sessionId?}`); code that
+  changes a membership publishes one.
+
+### Tests
+
+`test/rbac/`:
+
+- **`matrix.test.ts`:** reads both tables from `contracts/01-auth-rbac.md` and checks every cell,
+  conditional cells with the condition met and not met; an unknown cell text fails.
+- **`coverage.test.ts`:** a rule for every action, every rule citing a real row, every row covered.
+- **`scopes.test.ts`:** scope subsets, and API keys.
+- **`can.fuzz.test.ts`:** default deny, and 1 000 seeded fuzzed combinations that neither throw
+  nor allow.
+- **`membership-cache.test.ts`:** 2 s, invalidation through B009's pub/sub, failures uncached.
+- **`authorize.test.ts`:** audit records, 503 on unreadable membership, audit sink down.
+
+## Rate limiting (B023)
+
+Every API request counts against one CT-PAGE bucket (`src/ratelimit/`). The policy lives here; the
+Fastify plugin that applies it is `apps/api/src/plugins/rate-limit.ts`.
+
+```ts
+import { baseConfig, createRateLimiter, rateLimitConfig, resolveClientIp } from '@centcom/core';
+
+const config = rateLimitConfig(baseConfig()); // RATELIMIT_* and TRUSTED_PROXY_HOPS
+const limiter = createRateLimiter({
+  store: redis.rateLimit,
+  kv: redis.kv,
+  config,
+  logger,
+  metrics,
+});
+const ip = resolveClientIp(request, config.trustedHops);
+const decision = await limiter.check({ bucket: 'default', principal, ip }); // allowed, limit, ...
+```
+
+### Public interface
+
+| Export                                                                  | What it is                                                                                                                                                                  |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `defaultBuckets`, `rateLimitConfig(base, env?)`, `rateLimitEnvSchema`   | The five buckets (per 60 s: anonymous 30, user 600, API key 1200, auth 20, usage 60) and their `RATELIMIT_*` overrides ([docs/config.md](../../docs/config.md#rate-limits)) |
+| `bucketKey(route, principal, ip)`                                       | Where a request counts (see Rules)                                                                                                                                          |
+| `resolveClientIp(req, trustedHops)`, `ipBucket(ip)`, `normalizeIp(raw)` | The client address behind trusted proxies, and the bucket it counts in                                                                                                      |
+| `createRateLimiter({store, kv?, config, clock?, logger?, metrics?})`    | `check(request)`: `{allowed, bucket, limit, remaining, resetS, retryAfterS?, degraded, blocked}`; `maxCost(bucket)`                                                         |
+
+### Rules
+
+- **Keys:** never the URL.
+  - Users count by `usr_` id from any address, API keys by `key_` id.
+  - The `auth` bucket counts by address, whoever calls.
+  - `usage` counts by `dev_` id, else by the user or key, else by address.
+  - Everyone else counts by address; an IPv6 address by its /64.
+  - A malformed id throws: it is a bug in whoever built the principal.
+- **Client address:**
+  - with `TRUSTED_PROXY_HOPS=0`, the socket address;
+  - with N, the N-th `X-Forwarded-For` entry from the right (the leftmost when there are fewer).
+    Entries further left are never read, and a malformed entry ends the walk;
+  - `Fly-Client-IP` stands in when `X-Forwarded-For` has nothing usable;
+  - with no address at all, the shared `unknown` address.
+- **Store failure:** while B009's store throws, a per-process limiter decides: general buckets at
+  twice their limit, the auth bucket at its own. Limiting never stops.
+  - Each failure counts in `ratelimit_store_errors_total`, and `ratelimit.store_unavailable` is
+    logged at most once a minute.
+  - The store is tried again after 5 s; `ratelimit.store_recovered` is logged when it answers.
+- **Abuse block:** an address's 5th overrun of the auth bucket within 10 minutes blocks it for 15
+  minutes.
+  - The block covers every bucket counted by address: anonymous, auth, and usage without an id.
+  - Signed-in callers from that address are counted by who they are, and are not blocked.
+  - The block lives in the key-value store, so every instance honours it.
+  - Each block counts in `ratelimit_blocks_total` and is logged as `ratelimit.ip_blocked` (warn,
+    with the address bucket).
+- **Windows:** sliding, as B009's store computes them.
+- **Metrics:** `ratelimit_denied_total{bucket}` as well; no label holds an address or an id.
+
+### Tests
+
+`test/ratelimit/`:
+
+- **`buckets.test.ts`:** the five defaults, every key, the env overrides and the config checks.
+- **`client-ip.test.ts`:** proxy chains, spoofed `X-Forwarded-For`, `Fly-Client-IP` and IPv6 /64,
+  with property tests.
+- **`fallback.test.ts`:** store errors, the doubled limits and the strict auth bucket, the warning
+  and recovery.
+- **`abuse-block.test.ts`:** the block, its expiry, and sharing between instances.
+- **`concurrency.test.ts`:** 100 parallel requests never exceed the limit, on the fallback too.
+- **Redis:** the last two also run against Redis 7 in CI.
+
+## Idempotency (B024)
+
+What CT-PAGE's `Idempotency-Key` keeps, and how (`src/idempotency/`). The Fastify plugin that
+applies it is `apps/api/src/plugins/idempotency.ts`.
+
+```ts
+import {
+  createIdempotencyStore,
+  fingerprintRequest,
+  idempotencyConfig,
+  storeKeyFor,
+} from '@centcom/core';
+
+const store = createIdempotencyStore({ kv: redis.kv, ...idempotencyConfig(), logger, metrics });
+const key = storeKeyFor(principalId, 'POST', '/v1/invites', idempotencyKey);
+const claim = await store.claim(key, fingerprintRequest('POST', '/v1/invites', params, body));
+// claimed: run, then store.complete(key, fp, response) | replay | conflict | in_flight
+```
+
+### Public interface
+
+| Export                                                                                  | What it is                                                                                                                   |
+| --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `parseIdempotencyKey(header)`                                                           | The key (one ULID or UUID, at most 64 characters), or a 422 pointing at `/headers/idempotency-key`                           |
+| `storeKeyFor(principal, method, route, key)`                                            | `idem:<sha256>` of the scope: one caller's key never meets another's                                                         |
+| `fingerprintRequest(method, route, params, body)`, `canonicalJson`, `fingerprintsEqual` | `sha256:<hex>` of the request (keys sorted at every depth), compared in constant time                                        |
+| `createIdempotencyStore({kv, clock?, encryptionKey?, ...})`                             | `claim`, `complete` and `release` over B009's KeyValue                                                                       |
+| `sealBody`, `openBody`, `idempotencyConfig(env?)`                                       | AES-256-GCM for sensitive bodies, keyed by `IDEMPOTENCY_ENCRYPTION_KEY` ([docs/config.md](../../docs/config.md#idempotency)) |
+
+### Rules
+
+- **Records:** one store key per (principal, method, route template, key).
+  - Claiming writes an in-flight lock atomically (`setIfAbsent`, 30 s), which outlives a crashed
+    process by at most that long.
+  - Completing replaces the lock with the response for 24 hours: the status, the body, and only
+    `content-type`, `content-language`, `location`, `etag` and `last-modified`. `Set-Cookie`, auth
+    and every other header are never kept.
+  - 5xx responses, bodies over the route's limit (256 KiB by default, 1 MiB at most) and records
+    over B009's value limit are not kept: the lock is released, so a retry runs again.
+- **Claims:**
+  - the same fingerprint replays the response;
+  - a different fingerprint is a conflict;
+  - the same fingerprint while the first request runs waits up to 10 s (polling) for its result,
+    then is `in_flight`;
+  - a released key is claimed again by the waiting duplicate.
+- **Sensitive bodies:** sealed with AES-256-GCM. Each record gets a fresh IV, and its store key is
+  the associated data, so a sealed body opens only where it was stored.
+- **Unreadable records:** a record that does not parse or verify (tampered, sealed under another
+  key) is never replayed. It is deleted, counted in `idempotency_invalid_records_total` and logged
+  as `idempotency.invalid_record`; the request runs as new, as after an evicted key.
+
+### Tests
+
+`test/idempotency/`:
+
+- **`fingerprint.test.ts`:** canonical JSON and key-order independence, as property tests.
+- **`crypto.test.ts`:** round trips, tamper detection and the env key.
+- **`store.test.ts`:** claims, replays, conflicts, the in-flight wait, what is never kept, sealed
+  bodies, unreadable records and the header parser.
+- **`expiry.test.ts`:** 24 h and 30 s on a fake clock.
+- **`concurrency.test.ts`:** 20 parallel claims leave one runner.
+- **`principal-isolation.test.ts`:** store keys, including a property test.
+- **Redis:** `store.test.ts` and `concurrency.test.ts` also run against Redis 7 in CI.
+
+## Pagination (B025)
+
+Every list endpoint pages with CT-PAGE cursors through one library (`src/pagination/`). The
+Fastify side is `reply.page` (`apps/api/src/plugins/pagination.ts`).
+
+```ts
+import {
+  defineFilters,
+  enumFilter,
+  idFilter,
+  paginate,
+  paginationConfig,
+  parsePageQuery,
+} from '@centcom/core';
+
+const { signingKeys } = paginationConfig(); // CURSOR_SIGNING_KEYS; required
+const filters = defineFilters({
+  workspace: idFilter('wsp'),
+  state: enumFilter(['active', 'ended']),
+});
+const spec = { sorts: { '-created_at': { column: 'created_at', direction: 'desc' } } } as const;
+
+const page = parsePageQuery(request.query, { sorts: ['-created_at'], defaultSort: '-created_at' });
+const f = filters.parse(request.query);
+let query = db.selectFrom('sessions').selectAll();
+if (f.state !== undefined) query = query.where('state', '=', f.state);
+const result = await paginate(query, spec, {
+  ...page,
+  filterHash: filters.hash(f),
+  keys: signingKeys,
+  now: Date.now(),
+});
+return reply.page(result.data, result.next_cursor);
+```
+
+### Public interface
+
+| Export                                                                                               | What it is                                                                                            |
+| ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `parsePageQuery(q, {sorts, defaultSort, maxLimit?})`                                                 | `limit` (1 to 200, default 50), `cursor` and an allowed `sort`; offsets, pages and `skip` are refused |
+| `encodeCursor`, `decodeCursor`, `paginationConfig(env?)`                                             | Signed cursors and `CURSOR_SIGNING_KEYS` ([docs/config.md](../../docs/config.md#pagination))          |
+| `defineFilters({...})` with `stringFilter`, `enumFilter`, `idFilter`, `booleanFilter`, `rangeFilter` | An endpoint's filters: `parse(query)` and `hash(filters)`                                             |
+| `paginate(qb, spec, params)`, `paginateArray(items, spec, params)`, `page(data, next)`               | Keyset pages from a Kysely query or a list in memory, and the CT-PAGE shape                           |
+
+### Rules
+
+- **Parameters:**
+  - `limit` must be 1 to 200 (an endpoint may lower it, never raise it); a bad limit or sort is a
+    422 pointing at `/limit` or `/sort`.
+  - `offset`, `page` and `skip` are refused with 422 rather than ignored.
+  - Undeclared filter parameters are ignored.
+- **Cursors** are `<key id>.<payload>.<signature>`.
+  - The payload is base64url JSON `{v, k, f, s, exp}`: the last row's keyset values, the filter
+    hash, the sort, and the expiry 24 hours on.
+  - The signature is HMAC-SHA256, compared in constant time and as text, so no two spellings
+    verify.
+  - The newest key signs and every configured key verifies.
+  - Any bad cursor (malformed, unknown key, bad signature, expired, other filters or sort) is a
+    400 `cursor_invalid` with `errors[0].pointer` `/cursor` and code `invalid`, `expired` or
+    `mismatch`. It is never a 500.
+- **Keysets:** `paginate` orders by `(sort column, id)`, both in the sort's direction, and
+  fetches `limit + 1` rows.
+  - It continues with `(column, id) > ($1, $2)` (`<` descending), so values are always
+    parameters, and an index on `(column, id)` serves it.
+  - It clears any order, limit or offset the query had.
+  - Keyset values travel as Postgres prints them (`::text`), so a timestamp keeps its
+    microseconds.
+  - Sort columns and the id must be NOT NULL.
+- **No counts:** totals are never computed or returned.
+
+### Tests
+
+`test/pagination/`:
+
+- **`cursor.test.ts`:** the codec, binding, expiry, every one-character change, forgery, rotation
+  and the config.
+- **`fuzz.test.ts`:** arbitrary and mutated cursors throw only `cursor_invalid`.
+- **`query.test.ts`:** limits, sorts and refused offsets.
+- **`filters.test.ts`:** every filter type, and hash stability.
+- **`keyset.test.ts`:** the SQL `paginate` builds, page assembly, and `paginateArray`.
+- **Postgres:** the same guarantees against Postgres are in
+  `apps/api/test/pagination.test.ts` (CI).
+
+## Email (B032)
+
+Transactional email (`src/email/`): typed templates with escaping, input rules, providers, and the
+service that queues emails for the `email-send` job in `apps/worker`
+([README](../../apps/worker/README.md)).
+
+```ts
+import { Queue } from 'bullmq';
+import { createEmailService, EMAIL_QUEUE, emailConfig } from '@centcom/core';
+
+const config = emailConfig(); // EMAIL_PROVIDER, EMAIL_FROM, POSTMARK_SERVER_TOKEN, EMAIL_TIMEOUT_MS
+const email = createEmailService({
+  queue: new Queue(EMAIL_QUEUE, { connection, prefix: 'ct:production:bull' }),
+  rateLimit: redis.rateLimit,
+  kv: redis.kv,
+  from: config.from,
+  logger,
+  metrics,
+});
+await email.send(
+  'workspace_invite',
+  to,
+  { inviterName, workspaceName, url, expiresAt },
+  { idempotencyKey },
+);
+```
+
+### Public interface
+
+| Export                                                                                  | What it is                                                                                                                  |
+| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `createEmailService({queue, rateLimit, kv, from, templates?, ...})`                     | `send(id, to, params, {idempotencyKey?})` queues; `render(id, params)` previews                                             |
+| `TemplateParams`, `TemplateId`, `createTemplateRegistry()`, `markup`, `escapeHtml`      | Templates: `workspace_invite`, `account_deletion_scheduled`, `export_ready`; later lanes add theirs with `registerTemplate` |
+| `PostmarkProvider`, `MemoryEmailProvider`, `ConsoleEmailProvider`, `EmailProviderError` | Providers: Postmark over `fetch`, in memory (`sent`), and logs only                                                         |
+| `emailConfig(env?)`, `createEmailProvider(config, logger)`                              | Configuration ([docs/config.md](../../docs/config.md#email))                                                                |
+
+### Rules
+
+- **Escaping:** every parameter is escaped by `markup` (named so, not `html`, because Prettier
+  reformats `html` template literals). Callers cannot pass HTML: parameters are checked by kind.
+  - Text is 1 to 200 characters without line breaks or control characters.
+  - Links must be https (http only for localhost), have no credentials, and are used exactly as
+    given (no tracking, no redirect).
+  - Dates are formatted like `7 October 2026` (UTC). The plain-text part is always there.
+- **Headers:** a CR or LF in the recipient, the sender, the subject or any name is refused (422)
+  before anything is queued.
+  - The recipient is lower-cased and at most 254 characters.
+  - Subjects are cut to 150 characters.
+- **Limits:** 5 emails of one template to one address per hour; the 6th is a 429 with
+  `retry_after_s`.
+- **Queue:** every job carries its BullMQ options (`emailJobOptions()`: 5 attempts, the `email`
+  backoff, removal rules), so any BullMQ queue named `email-send` works; the worker's
+  `createEmailQueue` is one.
+- **Idempotency:** the same idempotency key, template and recipient within 24 hours queue nothing
+  more.
+  - The job id is derived from the key, so a concurrent duplicate is dropped by BullMQ.
+  - If the key cannot be remembered after queueing, the send still succeeds
+    (`email_idempotency_unrecorded_total`).
+- **Failures:**
+  - An unknown template throws at `send`, never at delivery.
+  - Redis or the queue failing is a 503 with `retry_after_s: 1`; nothing is ever sent inline.
+- **Logs and metrics:** only the template and job id are logged (`email.queued`), never the
+  recipient, a parameter, a link or the body. Metrics: `email_queued_total{template}` and
+  `email_rate_limited_total{template}`.
+- **Postmark:** `POST /email` with the server token in its header, `TrackOpens: false` and
+  `TrackLinks: None`.
+  - 429 and 5xx are retryable (Retry-After honoured), as are timeouts and network errors; other
+    4xx are permanent.
+  - Errors carry the status only: never the token, the recipient or Postmark's own text.
+
+### Tests
+
+`test/email/`:
+
+- **`render.test.ts`:** golden HTML and text per template (`golden/*.golden`), escaping with a
+  property test, links, the subject limit, and the registry.
+- **`validation.test.ts`:** header injection and address limits.
+- **`postmark.test.ts`:** a local HTTP stub answering 200, 4xx, 429 and 5xx, a timeout, a closed
+  port, and malformed replies.
+- **`service.test.ts`:** queueing, the per-recipient limit, idempotency keys, Redis and queue
+  failures, and logging.
+- **`config.test.ts`:** the configuration, and the memory and console providers.

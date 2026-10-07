@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Your Centcom data export is ready</title>
+</head>
+<body style="font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; color: #1a1a1a; line-height: 1.5;">
+<p>Hello Ada,</p>
+<p>The export of your Centcom data is ready.</p>
+<p><a href="https://centcom.dev/exports/EXPORT">Download the export</a></p>
+<p>The link expires on 8 October 2026.</p>
+<p style="color: #666666; font-size: 12px;">You received this email because of activity on your Centcom account.</p>
+</body>
+</html>

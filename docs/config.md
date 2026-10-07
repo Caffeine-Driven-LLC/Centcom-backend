@@ -33,3 +33,43 @@ Owner: B004, `baseConfig()` in `@centcom/core`.
 | `TRUSTED_PROXY_HOPS` | integer 0..10 | `1` | no | no | Number of reverse proxies in front of the service whose X-Forwarded-For is trusted. |
 | `REQUEST_TIMEOUT_MS` | integer 100..600000 | `30000` | no | no | Server-side timeout for one request, in milliseconds. |
 | `ALLOW_INSECURE_BACKENDS` | boolean (0, 1, true, false) | `false` | no | no | Allows plain-text Postgres and Redis in production. For emergencies only. |
+
+## Rate limits
+
+Owner: B023, `rateLimitConfig()` in `@centcom/core`.
+
+| Key | Type | Default | Required | Secret | Description |
+|---|---|---|---|---|---|
+| `RATELIMIT_ANONYMOUS_LIMIT` | integer 1..5000 | `30` | no | no | Requests per window from one client address without credentials. |
+| `RATELIMIT_USER_LIMIT` | integer 1..5000 | `600` | no | no | Requests per window from one user, from any address. |
+| `RATELIMIT_API_KEY_LIMIT` | integer 1..5000 | `1200` | no | no | Requests per window with one API key. |
+| `RATELIMIT_AUTH_LIMIT` | integer 1..5000 | `20` | no | no | Requests per window from one client address to the auth endpoints (/v1/auth/*). |
+| `RATELIMIT_USAGE_LIMIT` | integer 1..5000 | `60` | no | no | Usage-ingest requests per window from one device. |
+| `RATELIMIT_WINDOW_S` | integer 10..3600 | `60` | no | no | Length of every bucket's sliding window, in seconds. |
+
+## Idempotency
+
+Owner: B024, `idempotencyConfig()` in `@centcom/core`.
+
+| Key | Type | Default | Required | Secret | Description |
+|---|---|---|---|---|---|
+| `IDEMPOTENCY_ENCRYPTION_KEY` | base64 (32 bytes) |  | no | yes | Key (32 bytes, base64; e.g. `openssl rand -base64 32`) that encrypts stored responses of sensitive routes. Without it, routes flagged sensitiveResponse refuse to start. |
+
+## Pagination
+
+Owner: B025, `paginationConfig()` in `@centcom/core`.
+
+| Key | Type | Default | Required | Secret | Description |
+|---|---|---|---|---|---|
+| `CURSOR_SIGNING_KEYS` | id:secret list |  | yes | yes | Keys that sign list cursors, newest first: `id:secret[,id:secret...]`, each secret at least 32 characters. The first signs, all verify; to rotate, put the new key first and drop the old one after 24 hours. |
+
+## Email
+
+Owner: B032, `emailConfig()` in `@centcom/core`.
+
+| Key | Type | Default | Required | Secret | Description |
+|---|---|---|---|---|---|
+| `EMAIL_PROVIDER` | `postmark` \| `memory` \| `console` | `console` | no | no | Who sends email: postmark (production), memory (tests: kept in memory) or console (logs the template only). |
+| `EMAIL_FROM` | sender |  | yes | no | Sender of every email: `address` or `Display Name <address>`. |
+| `POSTMARK_SERVER_TOKEN` | string |  | no | yes | Postmark server token; required when EMAIL_PROVIDER is postmark. |
+| `EMAIL_TIMEOUT_MS` | integer 1000..60000 | `10000` | no | no | Longest wait for one provider call, in milliseconds; slower calls are retried. |
