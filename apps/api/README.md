@@ -2,8 +2,9 @@
 
 The Fastify REST API (`/v1/*`, CT-API). It is assembled lane by lane; today it holds the request
 context plugin (B005), the error handler plugin (B006), the users module (B013), social login
-(B015), the RBAC plugin (B021), the account routes (B022), the rate-limit plugin (B023) and the
-idempotency plugin (B024). Logging and the error types themselves live in `@centcom/core`
+(B015), the RBAC plugin (B021), the account routes (B022), the rate-limit plugin (B023), the
+idempotency plugin (B024) and the pagination plugin (B025). Logging and the error types
+themselves live in `@centcom/core`
 ([`packages/core/README.md`](../../packages/core/README.md#logging-b005),
 [errors](../../packages/core/README.md#errors-b006)).
 
@@ -403,3 +404,34 @@ app.post('/v1/keys', { config: { idempotency: 'required', sensitiveResponse: tru
   hijacked, or a failed write (`idempotency_store_errors_total`, `idempotency.store_failed`).
 - **Tests:** `test/idempotency.test.ts` covers acceptance 1-9 end to end, the guardrails, the
   failure policy and the route config checks.
+
+## Pagination plugin (B025)
+
+`src/plugins/pagination.ts` adds `reply.page(data, nextCursor)`, which sends CT-PAGE's
+`{data, next_cursor, has_more}`; register it before list routes. The paging itself is in
+`@centcom/core` ([README](../../packages/core/README.md#pagination-b025)).
+
+```ts
+await app.register(paginationPlugin);
+app.get('/v1/things', async (request, reply) => {
+  const query = parsePageQuery(request.query, {
+    sorts: ['-created_at'],
+    defaultSort: '-created_at',
+  });
+  const result = await paginate(db.selectFrom('things').selectAll(), SPEC, {
+    ...query,
+    filterHash,
+    keys,
+    now,
+  });
+  return reply.page(result.data, result.next_cursor);
+});
+```
+
+- **Shape:** `has_more` is whether `next_cursor` is set; there are no totals, offsets or page
+  numbers. Misuse (data that is not an array) is a 500, never a malformed list.
+- **Tests:** `test/pagination.test.ts`.
+  - Over HTTP: 1 000 items in pages of 200, the default limit, empty lists, bad limits and
+    offsets, and tampered, re-filtered, re-sorted and expired cursors.
+  - On Postgres 16 (CI's integration job): 1 000 rows, inserts racing the pages, ties,
+    microsecond timestamps, parameter-only SQL, and an index scan on 100 000 rows.

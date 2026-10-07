@@ -54,3 +54,11 @@ Owner: B024, `idempotencyConfig()` in `@centcom/core`.
 | Key | Type | Default | Required | Secret | Description |
 |---|---|---|---|---|---|
 | `IDEMPOTENCY_ENCRYPTION_KEY` | base64 (32 bytes) |  | no | yes | Key (32 bytes, base64; e.g. `openssl rand -base64 32`) that encrypts stored responses of sensitive routes. Without it, routes flagged sensitiveResponse refuse to start. |
+
+## Pagination
+
+Owner: B025, `paginationConfig()` in `@centcom/core`.
+
+| Key | Type | Default | Required | Secret | Description |
+|---|---|---|---|---|---|
+| `CURSOR_SIGNING_KEYS` | id:secret list |  | yes | yes | Keys that sign list cursors, newest first: `id:secret[,id:secret...]`, each secret at least 32 characters. The first signs, all verify; to rotate, put the new key first and drop the old one after 24 hours. |

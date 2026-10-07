@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import { baseEnvSchema } from '../src/config/base.js';
 import { idempotencyEnvSchema } from '../src/idempotency/crypto.js';
+import { paginationEnvSchema } from '../src/pagination/cursor.js';
 import { rateLimitEnvSchema } from '../src/ratelimit/buckets.js';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -40,6 +41,11 @@ export const SECTIONS: readonly ConfigSection[] = [
     title: 'Idempotency',
     owner: 'B024, `idempotencyConfig()` in `@centcom/core`',
     schema: idempotencyEnvSchema,
+  },
+  {
+    title: 'Pagination',
+    owner: 'B025, `paginationConfig()` in `@centcom/core`',
+    schema: paginationEnvSchema,
   },
 ];
 

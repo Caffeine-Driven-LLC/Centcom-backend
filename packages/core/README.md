@@ -2,7 +2,8 @@
 
 Shared platform primitives for the backend services. Today this is configuration (lane B004),
 logging (B005), errors (B006), Redis (B009, [`src/redis/README.md`](src/redis/README.md)), RBAC
-(B021), rate limiting (B023) and idempotency (B024). The rest arrive with their lanes.
+(B021), rate limiting (B023), idempotency (B024) and pagination (B025). The rest arrive with their
+lanes.
 
 ## Configuration (B004)
 
@@ -506,3 +507,86 @@ const claim = await store.claim(key, fingerprintRequest('POST', '/v1/invites', p
 - **`concurrency.test.ts`:** 20 parallel claims leave one runner.
 - **`principal-isolation.test.ts`:** store keys, including a property test.
 - **Redis:** `store.test.ts` and `concurrency.test.ts` also run against Redis 7 in CI.
+
+## Pagination (B025)
+
+Every list endpoint pages with CT-PAGE cursors through one library (`src/pagination/`). The
+Fastify side is `reply.page` (`apps/api/src/plugins/pagination.ts`).
+
+```ts
+import {
+  defineFilters,
+  enumFilter,
+  idFilter,
+  paginate,
+  paginationConfig,
+  parsePageQuery,
+} from '@centcom/core';
+
+const { signingKeys } = paginationConfig(); // CURSOR_SIGNING_KEYS; required
+const filters = defineFilters({
+  workspace: idFilter('wsp'),
+  state: enumFilter(['active', 'ended']),
+});
+const spec = { sorts: { '-created_at': { column: 'created_at', direction: 'desc' } } } as const;
+
+const page = parsePageQuery(request.query, { sorts: ['-created_at'], defaultSort: '-created_at' });
+const f = filters.parse(request.query);
+let query = db.selectFrom('sessions').selectAll();
+if (f.state !== undefined) query = query.where('state', '=', f.state);
+const result = await paginate(query, spec, {
+  ...page,
+  filterHash: filters.hash(f),
+  keys: signingKeys,
+  now: Date.now(),
+});
+return reply.page(result.data, result.next_cursor);
+```
+
+### Public interface
+
+| Export                                                                                               | What it is                                                                                            |
+| ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `parsePageQuery(q, {sorts, defaultSort, maxLimit?})`                                                 | `limit` (1 to 200, default 50), `cursor` and an allowed `sort`; offsets, pages and `skip` are refused |
+| `encodeCursor`, `decodeCursor`, `paginationConfig(env?)`                                             | Signed cursors and `CURSOR_SIGNING_KEYS` ([docs/config.md](../../docs/config.md#pagination))          |
+| `defineFilters({...})` with `stringFilter`, `enumFilter`, `idFilter`, `booleanFilter`, `rangeFilter` | An endpoint's filters: `parse(query)` and `hash(filters)`                                             |
+| `paginate(qb, spec, params)`, `paginateArray(items, spec, params)`, `page(data, next)`               | Keyset pages from a Kysely query or a list in memory, and the CT-PAGE shape                           |
+
+### Rules
+
+- **Parameters:**
+  - `limit` must be 1 to 200 (an endpoint may lower it, never raise it); a bad limit or sort is a
+    422 pointing at `/limit` or `/sort`.
+  - `offset`, `page` and `skip` are refused with 422 rather than ignored.
+  - Undeclared filter parameters are ignored.
+- **Cursors** are `<key id>.<payload>.<signature>`.
+  - The payload is base64url JSON `{v, k, f, s, exp}`: the last row's keyset values, the filter
+    hash, the sort, and the expiry 24 hours on.
+  - The signature is HMAC-SHA256, compared in constant time and as text, so no two spellings
+    verify.
+  - The newest key signs and every configured key verifies.
+  - Any bad cursor (malformed, unknown key, bad signature, expired, other filters or sort) is a
+    400 `cursor_invalid` with `errors[0].pointer` `/cursor` and code `invalid`, `expired` or
+    `mismatch`. It is never a 500.
+- **Keysets:** `paginate` orders by `(sort column, id)`, both in the sort's direction, and
+  fetches `limit + 1` rows.
+  - It continues with `(column, id) > ($1, $2)` (`<` descending), so values are always
+    parameters, and an index on `(column, id)` serves it.
+  - It clears any order, limit or offset the query had.
+  - Keyset values travel as Postgres prints them (`::text`), so a timestamp keeps its
+    microseconds.
+  - Sort columns and the id must be NOT NULL.
+- **No counts:** totals are never computed or returned.
+
+### Tests
+
+`test/pagination/`:
+
+- **`cursor.test.ts`:** the codec, binding, expiry, every one-character change, forgery, rotation
+  and the config.
+- **`fuzz.test.ts`:** arbitrary and mutated cursors throw only `cursor_invalid`.
+- **`query.test.ts`:** limits, sorts and refused offsets.
+- **`filters.test.ts`:** every filter type, and hash stability.
+- **`keyset.test.ts`:** the SQL `paginate` builds, page assembly, and `paginateArray`.
+- **Postgres:** the same guarantees against Postgres are in
+  `apps/api/test/pagination.test.ts` (CI).
