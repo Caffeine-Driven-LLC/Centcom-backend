@@ -20,6 +20,7 @@
     "@centcom/contracts": "workspace:*",
     "@centcom/core": "workspace:*",
     "@centcom/db": "workspace:*",
+    "@noble/hashes": "2.4.0",
     "fastify": "5.12.5",
     "jose": "6.2.12",
     "kysely": "0.29.6"

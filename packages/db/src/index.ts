@@ -6,8 +6,8 @@
  * identities (B015) in `schema/identities.ts`, refresh tokens (B017) in
  * `schema/refresh-tokens.ts`, e-mail sign-in links (B014) in
  * `schema/login-tokens.ts`, the audit log (B036) in `schema/audit-events.ts`, invites (B029) in
- * `schema/invites.ts`; repositories (B013 on, workspaces from B027, members from B028, invites
- * from B029) in `repos/`.
+ * `schema/invites.ts`, device grants (B016) in `schema/device-grants.ts`; repositories (B013 on,
+ * workspaces from B027, members from B028, invites from B029) in `repos/`.
  */
 export {
   ACQUIRE_BUCKETS_S,
@@ -105,6 +105,13 @@ export {
   type UserRepo,
 } from './repos/users.js';
 export type { AuditDatabase, AuditEventsTable } from './schema/audit-events.js';
+export type {
+  DeviceGrantDatabase,
+  DeviceGrantsDatabase,
+  DeviceGrantStatus,
+  DeviceGrantsTable,
+  DevicePlatform,
+} from './schema/device-grants.js';
 export type { InviteDatabase, InvitesDatabase, InvitesTable } from './schema/invites.js';
 export type {
   IdentitiesDatabase,
