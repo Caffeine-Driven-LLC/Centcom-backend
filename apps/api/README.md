@@ -739,10 +739,11 @@ Workspace invites (`src/modules/invites/`, CT-API-WORKSPACES). The SQL is `creat
 
 ```ts
 app.decorate('seatGate', seatGate); // B030: refuses a member when no seat is free
+await app.register(deeplinksPlugin); // B033: app.inviteUrls, on WEB_BASE_URL
 const invites = new InviteService({
   store: createInviteStore(db),
   members, // B028's MembershipService
-  urls: inviteUrlBuilder, // B033: inviteUrl(token), joinUrl(token)
+  urls: app.inviteUrls, // B033: inviteUrl(token), joinUrl(token)
   email: emailService, // B032: queues workspace_invite
   logger,
   metrics,
@@ -804,3 +805,31 @@ await app.register(inviteRoutes, { service: invites, workspaces, cursorKeys });
 - **`invites.idempotency.test.ts`**, **`invites.ratelimit.test.ts`**.
 - **`invites.postgres.test.ts`:** the routes over Postgres, a table dump without tokens, and the
   seat race against the database's locks (CI).
+
+## Deep links (B033)
+
+`src/modules/deeplinks/` puts CT-DEEPLINK's builders from `@centcom/core`
+([README](../../packages/core/README.md#deep-links-b033)) on the instance. `WEB_BASE_URL` is read
+when the plugin registers, so a value that is not a plain https origin fails the boot.
+
+```ts
+import { deeplinkConfig } from '@centcom/core';
+import { deeplinksPlugin } from './modules/deeplinks/index.js';
+
+await app.register(deeplinksPlugin); // or { config: deeplinkConfig(env) }; before the invite routes
+app.inviteUrls.inviteUrl(token); // https://centcom.dev/i/<token>: the create response and the e-mail
+app.inviteUrls.joinUrl(token); // centcom://invite/<token>: opens the invite in a client
+app.notificationDeeplink(sessionId, 'approval'); // centcom://session/<ses_id>?focus=approval
+```
+
+- **`inviteUrls`** is B029's `InviteUrlBuilder`, on the workspace-invite row of the table.
+- **`notificationDeeplink(session, focus?)`** is the `action.deeplink` of an `open_session`
+  notification (CT-NOTIF-PAYLOAD).
+- Neither adds a fragment: a token with `#` in it throws.
+
+### Tests
+
+`test/modules/deeplinks/deeplinks.plugin.test.ts`: the decorations reach later route plugins,
+the default and a configured `WEB_BASE_URL` (from options and from the environment), `http://`
+refused at boot, links that read back through `parseDeepLink`, the contract's notification fixture
+and schema, and B029's token shape and 7-day lifetime.

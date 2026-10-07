@@ -11,6 +11,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import { baseEnvSchema } from '../src/config/base.js';
+import { deeplinkEnvSchema } from '../src/deeplink/config.js';
 import { emailEnvSchema } from '../src/email/config.js';
 import { idempotencyEnvSchema } from '../src/idempotency/crypto.js';
 import { paginationEnvSchema } from '../src/pagination/cursor.js';
@@ -52,6 +53,11 @@ export const SECTIONS: readonly ConfigSection[] = [
     title: 'Email',
     owner: 'B032, `emailConfig()` in `@centcom/core`',
     schema: emailEnvSchema,
+  },
+  {
+    title: 'Deep links',
+    owner: 'B033, `deeplinkConfig()` in `@centcom/core`',
+    schema: deeplinkEnvSchema,
   },
 ];
 
