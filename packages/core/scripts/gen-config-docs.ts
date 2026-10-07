@@ -11,6 +11,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import { baseEnvSchema } from '../src/config/base.js';
+import { rateLimitEnvSchema } from '../src/ratelimit/buckets.js';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const COMMAND = 'pnpm --filter @centcom/core gen:config-docs';
@@ -28,6 +29,11 @@ export const SECTIONS: readonly ConfigSection[] = [
     title: 'Base configuration',
     owner: 'B004, `baseConfig()` in `@centcom/core`',
     schema: baseEnvSchema,
+  },
+  {
+    title: 'Rate limits',
+    owner: 'B023, `rateLimitConfig()` in `@centcom/core`',
+    schema: rateLimitEnvSchema,
   },
 ];
 

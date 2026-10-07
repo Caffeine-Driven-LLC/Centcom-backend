@@ -1,8 +1,8 @@
 # @centcom/core
 
 Shared platform primitives for the backend services. Today this is configuration (lane B004),
-logging (B005), errors (B006), Redis (B009, [`src/redis/README.md`](src/redis/README.md)) and
-RBAC (B021). The rest arrive with their lanes.
+logging (B005), errors (B006), Redis (B009, [`src/redis/README.md`](src/redis/README.md)), RBAC
+(B021) and rate limiting (B023). The rest arrive with their lanes.
 
 ## Configuration (B004)
 
@@ -371,3 +371,74 @@ await authorizer.authorize(actor, 'workspace.update', { workspaceId }); // or th
   nor allow.
 - **`membership-cache.test.ts`:** 2 s, invalidation through B009's pub/sub, failures uncached.
 - **`authorize.test.ts`:** audit records, 503 on unreadable membership, audit sink down.
+
+## Rate limiting (B023)
+
+Every API request counts against one CT-PAGE bucket (`src/ratelimit/`). The policy lives here; the
+Fastify plugin that applies it is `apps/api/src/plugins/rate-limit.ts`.
+
+```ts
+import { baseConfig, createRateLimiter, rateLimitConfig, resolveClientIp } from '@centcom/core';
+
+const config = rateLimitConfig(baseConfig()); // RATELIMIT_* and TRUSTED_PROXY_HOPS
+const limiter = createRateLimiter({
+  store: redis.rateLimit,
+  kv: redis.kv,
+  config,
+  logger,
+  metrics,
+});
+const ip = resolveClientIp(request, config.trustedHops);
+const decision = await limiter.check({ bucket: 'default', principal, ip }); // allowed, limit, ...
+```
+
+### Public interface
+
+| Export                                                                  | What it is                                                                                                                                                                  |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `defaultBuckets`, `rateLimitConfig(base, env?)`, `rateLimitEnvSchema`   | The five buckets (per 60 s: anonymous 30, user 600, API key 1200, auth 20, usage 60) and their `RATELIMIT_*` overrides ([docs/config.md](../../docs/config.md#rate-limits)) |
+| `bucketKey(route, principal, ip)`                                       | Where a request counts (see Rules)                                                                                                                                          |
+| `resolveClientIp(req, trustedHops)`, `ipBucket(ip)`, `normalizeIp(raw)` | The client address behind trusted proxies, and the bucket it counts in                                                                                                      |
+| `createRateLimiter({store, kv?, config, clock?, logger?, metrics?})`    | `check(request)`: `{allowed, bucket, limit, remaining, resetS, retryAfterS?, degraded, blocked}`; `maxCost(bucket)`                                                         |
+
+### Rules
+
+- **Keys:** never the URL.
+  - Users count by `usr_` id from any address, API keys by `key_` id.
+  - The `auth` bucket counts by address, whoever calls.
+  - `usage` counts by `dev_` id, else by the user or key, else by address.
+  - Everyone else counts by address; an IPv6 address by its /64.
+  - A malformed id throws: it is a bug in whoever built the principal.
+- **Client address:**
+  - with `TRUSTED_PROXY_HOPS=0`, the socket address;
+  - with N, the N-th `X-Forwarded-For` entry from the right (the leftmost when there are fewer).
+    Entries further left are never read, and a malformed entry ends the walk;
+  - `Fly-Client-IP` stands in when `X-Forwarded-For` has nothing usable;
+  - with no address at all, the shared `unknown` address.
+- **Store failure:** while B009's store throws, a per-process limiter decides: general buckets at
+  twice their limit, the auth bucket at its own. Limiting never stops.
+  - Each failure counts in `ratelimit_store_errors_total`, and `ratelimit.store_unavailable` is
+    logged at most once a minute.
+  - The store is tried again after 5 s; `ratelimit.store_recovered` is logged when it answers.
+- **Abuse block:** an address's 5th overrun of the auth bucket within 10 minutes blocks it for 15
+  minutes.
+  - The block covers every bucket counted by address: anonymous, auth, and usage without an id.
+  - Signed-in callers from that address are counted by who they are, and are not blocked.
+  - The block lives in the key-value store, so every instance honours it.
+  - Each block counts in `ratelimit_blocks_total` and is logged as `ratelimit.ip_blocked` (warn,
+    with the address bucket).
+- **Windows:** sliding, as B009's store computes them.
+- **Metrics:** `ratelimit_denied_total{bucket}` as well; no label holds an address or an id.
+
+### Tests
+
+`test/ratelimit/`:
+
+- **`buckets.test.ts`:** the five defaults, every key, the env overrides and the config checks.
+- **`client-ip.test.ts`:** proxy chains, spoofed `X-Forwarded-For`, `Fly-Client-IP` and IPv6 /64,
+  with property tests.
+- **`fallback.test.ts`:** store errors, the doubled limits and the strict auth bucket, the warning
+  and recovery.
+- **`abuse-block.test.ts`:** the block, its expiry, and sharing between instances.
+- **`concurrency.test.ts`:** 100 parallel requests never exceed the limit, on the fallback too.
+- **Redis:** the last two also run against Redis 7 in CI.

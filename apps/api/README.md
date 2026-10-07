@@ -2,8 +2,9 @@
 
 The Fastify REST API (`/v1/*`, CT-API). It is assembled lane by lane; today it holds the request
 context plugin (B005), the error handler plugin (B006), the users module (B013), social login
-(B015), the RBAC plugin (B021) and the account routes (B022). Logging and the error types themselves
-live in `@centcom/core` ([`packages/core/README.md`](../../packages/core/README.md#logging-b005),
+(B015), the RBAC plugin (B021), the account routes (B022) and the rate-limit plugin (B023).
+Logging and the error types themselves live in `@centcom/core`
+([`packages/core/README.md`](../../packages/core/README.md#logging-b005),
 [errors](../../packages/core/README.md#errors-b006)).
 
 ```ts
@@ -325,3 +326,41 @@ await app.register(meRoutes, { me, caller: (request) => callerOf(request) });
 - **Responses:** `Cache-Control: private, no-cache`. Email, id and status are never writable.
 - **Tests:** `test/routes/me.test.ts` (both routes over an in-memory store) and
   `test/routes/me-store.test.ts` (ETags; the Postgres store and the race, in CI).
+
+## Rate-limit plugin (B023)
+
+`src/plugins/rate-limit.ts` counts every request against its CT-PAGE bucket in an `onRequest`
+hook, before body parsing and any handler. The policy behind it (keys, client addresses, the
+fallback and the abuse block) is in `@centcom/core`
+([README](../../packages/core/README.md#rate-limiting-b023)).
+
+```ts
+await app.register(rateLimitPlugin, {
+  store: redis.rateLimit,
+  kv: redis.kv,
+  config: rateLimitConfig(base),
+  principal: (request) => principalOf(request), // the auth plugin's principal, once B017 is in
+  logger,
+  metrics,
+}); // after the request context, error handler and auth plugins; before any route
+app.post('/v1/usage/events', { config: { rateLimit: { bucket: 'usage' } } }, handler);
+```
+
+- **Buckets:** a route declares `config.rateLimit = { bucket, cost? }`.
+  - `default` is the caller's own bucket: anonymous callers per address, users and API keys per
+    id. Routes under `/v1/auth/` default to `auth` (per address).
+  - An unknown bucket, or a cost above the bucket's smallest limit, fails at startup.
+- **Headers:** every counted response (200, 404, 405 and 429 alike) carries `RateLimit-Limit`,
+  `RateLimit-Remaining` and `RateLimit-Reset` (whole seconds).
+  - Past the limit: 429 `rate_limited` with `Retry-After` and `retry_after_s`, one body for every
+    bucket.
+- **Route templates, never URLs:** `/v1/things/1` and `/v1/things/2?x` are one route. Unmatched
+  URLs (404, 405) count in the caller's own bucket.
+- **Exempt:** `/healthz` and `/readyz` (`config.exempt`), matched by route template.
+- **Order:** register it after the auth plugin, whose principal it reads.
+  - Requests that plugin refuses (401) are answered before the limiter runs.
+  - A `principal` function that throws a failed credential's 401 instead gets the request counted
+    as anonymous first: past the anonymous limit the answer is 429, otherwise its own error.
+  - Without a `principal` function, everyone counts as anonymous.
+- **Tests:** `test/rate-limit.test.ts` covers acceptance 1-9 end to end, the guardrails and the
+  route config checks.
