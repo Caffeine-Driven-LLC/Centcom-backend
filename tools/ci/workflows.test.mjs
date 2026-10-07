@@ -112,6 +112,15 @@ describe('workflow guardrails', () => {
     expect(permissions).not.toMatch(/statuses|pull-requests|contents: write/);
   });
 
+  it.each(Object.keys(workflows))(
+    '%s has no plain-scalar run: line with a YAML comment in it',
+    (file) => {
+      // Regression: `run: echo "PR #$NUMBER"` reached the shell as `echo "PR` (YAML ate the rest).
+      const plain = (workflows[file] ?? '').split('\n').filter((l) => /^\s*run: [^|>'"]/.test(l));
+      expect(plain.filter((l) => / #/.test(l))).toEqual([]);
+    },
+  );
+
   it('the PR title reaches the script through an env var, not inline interpolation', () => {
     const prTitle = workflows['pr-title.yml'] ?? '';
     expect(prTitle).toMatch(/TITLE: \$\{\{ github\.event\.pull_request\.title \}\}/);
