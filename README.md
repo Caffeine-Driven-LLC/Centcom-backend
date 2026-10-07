@@ -17,7 +17,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 ![Progress](docs/progress.svg)
 
-**5% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
+**6% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
 
 ## Next steps
 
@@ -32,8 +32,9 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 | Lane | What | Size | Milestone |
 |---|---|---|---|
-| [B007](plan/backend/B007.md) | Database package: Postgres client, migration runner, conventions | M | M0 |
+| [B008](plan/backend/B008.md) | Core schema v1 migration (users, devices, workspaces, memberships, sessions skeleton) | M | M0 |
 | [B009](plan/backend/B009.md) | Redis abstraction: pub/sub, KV, rate-limit primitives (in-memory + Redis impls) | M | M0 |
+| [B010](plan/backend/B010.md) | Test harness: containers, factories, contract test runner | M | M0 |
 | [B025](plan/backend/B025.md) | Pagination and filtering library | S | M3 |
 | [B091](plan/backend/B091.md) | Infrastructure as code: environments dev, stage, prod | L | M3 |
 | [B032](plan/backend/B032.md) | Transactional email service with templates and provider abstraction | M | M3 |
