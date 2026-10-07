@@ -6,6 +6,7 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch: # claude-pr.yml runs main's checks after a merge made with GITHUB_TOKEN
   schedule:
     - cron: '17 6 * * 1' # weekly, so new advisories surface without a code change
 
