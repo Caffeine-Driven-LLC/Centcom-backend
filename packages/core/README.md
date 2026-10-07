@@ -1,7 +1,8 @@
 # @centcom/core
 
 Shared platform primitives for the backend services. Today this is configuration (lane B004),
-logging (B005) and errors (B006). Redis (B009) and the rest arrive with their lanes.
+logging (B005), errors (B006) and Redis (B009,
+[`src/redis/README.md`](src/redis/README.md)). The rest arrive with their lanes.
 
 ## Configuration (B004)
 
