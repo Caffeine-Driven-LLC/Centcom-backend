@@ -6,8 +6,8 @@
  * identities (B015) in `schema/identities.ts`, refresh tokens (B017) in
  * `schema/refresh-tokens.ts`, e-mail sign-in links (B014) in
  * `schema/login-tokens.ts`, the audit log (B036) in `schema/audit-events.ts`, invites (B029) in
- * `schema/invites.ts`; repositories (B013 on, workspaces from B027, members from B028, invites
- * from B029) in `repos/`.
+ * `schema/invites.ts`, member slots (B031) in `schema/session-slots.ts`; repositories (B013 on,
+ * workspaces from B027, members from B028, invites from B029, slots from B031) in `repos/`.
  */
 export {
   ACQUIRE_BUCKETS_S,
@@ -63,6 +63,12 @@ export {
 } from './health.js';
 export { createMembershipRepo } from './repos/memberships.js';
 export {
+  createSessionSlotStore,
+  SLOT_STATEMENT_TIMEOUT_MS,
+  type SessionSlotStore,
+  type SlotAssignment,
+} from './repos/session-slots.js';
+export {
   createInviteStore,
   INVITE_LIST_SORTS,
   inviteOperations,
@@ -105,6 +111,11 @@ export {
   type UserRepo,
 } from './repos/users.js';
 export type { AuditDatabase, AuditEventsTable } from './schema/audit-events.js';
+export type {
+  SessionMemberSlotsTable,
+  SessionSlotDatabase,
+  SessionSlotsDatabase,
+} from './schema/session-slots.js';
 export type { InviteDatabase, InvitesDatabase, InvitesTable } from './schema/invites.js';
 export type {
   IdentitiesDatabase,
