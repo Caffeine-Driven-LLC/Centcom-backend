@@ -2,9 +2,9 @@
 
 The Fastify REST API (`/v1/*`, CT-API). It is assembled lane by lane; today it holds the request
 context plugin (B005), the error handler plugin (B006), the users module (B013), social login
-(B015), the RBAC plugin (B021), the account routes (B022), the rate-limit plugin (B023), the
-idempotency plugin (B024) and the pagination plugin (B025). Logging and the error types
-themselves live in `@centcom/core`
+(B015), e-mail sign-in (B014), the RBAC plugin (B021), the account routes (B022), the rate-limit
+plugin (B023), the idempotency plugin (B024) and the pagination plugin (B025). Logging and the
+error types themselves live in `@centcom/core`
 ([`packages/core/README.md`](../../packages/core/README.md#logging-b005),
 [errors](../../packages/core/README.md#errors-b006)).
 
@@ -435,3 +435,76 @@ app.get('/v1/things', async (request, reply) => {
     offsets, and tampered, re-filtered, re-sorted and expired cursors.
   - On Postgres 16 (CI's integration job): 1 000 rows, inserts racing the pages, ties,
     microsecond timestamps, parameter-only SQL, and an index scan on 100 000 rows.
+
+## E-mail sign-in (B014)
+
+Passwordless sign-in with a one-time link (`src/modules/auth/magic-link/`,
+`src/routes/login-email.ts`, outside the /v1 contract). The link is mailed through B032's email
+service (template `magic_link`); signing in ends in the same `LoginCompleter` as social login
+(B018 wires the web session).
+
+```ts
+const config = loadMagicLinkConfig(); // MAGIC_LINK_TTL_S, MAGIC_LINK_BASE_URL, LOGIN_RETURN_TO_ALLOWLIST
+const magicLink = new MagicLinkService({
+  store: createLoginTokenStore(db),
+  mailer: emailMagicLinkMailer(emailService, config.ttlS),
+  users: userService,
+  rateLimit: redis.rateLimit,
+  returnTo: config.returnTo,
+  baseUrl: config.baseUrl,
+  ttlS: config.ttlS,
+  logger,
+  metrics,
+});
+await app.register(emailLoginRoutes, { magicLink, completer, ttlS: config.ttlS, logger });
+// on shutdown: await magicLink.idle();
+```
+
+| Route                        | Answers                                                                                                                                     |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /login/email`          | `{email, return_to?}` (form or JSON): 202 and the same page for every address, plus the browser's nonce cookie; 422 for a malformed address |
+| `GET /login/email/verify?t=` | A page whose button posts the link back; nothing else happens (mail scanners use nothing up)                                                |
+| `POST /login/email/verify`   | `{t, csrf}` with the nonce cookie: signs in, then 303 to `return_to`; any failure gets one generic page (400)                               |
+
+- **No account enumeration:** a request does the same work for every address: no account is
+  looked up, and the mail goes out in the background after the response. Every valid address gets
+  a link; the account is found, or created, when the link is used.
+- **Links:**
+  - The token is 32 bytes from the CSPRNG; only its sha256 is stored (`login_tokens`, migration
+    `20260102000500`).
+  - A link lasts `MAGIC_LINK_TTL_S` (15 minutes) and is used at most once, in one statement.
+  - It works only with the nonce cookie of the browser that asked for it (HttpOnly,
+    SameSite=Lax, `Path=/login/email`), and only with the CSRF token the confirm page carries.
+- **Accounts:** `pending_deletion` and `deleted` accounts fail like a bad link.
+- **Limits:** 5 links per address per hour (beyond it nothing is sent, and the answer is the same
+  202). Both POSTs count in the rate limiter's `auth` bucket (20/min per client address, B023).
+- **return_to:** only exact matches of `LOGIN_RETURN_TO_ALLOWLIST` (shared with social login);
+  anything else becomes its first entry.
+- **Failures:** a mail that fails 3 times (backoff 1 s, 2 s) gives its link up
+  (`magic_link_mail_failures_total`). A token store or limiter failure is a 503 with
+  `retry_after_s`.
+- **Logs:** hashed-address prefixes (`email_hash`, 12 hex digits) and `usr_` ids only; never a
+  token, link, nonce or address.
+- **Pages:** no scripts or styles, `Cache-Control: no-store`, `Referrer-Policy: no-referrer`, and
+  CSP `default-src 'none'; form-action 'self'`.
+
+### Configuration
+
+| Key                         | Default | Required | What it is                                                                |
+| --------------------------- | ------- | -------- | ------------------------------------------------------------------------- |
+| `MAGIC_LINK_TTL_S`          | `900`   | no       | How long a link works, in seconds (60 to 3600)                            |
+| `MAGIC_LINK_BASE_URL`       |         | yes      | Public base URL of the API: links are `<base>/login/email/verify?t=...`   |
+| `LOGIN_RETURN_TO_ALLOWLIST` |         | yes      | Comma-separated URLs a login may return to (exact match); first = default |
+
+### Tests
+
+`test/modules/auth/magic-link/`:
+
+- **`service.test.ts`:** single use, expiry, the nonce and CSRF binding, hash-only storage, logs,
+  address spellings, closed accounts, mail failures, the store down, and the mailer adapter.
+- **`enumeration.test.ts`:** byte-identical answers, timing, and no account lookup while
+  answering.
+- **`limits.test.ts`:** the per-address and per-IP limits.
+- **`redirect.test.ts`:** the `return_to` matrix.
+- **`prefetch.test.ts`:** GETs change nothing; the page headers.
+- **`store.test.ts`:** the Postgres store and the whole flow with B013 (CI).

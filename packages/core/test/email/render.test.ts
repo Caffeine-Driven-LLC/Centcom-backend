@@ -40,7 +40,7 @@ const FIXED = {
 const count = (text: string, c: string): number => text.split(c).length - 1;
 
 describe('the templates', () => {
-  it.each(Object.keys(FIXED) as TemplateId[])(
+  it.each(Object.keys(FIXED) as (keyof typeof FIXED)[])(
     'render %s as their golden HTML and text',
     async (id) => {
       const { service } = setup();
