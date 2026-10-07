@@ -156,8 +156,10 @@ Protected paths are `protectedPaths` and `protectedNames` in `tools/ci/claude-pr
 **Costs.** GitHub Free gives the organisation 2,000 Actions minutes a month for private
 repositories, each job billed as at least one minute, and the organisation's budget is $0, so
 running out stops all CI until the month resets. Expect about 1 minute per plan (one per relayed
-PR event and per finished CI workflow on a lane branch), up to 25 minutes per Claude job, plus
-normal CI. The sweep costs about 180 minutes a month. Check usage in the organisation's billing
+PR event, per finished CI workflow on a lane branch, and per re-dispatch by the sweep, a merge or
+a local waiter, which re-dispatches a quiet PR every 20 minutes), up to 25 minutes per Claude job
+plus the record job, plus normal CI. The sweep itself costs about 180 minutes a month, plus a plan
+per actionable PR it re-dispatches. Check usage in the organisation's billing
 settings, and raise the Actions budget if overnight runs are routine.
 
 **When Claude hands a PR to a human**, the PR gets `claude-needs-human` and a comment naming the
@@ -173,6 +175,10 @@ reason. Removing the label re-plans the PR at once, so deal with the reason firs
   deal with the cause, then remove the label; the pipeline picks up from the PR's current state.
 
 To take a PR out of automation, add `do-not-merge` (a local session never touches that label).
+
+GitHub runs no `pull_request` workflows on a PR with merge conflicts, so labelling a conflicting
+PR is not relayed: re-plan it with `gh workflow run claude-pr.yml -f pr=<n>`, or wait for the
+sweep or a local waiter.
 
 ## Local equivalents
 
