@@ -15,5 +15,11 @@
   },
   "scripts": {
     "build": "tsc -b"
+  },
+  "dependencies": {
+    "@centcom/contracts": "workspace:*",
+    "@centcom/core": "workspace:*",
+    "bullmq": "6.3.11",
+    "ioredis": "6.0.0"
   }
 }
