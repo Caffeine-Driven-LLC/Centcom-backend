@@ -48,7 +48,13 @@ describe('generated config docs', () => {
   it('.env.example holds names and placeholders only, one line per key', () => {
     const example = renderConfigDocs().get('.env.example') ?? '';
     const lines = example.split('\n').filter((l) => l && !l.startsWith('#'));
-    expect(lines.map((l) => l.split('=')[0])).toEqual(Object.keys(baseEnvSchema.shape));
+    // Every section's keys, in order: the base keys, then each lane's (B023: RATELIMIT_*).
+    expect(lines.map((l) => l.split('=')[0])).toEqual(
+      SECTIONS.flatMap((s) => Object.keys(s.schema.shape)),
+    );
+    expect(
+      lines.slice(0, Object.keys(baseEnvSchema.shape).length).map((l) => l.split('=')[0]),
+    ).toEqual(Object.keys(baseEnvSchema.shape));
     expect(example).not.toMatch(/sslmode=require|rediss:\/\//); // no production-looking values
   });
 

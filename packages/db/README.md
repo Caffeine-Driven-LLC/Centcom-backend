@@ -23,17 +23,19 @@ const { ok, migrationsAtExpected } = await healthCheck(db); // for /readyz
 
 ## Public interface
 
-| Export                                                          | What it is                                                                                                                                |
-| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `createDb<DB>(cfg)`, `closeDb(db)`                              | A Kysely instance over a new `pg` pool (settings below); closes it. Lazy: nothing connects until the first query                          |
-| `poolStats(db)`                                                 | `{max, total, idle, waiting}` of the pool, for a saturation gauge                                                                         |
-| `migrate(db, dir, {target?, lockTimeoutMs?, logger?})`          | Applies the pending migrations of `dir`; returns `{applied: string[]}` (versions)                                                         |
-| `migrationStatus(db, dir)`                                      | `{applied, pending, changed, outOfOrder, missing}`; takes no lock, changes nothing                                                        |
-| `readMigrations(dir)`, `lintMigration(fileName, text)`          | The checked files of a directory; the CONVENTIONS checks for one file (`[]` when it is fine)                                              |
-| `withTransaction(db, fn, {isolation?})`                         | Runs `fn(trx)` in a transaction, retrying a serialization failure up to 3 times                                                           |
-| `expectedMigrationVersion(dir?)`, `healthCheck(db, opts?)`      | The newest migration version of a build; `{ok, migrationsAtExpected, expectedVersion, currentVersion}` within a 2 s timeout               |
-| `MigrationError`, `isConnectionError`, `isSerializationFailure` | Typed runner errors (`code`: `checksum_mismatch`, `lock_timeout`, `migration_failed`, ...) and error classifiers                          |
-| `Database`, `SchemaMigrationsTable`, `DbConfig`, ...            | Types; `Database` holds the tables this package owns (`schema_migrations`); schema lanes pass their own database type to `createDb<DB>()` |
+| Export                                                                  | What it is                                                                                                                                                                             |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createDb<DB>(cfg)`, `closeDb(db)`                                      | A Kysely instance over a new `pg` pool (settings below); closes it. Lazy: nothing connects until the first query                                                                       |
+| `poolStats(db)`                                                         | `{max, total, idle, waiting}` of the pool, for a saturation gauge                                                                                                                      |
+| `migrate(db, dir, {target?, lockTimeoutMs?, logger?})`                  | Applies the pending migrations of `dir`; returns `{applied: string[]}` (versions)                                                                                                      |
+| `migrationStatus(db, dir)`                                              | `{applied, pending, changed, outOfOrder, missing}`; takes no lock, changes nothing                                                                                                     |
+| `readMigrations(dir)`, `lintMigration(fileName, text)`                  | The checked files of a directory; the CONVENTIONS checks for one file (`[]` when it is fine)                                                                                           |
+| `withTransaction(db, fn, {isolation?})`                                 | Runs `fn(trx)` in a transaction, retrying a serialization failure up to 3 times                                                                                                        |
+| `expectedMigrationVersion(dir?)`, `healthCheck(db, opts?)`              | The newest migration version of a build; `{ok, migrationsAtExpected, expectedVersion, currentVersion}` within a 2 s timeout                                                            |
+| `MigrationError`, `isConnectionError`, `isSerializationFailure`         | Typed runner errors (`code`: `checksum_mismatch`, `lock_timeout`, `migration_failed`, ...) and error classifiers                                                                       |
+| `Database`, `SchemaMigrationsTable`, `DbConfig`, ...                    | Types; `Database` holds the tables this package owns (`schema_migrations`); schema lanes pass their own database type to `createDb<DB>()`                                              |
+| `createUserRepo(db)`, `User`, `NewUser`, `ProfilePatch`, `isEmailTaken` | The users repository (B013): `create`, `findById`, `findByEmail` (case-insensitive), `updateProfile`, `markDeletionRequested`, `markDeleted`, `listByIds`; selects only `USER_COLUMNS` |
+| `createMembershipRepo(db)`                                              | The RBAC `MembershipReader` (B021): a member's workspace role (none in a soft-deleted workspace) and most powerful live session seat; wrap it in `cachedMembershipReader`              |
 
 ## Client
 
@@ -131,6 +133,56 @@ them for Kysely (`createDb<CoreDatabase>(...)`). Enumerated columns use the cont
 - **citext:** the migration creates the extension; it needs CREATE on the database (the owner has
   it) and fails with "permission denied to create extension" otherwise.
 - A later lane that needs another column adds its own migration; this file never changes.
+
+## Refresh tokens (B017)
+
+[`migrations/20260102000000_refresh_tokens.sql`](migrations/20260102000000_refresh_tokens.sql)
+creates `refresh_tokens` for the API's token service; `src/schema/refresh-tokens.ts` types it
+(`TokenDatabase` = `CoreDatabase` plus this table).
+
+- **No token is stored.** A row is keyed by the token's SHA-256 (`token_hash`, hex), the only
+  thing a presented token is looked up by. Rows are never exposed, so they have no CT-IDS id; the
+  `family_id` that every rotation of one sign-in shares is 128 random bits (hex).
+- **Lifetimes:** `expires_at` (30 days after the rotation that issued the token, sliding) never
+  passes `absolute_expires_at` (180 days after the family's first token): a CHECK holds it.
+- **References:** `user_id`, `device_id`, `workspace_id` and `parent_hash` (the token this one
+  replaced), all `on delete restrict`; indexes on `family_id`, `user_id` and `device_id`.
+- **Retention:** the purge job (B090) removes rows past `absolute_expires_at`.
+
+The core schema tests stop the runner at the core version (`target`), so later migrations such
+as this one do not change what they check.
+
+## Identities (B015)
+
+[`migrations/20260102000400_identities.sql`](migrations/20260102000400_identities.sql) creates
+`identities(provider, subject, user_id, created_at)` for social login.
+`src/schema/identities.ts` types it (`SocialDatabase` = `CoreDatabase` plus this table).
+
+- **Contents:** only the provider (`github`, `google`) and its stable account id (`subject`) per
+  user. No provider token, code or e-mail address.
+- **Key:** the natural pair `(provider, subject)`, so a second link of one account fails with
+  `identities_pkey`; the rows are never exposed, so there is no CT-IDS id.
+- **`user_id`:** `on delete restrict`, indexed.
+
+The core schema tests stop the runner at the core version (`target`), so later migrations do not
+change what they check.
+
+## Invites (B029)
+
+[`migrations/20260102000800_invites.sql`](migrations/20260102000800_invites.sql) creates
+`invites`; `src/schema/invites.ts` types it (`InviteDatabase` = `CoreDatabase` plus this table),
+and `createInviteStore(db)` (`src/repos/invites.ts`) is its SQL.
+
+- **Tokens:** only `token_hash` (sha256, 32 bytes, unique) is stored; invites are found by it.
+- **One pending invite per address per workspace:** a partial unique index on
+  `(workspace_id, email)`; an insert that meets it writes nothing (`insert` returns null).
+- **Status** comes from `accepted_at`, `revoked_at`, `expired_at` and `expires_at`
+  (`inviteStatus`); `sweep(now)` sets `expired_at` on lapsed invites.
+- **Key bundles:** opaque `key_bundle` bytes (48 to 12 288) with their `key_bundle_expires_at`;
+  `takeKeyBundle` hands one out once, while it lasts; revocation, expiry and the sweep drop them.
+- **Foreign keys** restrict: a purged workspace's invites go through `deleteForWorkspace` (the
+  worker's `invites` purge hook) before B027's purge; deleting a user who created or accepted an
+  invite is refused (B026's job).
 
 ## Tests
 

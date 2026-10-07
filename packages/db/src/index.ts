@@ -2,7 +2,12 @@
  * @centcom/db (B007): the Postgres client (Kysely over `pg`), the forward-only migration runner,
  * transactions with serialization retry, and the health probe for `/readyz`. The `centcom-db` CLI
  * (`src/cli.ts`) runs migrations as a deploy step. Conventions for schema work:
- * packages/db/CONVENTIONS.md. Table types: the core schema (B008) in `schema/core.ts`.
+ * packages/db/CONVENTIONS.md. Table types: the core schema (B008) in `schema/core.ts`, social-login
+ * identities (B015) in `schema/identities.ts`, refresh tokens (B017) in
+ * `schema/refresh-tokens.ts`, e-mail sign-in links (B014) in
+ * `schema/login-tokens.ts`, the audit log (B036) in `schema/audit-events.ts`, invites (B029) in
+ * `schema/invites.ts`; repositories (B013 on, workspaces from B027, members from B028, invites
+ * from B029) in `repos/`.
  */
 export {
   ACQUIRE_BUCKETS_S,
@@ -56,6 +61,68 @@ export {
   type HealthOptions,
   type HealthReport,
 } from './health.js';
+export { createMembershipRepo } from './repos/memberships.js';
+export {
+  createInviteStore,
+  INVITE_LIST_SORTS,
+  inviteOperations,
+  inviteStatus,
+  type InvitePreviewRow,
+  type InviteRecord,
+  type InviteRole,
+  type InviteStatus,
+  type InviteStore,
+  type InviteTx,
+  type NewInvite,
+} from './repos/invites.js';
+export {
+  createMemberStore,
+  MEMBER_LIST_SORTS,
+  memberOperations,
+  type MemberRecord,
+  type MemberStore,
+  type MemberTx,
+  type NewMember,
+} from './repos/members.js';
+export {
+  createWorkspaceStore,
+  PURGE_AUDIT_BATCH,
+  WORKSPACE_LIST_SORTS,
+  type NewWorkspace,
+  type WorkspaceRecord,
+  type WorkspaceStore,
+  type WorkspaceTx,
+  type WorkspaceView,
+} from './repos/workspaces.js';
+export {
+  createUserRepo,
+  isEmailTaken,
+  USER_COLUMNS,
+  USERS_EMAIL_KEY,
+  type NewUser,
+  type ProfilePatch,
+  type User,
+  type UserRepo,
+} from './repos/users.js';
+export type { AuditDatabase, AuditEventsTable } from './schema/audit-events.js';
+export type { InviteDatabase, InvitesDatabase, InvitesTable } from './schema/invites.js';
+export type {
+  IdentitiesDatabase,
+  IdentitiesTable,
+  IdentityProvider,
+  SocialDatabase,
+} from './schema/identities.js';
+export type {
+  LoginTokensDatabase,
+  LoginTokensTable,
+  MagicLinkDatabase,
+} from './schema/login-tokens.js';
+export type {
+  ClientId,
+  RefreshTokensDatabase,
+  RefreshTokensTable,
+  TokenDatabase,
+} from './schema/refresh-tokens.js';
 export type {
   CoreDatabase,
   CreatedAt,
