@@ -23,17 +23,18 @@ const { ok, migrationsAtExpected } = await healthCheck(db); // for /readyz
 
 ## Public interface
 
-| Export                                                          | What it is                                                                                                                                |
-| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `createDb<DB>(cfg)`, `closeDb(db)`                              | A Kysely instance over a new `pg` pool (settings below); closes it. Lazy: nothing connects until the first query                          |
-| `poolStats(db)`                                                 | `{max, total, idle, waiting}` of the pool, for a saturation gauge                                                                         |
-| `migrate(db, dir, {target?, lockTimeoutMs?, logger?})`          | Applies the pending migrations of `dir`; returns `{applied: string[]}` (versions)                                                         |
-| `migrationStatus(db, dir)`                                      | `{applied, pending, changed, outOfOrder, missing}`; takes no lock, changes nothing                                                        |
-| `readMigrations(dir)`, `lintMigration(fileName, text)`          | The checked files of a directory; the CONVENTIONS checks for one file (`[]` when it is fine)                                              |
-| `withTransaction(db, fn, {isolation?})`                         | Runs `fn(trx)` in a transaction, retrying a serialization failure up to 3 times                                                           |
-| `expectedMigrationVersion(dir?)`, `healthCheck(db, opts?)`      | The newest migration version of a build; `{ok, migrationsAtExpected, expectedVersion, currentVersion}` within a 2 s timeout               |
-| `MigrationError`, `isConnectionError`, `isSerializationFailure` | Typed runner errors (`code`: `checksum_mismatch`, `lock_timeout`, `migration_failed`, ...) and error classifiers                          |
-| `Database`, `SchemaMigrationsTable`, `DbConfig`, ...            | Types; `Database` holds the tables this package owns (`schema_migrations`); schema lanes pass their own database type to `createDb<DB>()` |
+| Export                                                                  | What it is                                                                                                                                                                             |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createDb<DB>(cfg)`, `closeDb(db)`                                      | A Kysely instance over a new `pg` pool (settings below); closes it. Lazy: nothing connects until the first query                                                                       |
+| `poolStats(db)`                                                         | `{max, total, idle, waiting}` of the pool, for a saturation gauge                                                                                                                      |
+| `migrate(db, dir, {target?, lockTimeoutMs?, logger?})`                  | Applies the pending migrations of `dir`; returns `{applied: string[]}` (versions)                                                                                                      |
+| `migrationStatus(db, dir)`                                              | `{applied, pending, changed, outOfOrder, missing}`; takes no lock, changes nothing                                                                                                     |
+| `readMigrations(dir)`, `lintMigration(fileName, text)`                  | The checked files of a directory; the CONVENTIONS checks for one file (`[]` when it is fine)                                                                                           |
+| `withTransaction(db, fn, {isolation?})`                                 | Runs `fn(trx)` in a transaction, retrying a serialization failure up to 3 times                                                                                                        |
+| `expectedMigrationVersion(dir?)`, `healthCheck(db, opts?)`              | The newest migration version of a build; `{ok, migrationsAtExpected, expectedVersion, currentVersion}` within a 2 s timeout                                                            |
+| `MigrationError`, `isConnectionError`, `isSerializationFailure`         | Typed runner errors (`code`: `checksum_mismatch`, `lock_timeout`, `migration_failed`, ...) and error classifiers                                                                       |
+| `Database`, `SchemaMigrationsTable`, `DbConfig`, ...                    | Types; `Database` holds the tables this package owns (`schema_migrations`); schema lanes pass their own database type to `createDb<DB>()`                                              |
+| `createUserRepo(db)`, `User`, `NewUser`, `ProfilePatch`, `isEmailTaken` | The users repository (B013): `create`, `findById`, `findByEmail` (case-insensitive), `updateProfile`, `markDeletionRequested`, `markDeleted`, `listByIds`; selects only `USER_COLUMNS` |
 
 ## Client
 
