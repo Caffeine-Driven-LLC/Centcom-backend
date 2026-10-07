@@ -37,6 +37,8 @@ export default defineConfig({
           name: dir,
           root: resolve(root, dir),
           include: ['src/**/*.test.ts', 'test/**/*.test.ts'],
+          // B010: the testkit's run-level housekeeping (reaps stale throwaway databases).
+          ...(dir === 'packages/testkit' ? { globalSetup: ['vitest.setup.ts'] } : {}),
         },
       })),
       {
