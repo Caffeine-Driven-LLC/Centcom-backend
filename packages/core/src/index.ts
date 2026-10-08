@@ -1,8 +1,8 @@
 /**
  * @centcom/core: shared platform primitives. Today: configuration (B004), logging (B005), errors
  * (B006), Redis (B009), RBAC (B021), rate limiting (B023), idempotency (B024), pagination (B025),
- * email (B032), audit (B036), workspace lifecycle names (B027) and notification names (B063). The
- * rest arrive with their lanes.
+ * email (B032), audit (B036), workspace lifecycle names (B027), deep links (B033) and notification
+ * names (B063). The rest arrive with their lanes.
  */
 export * from './config/index.js';
 export * from './errors/index.js';
@@ -16,3 +16,4 @@ export * from './email/index.js';
 export * from './audit/index.js';
 export * from './workspaces/index.js';
 export * from './notifications/index.js';
+export * from './deeplink/index.js';
