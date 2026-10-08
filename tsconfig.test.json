@@ -30,6 +30,7 @@
     "packages/*/vitest.setup.ts",
     "tools/repo/**/*.ts",
     "tools/repo/**/*.mjs",
+    "tools/dev/**/*.ts",
     "tools/ci/**/*.mjs",
     "vitest.workspace.ts"
   ],

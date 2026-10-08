@@ -20,6 +20,7 @@ import {
   runtimeSecret,
   socialApp,
   socialService,
+  T0,
   testConfig,
 } from './helpers.js';
 
@@ -90,6 +91,8 @@ describe.runIf(ADMIN_URL !== undefined)('the database after a login on Postgres 
       users: new UserService({ db: t.db, newId, now: () => new Date() }),
       identities: createIdentityRepo(db),
       fetch: providers.fetch,
+      // The fake Google ID tokens are signed at T0 and expire an hour later.
+      now: () => T0,
     });
     const code = runtimeSecret('auth-code');
     for (const provider of ['github', 'google'] as const) {

@@ -73,3 +73,11 @@ Owner: B032, `emailConfig()` in `@centcom/core`.
 | `EMAIL_FROM` | sender |  | yes | no | Sender of every email: `address` or `Display Name <address>`. |
 | `POSTMARK_SERVER_TOKEN` | string |  | no | yes | Postmark server token; required when EMAIL_PROVIDER is postmark. |
 | `EMAIL_TIMEOUT_MS` | integer 1000..60000 | `10000` | no | no | Longest wait for one provider call, in milliseconds; slower calls are retried. |
+
+## Deep links
+
+Owner: B033, `deeplinkConfig()` in `@centcom/core`.
+
+| Key | Type | Default | Required | Secret | Description |
+|---|---|---|---|---|---|
+| `WEB_BASE_URL` | URL (https://) | `https://centcom.dev` | no | no | Web origin of join, invite, session and billing links (https only). |

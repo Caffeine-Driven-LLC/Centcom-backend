@@ -10,6 +10,7 @@
 import { checkName, checkSlug, type ValidationIssue } from '@centcom/contracts';
 import { validationFailed, type FieldError } from '@centcom/core';
 import type { WorkspaceTx } from '@centcom/db';
+import type { RequestCtx } from './service.js';
 
 /** The detail of a 422 on a workspace body (GUIDELINES §3.4: one message table). */
 export const INVALID_BODY_DETAIL = 'Some fields are not valid.';
@@ -20,8 +21,17 @@ export interface PatchExtension {
   readonly key: string;
   /** Checks the field's value; returns it as `apply` takes it, or the issues (pointers below the field). */
   parse(value: unknown): { value: unknown; issues?: undefined } | { issues: ValidationIssue[] };
-  /** Applies it in the PATCH's transaction, after the ETag check; the version moves on once for all. */
-  apply(tx: WorkspaceTx, workspaceId: string, value: unknown): Promise<void>;
+  /**
+   * Applies it in the PATCH's transaction, after the ETag check; the version moves on once for
+   * all. `ctx` writes audit events in that transaction. May return a step to run after the commit
+   * (an announcement); it must not throw.
+   */
+  apply(
+    tx: WorkspaceTx,
+    workspaceId: string,
+    value: unknown,
+    ctx: RequestCtx,
+  ): Promise<void> | Promise<(() => Promise<void>) | undefined>;
 }
 
 /** The PATCH extensions, by field. */

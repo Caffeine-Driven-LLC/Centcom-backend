@@ -1,7 +1,8 @@
 /**
  * Root Vitest config (B001). Vitest 3.2+ replaced the separate workspace file with
  * `test.projects`, so this file is a full root config and `pnpm test` passes it via
- * `--config`. One project per workspace plus `repo` for the repository checks in tools/repo.
+ * `--config`. One project per workspace plus `repo` for the repository checks in tools/repo
+ * (and the tools/ci and tools/dev scripts).
  */
 import { basename, resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
@@ -46,7 +47,7 @@ export default defineConfig({
         test: {
           name: 'repo',
           root,
-          include: ['tools/repo/**/*.test.ts', 'tools/ci/**/*.test.mjs'],
+          include: ['tools/repo/**/*.test.ts', 'tools/ci/**/*.test.mjs', 'tools/dev/**/*.test.ts'],
         },
       },
     ],

@@ -17,7 +17,7 @@ import {
 } from '../../../../src/modules/auth/social/index.js';
 import { UserService } from '../../../../src/modules/users/index.js';
 import { ADMIN_URL, counts, migratedDatabase, type TestDatabase } from '../../users/helpers.js';
-import { begun, fakeProviders, socialService, testConfig } from './helpers.js';
+import { begun, fakeProviders, socialService, T0, testConfig } from './helpers.js';
 
 describe('account matching in memory', () => {
   it('returns an account to the same user even after its e-mail changed at the provider (acceptance 5)', async () => {
@@ -175,6 +175,8 @@ describe.runIf(ADMIN_URL !== undefined)('account matching on Postgres 16', () =>
       users: new UserService({ db: t.db, newId, now: () => new Date() }),
       identities: createIdentityRepo(db),
       fetch: providers.fetch,
+      // The fake Google ID tokens are signed at T0 and expire an hour later.
+      now: () => T0,
     }),
   });
 
