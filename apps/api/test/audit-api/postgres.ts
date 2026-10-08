@@ -38,7 +38,7 @@ export async function seedEvents(
   count: number,
   opts: SeedOptions,
 ): Promise<void> {
-  const chunk = opts.chunk ?? 250_000;
+  const chunk = opts.chunk ?? 20_000;
   const step = opts.stepMs ?? 50;
   const actions = sql.val([...SEED_ACTIONS]);
   for (let start = 0; start < count; start += chunk) {
