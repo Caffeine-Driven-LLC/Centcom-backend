@@ -87,12 +87,12 @@ processors:
     trace_statements:
       - context: span
         statements:
-          - 'replace_all_patterns(attributes, "value", "(usr|ses|wsp|agt|dev|que|mem|msg|inv|apr|key|sub|whk|dlv|ntf|aud|snp|prj|blb|exp|psh|use|inc)_[0-9A-HJKMNP-TV-Z]{26}", "$$1_[id]")'
+          - 'replace_all_patterns(attributes, "value", "(usr|ses|wsp|agt|dev|que|mem|msg|inv|apr|key|sub|whk|dlv|ntf|aud|snp|prj|blb|exp|psh|use|inc)_[0-9A-HJKMNP-TV-Z]{26}", "$${1}_[id]")'
           - 'replace_all_patterns(attributes, "value", "[^ @<>'']+@[^ @<>'']+[.][A-Za-z]{2,}", "[email]")'
     log_statements:
       - context: log
         statements:
-          - 'replace_all_patterns(attributes, "value", "(usr|ses|wsp|agt|dev|que|mem|msg|inv|apr|key|sub|whk|dlv|ntf|aud|snp|prj|blb|exp|psh|use|inc)_[0-9A-HJKMNP-TV-Z]{26}", "$$1_[id]")'
+          - 'replace_all_patterns(attributes, "value", "(usr|ses|wsp|agt|dev|que|mem|msg|inv|apr|key|sub|whk|dlv|ntf|aud|snp|prj|blb|exp|psh|use|inc)_[0-9A-HJKMNP-TV-Z]{26}", "$${1}_[id]")'
           - 'replace_all_patterns(attributes, "value", "[^ @<>'']+@[^ @<>'']+[.][A-Za-z]{2,}", "[email]")'
 
   # The dashboards' env and region variables, from the resource.

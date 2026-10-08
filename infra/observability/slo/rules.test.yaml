@@ -17,21 +17,23 @@ tests:
       - series: 'centcom_http_requests_total{route="/readyz", method="GET", status_class="5xx", env="prod", region="eu"}'
         values: '0+5000x240'
     promql_expr_test:
-      - expr: slo:sli_error:ratio_rate1h{slo="api-availability"}
+      # Rounded to whole numbers (error ratio in basis points, burn rates in tenths): promtool
+      # compares floats exactly, and the rate maths leaves noise in the last digits.
+      - expr: round(slo:sli_error:ratio_rate1h{slo="api-availability"} * 10000)
         eval_time: 2h
         exp_samples:
-          - labels: 'slo:sli_error:ratio_rate1h{slo="api-availability", env="prod"}'
-            value: 0.0144
-      - expr: slo:burn_rate:1h{slo="api-availability"}
+          - labels: '{slo="api-availability", env="prod"}'
+            value: 144
+      - expr: round(slo:burn_rate:1h{slo="api-availability"} * 10)
         eval_time: 2h
         exp_samples:
-          - labels: 'slo:burn_rate:1h{slo="api-availability", env="prod"}'
-            value: 14.4
-      - expr: slo:burn_rate:5m{slo="api-availability"}
+          - labels: '{slo="api-availability", env="prod"}'
+            value: 144
+      - expr: round(slo:burn_rate:5m{slo="api-availability"} * 10)
         eval_time: 2h
         exp_samples:
-          - labels: 'slo:burn_rate:5m{slo="api-availability", env="prod"}'
-            value: 14.4
+          - labels: '{slo="api-availability", env="prod"}'
+            value: 144
 
   # API latency: 95 of every 100 requests within 300 ms meets the 95 % objective exactly: a burn
   # rate of 1.
@@ -42,8 +44,8 @@ tests:
       - series: 'centcom_http_request_duration_seconds_count{route="/v1/me", method="GET", env="prod", region="eu"}'
         values: '0+1000x240'
     promql_expr_test:
-      - expr: slo:burn_rate:6h{slo="api-latency"}
+      - expr: round(slo:burn_rate:6h{slo="api-latency"} * 10)
         eval_time: 4h
         exp_samples:
-          - labels: 'slo:burn_rate:6h{slo="api-latency", env="prod"}'
-            value: 1
+          - labels: '{slo="api-latency", env="prod"}'
+            value: 10

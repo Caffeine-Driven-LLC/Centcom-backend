@@ -329,19 +329,29 @@ describe('when the collector is down', () => {
       .counter('http_requests_total', { route: '/v1/me', method: 'GET', status_class: '2xx' })
       .inc();
     for (let i = 0; i < 50; i += 1) t.tracer.startSpan(`span ${i}`).end();
-    await t.flush(); // metrics refused; spans to a closed port (refused)
+    const failedBySignal = (): Record<string, unknown> => {
+      const last = refusing.given.at(-1);
+      const failed =
+        last === undefined
+          ? []
+          : points(last).filter((p) => p.name === 'centcom_otel_export_failed_total');
+      return Object.fromEntries(failed.map((p) => [p.attributes['signal'], p.value]));
+    };
+    // Metrics refused; spans to a closed port. A span export's failure is counted when it
+    // returns, which on a slow runner is after the first flushes: flush until it shows.
+    const deadline = Date.now() + 25_000;
+    do {
+      await t.flush();
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    } while (
+      Date.now() < deadline &&
+      (Number(failedBySignal()['traces'] ?? 0) < 1 || Number(failedBySignal()['metrics'] ?? 0) < 2)
+    );
     await t.flush();
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    await t.flush();
-    const last = refusing.given.at(-1);
-    const failed =
-      last === undefined
-        ? []
-        : points(last).filter((p) => p.name === 'centcom_otel_export_failed_total');
-    const bySignal = Object.fromEntries(failed.map((p) => [p.attributes['signal'], p.value]));
+    const bySignal = failedBySignal();
     expect(bySignal['metrics']).toBeGreaterThanOrEqual(2);
     expect(bySignal['traces']).toBeGreaterThanOrEqual(1);
-  });
+  }, 40_000);
 
   it('records without waiting on the collector, and shuts down within 5 s', async () => {
     const hole = await blackhole();
