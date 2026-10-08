@@ -630,7 +630,7 @@ const service = new WorkspaceService({
   logger,
   metrics,
 });
-service.extensions.register(settingsExtension); // B034: owns PATCH `settings`
+service.extensions.register(settings.patchExtension()); // B034: owns PATCH `settings`
 // after the request-context, error-handler, idempotency, RBAC and audit plugins:
 await app.register(workspaceRoutes, { service, cursorKeys: paginationConfig().signingKeys });
 ```
@@ -653,7 +653,9 @@ Crème` → `cafe-creme`), with the next free numeric suffix; a slug race retrie
 - **Update:** the row is locked and the ETag checked, then the name and the extension fields
   change and the version moves on, in one transaction: of two PATCHes with one ETag exactly one
   wins. Unknown fields are ignored; a body with nothing to change is a 422. Extensions
-  (`service.extensions.register({key, parse, apply})`) own fields such as `settings`.
+  (`service.extensions.register({key, parse, apply})`) own fields such as `settings`: `apply`
+  runs in the transaction with the request's audit context, and may return a step (an
+  announcement) that runs after the commit.
 - **Delete:** hides the workspace and writes `workspace.delete` (account-level, so it outlives the
   purge) in one transaction; then announces `workspace.deleted` on `centcom:workspace-events`,
   drops cached roles (`rbac:invalidate`) and queues `workspace-purge` (job `purge-<wsp>`). Their
@@ -677,6 +679,66 @@ Crème` → `cafe-creme`), with the next free numeric suffix; a slug race retrie
 - **`workspaces.pagination.test.ts`:** 120 workspaces, limits, cursors across changes and callers.
 - **`workspaces.validation.test.ts`:** names, slugs (property tests).
 - **`workspaces.postgres.test.ts`:** the routes over the SQL store (CI).
+
+## Workspace settings (B034)
+
+A workspace's policies (`src/modules/workspace-settings/`, CT-API-WORKSPACES `WorkspaceSettings`):
+the default auto-approve level, history sharing and the retention override. The SQL is
+`createWorkspaceSettingsStore` in @centcom/db; the purge hook is `workspace-settings` in
+@centcom/worker.
+
+```ts
+const settings = new WorkspaceSettingsService({
+  store: createWorkspaceSettingsStore(db),
+  entitlements: freePlanHistoryDays, // B069's reader of `history_days` when it exists
+  events: redis.pubsub,
+  logger,
+  metrics,
+});
+service.extensions.register(settings.patchExtension()); // `settings` in PATCH /v1/workspaces/{id}
+await app.register(workspaceSettingsRoutes, { service: settings }); // after the workspace routes
+```
+
+| Route                                  | Scope              | Who     | Answers                                                       |
+| -------------------------------------- | ------------------ | ------- | ------------------------------------------------------------- |
+| `GET /v1/workspaces/{id}/settings`     | `workspaces:read`  | member+ | The settings and their `ETag` (`"s<version>"`); guests: 403   |
+| `PATCH /v1/workspaces/{id}/settings`   | `workspaces:write` | admin+  | `If-Match` required (400 without, 412 stale); 200, new `ETag` |
+| `PATCH /v1/workspaces/{id}` `settings` | `workspaces:write` | admin+  | The same change under the workspace's `ETag`                  |
+
+- **Defaults:** `auto_approve` `ask`, `share_history` true, `history_retention_days` null, ETag
+  `"s0"`, until the first change creates the row. The settings' ETags (`"s…"`) are their own: a
+  workspace ETag (`"v…"`) never matches them, and the other way round.
+- **Values:** `auto_approve` is exactly `ask`, `trusted` or `everyone` (CT-WS-QUEUE rule 3 /
+  `control.policy`); `share_history` a boolean; `history_retention_days` null (the plan's) or whole
+  days up to the plan's `history_days` (422 above; 503 `retry_after_s: 1` while entitlements are
+  unavailable, for that field only). Unknown fields are ignored and never stored; a body naming no
+  setting is a 422.
+- **One code path:** both routes lock the workspace row, check the ETag, check the cap, write the
+  row with the next version and audit, in one transaction; two PATCHes with one ETag: one 200, one 412. A change that changes nothing writes nothing (the ETag stays).
+- **Audit:** `workspace.update` with `fields` (the changed keys) and each one's `*_from` / `*_to`
+  (`auto_approve`, `share_history`, `retention_days`): enums, flags and days, no text. Through the
+  workspace PATCH, B027's own `workspace.update` (`fields: settings`) is written too.
+- **Announce:** after the commit, one `workspace.settings_changed` `{wsp, changed, at}` on
+  `centcom:workspace-events` (the relay and the retention job re-read the settings); tried 4 times
+  (100, 200, 400 ms apart), then logged (`workspace.settings_publish_failed`) and counted
+  (`workspace_settings_publish_failures_total`): the stored value stands.
+- **Defaults only:** the server never pushes settings into a live session; the host client applies
+  them through `control.policy`.
+
+### Tests
+
+`test/modules/workspace-settings/`:
+
+- **`workspace-settings.routes.test.ts`:** defaults and the first PATCH, the role matrix, 404s,
+  If-Match and ETags, two PATCHes with one ETag, API keys, contract validation.
+- **`workspace-settings.validation.test.ts`:** the enum, bounds and the plan's cap (CT-ENTITLEMENTS
+  fixtures), `null`, unknown fields, an entitlements outage, a property test over random bodies.
+- **`workspace-settings.extension.test.ts`:** `settings` in the workspace PATCH: same stored result,
+  one version step each, refusals under `/settings` that roll the rename back.
+- **`workspace-settings.events.test.ts`:** one message with only the changed keys, audit meta,
+  no-op PATCHes, publish retries.
+- **`workspace-settings.postgres.test.ts`:** the routes over the SQL stores, ten racing PATCHes,
+  constraints, audit rows and the purge (CI).
 
 ## Members (B028)
 
