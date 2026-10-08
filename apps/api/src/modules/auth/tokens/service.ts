@@ -82,6 +82,14 @@ export interface Principal {
   keyId?: string;
 }
 
+/**
+ * Whether a user may get tokens (B087: staff can disable a user's sign-in). Resolves when they
+ * may; rejects with an AppError (403 `access_denied`) when they may not.
+ */
+export interface SignInGate {
+  assertCanSignIn(userId: string): Promise<void>;
+}
+
 /** Turns a bearer credential with a registered prefix into a principal, or throws a 401 AppError. */
 export type PrincipalResolver = (credential: string) => Promise<Principal>;
 
@@ -107,6 +115,8 @@ export interface TokenServiceDeps {
   /** Milliseconds since the epoch; default Date.now. */
   now?: () => number;
   entitlements?: EntitlementsLookup;
+  /** Asked before any tokens are issued or refreshed; default: everyone may. */
+  signInGate?: SignInGate;
   logger?: Logger;
   metrics?: Metrics;
 }
@@ -145,6 +155,7 @@ export class TokenService {
   private readonly keys: TokenKeys;
   private readonly now: () => number;
   private readonly entitlements: EntitlementsLookup;
+  private readonly signInGate: SignInGate | undefined;
   private readonly logger: Logger | undefined;
   private readonly store: RefreshStore;
   private readonly revocations: RevocationList;
@@ -155,6 +166,7 @@ export class TokenService {
     this.keys = deps.keys;
     this.now = deps.now ?? Date.now;
     this.entitlements = deps.entitlements ?? FREE_ENTITLEMENTS;
+    this.signInGate = deps.signInGate;
     this.logger = deps.logger;
     this.store = deps.store ?? new RefreshTokenStore({ db: deps.db, now: this.now });
     this.revocations = new RevocationList({
@@ -181,6 +193,7 @@ export class TokenService {
     ) {
       throw new AppError('invalid_request', { detail: 'The user or workspace id is not valid.' });
     }
+    await this.signInGate?.assertCanSignIn(input.userId);
     const store = tx === undefined ? this.store : new RefreshTokenStore({ db: tx, now: this.now });
     const clientId = input.clientId ?? 'centcom-cli';
     if (input.deviceId !== null) await this.checkDevice(input.deviceId, input.userId, store);
@@ -209,6 +222,7 @@ export class TokenService {
         this.logger?.warn({ family_id: familyId }, 'auth.refresh_reuse_detected: family revoked'),
       ),
     );
+    await this.signInGate?.assertCanSignIn(grant.userId);
     const granted = splitScope(grant.scope);
     let scopes = granted;
     if (input.scope !== undefined) {
@@ -266,6 +280,17 @@ export class TokenService {
   async revokeDevice(deviceId: string): Promise<void> {
     await guarded(() => this.store.revokeDevice(deviceId));
     await this.revocations.revokeDevice(deviceId);
+  }
+
+  /**
+   * Revokes everything the user holds (B087's staff revocation): every live refresh token, whose
+   * next use answers `token_revoked`, and every access token issued until now. Resolves to the
+   * number of refresh tokens revoked.
+   */
+  async revokeUser(userId: string): Promise<number> {
+    const revoked = await guarded(() => this.store.revokeUser(userId));
+    await this.revocations.revokeUser(userId, this.now());
+    return revoked;
   }
 
   /** Revokes every refresh token of a family. */

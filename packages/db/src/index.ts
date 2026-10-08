@@ -12,7 +12,8 @@
  * (B035) in `schema/projects.ts`, notifications (B063) in `schema/notifications.ts`, plans and
  * entitlements (B069) in `schema/entitlements.ts`, feature flags (B083) in
  * `schema/feature-flags.ts`, release manifests (B084) in `schema/releases.ts`, telemetry (B085)
- * in `schema/telemetry.ts`, the status feed (B086) in `schema/status.ts`; repositories (B013 on,
+ * in `schema/telemetry.ts`, the status feed (B086) in `schema/status.ts`, staff access (B087) in
+ * `schema/staff.ts`; repositories (B013 on,
  * workspaces from B027, members from B028, invites from B029, settings from B034, projects from
  * B035, notifications from B063) in `repos/`; the entitlements repository is the API's (B069).
  */
@@ -174,6 +175,13 @@ export type {
   StatusIncidentsTable,
   StatusIncidentUpdatesTable,
 } from './schema/status.js';
+export type {
+  AdminDatabase,
+  StaffAuditDetailsTable,
+  StaffRole,
+  StaffUsersColumns,
+  StaffUsersTable,
+} from './schema/staff.js';
 export type {
   DeviceGrantDatabase,
   DeviceGrantsDatabase,
