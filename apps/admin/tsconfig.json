@@ -2,9 +2,16 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "dist",
-    "tsBuildInfoFile": "dist/.tsbuildinfo"
+    "outDir": "dist/types",
+    "tsBuildInfoFile": "dist/types/.tsbuildinfo",
+    "emitDeclarationOnly": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": [],
+    "jsx": "react-jsx"
   },
+  "references": [{ "path": "../api" }],
   "include": ["src"],
   "exclude": ["src/**/*.test.ts"]
 }

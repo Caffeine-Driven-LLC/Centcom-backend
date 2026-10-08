@@ -1,0 +1,10 @@
+# Stripe events processed within 30 s of creation.
+# A proposal for the owner to ratify (B093); alert thresholds derived from it live in B094.
+# Its metric is catalogued now and first emitted by B072.
+name: stripe-webhook
+objective: 0.99
+window: 30d
+owner: billing
+sli:
+  good: 'centcom_stripe_webhook_lag_seconds_bucket{le="30"}'
+  total: 'centcom_stripe_webhook_lag_seconds_count'
