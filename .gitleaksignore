@@ -18,7 +18,9 @@ a4852c89d6c40af30617ab092f0c2f7a0a854185:packages/contracts/src/generated/valida
 a4852c89d6c40af30617ab092f0c2f7a0a854185:packages/contracts/src/generated/validators.js:generic-api-key:35410
 #
 # Deliberate test values in the B019 API-key tests: a fake ULID idempotency key and a 31-byte
-# too-short pepper used to assert rejection (lane B019).
+# too-short pepper used to assert rejection (lane B019). d913b96 is the PR #40 branch commit;
+# 2191980 is its squash on main, which brought the same lines along. The tests now build these
+# values at run time, so no later commit adds them again.
 d913b969d1cc5942d5b1f0af866bbba06383edc2:apps/api/test/modules/apikeys/routes.test.ts:generic-api-key:142
 d913b969d1cc5942d5b1f0af866bbba06383edc2:apps/api/test/modules/apikeys/routes.test.ts:generic-api-key:171
 d913b969d1cc5942d5b1f0af866bbba06383edc2:apps/api/test/modules/apikeys/config.test.ts:generic-api-key:20
