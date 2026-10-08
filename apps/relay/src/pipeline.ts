@@ -2,8 +2,9 @@
  * The inbound frame pipeline (B037): every message a connection receives runs through the stages
  * relay modules add, in `order`, each calling `next()` to pass the frame on (or not, to stop it).
  * The orders are reserved by lane, so stages from separate folders compose without knowing each
- * other: decode 10 (B039), handshake 15 (B038), authorise 20, privacy 30 (B050), sequence 40
- * (B041), fan-out 50 (B044). With no stage, a frame goes nowhere.
+ * other: activity 5 (B040), decode 10 (B039), heartbeat 12 (B040), handshake 15 (B038), authorise
+ * 20, privacy 30 (B050), sequence 40 (B041), fan-out 50 (B044). With no stage, a frame goes
+ * nowhere.
  *
  * Owns: ordering and running stages, and the connection as stages see it. Must not: parse or
  * route frames itself.
@@ -13,7 +14,9 @@ import type { ConnectionEntry } from './connection-registry.js';
 
 /** Stage orders by purpose. */
 export const STAGE_ORDER = Object.freeze({
+  activity: 5,
   decode: 10,
+  heartbeat: 12,
   handshake: 15,
   authorise: 20,
   privacy: 30,
@@ -30,6 +33,11 @@ export interface RelayConnection {
   close(code: CloseCodeValue, reason?: string): void;
   /** Cuts the connection at once. */
   terminate(): void;
+  /**
+   * Runs `listener` once when the socket has closed, whoever closed it (B040: timers are cleared
+   * here); at once when it already has.
+   */
+  onClose(listener: (code: number) => void): void;
 }
 
 /** One received message on its way through the stages. */

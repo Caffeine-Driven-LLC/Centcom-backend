@@ -3,10 +3,12 @@
  * .handshake) and its connection handler, which starts each connection's 5 s hello timer. Keys
  * come from RELAY_JWKS_URL, used tickets are remembered in the relay's Redis, and the live checks
  * go through `SessionAccess`. That port's Postgres implementation is B043's; until it is wired
- * here, every handshake fails closed with 4503.
+ * here, every handshake fails closed with 4503. `sys.welcome` advertises the heartbeat the
+ * connection module enforces (RELAY_PING_MS, RELAY_DEAD_MS, B040).
  *
  * Owns: wiring. Must not: hold state outside what `register` creates.
  */
+import { loadHeartbeatConfig, welcomeHeartbeat } from '../connection/config.js';
 import type { RelayModule } from '../modules.js';
 import { STAGE_ORDER } from '../pipeline.js';
 import { unavailableSessionAccess } from './access.js';
@@ -28,6 +30,7 @@ const relayModule: RelayModule = {
       logger: ctx.log,
       metrics: ctx.metrics,
       clock: ctx.clock,
+      heartbeat: welcomeHeartbeat(loadHeartbeatConfig()),
     });
     ctx.pipeline.use(STAGE_ORDER.handshake, handshake.stage);
     ctx.onConnection(handshake.onConnection);
