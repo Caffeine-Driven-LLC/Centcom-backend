@@ -29,3 +29,10 @@ d913b969d1cc5942d5b1f0af866bbba06383edc2:apps/api/test/modules/apikeys/config.te
 2191980b833867b68ea6440f135aa41f454e6311:apps/api/test/modules/apikeys/routes.test.ts:generic-api-key:142
 2191980b833867b68ea6440f135aa41f454e6311:apps/api/test/modules/apikeys/routes.test.ts:generic-api-key:171
 2191980b833867b68ea6440f135aa41f454e6311:apps/api/test/modules/apikeys/config.test.ts:generic-api-key:20
+#
+# Deliberate fake tokens in the B035 repo-reference tests (the API must refuse token-shaped
+# values). Pinned to the branch commit 77c1620; the test now builds them from pieces, so the
+# squash merge brings no token shape to main (lane B035).
+77c1620040320fcf3a973424e481bd1c9ff72736:apps/api/test/modules/projects/projects.validation.test.ts:gitlab-pat:61
+77c1620040320fcf3a973424e481bd1c9ff72736:apps/api/test/modules/projects/projects.validation.test.ts:stripe-access-token:64
+77c1620040320fcf3a973424e481bd1c9ff72736:apps/api/test/modules/projects/projects.validation.test.ts:aws-access-token:65

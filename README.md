@@ -40,8 +40,8 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 | [B026](plan/backend/B026.md) | Account deletion and data export | M | M3 |
 | [B029](plan/backend/B029.md) | Invites: create, accept, revoke, expiry, key-bundle storage | L | M3 |
 | [B039](plan/backend/B039.md) | Envelope codec and schema-enforced validation with size limits | M | M3 |
-| [B035](plan/backend/B035.md) | Projects registry | S | M4 |
 | [B064](plan/backend/B064.md) | Push delivery: web push, APNs, FCM abstraction | M | M4 |
+| [B065](plan/backend/B065.md) | In-app notification inbox API | S | M4 |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
 

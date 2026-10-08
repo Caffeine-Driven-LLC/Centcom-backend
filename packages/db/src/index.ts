@@ -7,11 +7,11 @@
  * `schema/refresh-tokens.ts`, e-mail sign-in links (B014) in
  * `schema/login-tokens.ts`, the audit log (B036) in `schema/audit-events.ts`, invites (B029) in
  * `schema/invites.ts`, device grants (B016) in `schema/device-grants.ts`, API keys (B019) in
- * `schema/api-keys.ts`, workspace settings (B034) in `schema/workspace-settings.ts`,
- * notifications (B063) in `schema/notifications.ts`, plans and entitlements (B069) in
- * `schema/entitlements.ts`; repositories (B013 on, workspaces from B027, members from B028,
- * invites from B029, settings from B034, notifications from B063) in `repos/`; the entitlements
- * repository is the API's (B069).
+ * `schema/api-keys.ts`, workspace settings (B034) in `schema/workspace-settings.ts`, projects
+ * (B035) in `schema/projects.ts`, notifications (B063) in `schema/notifications.ts`, plans and
+ * entitlements (B069) in `schema/entitlements.ts`; repositories (B013 on, workspaces from B027,
+ * members from B028, invites from B029, settings from B034, projects from B035, notifications
+ * from B063) in `repos/`; the entitlements repository is the API's (B069).
  */
 export {
   ACQUIRE_BUCKETS_S,
@@ -80,6 +80,17 @@ export {
   type NewInvite,
 } from './repos/invites.js';
 export {
+  createProjectStore,
+  PROJECT_LIST_SORTS,
+  projectOperations,
+  PROJECTS_NAME_KEY,
+  type NewProject,
+  type ProjectChanges,
+  type ProjectRecord,
+  type ProjectStore,
+  type ProjectTx,
+} from './repos/projects.js';
+export {
   createMemberStore,
   MEMBER_LIST_SORTS,
   memberOperations,
@@ -147,6 +158,7 @@ export type {
   WorkspaceEntitlementsTable,
 } from './schema/entitlements.js';
 export type { InviteDatabase, InvitesDatabase, InvitesTable } from './schema/invites.js';
+export type { ProjectDatabase, ProjectsDatabase, ProjectsTable } from './schema/projects.js';
 export type {
   AutoApprove,
   WorkspaceSettingsDatabase,

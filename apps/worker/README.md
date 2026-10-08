@@ -126,6 +126,20 @@ registerWorkspaceSettingsPurgeHook(hooks, createWorkspaceSettingsStore(db)); // 
 - **Tests:** `test/workspace-settings-purge.test.ts`: the hook runs before the purge, twice
   harmlessly, and its name is taken once.
 
+## `projects` purge hook (B035)
+
+`registerProjectPurgeHook` adds the `projects` hook to B027's purge registry: it deletes a purged
+workspace's projects (`deleteForWorkspace`) before `workspace-purge` removes the workspace row,
+which the foreign key requires. Like every hook it is idempotent.
+
+```ts
+registerProjectPurgeHook(hooks, createProjectStore(db)); // before startWorkspacePurgeWorker
+```
+
+Tests: `test/projects.purge-hook.test.ts` (registration, order before the purge, a harmless
+re-run); the rows going on Postgres is checked in
+`apps/api/test/modules/projects/projects.postgres.test.ts`.
+
 ## `notify.dispatch` and `notify.digest` (B063)
 
 The BullMQ side of the notification dispatcher

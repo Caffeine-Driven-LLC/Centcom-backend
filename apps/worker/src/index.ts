@@ -1,8 +1,8 @@
 /**
  * @centcom/worker: BullMQ jobs: webhooks, notifications, billing, retention. Today: the email
- * delivery job (B032), the workspace purge (B027) with the settings (B034) and entitlements
- * (B069) purge hooks, invite expiry (B029), and notification dispatch and digests (B063). Later
- * lanes add theirs under `src/jobs/`.
+ * delivery job (B032), the workspace purge (B027) with the settings (B034), entitlements (B069)
+ * and projects (B035) purge hooks, invite expiry (B029), and notification dispatch and digests
+ * (B063). Later lanes add theirs under `src/jobs/`.
  */
 export {
   createEmailQueue,
@@ -55,6 +55,7 @@ export {
   type InviteExpiryQueueOptions,
   type InviteExpiryWorkerOptions,
 } from './jobs/invite-expiry.js';
+export { PROJECT_PURGE_HOOK, registerProjectPurgeHook } from './jobs/project-purge.js';
 export {
   registerWorkspaceSettingsPurgeHook,
   WORKSPACE_SETTINGS_PURGE_HOOK,
