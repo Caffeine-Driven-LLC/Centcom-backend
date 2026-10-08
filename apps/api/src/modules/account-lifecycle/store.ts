@@ -151,18 +151,6 @@ export interface AccountLifecycleStore {
   stalePending(before: Date, limit: number): Promise<string[]>;
 }
 
-/** The columns of an export row. */
-const EXPORT_COLUMNS = [
-  'id',
-  'user_id',
-  'status',
-  'blob_key',
-  'size_bytes',
-  'error_code',
-  'created_at',
-  'expires_at',
-] as const;
-
 type ExportSelect = {
   id: string;
   user_id: string;
@@ -343,7 +331,7 @@ export function createAccountLifecycleStore(db: Kysely<LifecycleDb>): AccountLif
     async getExport(userId, exportId) {
       const row = await db
         .selectFrom('account_exports')
-        .select(EXPORT_COLUMNS)
+        .selectAll()
         .where('id', '=', exportId)
         .where('user_id', '=', userId)
         .executeTakeFirst();
@@ -356,7 +344,7 @@ export function createAccountLifecycleStore(db: Kysely<LifecycleDb>): AccountLif
         .set({ status: 'running', updated_at: sql<Date>`now()` })
         .where('id', '=', exportId)
         .where('status', 'in', ['pending', 'running'])
-        .returning(EXPORT_COLUMNS)
+        .returningAll()
         .executeTakeFirst();
       return row === undefined ? null : toExportRow(row);
     },
@@ -471,7 +459,7 @@ export function createAccountLifecycleStore(db: Kysely<LifecycleDb>): AccountLif
     async dueForExpiry(now, limit) {
       const rows = await db
         .selectFrom('account_exports')
-        .select(EXPORT_COLUMNS)
+        .selectAll()
         .where('status', '=', 'ready')
         .where('expires_at', '<=', now)
         .orderBy('expires_at')

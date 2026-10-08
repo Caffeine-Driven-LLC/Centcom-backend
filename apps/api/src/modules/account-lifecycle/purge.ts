@@ -14,11 +14,11 @@
  *    memberships (except in workspaces where they are the only member). The user row is scrubbed:
  *    no e-mail of theirs, name, avatar or locale; status `deleted`, `deleted_at` set. Device names
  *    are scrubbed too.
- * 4. **Audit.** Every audit event naming the user as actor or target is rewritten to
- *    `usr_deleted` (`pseudonymise_audit_user`), never deleted (retention is B090's); an
- *    `account.purge` event without the user's id records it.
+ * 4. **Audit**, in that same transaction: every audit event naming the user as actor or target is
+ *    rewritten to `usr_deleted` (`pseudonymise_audit_user`), never deleted (retention is B090's);
+ *    an `account.purge` event without the user's id records it.
  * 5. **Workspaces** the user was the only member of are deleted the way their owner would
- *    (B027: hidden at once, then the `workspace-purge` job).
+ *    (B027: hidden at once, then the `workspace-purge` job); a retry deletes them again.
  * 6. **Finish.** While those workspaces still exist the result is `waiting` (the job retries).
  *    Then the devices no session references are deleted, and the user row itself: `deleted`. When
  *    other people's records still point at the user (a workspace they created, a session they
@@ -29,7 +29,7 @@
  * Owns: the purge. Must not: delete another user's data or a workspace that has other members,
  * delete audit events, or log anything but ids and counts.
  */
-import { noopMetrics, type AuditEmitter, type Logger, type Metrics } from '@centcom/core';
+import { AppError, noopMetrics, type AuditEmitter, type Logger, type Metrics } from '@centcom/core';
 import {
   withTransaction,
   type DeviceGrantsDatabase,
@@ -38,8 +38,9 @@ import {
   type NotificationsDatabase,
   type PushSubscriptionsDatabase,
 } from '@centcom/db';
-import { sql, type Kysely } from 'kysely';
+import { sql, type Kysely, type Transaction } from 'kysely';
 import { ACCOUNT_ACTIONS, type AccountLifecycleAction } from './actions.js';
+import type { WorkspaceService } from '../workspaces/service.js';
 import type { ExportBlobStore } from './blob-store.js';
 import { blockingWorkspaces, type LifecycleDb } from './store.js';
 
@@ -68,7 +69,10 @@ export type PurgeOutcome =
 export interface PurgeDeps {
   db: Kysely<PurgeDb>;
   blobs: Pick<ExportBlobStore, 'delete'>;
-  /** Deletes a workspace as its owner would (B027 `WorkspaceService.softDelete`); idempotent. */
+  /**
+   * Deletes a workspace as its owner would; must resolve for one already deleted
+   * (`workspaceDeleterFrom` over B027's `WorkspaceService`).
+   */
   deleteWorkspace(workspaceId: string): Promise<void>;
   /** Writes `account.purge` (`ACCOUNT_LIFECYCLE_ACTIONS`). */
   emitter: Pick<AuditEmitter<AccountLifecycleAction>, 'emit'>;
@@ -105,9 +109,13 @@ async function soleWorkspaces(db: Kysely<PurgeDb>, userId: string): Promise<stri
   return rows.map((r) => r.workspace_id);
 }
 
-/** Writes `account.purge`; the user's id is not in it (it was just pseudonymised). */
-async function auditPurge(deps: PurgeDeps, outcome: 'scrubbed' | 'deleted'): Promise<void> {
-  await deps.emitter.emit(deps.db, {
+/** Writes `account.purge` in `trx`; the user's id is not in it (it was just pseudonymised). */
+async function auditPurge(
+  deps: PurgeDeps,
+  trx: Transaction<PurgeDb>,
+  outcome: 'scrubbed' | 'deleted',
+): Promise<void> {
+  await deps.emitter.emit(trx, {
     workspaceId: null,
     actor: { type: 'system', id: PURGE_ACTOR },
     action: ACCOUNT_ACTIONS.purge,
@@ -116,7 +124,7 @@ async function auditPurge(deps: PurgeDeps, outcome: 'scrubbed' | 'deleted'): Pro
   });
 }
 
-/** Steps 2-5: removes the user's personal data. False when the user is no longer due. */
+/** Steps 2-4: removes the user's personal data. False when the user is no longer due. */
 async function removePersonalData(deps: PurgeDeps, userId: string, now: Date): Promise<boolean> {
   const exportKeys = await deps.db
     .selectFrom('account_exports')
@@ -127,7 +135,7 @@ async function removePersonalData(deps: PurgeDeps, userId: string, now: Date): P
   for (const { blob_key: key } of exportKeys) if (key !== null) await deps.blobs.delete(key);
 
   const sole = await soleWorkspaces(deps.db, userId);
-  const done = await withTransaction(deps.db, async (trx) => {
+  return withTransaction(deps.db, async (trx) => {
     const user = await trx
       .selectFrom('users')
       .select(['email', 'status', 'deletion_scheduled_at'])
@@ -173,21 +181,23 @@ async function removePersonalData(deps: PurgeDeps, userId: string, now: Date): P
       })
       .where('id', '=', userId)
       .execute();
+    await sql`select pseudonymise_audit_user(${userId})`.execute(trx);
+    await auditPurge(deps, trx, 'scrubbed');
     return true;
   });
-  if (!done) return false;
-
-  await sql`select pseudonymise_audit_user(${userId})`.execute(deps.db);
-  await auditPurge(deps, 'scrubbed');
-  for (const workspaceId of sole) await deps.deleteWorkspace(workspaceId);
-  return true;
 }
 
-/** Step 6: deletes what nobody else references; `waiting` while sole workspaces remain. */
+/**
+ * Steps 5-6: deletes the workspaces the user was alone in (again on a retry: deleting is
+ * idempotent), then what nobody else references; `waiting` while those workspaces remain.
+ */
 async function finish(
   deps: PurgeDeps,
   userId: string,
 ): Promise<'deleted' | 'scrubbed' | 'waiting'> {
+  for (const workspaceId of await soleWorkspaces(deps.db, userId)) {
+    await deps.deleteWorkspace(workspaceId);
+  }
   const remaining = await deps.db
     .selectFrom('memberships')
     .select('id')
@@ -209,15 +219,44 @@ async function finish(
     )
     .execute();
   try {
-    const result = await deps.db.deleteFrom('users').where('id', '=', userId).executeTakeFirst();
-    if (Number(result.numDeletedRows) === 0) return 'deleted';
+    await withTransaction(deps.db, async (trx) => {
+      const result = await trx.deleteFrom('users').where('id', '=', userId).executeTakeFirst();
+      if (Number(result.numDeletedRows) > 0) await auditPurge(deps, trx, 'deleted');
+    });
   } catch (err) {
     // 23503: other people's records (a workspace they created, a session they joined) point at it.
     if ((err as { code?: unknown } | null)?.code === '23503') return 'scrubbed';
     throw err;
   }
-  await auditPurge(deps, 'deleted');
   return 'deleted';
+}
+
+/**
+ * `PurgeDeps.deleteWorkspace` over B027's `WorkspaceService.softDelete`: the workspace is deleted
+ * as its owner would (hidden, `workspace.delete` audited by the system actor `account-purge`,
+ * the `workspace-purge` job queued). A workspace that is already gone resolves, so a retry is
+ * safe.
+ */
+export function workspaceDeleterFrom(
+  workspaces: Pick<WorkspaceService, 'softDelete'>,
+  emitter: Pick<AuditEmitter, 'emit'>,
+): (workspaceId: string) => Promise<void> {
+  return async (workspaceId) => {
+    try {
+      await workspaces.softDelete(workspaceId, undefined, {
+        audit: (trx, input) =>
+          emitter.emit(trx, {
+            workspaceId: null,
+            actor: { type: 'system', id: PURGE_ACTOR },
+            outcome: 'success',
+            ...input,
+          }),
+      });
+    } catch (err) {
+      if (err instanceof AppError && err.code === 'not_found') return;
+      throw err;
+    }
+  };
 }
 
 /** Users whose deletion deadline is at or before `now`, oldest first (the purge sweep's input). */

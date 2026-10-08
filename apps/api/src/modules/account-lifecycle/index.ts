@@ -35,6 +35,7 @@ export {
   type PurgeDb,
   type PurgeDeps,
   type PurgeOutcome,
+  workspaceDeleterFrom,
 } from './purge.js';
 export {
   ACCOUNT_BODY_LIMIT,
