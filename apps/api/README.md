@@ -897,6 +897,58 @@ the default and a configured `WEB_BASE_URL` (from options and from the environme
 refused at boot, links that read back through `parseDeepLink`, the contract's notification fixture
 and schema, and B029's token shape and 7-day lifetime.
 
+## Projects (B035)
+
+Named references to a repository inside a workspace (`src/modules/projects/`,
+CT-API-WORKSPACES). The SQL is `createProjectStore` in @centcom/db; the purge hook is
+`registerProjectPurgeHook` in @centcom/worker. The server never reads a repository.
+
+```ts
+const projects = new ProjectService({ store: createProjectStore(db), logger });
+// after the RBAC, audit and idempotency plugins:
+await app.register(projectRoutes, { service: projects, cursorKeys });
+```
+
+| Route                               | Scope              | Who                  | Answers                                                |
+| ----------------------------------- | ------------------ | -------------------- | ------------------------------------------------------ |
+| `GET /v1/workspaces/{id}/projects`  | `workspaces:read`  | owner, admin, member | Projects, oldest first (CT-PAGE)                       |
+| `POST /v1/workspaces/{id}/projects` | `workspaces:write` | owner, admin, member | 201 with the project and its `ETag`; `Idempotency-Key` |
+| `PATCH /v1/projects/{id}`           | `workspaces:write` | owner, admin, member | 200 with the new `ETag`; `If-Match` optional (412)     |
+| `DELETE /v1/projects/{id}`          | `workspaces:write` | owner, admin         | 204                                                    |
+
+- **Fields:** `name`, 1-60 code points after NFC, unique per workspace ignoring case (409
+  `conflict`, also when two creates race); `repo`, an opaque reference of 1-128 code points
+  (null clears it on PATCH). `created_by` is stored, not answered.
+- **`repo` is never a path, a credential or a token:** values that start like a local path
+  (`/`, `~`, `./`, `../`, `C:\`, `\\server`, `file:`) or contain `\`, URLs with a user part,
+  credential query parameters, well-known token shapes (GitHub, GitLab, Slack, npm, OpenAI-style,
+  Stripe, AWS, Google, PEM keys) and anything the log redactor would hide (Centcom API keys,
+  JWTs, bearer credentials) are a 422 pointing at `/repo`; the value is never echoed or logged.
+- **RBAC:** CT-RBAC has no projects row yet, so member+ is `session.create` ("Create/host
+  session") and admin+ is `workspace.update` ("Update workspace settings"), both exported as
+  `PROJECT_ACTIONS`. `session.create` gives API keys no scope: until a contract row exists, an
+  API key gets 403 on the list, create and update routes. Non-members, deleted workspaces and
+  projects of other workspaces are a 404 (the same answer as an unknown project).
+- **Audit:** CT-API-AUDIT's stable names have no `project.*` yet, so every change is audited as
+  `workspace.update` in its transaction, with `target: {type: 'project', id}` and `meta.fields`
+  (`project` for a create or delete, else the changed fields).
+- **Purge:** `deleteForWorkspace` (the worker's `projects` hook) empties a deleted workspace
+  before B027's purge; the foreign key restricts until it has run.
+
+### Tests
+
+`test/modules/projects/`:
+
+- **`projects.routes.test.ts`:** CRUD, the role matrix, ETags and `If-Match`, idempotent
+  creates, names unique ignoring case and racing creates, 404s for outsiders and other
+  workspaces, audit rows, contract validation.
+- **`projects.validation.test.ts`:** the `repo` table and property tests (paths, credentialed
+  URLs, token shapes, accepted references), name rules, no echo in the 422 or the logs.
+- **`projects.pagination.test.ts`:** 120 projects as 50, 50 and 20, stable order, a cursor bound
+  to its workspace, `limit` bounds.
+- **`projects.postgres.test.ts`:** the routes over Postgres, 10 racing creates against the unique
+  index, and the purge after the workspace is deleted (CI).
+
 ## Plans and entitlements (B069)
 
 `src/modules/entitlements/` ([README](src/modules/entitlements/README.md)) resolves each

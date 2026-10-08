@@ -14,6 +14,7 @@ import {
   hashRefreshToken,
   invalidRefreshToken,
   newRefreshToken,
+  refreshRevokedByStaff,
   parseSigningKeys,
   REFRESH_ABSOLUTE_MS,
   REFRESH_SLIDING_MS,
@@ -80,6 +81,8 @@ interface MemoryRow {
   grant: RefreshGrant;
   usedAt: number | null;
   revokedAt: number | null;
+  /** `staff` when staff revoked it (B087). */
+  revokedReason?: 'staff';
   expiresAt: number;
   absoluteExpiresAt: number;
 }
@@ -122,6 +125,7 @@ export function memoryRefreshStore(
           ? undefined
           : {
               revoked_at: row.revokedAt === null ? null : new Date(row.revokedAt),
+              revoked_reason: row.revokedReason ?? null,
               used_at: row.usedAt === null ? null : new Date(row.usedAt),
               client_id: row.grant.clientId,
               expires_at: new Date(row.expiresAt),
@@ -134,6 +138,7 @@ export function memoryRefreshStore(
         },
       );
       if (row === undefined || decision === 'invalid') return Promise.reject(invalidRefreshToken());
+      if (decision === 'revoked') return Promise.reject(refreshRevokedByStaff());
       if (decision === 'reuse') {
         revokeFamily(row.familyId);
         onReuse?.(row.familyId);
@@ -168,6 +173,16 @@ export function memoryRefreshStore(
       for (const row of rows.values())
         if (row.grant.deviceId === deviceId && row.revokedAt === null) row.revokedAt = now();
       return Promise.resolve();
+    },
+    revokeUser(userId) {
+      let revoked = 0;
+      for (const row of rows.values()) {
+        if (row.grant.userId !== userId || row.revokedAt !== null) continue;
+        row.revokedAt = now();
+        row.revokedReason = 'staff';
+        revoked += 1;
+      }
+      return Promise.resolve(revoked);
     },
     device(deviceId) {
       const device = devices.get(deviceId);

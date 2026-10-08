@@ -32,6 +32,7 @@ import {
   type Metrics,
   type RedisBackend,
 } from '@centcom/core';
+import { SpanKind, type Tracer } from '@opentelemetry/api';
 import { WebSocket, WebSocketServer, type RawData } from 'ws';
 import { buildInfo, type BuildInfo } from './build-info.js';
 import { CloseCode, type CloseCodeValue } from './close-codes.js';
@@ -39,6 +40,7 @@ import type { RelayConfig } from './config.js';
 import { ConnectionRegistry, type ConnectionEntry } from './connection-registry.js';
 import { handleHealth, Readiness, type ReadinessProbe } from './health.js';
 import {
+  closeLabel,
   createRelayMetrics,
   frameLabel,
   RELAY_METRICS,
@@ -109,6 +111,8 @@ export interface RelayServerOptions {
   pipeline: FramePipeline;
   logger: Logger;
   metrics?: Metrics;
+  /** Traces each connection as one span (B093); none: not traced. */
+  tracer?: Tracer;
 }
 
 /** The HTTP server, the WebSocket upgrades and the live connections. */
@@ -239,6 +243,11 @@ export class RelayServer {
     const connection = new LiveConnection(ws, entry);
     this.#live.set(entry.id, connection);
     this.#metrics.connectionOpened();
+    // One span per connection (B093): no per-frame spans, nothing from the frames.
+    const span = this.#o.tracer?.startSpan('relay.connection', {
+      kind: SpanKind.SERVER,
+      attributes: { 'network.protocol.name': 'websocket' },
+    });
     ws.on('message', (data, isBinary) => {
       const raw = isBinary ? null : text(data);
       this.#metrics.frameIn(frameLabel(raw));
@@ -250,6 +259,8 @@ export class RelayServer {
       this.#o.registry.remove(entry.id);
       this.#live.delete(entry.id);
       this.#metrics.closed(code);
+      span?.setAttribute('centcom.close_code', closeLabel(code));
+      span?.end();
     });
     // A socket error is followed by 'close', which cleans up.
     ws.on('error', (err) => this.#o.logger.debug({ error: err.name }, 'relay.socket_error'));
@@ -295,6 +306,8 @@ export interface StartRelayOptions {
   host: string;
   logger: Logger;
   metrics?: Metrics;
+  /** Traces connections (B093). */
+  tracer?: Tracer;
   /** Milliseconds; default Date.now. */
   clock?: () => number;
   redis: RedisBackend;
@@ -339,6 +352,7 @@ export async function startRelay(options: StartRelayOptions): Promise<RunningRel
     pipeline,
     logger: options.logger,
     metrics,
+    ...(options.tracer === undefined ? {} : { tracer: options.tracer }),
   });
   const shutdownSteps: (() => Promise<void>)[] = [];
   const ctx: RelayContext = {
