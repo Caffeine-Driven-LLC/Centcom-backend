@@ -1,0 +1,9 @@
+# API latency: requests answered within 300 ms, of all requests but health checks.
+# A proposal for the owner to ratify (B093); alert thresholds derived from it live in B094.
+name: api-latency
+objective: 0.95
+window: 30d
+owner: platform
+sli:
+  good: 'centcom_http_request_duration_seconds_bucket{route!~"/healthz|/readyz", le="0.3"}'
+  total: 'centcom_http_request_duration_seconds_count{route!~"/healthz|/readyz"}'

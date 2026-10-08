@@ -1,0 +1,10 @@
+# Relay handshakes that succeed within 2 s.
+# A proposal for the owner to ratify (B093); alert thresholds derived from it live in B094.
+# Its metric is catalogued now and first emitted by B038.
+name: relay-connect
+objective: 0.995
+window: 30d
+owner: realtime
+sli:
+  good: 'centcom_relay_handshake_duration_seconds_bucket{result="ok", le="2"}'
+  total: 'centcom_relay_handshake_duration_seconds_count'

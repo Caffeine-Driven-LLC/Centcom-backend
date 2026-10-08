@@ -5,13 +5,17 @@
  * packages/db/CONVENTIONS.md. Table types: the core schema (B008) in `schema/core.ts`, social-login
  * identities (B015) in `schema/identities.ts`, refresh tokens (B017) in
  * `schema/refresh-tokens.ts`, e-mail sign-in links (B014) in
- * `schema/login-tokens.ts`, the audit log (B036) in `schema/audit-events.ts`, invites (B029) in
+ * `schema/login-tokens.ts`, the audit log (B036) in `schema/audit-events.ts` and its export jobs
+ * (B082) in `schema/audit-exports.ts`, invites (B029) in
  * `schema/invites.ts`, device grants (B016) in `schema/device-grants.ts`, API keys (B019) in
  * `schema/api-keys.ts`, workspace settings (B034) in `schema/workspace-settings.ts`, projects
  * (B035) in `schema/projects.ts`, notifications (B063) in `schema/notifications.ts`, plans and
- * entitlements (B069) in `schema/entitlements.ts`; repositories (B013 on, workspaces from B027,
- * members from B028, invites from B029, settings from B034, projects from B035, notifications
- * from B063) in `repos/`; the entitlements repository is the API's (B069).
+ * entitlements (B069) in `schema/entitlements.ts`, feature flags (B083) in
+ * `schema/feature-flags.ts`, release manifests (B084) in `schema/releases.ts`, telemetry (B085)
+ * in `schema/telemetry.ts`, the status feed (B086) in `schema/status.ts`, staff access (B087) in
+ * `schema/staff.ts`; repositories (B013 on,
+ * workspaces from B027, members from B028, invites from B029, settings from B034, projects from
+ * B035, notifications from B063) in `repos/`; the entitlements repository is the API's (B069).
  */
 export {
   ACQUIRE_BUCKETS_S,
@@ -140,6 +144,44 @@ export type {
   ApiKeysTable,
 } from './schema/api-keys.js';
 export type { AuditDatabase, AuditEventsTable } from './schema/audit-events.js';
+export type {
+  AuditApiDb,
+  AuditExportDatabase,
+  AuditExportJobsTable,
+  AuditExportStatus,
+} from './schema/audit-exports.js';
+export type {
+  FeatureFlagsMetaTable,
+  FeatureFlagsTable,
+  FlagDatabase,
+  FlagType,
+} from './schema/feature-flags.js';
+export type {
+  ReleaseArtifactsTable,
+  ReleaseChannel,
+  ReleaseDatabase,
+  ReleasesTable,
+} from './schema/releases.js';
+export type {
+  TelemetryDailyAggTable,
+  TelemetryDatabase,
+  TelemetryEventsTable,
+  TelemetryRollupsTable,
+} from './schema/telemetry.js';
+export type {
+  IncidentStatus,
+  StatusDatabase,
+  StatusDeprecationsTable,
+  StatusIncidentsTable,
+  StatusIncidentUpdatesTable,
+} from './schema/status.js';
+export type {
+  AdminDatabase,
+  StaffAuditDetailsTable,
+  StaffRole,
+  StaffUsersColumns,
+  StaffUsersTable,
+} from './schema/staff.js';
 export type {
   DeviceGrantDatabase,
   DeviceGrantsDatabase,

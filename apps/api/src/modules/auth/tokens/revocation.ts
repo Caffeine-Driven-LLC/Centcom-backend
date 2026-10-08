@@ -3,7 +3,9 @@
  * revoked token or device stops working at once rather than at its `exp`. `revoked:jti:<jti>`
  * lives as long as the token could (at most 16 min); `revoked:dev:<id>` lives 16 min, which
  * covers every access token the device still holds (new ones cannot be issued: the refresh store
- * and device records are revoked in the database).
+ * and device records are revoked in the database). `revoked:usr:<id>` (B087's staff revocation)
+ * holds the time of the revocation, in epoch milliseconds, for 16 min: every access token of the
+ * user issued (`iat`) at or before it is revoked.
  *
  * When Redis cannot be asked, tokens with the `admin` scope fail closed (503) and the rest fail
  * open: they stay valid for what is left of their 15 min, counted in
@@ -22,6 +24,7 @@ export const ADMIN_SCOPE = 'admin';
 
 const jtiKey = (jti: string): string => `revoked:jti:${jti}`;
 const deviceKey = (deviceId: string): string => `revoked:dev:${deviceId}`;
+const userKey = (userId: string): string => `revoked:usr:${userId}`;
 
 /** What a revocation check found. */
 export type RevocationState = 'live' | 'token_revoked' | 'device_revoked';
@@ -54,17 +57,29 @@ export class RevocationList {
     await this.deps.kv.set(deviceKey(deviceId), '1', { ttlMs: REVOCATION_TTL_MS });
   }
 
+  /** Makes every access token of the user issued at or before `atMs` fail with `token_revoked`. */
+  async revokeUser(userId: string, atMs: number): Promise<void> {
+    await this.deps.kv.set(userKey(userId), String(atMs), { ttlMs: REVOCATION_TTL_MS });
+  }
+
   /**
-   * Whether the token behind `claims` was revoked (by jti or device). Redis unavailable: a 503
-   * for `admin` tokens, `live` for the rest (fail open).
+   * Whether the token behind `claims` was revoked (by jti, device, or its user's revocation when
+   * `sub` and `iat` are given). Redis unavailable: a 503 for `admin` tokens, `live` for the rest
+   * (fail open).
    */
-  async check(claims: Pick<AccessClaims, 'jti' | 'dev' | 'scp'>): Promise<RevocationState> {
+  async check(
+    claims: Pick<AccessClaims, 'jti' | 'dev' | 'scp'> & Partial<Pick<AccessClaims, 'sub' | 'iat'>>,
+  ): Promise<RevocationState> {
     try {
-      const [byJti, byDevice] = await Promise.all([
+      const [byJti, byDevice, byUser] = await Promise.all([
         this.deps.kv.get(jtiKey(claims.jti)),
         claims.dev === undefined ? Promise.resolve(null) : this.deps.kv.get(deviceKey(claims.dev)),
+        claims.sub === undefined ? Promise.resolve(null) : this.deps.kv.get(userKey(claims.sub)),
       ]);
       if (byDevice !== null) return 'device_revoked';
+      if (byUser !== null && claims.iat !== undefined && claims.iat * 1000 <= Number(byUser)) {
+        return 'token_revoked';
+      }
       return byJti === null ? 'live' : 'token_revoked';
     } catch (err) {
       const admin = claims.scp.split(' ').includes(ADMIN_SCOPE);

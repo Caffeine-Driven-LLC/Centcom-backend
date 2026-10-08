@@ -3,11 +3,13 @@
  * `refresh_tokens`. Every use rotates the token in one transaction that locks its row: the
  * presented token is marked used and a new one issued in the same family, valid 30 days (sliding)
  * but never past the family's 180-day absolute expiry. Presenting a spent token again is reuse:
- * the whole family is revoked (committed) and the caller gets `refresh_reuse_detected`.
+ * the whole family is revoked (committed) and the caller gets `refresh_reuse_detected`. A token
+ * staff revoked (B087's admin API, `revoked_reason` `staff`) answers 401 `token_revoked`.
  *
  * Owns: storing, rotating and revoking refresh tokens. Must not: store or log a token, tell an
- * unknown token from a malformed, expired or revoked one (all are `invalid_grant`, one body), or
- * issue a token for a family that was revoked.
+ * unknown token from a malformed, expired or revoked one (all are `invalid_grant`, one body; only
+ * a staff revocation, which the holder is told of, differs), or issue a token for a family that
+ * was revoked.
  */
 import { createHash, randomBytes } from 'node:crypto';
 import { AppError } from '@centcom/core';
@@ -50,6 +52,10 @@ export interface RefreshGrant {
 export const invalidRefreshToken = (): AppError =>
   new AppError('invalid_grant', { detail: 'The refresh token is not valid.' });
 
+/** The token was revoked by staff (B087): the holder must sign in again. */
+export const refreshRevokedByStaff = (): AppError =>
+  new AppError('token_revoked', { detail: 'The refresh token was revoked; sign in again.' });
+
 /** A spent token was presented again; its family is revoked. */
 export const refreshReuseDetected = (): AppError =>
   new AppError('refresh_reuse_detected', {
@@ -59,26 +65,26 @@ export const refreshReuseDetected = (): AppError =>
 type RefreshRow = Selectable<RefreshTokensTable>;
 
 /** What to do with a presented token's row. */
-export type RotationDecision = 'rotate' | 'reuse' | 'invalid';
+export type RotationDecision = 'rotate' | 'reuse' | 'revoked' | 'invalid';
 
 /**
  * Decides a rotation (pure): unknown is invalid; spent is reuse, whatever else is wrong with the
  * request and even when its family is already revoked (CT-AUTH: reuse of a spent token returns
- * `refresh_reuse_detected`); revoked, another client, a revoked device or a passed expiry is
- * invalid.
+ * `refresh_reuse_detected`); revoked by staff is `revoked`; otherwise revoked, another client, a
+ * revoked device or a passed expiry is invalid.
  */
 export function decideRotation(
   row:
-    | Pick<
+    | (Pick<
         RefreshRow,
         'revoked_at' | 'used_at' | 'client_id' | 'expires_at' | 'absolute_expires_at'
-      >
+      > & { revoked_reason?: 'staff' | null })
     | undefined,
   ctx: { nowMs: number; clientId: string; deviceRevoked: boolean },
 ): RotationDecision {
   if (row === undefined) return 'invalid';
   if (row.used_at !== null) return 'reuse';
-  if (row.revoked_at !== null) return 'invalid';
+  if (row.revoked_at !== null) return row.revoked_reason === 'staff' ? 'revoked' : 'invalid';
   if (row.client_id !== ctx.clientId || ctx.deviceRevoked) return 'invalid';
   if (ctx.nowMs >= row.expires_at.getTime() || ctx.nowMs >= row.absolute_expires_at.getTime())
     return 'invalid';
@@ -111,6 +117,8 @@ export interface RefreshStore {
   revokeByToken(token: string, userId: string): Promise<boolean>;
   /** Marks the device revoked and revokes its refresh tokens. */
   revokeDevice(deviceId: string): Promise<void>;
+  /** Revokes every live refresh token of the user as staff did (B087); resolves to how many. */
+  revokeUser(userId: string): Promise<number>;
   /** The device's owner and state; undefined for an unknown device. */
   device(deviceId: string): Promise<{ userId: string; revoked: boolean } | undefined>;
 }
@@ -125,6 +133,7 @@ export interface RefreshStoreDeps {
 type Outcome =
   | { kind: 'rotated'; token: string; grant: RefreshGrant; familyId: string }
   | { kind: 'reuse'; familyId: string }
+  | { kind: 'revoked' }
   | { kind: 'invalid' };
 
 /** Refresh tokens in Postgres. */
@@ -185,6 +194,7 @@ export class RefreshTokenStore implements RefreshStore {
       }
       const decision = decideRotation(row, { nowMs, clientId, deviceRevoked });
       if (row === undefined || decision === 'invalid') return { kind: 'invalid' };
+      if (decision === 'revoked') return { kind: 'revoked' };
       if (decision === 'reuse') {
         await revokeFamilyWith(trx, row.family_id, nowMs);
         return { kind: 'reuse', familyId: row.family_id };
@@ -220,6 +230,7 @@ export class RefreshTokenStore implements RefreshStore {
       throw refreshReuseDetected();
     }
     if (outcome.kind === 'invalid') throw invalidRefreshToken();
+    if (outcome.kind === 'revoked') throw refreshRevokedByStaff();
     return { token: outcome.token, grant: outcome.grant, familyId: outcome.familyId };
   }
 
@@ -259,6 +270,17 @@ export class RefreshTokenStore implements RefreshStore {
         .where('revoked_at', 'is', null)
         .execute();
     });
+  }
+
+  /** Revokes every live refresh token of `userId`, marked as staff's doing; resolves to how many. */
+  async revokeUser(userId: string): Promise<number> {
+    const result = await this.deps.db
+      .updateTable('refresh_tokens')
+      .set({ revoked_at: new Date(this.deps.now()), revoked_reason: 'staff' })
+      .where('user_id', '=', userId)
+      .where('revoked_at', 'is', null)
+      .executeTakeFirst();
+    return Number(result.numUpdatedRows);
   }
 
   /** The device's owner and whether it is revoked; undefined for an unknown device. */

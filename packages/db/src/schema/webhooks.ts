@@ -1,5 +1,5 @@
 /**
- * Table types of outgoing webhooks (B081, migration 20260102002300_webhooks.sql). Written by the
+ * Table types of outgoing webhooks (B081, migration 20260102003000_webhooks.sql). Written by the
  * webhook repository (apps/api `modules/webhooks/repository.ts`); secrets are stored sealed only.
  */
 import type { ColumnType, Generated } from 'kysely';

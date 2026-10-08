@@ -69,6 +69,18 @@ the log (`POST /v1/webhooks/{id}/deliveries/{dlv}/redeliver`) what is needed.
 - **Fairness:** at most 5 attempts in flight per endpoint and 20 per workspace, and responses are
   read up to 64 KiB.
 
+## Retention
+
+The delivery log is kept for **30 days**:
+
+- `webhook_deliveries` rows (each delivery's last result, status and response excerpt) and the
+  `webhook_events` they were sent from are kept for 30 days after they were created. After that
+  they are purged in batches, by `created_at` (both tables have an index on it).
+- The purge is the retention job's (B090), not this lane's. Until B090 runs it, older rows stay,
+  and a purged delivery can no longer be listed or redelivered.
+- `webhook_outbox` rows are deleted as soon as they are drained, and endpoints (with their
+  deliveries) go with their workspace.
+
 ## Metrics
 
 | Metric                             | Watch for                                                                                             |

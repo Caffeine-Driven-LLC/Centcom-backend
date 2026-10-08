@@ -12,8 +12,8 @@
 --   receiver's answer are kept; no request body.
 -- - webhook_outbox: events waiting for Redis, drained in id order.
 --
--- Rows go with their workspace or endpoint. Named after main's newest migration (20260102002200,
--- B075) instead of the card's 081_*.
+-- Rows go with their workspace or endpoint. Named after main's newest migration (20260102002900,
+-- B087) instead of the card's 081_*.
 
 create table webhook_endpoints (
   id text primary key check (id ~ '^whk_[0-9A-HJKMNP-TV-Z]{26}$'),

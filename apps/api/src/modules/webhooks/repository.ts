@@ -191,7 +191,7 @@ const deliveryOf = (r: DeliveryRow): DeliveryRecord => ({
   updatedAt: r.updated_at,
 });
 
-/** The repository on Postgres (migration 20260102002300). */
+/** The repository on Postgres (migration 20260102003000). */
 export function createWebhookRepository<DB extends WebhookDb>(
   database: Kysely<DB>,
 ): WebhookRepository {

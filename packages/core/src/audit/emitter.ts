@@ -85,8 +85,8 @@ export interface AuditEmitterOptions<A extends string> {
   /** Writes `audit.*` lines: actions, counts and error codes, never event contents. */
   logger?: Logger;
   /**
-   * Receives `audit_events_written_total{path}`, `audit_events_dropped_total{reason}` and
-   * `audit_emit_latency_ms{path}` (`path`: `emit` or `detached`).
+   * Receives `audit_events_written_total{mode}`, `audit_events_dropped_total{reason}` and
+   * `audit_emit_latency_ms{mode}` (`mode`: `emit` or `detached`).
    */
   metrics?: Metrics;
   /** Milliseconds since the epoch, for `created_at`, ids and flush deadlines; default Date.now. */
@@ -175,8 +175,8 @@ class Emitter<A extends string> implements AuditEmitter<A> {
     this.#clock = options.clock ?? Date.now;
     this.#latency = this.#metrics.histogram('audit_emit_latency_ms', AUDIT_LATENCY_BUCKETS_MS);
     this.#written = {
-      emit: this.#metrics.counter('audit_events_written_total', { path: 'emit' }),
-      detached: this.#metrics.counter('audit_events_written_total', { path: 'detached' }),
+      emit: this.#metrics.counter('audit_events_written_total', { mode: 'emit' }),
+      detached: this.#metrics.counter('audit_events_written_total', { mode: 'detached' }),
     };
   }
 
@@ -197,7 +197,7 @@ class Emitter<A extends string> implements AuditEmitter<A> {
     await trx.executeQuery(insertOne(row));
     // The row is in the caller's transaction: a broken metrics backend must not fail it now.
     this.#quietly(() => {
-      this.#latency.observe(performance.now() - started, { path: 'emit' });
+      this.#latency.observe(performance.now() - started, { mode: 'emit' });
       this.#written.emit.inc();
     });
     return row.id;
@@ -353,7 +353,7 @@ class Emitter<A extends string> implements AuditEmitter<A> {
     this.#quietly(() => {
       if (written > 0) this.#written.detached.inc(written);
       if (unwritten.length === 0) {
-        this.#latency.observe(performance.now() - started, { path: 'detached' });
+        this.#latency.observe(performance.now() - started, { mode: 'detached' });
       } else {
         this.#logger?.warn(
           { error_code: errorCode(failure), attempt: this.#failures, pending: this.#queue.length },
