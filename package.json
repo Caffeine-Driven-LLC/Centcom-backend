@@ -16,7 +16,10 @@
     "format": "prettier --write .",
     "contracts:gen": "pnpm --filter @centcom/contracts run contracts:gen",
     "contracts:check": "pnpm --filter @centcom/contracts run contracts:check",
-    "dev:up": "bash tools/dev/up.sh"
+    "dev:up": "bash tools/dev/up.sh",
+    "dev:down": "bash tools/dev/down.sh",
+    "dev:reset": "bash tools/dev/reset.sh",
+    "dev:seed": "tsx --tsconfig tsconfig.test.json tools/dev/seed.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
