@@ -19,10 +19,18 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "gen:config-docs": "tsx scripts/gen-config-docs.ts"
+    "gen:config-docs": "tsx scripts/gen-config-docs.ts",
+    "gen:slo-rules": "tsx scripts/gen-slo-rules.ts"
   },
   "dependencies": {
     "@centcom/contracts": "workspace:*",
+    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/core": "2.12.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "0.223.0",
+    "@opentelemetry/exporter-trace-otlp-http": "0.223.0",
+    "@opentelemetry/resources": "2.12.0",
+    "@opentelemetry/sdk-metrics": "2.12.0",
+    "@opentelemetry/sdk-trace-base": "2.12.0",
     "ioredis": "6.0.0",
     "kysely": "0.29.6",
     "pino": "10.4.0",
@@ -30,6 +38,7 @@
   },
   "devDependencies": {
     "fast-check": "4.10.2",
-    "tsx": "4.23.15"
+    "tsx": "4.23.15",
+    "yaml": "2.9.1"
   }
 }

@@ -1,7 +1,7 @@
 /**
  * @centcom/testkit (B010): the backend's test harness. A migrated Postgres database and a Redis
  * namespace per test file (`startTestStack`, on CI's services or on containers), a MinIO object
- * store (`startMinio`, B082), factories for the core schema, a fake clock and seeded randomness,
+ * store (`startMinio`, B082), observability containers (collector, Grafana, promtool; B093), factories for the core schema, a fake clock and seeded randomness,
  * the contract fixture runner and a Fastify app helper. Test-only: other packages list it as a
  * devDependency, and production code never imports it.
  */
@@ -49,3 +49,13 @@ export {
 } from './fixtures.js';
 export { withApp, type AppHandle } from './app.js';
 export { MINIO_IMAGE, startMinio, type TestMinio } from './minio.js';
+export {
+  GRAFANA_IMAGE,
+  OTEL_COLLECTOR_IMAGE,
+  PROMETHEUS_IMAGE,
+  runPromtool,
+  startCollector,
+  startGrafana,
+  type TestCollector,
+  type TestGrafana,
+} from './observability.js';

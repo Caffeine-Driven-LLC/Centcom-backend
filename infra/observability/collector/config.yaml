@@ -1,0 +1,184 @@
+# Centcom's OpenTelemetry collector (B093): receives OTLP from the api, relay and worker, redacts
+# again what the services already redacted, keeps every error and slow trace and 5 % of the rest,
+# labels metrics with env and region, and sends metrics, traces and logs on to Mimir, Tempo and
+# Loki (Grafana Cloud's OTLP gateway serves all three: point the three endpoints at it).
+#
+# Image: otel/opentelemetry-collector-contrib (see docs/ops/observability.md for the version).
+#
+# Environment (names only; values come from the secret manager at deploy time, B091):
+#   MIMIR_OTLP_ENDPOINT, TEMPO_OTLP_ENDPOINT, LOKI_OTLP_ENDPOINT   OTLP/HTTP base URLs
+#   GRAFANA_OTLP_AUTHORIZATION                                      the Authorization header value
+#
+# The collector listens on the private network only; services reach it at
+# OTEL_EXPORTER_OTLP_ENDPOINT (http://<collector>:4318).
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 80
+    spike_limit_percentage: 20
+
+  # Attributes that must never be stored: credentials, frame fields, the client's address.
+  attributes/redact:
+    actions:
+      - key: authorization
+        action: delete
+      - key: http.request.header.authorization
+        action: delete
+      - key: cookie
+        action: delete
+      - key: http.request.header.cookie
+        action: delete
+      - key: set-cookie
+        action: delete
+      - key: http.response.header.set-cookie
+        action: delete
+      - key: ct
+        action: delete
+      - key: p
+        action: delete
+      - key: ticket
+        action: delete
+      - key: token
+        action: delete
+      - key: client.address
+        action: delete
+      - key: client.port
+        action: delete
+      - key: http.client_ip
+        action: delete
+      - key: net.peer.ip
+        action: delete
+      - key: net.sock.peer.addr
+        action: delete
+      - key: network.peer.address
+        action: delete
+      - key: source.address
+        action: delete
+      - key: user_agent.original
+        action: delete
+      - pattern: (?i)^.*(authorization|cookie|password|secret|api[_-]?key|token|ticket)$
+        action: delete
+
+  resource/redact:
+    attributes:
+      - key: host.ip
+        action: delete
+      - key: process.command_args
+        action: delete
+      - key: process.command_line
+        action: delete
+
+  # Ids of people, places and content, and e-mail addresses, in any remaining string value.
+  transform/scrub:
+    error_mode: ignore
+    trace_statements:
+      - context: span
+        statements:
+          - 'replace_all_patterns(attributes, "value", "(usr|ses|wsp|agt|dev|que|mem|msg|inv|apr|key|sub|whk|dlv|ntf|aud|snp|prj|blb|exp|psh|use|inc)_[0-9A-HJKMNP-TV-Z]{26}", "$$1_[id]")'
+          - 'replace_all_patterns(attributes, "value", "[^ @<>'']+@[^ @<>'']+[.][A-Za-z]{2,}", "[email]")'
+    log_statements:
+      - context: log
+        statements:
+          - 'replace_all_patterns(attributes, "value", "(usr|ses|wsp|agt|dev|que|mem|msg|inv|apr|key|sub|whk|dlv|ntf|aud|snp|prj|blb|exp|psh|use|inc)_[0-9A-HJKMNP-TV-Z]{26}", "$$1_[id]")'
+          - 'replace_all_patterns(attributes, "value", "[^ @<>'']+@[^ @<>'']+[.][A-Za-z]{2,}", "[email]")'
+
+  # The dashboards' env and region variables, from the resource.
+  transform/labels:
+    error_mode: ignore
+    metric_statements:
+      - context: datapoint
+        statements:
+          - set(attributes["env"], resource.attributes["deployment.environment.name"])
+          - set(attributes["region"], resource.attributes["cloud.region"]) where resource.attributes["cloud.region"] != nil
+
+  # Every error and every slow trace, and 5 % of the rest.
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 50000
+    expected_new_traces_per_sec: 100
+    policies:
+      - name: errors
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: slow
+        type: latency
+        latency:
+          threshold_ms: 1000
+      - name: rest
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 5
+
+  batch:
+    timeout: 5s
+    send_batch_size: 1024
+    send_batch_max_size: 2048
+
+exporters:
+  otlphttp/mimir:
+    endpoint: ${env:MIMIR_OTLP_ENDPOINT}
+    headers:
+      authorization: ${env:GRAFANA_OTLP_AUTHORIZATION}
+    compression: gzip
+    timeout: 5s
+    sending_queue:
+      enabled: true
+      queue_size: 2048
+    retry_on_failure:
+      enabled: true
+      max_elapsed_time: 60s
+  otlphttp/tempo:
+    endpoint: ${env:TEMPO_OTLP_ENDPOINT}
+    headers:
+      authorization: ${env:GRAFANA_OTLP_AUTHORIZATION}
+    compression: gzip
+    timeout: 5s
+    sending_queue:
+      enabled: true
+      queue_size: 2048
+    retry_on_failure:
+      enabled: true
+      max_elapsed_time: 60s
+  otlphttp/loki:
+    endpoint: ${env:LOKI_OTLP_ENDPOINT}
+    headers:
+      authorization: ${env:GRAFANA_OTLP_AUTHORIZATION}
+    compression: gzip
+    timeout: 5s
+    sending_queue:
+      enabled: true
+      queue_size: 2048
+    retry_on_failure:
+      enabled: true
+      max_elapsed_time: 60s
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors:
+        [memory_limiter, attributes/redact, resource/redact, transform/scrub, tail_sampling, batch]
+      exporters: [otlphttp/tempo]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, attributes/redact, resource/redact, transform/labels, batch]
+      exporters: [otlphttp/mimir]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, attributes/redact, resource/redact, transform/scrub, batch]
+      exporters: [otlphttp/loki]
