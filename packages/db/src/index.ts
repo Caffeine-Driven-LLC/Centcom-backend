@@ -177,6 +177,11 @@ export type {
   SealedColumn,
 } from './schema/push-subscriptions.js';
 export type {
+  NotificationPrefDatabase,
+  NotificationPrefDb,
+  NotificationPrefTable,
+} from './schema/notification-preferences.js';
+export type {
   IdentitiesDatabase,
   IdentitiesTable,
   IdentityProvider,
