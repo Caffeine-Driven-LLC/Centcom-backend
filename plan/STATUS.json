@@ -7,7 +7,7 @@
   },
   "B002": {
    "pct": 1,
-   "note": "merged in #2"
+   "note": "merged in #49"
   },
   "B003": {
    "pct": 1,
@@ -116,6 +116,10 @@
   "B019": {
    "pct": 1,
    "note": "merged in #40"
+  },
+  "B030": {
+   "pct": 1,
+   "note": "merged in #51"
   }
  },
  "next": [
