@@ -302,6 +302,29 @@ export function createHistoryStore(
   };
 }
 
+/**
+ * The history side of B027's workspace purge: purges the history of every session of a (deleted)
+ * workspace, blobs first, before the purge deletes the sessions (whose rows the history references
+ * with ON DELETE RESTRICT). Idempotent: a session without history purges nothing.
+ */
+export function createWorkspaceHistoryPurger(deps: {
+  db: Kysely<HistoryDatabase>;
+  store: Pick<HistoryStore, 'purge'>;
+}): { purgeWorkspace(workspaceId: string): Promise<{ sessions: number; frames: number }> } {
+  return {
+    async purgeWorkspace(workspaceId) {
+      const sessions = await deps.db
+        .selectFrom('sessions')
+        .select('id')
+        .where('workspace_id', '=', workspaceId)
+        .execute();
+      let frames = 0;
+      for (const { id } of sessions) frames += (await deps.store.purge(id)).deleted;
+      return { sessions: sessions.length, frames };
+    },
+  };
+}
+
 /** When a session's history expires: `historyDays` after it ended (0 days: at once). */
 export function retentionExpiry(endedAt: Date, historyDays: number): Date {
   return new Date(endedAt.getTime() + Math.max(0, historyDays) * 24 * 60 * 60 * 1000);

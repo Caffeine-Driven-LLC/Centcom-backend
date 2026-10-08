@@ -29,7 +29,7 @@ create table history_index (
   -- The epoch key id of `ct` (CT-CRYPTO); null for a frame without `ct`.
   kid text check (char_length(kid) between 1 and 64),
   blob_key text not null check (
-    char_length(blob_key) <= 80
+    char_length(blob_key) <= 100
     and blob_key ~ '^history/ses_[0-9A-HJKMNP-TV-Z]{26}/[0-9]{1,19}-[0-9]{1,19}\.bin$'
   ),
   primary key (session_id, seq)

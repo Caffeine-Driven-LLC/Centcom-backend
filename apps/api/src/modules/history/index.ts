@@ -36,6 +36,7 @@ export {
 } from './service.js';
 export {
   createHistoryStore,
+  createWorkspaceHistoryPurger,
   retentionExpiry,
   toStoredFrame,
   type HistoryStoreDeps,

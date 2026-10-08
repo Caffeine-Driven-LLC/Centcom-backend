@@ -1,5 +1,5 @@
 /**
- * Table types of the durable history index (B055, migration 20260102003400_history_index.sql).
+ * Table types of the durable history index (B055, migration 20260102003600_history_index.sql).
  * Written by the API's history module; the frames themselves are in the object store.
  */
 import type { ColumnType } from 'kysely';

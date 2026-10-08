@@ -11,8 +11,10 @@
 import type { HistoryDatabase } from '@centcom/db';
 import type { Kysely } from 'kysely';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { createWorkspaceStore } from '@centcom/db';
 import {
   createHistoryStore,
+  createWorkspaceHistoryPurger,
   createMemoryBlobStore,
   encodeBatch,
   historyBlobKey,
@@ -123,6 +125,38 @@ describe.runIf(ADMIN_URL !== undefined)('history purge on Postgres 16', () => {
     await blobs.put(historyBlobKey(sid, 1, 3), orphan.body);
     expect(await store.purge(sid)).toEqual({ deleted: 0, blobs: 1 });
     expect(blobs.objects.size).toBe(0);
+  });
+
+  it('lets B027 purge a workspace with history once the history hook ran (review finding)', async () => {
+    const blobs = createMemoryBlobStore();
+    const store = createHistoryStore({ db, blobs });
+    const owner = await pgUser(test.db);
+    const workspaceId = await pgWorkspace(test.db, owner);
+    const sessions = [
+      await pgSession(test.db, workspaceId, owner),
+      await pgSession(test.db, workspaceId, owner),
+    ];
+    for (const sid of sessions) {
+      await store.append(sid, storedRange(sid, 1, 20));
+      await store.setExpiry(sid, new Date());
+    }
+    // A session without history is purged as a no-op.
+    await pgSession(test.db, workspaceId, owner);
+    await test.db
+      .updateTable('workspaces')
+      .set({ deleted_at: new Date() })
+      .where('id', '=', workspaceId)
+      .execute();
+    const workspaces = createWorkspaceStore(test.db);
+    // Without the hook the history's foreign keys stop the purge.
+    await expect(workspaces.purge(workspaceId)).rejects.toMatchObject({ code: '23503' });
+
+    const purger = createWorkspaceHistoryPurger({ db, store });
+    expect(await purger.purgeWorkspace(workspaceId)).toEqual({ sessions: 3, frames: 40 });
+    expect(blobs.objects.size).toBe(0);
+    expect(await workspaces.purge(workspaceId)).toEqual({ purged: true });
+    // A re-run finds nothing to do.
+    expect(await purger.purgeWorkspace(workspaceId)).toEqual({ sessions: 0, frames: 0 });
   });
 
   it('computes retention from the plan’s history_days', () => {
