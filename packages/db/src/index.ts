@@ -181,7 +181,16 @@ export type {
   NotificationPrefDb,
   NotificationPrefTable,
 } from './schema/notification-preferences.js';
-export type { UsageDatabase, UsageDb, UsageEventTable } from './schema/usage.js';
+export type {
+  QuotaStateTable,
+  UsageAggregateCursorTable,
+  UsageAggregationDatabase,
+  UsageAggregationDb,
+  UsageCounterTable,
+  UsageDatabase,
+  UsageDb,
+  UsageEventTable,
+} from './schema/usage.js';
 export type {
   IdentitiesDatabase,
   IdentitiesTable,
