@@ -125,3 +125,30 @@ registerWorkspaceSettingsPurgeHook(hooks, createWorkspaceSettingsStore(db)); // 
 
 - **Tests:** `test/workspace-settings-purge.test.ts`: the hook runs before the purge, twice
   harmlessly, and its name is taken once.
+
+## `notify.dispatch` and `notify.digest` (B063)
+
+The BullMQ side of the notification dispatcher
+([README](../api/src/modules/notifications/dispatcher/README.md)). The processing is injected:
+`process` is the API's `NotificationDispatcher.process`, `run` its `runDigest`.
+
+```ts
+const deadLetter = createNotifyDeadLetterQueue({ connection, prefix });
+startNotifyDispatchWorker({
+  connection,
+  prefix,
+  deadLetter,
+  process: (job) => dispatcher.process(job),
+});
+const digest = createNotifyDigestQueue({ connection, prefix });
+await scheduleNotifyDigest(digest); // one hourly schedule per queue
+startNotifyDigestWorker({ connection, prefix, run: () => runDigest({ store, email }) });
+```
+
+- **Dispatch:** 5 attempts, exponential backoff from 5 s with jitter 0.5; after the last, the
+  event is copied to `notify.dispatch.dlq` (job `dead-<event id>`, kept 7 days) for an operator to
+  replay, counted in `notification_dispatch_failed_total` and logged by error kind only.
+  Dispatching is idempotent, so a retry only finishes a partial run.
+- **Digest:** hourly, one run at a time, 3 attempts; a run is idempotent.
+- **Tests:** `test/notify-dispatch.test.ts`: options, dead-lettering, and on Redis 7 (CI) a
+  dispatch failing 5 times into the dead-letter queue and the hourly schedule.

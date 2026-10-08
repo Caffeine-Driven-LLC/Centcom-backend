@@ -201,6 +201,22 @@ table), and `createWorkspaceSettingsStore(db)` (`src/repos/workspace-settings.ts
   worker's `workspace-settings` purge hook) before B027's purge; it does nothing for a live
   workspace.
 
+## Notifications (B063)
+
+[`migrations/20260102001400_notifications.sql`](migrations/20260102001400_notifications.sql)
+creates `notifications`; `src/schema/notifications.ts` types it (`NotificationDb`), and
+`createNotificationStore(db)` (`src/repos/notifications.ts`) is its SQL and the recipient lookups.
+
+- **One per user and event:** `(user_id, event_id)` is unique; `insert` answers `duplicate_event`.
+- **Dedupe window:** a row with the same `dedupe_key` for the user within the window makes
+  `insert` answer `deduped`; the check and the insert run under `pg_advisory_xact_lock` on
+  (user, key), so concurrent events make one row.
+- **Digest:** `takeDigest` locks a user's pending items (`for update skip locked`), calls `send`,
+  and marks them sent in one transaction.
+- **Recipients:** active users only; workspace members of live workspaces; session members whose
+  `left_at` is null.
+- **Foreign key:** `user_id` restricts; B026's account deletion deletes a user's notifications first.
+
 ## Tests
 
 `test/runner/` holds the tests of the client and the runner, `test/schema/` those of the schemas.
