@@ -16,3 +16,9 @@ c5a1eff1dfe7301923c4ff9e4bfbdbfb90d87eb3:plan/lanes/backend/B101.json:aws-access
 # file cannot shift them; a squash merge never brings the commit to main.
 a4852c89d6c40af30617ab092f0c2f7a0a854185:packages/contracts/src/generated/validators.js:generic-api-key:35353
 a4852c89d6c40af30617ab092f0c2f7a0a854185:packages/contracts/src/generated/validators.js:generic-api-key:35410
+#
+# Deliberate test values in the B019 API-key tests: a fake ULID idempotency key and a 31-byte
+# too-short pepper used to assert rejection (lane B019).
+d913b969d1cc5942d5b1f0af866bbba06383edc2:apps/api/test/modules/apikeys/routes.test.ts:generic-api-key:142
+d913b969d1cc5942d5b1f0af866bbba06383edc2:apps/api/test/modules/apikeys/routes.test.ts:generic-api-key:171
+d913b969d1cc5942d5b1f0af866bbba06383edc2:apps/api/test/modules/apikeys/config.test.ts:generic-api-key:20
