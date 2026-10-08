@@ -50,7 +50,7 @@ begin
       using errcode = 'invalid_parameter_value';
   end if;
   execute format(
-    'create table if not exists %I partition of telemetry_events for values from (%L) to (%L)',
+    'create table if not exists public.%I partition of public.telemetry_events for values from (%L) to (%L)',
     'telemetry_events_' || to_char(p_day, 'YYYYMMDD'), p_day, p_day + 1
   );
 exception
@@ -76,12 +76,13 @@ begin
     from pg_inherits i
     join pg_class c on c.oid = i.inhrelid
     join pg_class p on p.oid = i.inhparent
-    where p.relname = 'telemetry_events'
+    where p.oid = 'public.telemetry_events'::regclass
+      and c.relnamespace = 'public'::regnamespace
       and c.relname ~ '^telemetry_events_[0-9]{8}$'
       and to_date(substr(c.relname, 18), 'YYYYMMDD') < p_before
     order by c.relname
   loop
-    execute format('drop table %I', part);
+    execute format('drop table public.%I', part);
     return next part;
   end loop;
 end;
