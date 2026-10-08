@@ -175,6 +175,7 @@ describe.runIf(ADMIN_URL !== undefined)('account matching on Postgres 16', () =>
       users: new UserService({ db: t.db, newId, now: () => new Date() }),
       identities: createIdentityRepo(db),
       fetch: providers.fetch,
+      // The fake Google ID tokens are signed at T0 and expire an hour later.
       now: () => T0,
     }),
   });

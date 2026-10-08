@@ -320,22 +320,23 @@ async function createStack(opts: TestStackOptions, onStop?: () => void): Promise
         where schemaname = 'public' and tablename <> 'schema_migrations'
       `.execute(db);
       if (rows.length > 0) {
-        const hasAudit = rows.some((r) => r.name === 'audit_events');
-        // audit_events refuses TRUNCATE (append-only trigger), also when a cascade reaches it. The
-        // test database is disposable, so lift the trigger for this one transaction.
+        const tables = sql.join(rows.map((r) => sql.table(r.name)));
+        // Append-only tables (audit_events, B036) refuse TRUNCATE through a trigger. The stack's
+        // role owns this throwaway database, so it switches user triggers off for the truncate
+        // only, in one transaction: a failure leaves every trigger in place.
+        const guarded = await sql<{ name: string }>`
+          select distinct c.relname as name from pg_trigger t
+          join pg_class c on c.oid = t.tgrelid
+          join pg_namespace n on n.oid = c.relnamespace
+          where n.nspname = 'public' and not t.tgisinternal
+        `.execute(db);
         await db.transaction().execute(async (trx) => {
-          if (hasAudit) {
-            await sql`alter table audit_events disable trigger audit_events_append_only`.execute(
-              trx,
-            );
+          for (const { name } of guarded.rows) {
+            await sql`alter table ${sql.table(name)} disable trigger user`.execute(trx);
           }
-          await sql`truncate table ${sql.join(rows.map((r) => sql.table(r.name)))} restart identity cascade`.execute(
-            trx,
-          );
-          if (hasAudit) {
-            await sql`alter table audit_events enable trigger audit_events_append_only`.execute(
-              trx,
-            );
+          await sql`truncate table ${tables} restart identity cascade`.execute(trx);
+          for (const { name } of guarded.rows) {
+            await sql`alter table ${sql.table(name)} enable trigger user`.execute(trx);
           }
         });
       }
