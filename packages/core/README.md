@@ -2,8 +2,8 @@
 
 Shared platform primitives for the backend services. Today this is configuration (lane B004),
 logging (B005), errors (B006), Redis (B009, [`src/redis/README.md`](src/redis/README.md)), RBAC
-(B021), rate limiting (B023), idempotency (B024), pagination (B025) and email (B032). The rest
-arrive with their lanes.
+(B021), rate limiting (B023), idempotency (B024), pagination (B025), email (B032) and deep links
+(B033). The rest arrive with their lanes.
 
 ## Configuration (B004)
 
@@ -673,3 +673,73 @@ await email.send(
 - **`service.test.ts`:** queueing, the per-recipient limit, idempotency keys, Redis and queue
   failures, and logging.
 - **`config.test.ts`:** the configuration, and the memory and console providers.
+
+## Deep links (B033)
+
+Every Centcom link in CT-DEEPLINK's table (`src/deeplink/`): builders for the web and app form,
+a strict parser, link tokens and their lifetimes, and the fragment guard. The Fastify plugin that
+puts the invite and notification builders on the API is `deeplinksPlugin` in
+`apps/api/src/modules/deeplinks/` ([README](../../apps/api/README.md#deep-links-b033)).
+
+```ts
+import { buildJoinUrl, deeplinkConfig, generateLinkToken, parseDeepLink } from '@centcom/core';
+
+const { webBase } = deeplinkConfig(); // WEB_BASE_URL, https://centcom.dev by default
+buildJoinUrl(generateLinkToken(), webBase); // { web: 'https://centcom.dev/j/…', app: 'centcom://join/…' }
+parseDeepLink('centcom://session/ses_…?focus=approval', { webBase });
+// { ok: true, kind: 'session', form: 'app', sessionId: 'ses_…', focus: 'approval' }, or { ok: false }
+```
+
+| Purpose                 | Web URL             | App URL                                  | Builder                          |
+| ----------------------- | ------------------- | ---------------------------------------- | -------------------------------- |
+| Join a session          | `<base>/j/<token>`  | `centcom://join/<token>`                 | `buildJoinUrl(token, base?)`     |
+| Open a session          | `<base>/s/<ses_id>` | `centcom://session/<ses_id>[?focus=…]`   | `buildSessionUrl(id, focus?, …)` |
+| Auth callback (desktop) | none                | `centcom://auth/callback?code=…&state=…` | `buildAuthCallbackUrl(code, st)` |
+| Upgrade / billing       | `<base>/billing`    | `centcom://billing`                      | `buildBillingUrl(base?)`         |
+| Accept workspace invite | `<base>/i/<token>`  | `centcom://invite/<token>`               | `buildInviteUrl(token, base?)`   |
+| Join as viewer guest    | `<base>/g/<token>`  | `centcom://share/<token>`                | `buildShareUrl(token, base?)`    |
+
+### Public interface
+
+| Export                                                            | What it is                                                                       |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `build*Url(…)`, `LinkPair`, `SessionFocus`                        | The builders above; each throws a TypeError for input off the table              |
+| `parseDeepLink(input, {webBase?})`, `DeepLink`, `NotADeepLink`    | `{ok: true, kind, form, …}` or `{ok: false}`; never throws on its input          |
+| `generateLinkToken(rng?)`, `LINK_TTL`, `RandomSource`             | 160-bit tokens from the CSPRNG; invites last 7 days, share links 24 h at most    |
+| `assertServerUrl(url)`, `withKeyFragment(url, key)`               | The fragment guard; `#k=` for tests that play a client (never in server code)    |
+| `deeplinkConfig(env?)`, `webOrigin(base)`, `DEFAULT_WEB_BASE_URL` | Configuration ([docs/config.md](../../docs/config.md#deep-links)) and its checks |
+
+### Rules
+
+- **No key material:** a URL the server builds never has a fragment (`assertServerUrl` runs on
+  every one, so a token with `#` throws), and the parser refuses a fragment or a `k` parameter.
+  `withKeyFragment` exists for tests; a test fails if any server source calls it or writes `#k=`.
+- **Strict parsing:** the match is literal (the configured origin exactly, lower case, no port or
+  credentials unless the origin has them; `centcom://`; the table's paths with no trailing `/`),
+  not a URL parser's normalised reading, so `https:\\centcom.dev\j\…` or `/%6A/` is refused.
+  - Tokens are 27 base64url characters; session ids pass CT-IDS (`ses_` and 26 Crockford base32).
+  - Unknown query parameters are ignored. `focus` (`approval` or `queue`), `code` and `state` (1
+    to 512 unreserved characters) must appear once with a valid value.
+  - Inputs over 2 048 characters are refused before any matching.
+- **Neutral refusals:** every refusal is the same frozen `{ ok: false }`: no reason, no echo.
+- **Builders:** take tokens of 1 to 64 base64url characters (`buildJoinUrl('T')` works; the
+  server's tokens are 27), a `ses_` id, and add only the parameters the table names: no
+  `return_to` or other redirect parameter.
+- **Origin:** `WEB_BASE_URL` must be https with nothing but an origin; anything else stops the
+  process at boot (`ConfigError`).
+- **Tokens:** 20 bytes from `node:crypto`'s `randomBytes`, never derived from ids or time. A
+  source that throws or gives the wrong number of bytes throws; there is no fallback. No
+  `Math.random` anywhere in the deep-link code (a test checks).
+
+### Tests
+
+`test/deeplink/`:
+
+- **`deeplink.build.test.ts`:** golden URLs for every row of the table, read from
+  `contracts/08-integrations.md` (a new row fails the test until it is built), `WEB_BASE_URL`,
+  refusals, no `#` in any built URL, the fragment helpers, and the server-source check.
+- **`deeplink.parse.test.ts`:** the accept and refuse matrix, unknown parameters, neutral results.
+- **`deeplink.fuzz.test.ts`:** 10 000 generated strings (arbitrary, edited links, assembled near
+  misses) never throw, and are accepted only when an independent oracle of the table accepts them.
+- **`deeplink.token.test.ts`:** length and alphabet, 1 000 000 draws without a collision, the
+  CSPRNG, source failures, `LINK_TTL`, and no `Math.random`.

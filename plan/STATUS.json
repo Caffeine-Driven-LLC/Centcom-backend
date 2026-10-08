@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-07",
+ "updated": "2026-10-08",
  "lanes": {
   "B001": {
    "pct": 1,
@@ -84,6 +84,22 @@
   "B028": {
    "pct": 1,
    "note": "merged in #33"
+  },
+  "B033": {
+   "pct": 1,
+   "note": "merged in #42"
+  },
+  "B063": {
+   "pct": 1,
+   "note": "merged in #45"
+  },
+  "B034": {
+   "pct": 1,
+   "note": "merged in #43"
+  },
+  "B069": {
+   "pct": 1,
+   "note": "merged in #46"
   }
  },
  "next": [

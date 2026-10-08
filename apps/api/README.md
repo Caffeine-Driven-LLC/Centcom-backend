@@ -222,7 +222,8 @@ app.get(
   - Every use rotates the token in one transaction that locks its row, sliding 30 days within
     180 days absolute.
   - A spent token presented again revokes the whole family (`refresh_reuse_detected`, logged as
-    `auth.refresh_reuse_detected` with the family id).
+    `auth.refresh_reuse_detected` with the family id), and stays reuse after the family is
+    revoked: every loser of a refresh race gets `refresh_reuse_detected`.
   - Every other problem is one `invalid_grant` body.
   - `scope` on a refresh may narrow the access token, never widen it.
 - **Hooks for other lanes:**
@@ -630,7 +631,7 @@ const service = new WorkspaceService({
   logger,
   metrics,
 });
-service.extensions.register(settingsExtension); // B034: owns PATCH `settings`
+service.extensions.register(settings.patchExtension()); // B034: owns PATCH `settings`
 // after the request-context, error-handler, idempotency, RBAC and audit plugins:
 await app.register(workspaceRoutes, { service, cursorKeys: paginationConfig().signingKeys });
 ```
@@ -653,7 +654,9 @@ Crème` → `cafe-creme`), with the next free numeric suffix; a slug race retrie
 - **Update:** the row is locked and the ETag checked, then the name and the extension fields
   change and the version moves on, in one transaction: of two PATCHes with one ETag exactly one
   wins. Unknown fields are ignored; a body with nothing to change is a 422. Extensions
-  (`service.extensions.register({key, parse, apply})`) own fields such as `settings`.
+  (`service.extensions.register({key, parse, apply})`) own fields such as `settings`: `apply`
+  runs in the transaction with the request's audit context, and may return a step (an
+  announcement) that runs after the commit.
 - **Delete:** hides the workspace and writes `workspace.delete` (account-level, so it outlives the
   purge) in one transaction; then announces `workspace.deleted` on `centcom:workspace-events`,
   drops cached roles (`rbac:invalidate`) and queues `workspace-purge` (job `purge-<wsp>`). Their
@@ -677,6 +680,66 @@ Crème` → `cafe-creme`), with the next free numeric suffix; a slug race retrie
 - **`workspaces.pagination.test.ts`:** 120 workspaces, limits, cursors across changes and callers.
 - **`workspaces.validation.test.ts`:** names, slugs (property tests).
 - **`workspaces.postgres.test.ts`:** the routes over the SQL store (CI).
+
+## Workspace settings (B034)
+
+A workspace's policies (`src/modules/workspace-settings/`, CT-API-WORKSPACES `WorkspaceSettings`):
+the default auto-approve level, history sharing and the retention override. The SQL is
+`createWorkspaceSettingsStore` in @centcom/db; the purge hook is `workspace-settings` in
+@centcom/worker.
+
+```ts
+const settings = new WorkspaceSettingsService({
+  store: createWorkspaceSettingsStore(db),
+  entitlements: freePlanHistoryDays, // B069's reader of `history_days` when it exists
+  events: redis.pubsub,
+  logger,
+  metrics,
+});
+service.extensions.register(settings.patchExtension()); // `settings` in PATCH /v1/workspaces/{id}
+await app.register(workspaceSettingsRoutes, { service: settings }); // after the workspace routes
+```
+
+| Route                                  | Scope              | Who     | Answers                                                       |
+| -------------------------------------- | ------------------ | ------- | ------------------------------------------------------------- |
+| `GET /v1/workspaces/{id}/settings`     | `workspaces:read`  | member+ | The settings and their `ETag` (`"s<version>"`); guests: 403   |
+| `PATCH /v1/workspaces/{id}/settings`   | `workspaces:write` | admin+  | `If-Match` required (400 without, 412 stale); 200, new `ETag` |
+| `PATCH /v1/workspaces/{id}` `settings` | `workspaces:write` | admin+  | The same change under the workspace's `ETag`                  |
+
+- **Defaults:** `auto_approve` `ask`, `share_history` true, `history_retention_days` null, ETag
+  `"s0"`, until the first change creates the row. The settings' ETags (`"s…"`) are their own: a
+  workspace ETag (`"v…"`) never matches them, and the other way round.
+- **Values:** `auto_approve` is exactly `ask`, `trusted` or `everyone` (CT-WS-QUEUE rule 3 /
+  `control.policy`); `share_history` a boolean; `history_retention_days` null (the plan's) or whole
+  days up to the plan's `history_days` (422 above; 503 `retry_after_s: 1` while entitlements are
+  unavailable, for that field only). Unknown fields are ignored and never stored; a body naming no
+  setting is a 422.
+- **One code path:** both routes lock the workspace row, check the ETag, check the cap, write the
+  row with the next version and audit, in one transaction; two PATCHes with one ETag: one 200, one 412. A change that changes nothing writes nothing (the ETag stays).
+- **Audit:** `workspace.update` with `fields` (the changed keys) and each one's `*_from` / `*_to`
+  (`auto_approve`, `share_history`, `retention_days`): enums, flags and days, no text. Through the
+  workspace PATCH, B027's own `workspace.update` (`fields: settings`) is written too.
+- **Announce:** after the commit, one `workspace.settings_changed` `{wsp, changed, at}` on
+  `centcom:workspace-events` (the relay and the retention job re-read the settings); tried 4 times
+  (100, 200, 400 ms apart), then logged (`workspace.settings_publish_failed`) and counted
+  (`workspace_settings_publish_failures_total`): the stored value stands.
+- **Defaults only:** the server never pushes settings into a live session; the host client applies
+  them through `control.policy`.
+
+### Tests
+
+`test/modules/workspace-settings/`:
+
+- **`workspace-settings.routes.test.ts`:** defaults and the first PATCH, the role matrix, 404s,
+  If-Match and ETags, two PATCHes with one ETag, API keys, contract validation.
+- **`workspace-settings.validation.test.ts`:** the enum, bounds and the plan's cap (CT-ENTITLEMENTS
+  fixtures), `null`, unknown fields, an entitlements outage, a property test over random bodies.
+- **`workspace-settings.extension.test.ts`:** `settings` in the workspace PATCH: same stored result,
+  one version step each, refusals under `/settings` that roll the rename back.
+- **`workspace-settings.events.test.ts`:** one message with only the changed keys, audit meta,
+  no-op PATCHes, publish retries.
+- **`workspace-settings.postgres.test.ts`:** the routes over the SQL stores, ten racing PATCHes,
+  constraints, audit rows and the purge (CI).
 
 ## Members (B028)
 
@@ -739,10 +802,11 @@ Workspace invites (`src/modules/invites/`, CT-API-WORKSPACES). The SQL is `creat
 
 ```ts
 app.decorate('seatGate', seatGate); // B030: refuses a member when no seat is free
+await app.register(deeplinksPlugin); // B033: app.inviteUrls, on WEB_BASE_URL
 const invites = new InviteService({
   store: createInviteStore(db),
   members, // B028's MembershipService
-  urls: inviteUrlBuilder, // B033: inviteUrl(token), joinUrl(token)
+  urls: app.inviteUrls, // B033: inviteUrl(token), joinUrl(token)
   email: emailService, // B032: queues workspace_invite
   logger,
   metrics,
@@ -804,3 +868,59 @@ await app.register(inviteRoutes, { service: invites, workspaces, cursorKeys });
 - **`invites.idempotency.test.ts`**, **`invites.ratelimit.test.ts`**.
 - **`invites.postgres.test.ts`:** the routes over Postgres, a table dump without tokens, and the
   seat race against the database's locks (CI).
+
+## Deep links (B033)
+
+`src/modules/deeplinks/` puts CT-DEEPLINK's builders from `@centcom/core`
+([README](../../packages/core/README.md#deep-links-b033)) on the instance. `WEB_BASE_URL` is read
+when the plugin registers, so a value that is not a plain https origin fails the boot.
+
+```ts
+import { deeplinkConfig } from '@centcom/core';
+import { deeplinksPlugin } from './modules/deeplinks/index.js';
+
+await app.register(deeplinksPlugin); // or { config: deeplinkConfig(env) }; before the invite routes
+app.inviteUrls.inviteUrl(token); // https://centcom.dev/i/<token>: the create response and the e-mail
+app.inviteUrls.joinUrl(token); // centcom://invite/<token>: opens the invite in a client
+app.notificationDeeplink(sessionId, 'approval'); // centcom://session/<ses_id>?focus=approval
+```
+
+- **`inviteUrls`** is B029's `InviteUrlBuilder`, on the workspace-invite row of the table.
+- **`notificationDeeplink(session, focus?)`** is the `action.deeplink` of an `open_session`
+  notification (CT-NOTIF-PAYLOAD).
+- Neither adds a fragment: a token with `#` in it throws.
+
+### Tests
+
+`test/modules/deeplinks/deeplinks.plugin.test.ts`: the decorations reach later route plugins,
+the default and a configured `WEB_BASE_URL` (from options and from the environment), `http://`
+refused at boot, links that read back through `parseDeepLink`, the contract's notification fixture
+and schema, and B029's token shape and 7-day lifetime.
+
+## Plans and entitlements (B069)
+
+`src/modules/entitlements/` ([README](src/modules/entitlements/README.md)) resolves each
+workspace's subscription state to CT-ENTITLEMENTS limits with a revision `rev`, from the
+`plans`/`plan_limits` rows the migration `20260102001500_plans_entitlements.sql` seeds.
+`src/routes/plans/` serves the public `GET /v1/plans`; `src/routes/entitlements/` serves
+`GET /v1/workspaces/{id}/entitlements` (`workspaces:read`, member+, guests 403, `ETag` and 304).
+Billing lanes change entitlements through `EntitlementService.applySubscriptionState`, which moves
+`rev` only when the resolved plan, status or limits change and announces it on
+`entitlements:invalidate`.
+
+### Tests
+
+`test/entitlements/`:
+
+- **`entitlements.resolve.test.ts`:** every plan under every status, the grace and cancellation
+  boundaries, add-on seats, typed errors, the digest, and properties over random states.
+- **`entitlements.service.test.ts`:** the default row, idempotent changes, the invalidation and
+  its retry, changes time makes, refused states, usage, the catalog cache, and a property that
+  `rev` never goes back and every move is announced.
+- **`entitlements.routes.test.ts`:** the public plans (USD and EUR integers), the entitlements
+  object by role and API key, 404s, and `If-None-Match`.
+- **`entitlements.seed.test.ts`:** the seed equals the contract's table and the migration's rows;
+  `validateSeedPlans` refusals.
+- **`entitlements.contract.test.ts`:** the contract's fixtures round-trip through the service.
+- **`entitlements.postgres.test.ts`:** the migration's seed and backfill, the service over the
+  SQL repository with ten racing changes, the purge, and the constraints (CI).

@@ -54,10 +54,10 @@ describe('decideRotation', () => {
       'reuse',
     ],
     [
-      'a spent and revoked token',
+      'a spent token whose family is already revoked',
       row({ used_at: new Date(T0), revoked_at: new Date(T0) }),
       ctx,
-      'invalid',
+      'reuse',
     ],
     ['another client', row(), { ...ctx, clientId: 'centcom-web' }, 'invalid'],
     ['a revoked device', row(), { ...ctx, deviceRevoked: true }, 'invalid'],
@@ -270,9 +270,10 @@ describe.runIf(ADMIN_URL !== undefined)('the Postgres store on Postgres 16', () 
     const won = results.filter((r) => r.status === 'fulfilled');
     expect(won).toHaveLength(1);
     const lost = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
-    expect(new Set(lost.map((r) => (r.reason as { code?: string }).code))).toEqual(
-      new Set(['refresh_reuse_detected']),
-    );
+    const codes = lost.map((r) => (r.reason as { code?: string }).code);
+    // Every loser finds the token spent: reuse, whether or not an earlier loser already revoked
+    // the family (CT-AUTH).
+    expect(codes).toEqual(Array(99).fill('refresh_reuse_detected'));
     const familyId = won[0]?.status === 'fulfilled' ? won[0].value.familyId : '';
     expect(
       await db
