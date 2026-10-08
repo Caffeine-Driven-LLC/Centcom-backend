@@ -17,7 +17,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 ![Progress](docs/progress.svg)
 
-**27% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
+**28% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
 
 ## Next steps
 
@@ -41,7 +41,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 | [B029](plan/backend/B029.md) | Invites: create, accept, revoke, expiry, key-bundle storage | L | M3 |
 | [B039](plan/backend/B039.md) | Envelope codec and schema-enforced validation with size limits | M | M3 |
 | [B070](plan/backend/B070.md) | Stripe integration: customers and subscriptions | L | M4 |
-| [B075](plan/backend/B075.md) | Usage aggregation and quota computation | M | M4 |
+| [B080](plan/backend/B080.md) | Entitlement cache and enforcement middleware | M | M4 |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
 
