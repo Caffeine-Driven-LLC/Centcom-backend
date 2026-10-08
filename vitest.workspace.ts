@@ -40,6 +40,13 @@ export default defineConfig({
           include: ['src/**/*.test.ts', 'test/**/*.test.ts'],
           // B010: the testkit's run-level housekeeping (reaps stale throwaway databases).
           ...(dir === 'packages/testkit' ? { globalSetup: ['vitest.setup.ts'] } : {}),
+          // B088: the admin console is browser code; its component tests are .tsx, in jsdom.
+          ...(dir === 'apps/admin'
+            ? {
+                include: ['src/**/*.test.ts', 'test/**/*.test.ts', 'test/**/*.test.tsx'],
+                environment: 'jsdom',
+              }
+            : {}),
         },
       })),
       {

@@ -1,8 +1,9 @@
 /**
  * @centcom/worker: BullMQ jobs: webhooks, notifications, billing, retention. Today: the email
  * delivery job (B032), the workspace purge (B027) with the settings (B034), entitlements (B069)
- * and projects (B035) purge hooks, invite expiry (B029), and notification dispatch and digests
- * (B063). Later lanes add theirs under `src/jobs/`.
+ * and projects (B035) purge hooks, invite expiry (B029), notification dispatch and digests
+ * (B063), audit log exports (B082), and telemetry retention (B085). Later lanes add theirs under
+ * `src/jobs/`.
  */
 export {
   createEmailQueue,
@@ -84,3 +85,32 @@ export {
   ENTITLEMENTS_PURGE_HOOK,
   registerEntitlementsPurgeHook,
 } from './jobs/entitlements-purge.js';
+export {
+  AUDIT_EXPORT_ATTEMPTS,
+  AUDIT_EXPORT_BACKOFF_MS,
+  AUDIT_EXPORT_JOB,
+  AUDIT_EXPORT_QUEUE,
+  AUDIT_EXPORT_SWEEP_JOB,
+  auditExportJobOptions,
+  createAuditExportQueue,
+  enqueueAuditExport,
+  onAuditExportFailed,
+  processAuditExport,
+  scheduleAuditExportSweep,
+  startAuditExportWorker,
+  type AuditExportDeps,
+  type AuditExportJobData,
+  type AuditExportWorkerOptions,
+} from './jobs/audit-export/index.js';
+export {
+  createTelemetryRetentionQueue,
+  processTelemetryRetention,
+  scheduleTelemetryRetention,
+  startTelemetryRetentionWorker,
+  TELEMETRY_DROP_JOB,
+  TELEMETRY_RETENTION_QUEUE,
+  TELEMETRY_ROLLUP_JOB,
+  telemetryRetentionJobOptions,
+  type TelemetryRetentionDeps,
+  type TelemetryRetentionWorkerOptions,
+} from './jobs/telemetry-retention/index.js';

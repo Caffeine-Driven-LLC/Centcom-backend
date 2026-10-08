@@ -36,6 +36,8 @@ export interface RefreshTokensTable {
   /** 180 days after the family's first token. */
   absolute_expires_at: ColumnType<Date, Date | string, never>;
   revoked_at: NullableTimestamp;
+  /** `staff` when staff revoked the token (B087, migration 20260102002900): its use is `token_revoked`. */
+  revoked_reason: ColumnType<'staff' | null, 'staff' | null | undefined, 'staff' | null>;
 }
 
 /** The refresh-token table. */

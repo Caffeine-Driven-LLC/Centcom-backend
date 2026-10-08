@@ -92,10 +92,12 @@ A signal during startup exits 0 without serving; a port in use exits 1 (`relay.p
 
 ## Metrics and logs
 
-- `relay_connections_active` (read from `RelayServer.gauges()`; the Metrics interface has no
-  gauge), `relay_connections_total`, `relay_frames_in_total{t}` (the envelope type, `invalid` or
-  `binary`), `relay_closes_total{code}` (a known code or `other`), `relay_handler_errors_total`,
-  `relay_upgrades_refused_total{reason}`. No label holds a session, member or user id.
+- `relay_connections` (a gauge read from `RelayServer.gauges()` at each export),
+  `relay_connections_total`, `relay_frames_total{t,direction}` (the envelope type, `invalid` or
+  `binary`; `in`), `relay_close_total{code}` (a known code or `other`),
+  `relay_handler_errors_total`, `relay_upgrades_refused_total{reason}`. No label holds a session,
+  member or user id. They are exported as `centcom_*` through B093's telemetry (`main.ts` wires it),
+  with one span per connection (`relay.connection`, its close code) and none per frame.
 - Logs: `relay.starting` and `relay.started` (with `version` and `contract_version`),
   `relay.upgrade_refused` (reason and status only), `relay.handler_error`, `shutdown.*`. The query
   string, the subprotocol header and credentials are never logged. Remote addresses are kept only

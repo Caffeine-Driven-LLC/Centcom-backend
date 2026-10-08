@@ -7,22 +7,24 @@
  * member, or asks about a deleted workspace, gets 404. Register after the request-context,
  * error-handler, RBAC and audit plugins.
  *
+ * In production `service` is B080's `CachedEntitlements` (≤ 30 s cache, invalidated on change), so
+ * a warm read never reaches SQL; B069's `EntitlementService` works the same, uncached.
+ *
  * Owns: the HTTP side of entitlements. Must not: compare roles itself, or let a shared cache keep
  * a response.
  */
 import { AppError, notFound } from '@centcom/core';
 import type { FastifyPluginAsync } from 'fastify';
 import { entitlementsEtag, ifNoneMatchHits } from '../../modules/entitlements/etag.js';
-import {
-  ENTITLEMENT_DETAILS,
-  type EntitlementService,
-} from '../../modules/entitlements/service.js';
+import type { Entitlements } from '../../modules/entitlements/ports.js';
+import { ENTITLEMENT_DETAILS } from '../../modules/entitlements/service.js';
 import { workspaceAccess } from '../../modules/workspaces/index.js';
 import { requireScope } from '../../plugins/rbac.js';
 
 /** Options for `entitlementRoutes`. */
 export interface EntitlementRouteOptions {
-  service: EntitlementService;
+  /** B080's `CachedEntitlements`, or B069's `EntitlementService`. */
+  service: { get(workspaceId: string): Promise<Entitlements | null> };
 }
 
 /** The details of the route's own refusals (GUIDELINES §3.4). */
