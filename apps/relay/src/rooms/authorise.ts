@@ -187,7 +187,11 @@ export function createRooms(deps: RoomsDeps): {
       return;
     }
     if (live.role !== member.role) room.setRole(member.id, live.role);
-    const decision = authorizeFrame({ id: member.id, sid: room.sid, role: live.role }, frame, deps.mute);
+    const decision = authorizeFrame(
+      { id: member.id, sid: room.sid, role: live.role },
+      frame,
+      deps.mute,
+    );
     if (decision.ok) {
       metrics.counter('relay_frames_authorised_total', { outcome: 'allowed' }).inc();
       await next();

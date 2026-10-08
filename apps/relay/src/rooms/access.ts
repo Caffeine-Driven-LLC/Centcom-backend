@@ -55,7 +55,9 @@ export function effectivePlan(state: SubscriptionState | undefined, now: Date): 
   const keeps =
     state.status === 'active' ||
     state.status === 'trialing' ||
-    (state.status === 'past_due' && state.grace_until !== null && at <= state.grace_until.getTime()) ||
+    (state.status === 'past_due' &&
+      state.grace_until !== null &&
+      at <= state.grace_until.getTime()) ||
     (state.status === 'canceled' && state.period_end !== null && at <= state.period_end.getTime());
   return keeps ? state.plan_id : 'free';
 }

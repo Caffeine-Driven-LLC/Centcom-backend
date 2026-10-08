@@ -339,6 +339,11 @@ export const METRICS = {
     [],
     RELAY,
   ),
+  relay_frames_authorised_total: counter(
+    'Member frames by authorisation outcome (allowed, forbidden, muted, not_a_member, unavailable, not_joined).',
+    ['outcome'],
+    RELAY,
+  ),
   relay_frames_invalid_total: counter('Inbound frames refused by the codec.', ['code'], RELAY),
   relay_handshake_frames_dropped_total: counter(
     'Frames dropped while a hello was being checked.',
@@ -350,6 +355,17 @@ export const METRICS = {
     ['outcome'],
     RELAY,
   ),
+  relay_membership_events_total: counter(
+    'centcom:membership messages handled, by type.',
+    ['type'],
+    RELAY,
+  ),
+  relay_membership_subscribe_failures_total: counter(
+    'Failed subscriptions to centcom:membership (retried with backoff).',
+    [],
+    RELAY,
+  ),
+  relay_room_joins_total: counter('Room joins by outcome (joined or full).', ['outcome'], RELAY),
   relay_superseded_total: counter(
     'Connections superseded by a newer one of the same member and device.',
     [],
