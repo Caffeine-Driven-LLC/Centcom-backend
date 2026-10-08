@@ -2,11 +2,12 @@
  * LoopbackRelay (B011): a small in-process relay that exists to test the simulator itself. It
  * implements the parts of CT-WS-ENVELOPE and CT-RESUME a client meets: `sys.hello` within 5 s
  * (else close 4408), the ticket check against the test JWKS with single-use `jti` (else
- * `sys.error` and 4401), protocol negotiation (4426), the welcome, pings every `ping_ms` and
- * dropping a peer silent for `dead_ms`, schema validation of every frame (`sys.error`
- * invalid_frame; more than 10 in a minute closes 4400), the 256 KiB limit, session-wide `seq`
- * assigned in arrival order and echoed to the sender, de-duplication by (sid, from, id), replay
- * after `last_seq` with `sys.resumed`, and superseding a second connection of a member's device.
+ * `sys.error` and 4401), protocol negotiation (4426), the welcome, pings every
+ * `heartbeat.ping_ms` and dropping a peer silent for `heartbeat.dead_ms`, schema validation of
+ * every frame (`sys.error` invalid_frame; more than 10 in a minute closes 4400), the 256 KiB
+ * limit, session-wide `seq` assigned in arrival order and echoed to the sender, de-duplication by
+ * (sid, from, id), replay after `last_seq` with `sys.resumed`, and superseding a second connection
+ * of a member's device.
  *
  * Owns: nothing outside tests. It is not the relay (B037 on): no authorization by role, no rate
  * limits, no durable history. Exported only from `@centcom/testkit/sim`, never the package root.
