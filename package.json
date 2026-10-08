@@ -19,7 +19,8 @@
     "dev:up": "bash tools/dev/up.sh",
     "dev:down": "bash tools/dev/down.sh",
     "dev:reset": "bash tools/dev/reset.sh",
-    "dev:seed": "tsx --tsconfig tsconfig.test.json tools/dev/seed.ts"
+    "dev:seed": "tsx --tsconfig tsconfig.test.json tools/dev/seed.ts",
+    "release:publish": "tsx --tsconfig tsconfig.test.json apps/api/scripts/publish-release.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
