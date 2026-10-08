@@ -104,7 +104,8 @@ export class LiveMembership {
   readonly #maxEntries: number;
   readonly #clock: () => number;
   readonly #entries = new Map<string, Entry>();
-  readonly #loading = new Map<string, Promise<LiveMember | null>>();
+  /** Reads running, with the generation they started in. */
+  readonly #loading = new Map<string, { generation: number; load: Promise<LiveMember | null> }>();
   /** Bumped by every invalidation, so a read that started before one is not cached. */
   #generation = 0;
 
@@ -129,24 +130,28 @@ export class LiveMembership {
     return this.refresh(sid, memberId);
   }
 
-  /** Reads the member from the records now (sharing a read already running) and caches it. */
+  /**
+   * Reads the member from the records now and caches it. A read already running is shared only
+   * if it started after the last invalidation: one from before a membership event may predate the
+   * change, so a new read starts instead.
+   */
   refresh(sid: string, memberId: string): Promise<LiveMember | null> {
     const key = `${sid}:${memberId}`;
-    const running = this.#loading.get(key);
-    if (running !== undefined) return running;
     const generation = this.#generation;
+    const running = this.#loading.get(key);
+    if (running !== undefined && running.generation === generation) return running.load;
     const load = this.#source.lookup(sid, memberId).then(
       (value) => {
-        this.#loading.delete(key);
+        if (this.#loading.get(key)?.load === load) this.#loading.delete(key);
         if (generation === this.#generation) this.#store(key, value);
         return value;
       },
       (err: unknown) => {
-        this.#loading.delete(key);
+        if (this.#loading.get(key)?.load === load) this.#loading.delete(key);
         throw err;
       },
     );
-    this.#loading.set(key, load);
+    this.#loading.set(key, { generation, load });
     return load;
   }
 

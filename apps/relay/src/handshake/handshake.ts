@@ -18,7 +18,8 @@
  *    ticket. Then `onAdmitted` (B043's room join) may still refuse with a 4403.
  * 5. `sys.welcome` goes out with the member's live role (never the ticket's), the negotiated
  *    protocol and capabilities, `roster_v`, heartbeat, server time, limits and session state; the
- *    connection becomes `authenticated` and later frames pass to the next stages. A connection of
+ *    connection becomes `authenticated`, its entry names the session and the member (the `from`
+ *    later stages stamp, B041), and later frames pass to the next stages. A connection of
  *    the same `(member, device)` already on this node gets `sys.bye` (`superseded`) and close 4409.
  *
  * Nothing but `sys.error` and `sys.welcome` is sent before the welcome; frames that arrive while
@@ -122,6 +123,11 @@ export interface HandshakeDeps {
    */
   heartbeat?: { ping_ms: number; dead_ms: number };
   /**
+   * The sequencing limits `sys.welcome` advertises: the values the sequence module enforces
+   * (RELAY_SEQ_RATE, RELAY_SEQ_BURST, B041); default WELCOME_LIMITS.
+   */
+  seqLimits?: { seq_rate: number; seq_burst: number };
+  /**
    * Runs after the live checks, right before the welcome (B043 joins the member's room here);
    * a refusal closes 4403. A throw is a 503 (4503).
    */
@@ -185,6 +191,8 @@ export function welcomeFrame(input: {
   nowMs: number;
   /** Default HEARTBEAT. */
   heartbeat?: { ping_ms: number; dead_ms: number };
+  /** Default WELCOME_LIMITS' `seq_rate` and `seq_burst`. */
+  seqLimits?: { seq_rate: number; seq_burst: number };
 }): object {
   const { access } = input;
   return {
@@ -204,6 +212,7 @@ export function welcomeFrame(input: {
       server_time: new Date(input.nowMs).toISOString(),
       limits: {
         ...WELCOME_LIMITS,
+        ...input.seqLimits,
         max_members: Math.min(access.session.maxMembers, MAX_MEMBERS_CAP),
       },
       session: { state: access.session.state },
@@ -466,10 +475,12 @@ export function createHandshake(deps: HandshakeDeps): {
           access: { ...access, member: access.member },
           nowMs: clock(),
           ...(deps.heartbeat === undefined ? {} : { heartbeat: deps.heartbeat }),
+          ...(deps.seqLimits === undefined ? {} : { seqLimits: deps.seqLimits }),
         }),
       );
       connection.entry.state = 'authenticated';
       connection.entry.sessionId = admitted.claims.sid;
+      connection.entry.memberId = access.member.id;
       activate(connection, `${access.member.id}:${admitted.claims.dev}`);
       metrics.counter('relay_handshakes_total', { outcome: 'welcome' }).inc();
     } catch (err) {

@@ -224,6 +224,28 @@ export const METRICS = {
 
   // Modules.
   account_audit_failures_total: counter('Account audit writes that failed.'),
+  account_deletions_blocked_total: counter(
+    'Account deletions refused: the only owner of a workspace with other members.',
+  ),
+  account_deletions_requested_total: counter('Account deletions scheduled.'),
+  account_deletions_restored_total: counter('Pending account deletions cancelled.'),
+  account_export_dead_letters_total: counter('Account export jobs given up on.', ['job'], WORKER),
+  account_exports_expired_total: counter('Account export files expired.', [], API_WORKER),
+  account_exports_failed_total: counter('Account exports failed, by code.', ['code'], API_WORKER),
+  account_exports_limited_total: counter('Account exports refused by the 24-hour limit.'),
+  account_exports_requested_total: counter('Account exports requested.'),
+  account_exports_written_total: counter('Account export files written.', [], API_WORKER),
+  account_lifecycle_after_commit_failures_total: counter(
+    'Account lifecycle steps after a commit that failed (revocation flags, queueing).',
+    ['step'],
+  ),
+  account_purge_blocked_total: counter(
+    'Account purges not run: the user owns a workspace with other members.',
+    [],
+    API_WORKER,
+  ),
+  account_purge_failed_total: counter('Account purges that failed.', [], WORKER),
+  account_purges_total: counter('Account purge runs, by outcome.', ['outcome'], API_WORKER),
   admin_audit_failures_total: counter('Admin API calls whose audit write failed.'),
   admin_calls_total: counter('Admin API calls by outcome.', ['outcome']),
   admin_connections_refused_total: counter(
@@ -248,6 +270,13 @@ export const METRICS = {
     'outcome',
   ]),
   billing_customers_created_total: counter('Stripe customers created for workspaces.'),
+  billing_session_failures_total: counter(
+    'Checkout and portal sessions Stripe did not create, by kind and reason (stripe_unavailable, stripe_refused).',
+    ['kind', 'reason'],
+  ),
+  billing_sessions_created_total: counter('Checkout and portal sessions created, by kind.', [
+    'kind',
+  ]),
   billing_subscription_updates_total: counter(
     'Stripe subscription updates, by whether they were applied (false: a stale event).',
     ['applied'],
@@ -333,9 +362,20 @@ export const METRICS = {
   redis_pubsub_handler_errors_total: counter('Pub/sub handlers that threw.', [], ALL),
   redis_reconnects_total: counter('Redis reconnects.', [], ALL),
   redis_unavailable_total: counter('Redis calls refused while it was down.', [], ALL),
+  relay_acks_rejected_total: counter('Acks refused for naming a seq beyond the head.', [], RELAY),
   relay_codec_errors_total: counter('Frames dropped because decoding threw.', [], RELAY),
   relay_dead_peers_total: counter(
     'Connections closed after RELAY_DEAD_MS without an inbound frame.',
+    [],
+    RELAY,
+  ),
+  relay_durable_append_failed_total: counter(
+    'Durable appends of sequenced frames that failed (each attempt).',
+    [],
+    RELAY,
+  ),
+  relay_durable_append_given_up_total: counter(
+    'Sequenced frames whose durable append was given up (retries spent or backlog full).',
     [],
     RELAY,
   ),
@@ -352,6 +392,19 @@ export const METRICS = {
   ),
   relay_handshakes_total: counter(
     'Handshakes by outcome (welcome or the refusal reason).',
+    ['outcome'],
+    RELAY,
+  ),
+  relay_seq_assign_ms: {
+    type: 'histogram',
+    unit: '',
+    labels: [],
+    services: RELAY,
+    group: 'module',
+    help: 'Time to assign a seq (dedupe, counter and buffer append), milliseconds.',
+  },
+  relay_sequenced_total: counter(
+    'Sequenced frames by outcome (assigned, duplicate, rate_limited, unavailable, backlog).',
     ['outcome'],
     RELAY,
   ),
@@ -395,6 +448,28 @@ export const METRICS = {
   usage_events_duplicate_total: counter('Duplicate usage events.'),
   usage_hint_failures_total: counter('Usage hints that failed.'),
   usage_relay_unavailable_total: counter('Usage reports while the relay was unreachable.'),
+  webhook_attempts_total: counter('Outgoing webhook attempts, by result.', ['result'], API_WORKER),
+  webhook_deliveries_created_total: counter(
+    'Outgoing webhook deliveries created by fan-out.',
+    [],
+    API_WORKER,
+  ),
+  webhook_deliveries_dead_total: counter(
+    'Outgoing webhook deliveries that failed every retry.',
+    [],
+    WORKER,
+  ),
+  webhook_endpoints_disabled_total: counter(
+    'Webhook endpoints disabled after 3 days of failures.',
+    [],
+    API_WORKER,
+  ),
+  webhook_jobs_failed_total: counter('Webhook jobs that crashed.', ['queue'], WORKER),
+  webhook_secret_unavailable_total: counter(
+    'Deliveries paused for want of the signing key.',
+    [],
+    API_WORKER,
+  ),
   workspace_announce_failures_total: counter('Workspace announcements that failed.'),
   workspace_purge_enqueue_failures_total: counter('Workspace purges that could not be queued.'),
   workspace_purge_failed_total: counter('Workspace purges that failed.', [], WORKER),

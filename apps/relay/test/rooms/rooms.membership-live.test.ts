@@ -261,6 +261,35 @@ describe('LiveMembership', () => {
     ).toThrow(TypeError);
   });
 
+  it('does not share a read that started before an invalidation (review note)', async () => {
+    const releases: ((v: {
+      role: 'editor' | 'viewer';
+      userId: string;
+      workspaceId: null;
+    }) => void)[] = [];
+    let reads = 0;
+    const cache = new LiveMembership({
+      source: {
+        lookup: () => {
+          reads += 1;
+          return new Promise((resolve) => releases.push(resolve));
+        },
+      },
+      clock: () => 0,
+    });
+    const before = cache.refresh('s', 'a');
+    cache.invalidateUser('usr_x');
+    const after = cache.refresh('s', 'a');
+    expect(reads).toBe(2);
+    releases[0]?.({ role: 'editor', userId: 'usr_x', workspaceId: null });
+    releases[1]?.({ role: 'viewer', userId: 'usr_x', workspaceId: null });
+    expect((await before)?.role).toBe('editor');
+    expect((await after)?.role).toBe('viewer');
+    // The post-invalidation answer is the one cached.
+    expect((await cache.get('s', 'a'))?.role).toBe('viewer');
+    expect(reads).toBe(2);
+  });
+
   it('does not cache a read that started before an invalidation', async () => {
     let release: () => void = () => undefined;
     let reads = 0;

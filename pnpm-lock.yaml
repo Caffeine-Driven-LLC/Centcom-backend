@@ -285,6 +285,9 @@ importers:
       '@opentelemetry/api':
         specifier: 1.9.1
         version: 1.9.1
+      ioredis:
+        specifier: 6.0.0
+        version: 6.0.0
       jose:
         specifier: 6.2.12
         version: 6.2.12
@@ -301,6 +304,9 @@ importers:
       '@types/ws':
         specifier: 8.18.2
         version: 8.18.2
+      fast-check:
+        specifier: 4.10.2
+        version: 4.10.2
 
   apps/worker:
     dependencies:

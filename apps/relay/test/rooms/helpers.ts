@@ -53,6 +53,7 @@ export function fakeConnection(sid: string | null = null): FakeConnection {
       remoteHash: '0000000000000000',
       state: 'authenticated',
       sessionId: sid,
+      memberId: null,
       createdAt: new Date(0),
     },
     sent: [],

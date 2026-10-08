@@ -21,6 +21,8 @@ export interface ConnectionEntry {
   state: ConnectionState;
   /** The session, once the handshake (B038) names it. */
   sessionId: string | null;
+  /** The member (`mem_…`) the handshake admitted, from the live record; stamped as `from` (B041). */
+  memberId: string | null;
   readonly createdAt: Date;
 }
 
@@ -69,6 +71,7 @@ export class ConnectionRegistry {
         .slice(0, 16),
       state: 'open',
       sessionId: null,
+      memberId: null,
       createdAt: new Date(this.#clock()),
     };
     this.#entries.set(entry.id, entry);

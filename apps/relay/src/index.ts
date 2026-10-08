@@ -5,8 +5,9 @@
  * Today: the service skeleton (B037): the server, health endpoints, configuration, metrics, the
  * module loader and frame pipeline relay lanes plug into, the connection registry, close codes
  * and graceful shutdown, plus member slots (B031), the connection state machine and
- * `closeConnection` (B040), and session rooms with membership authorisation (B043). The process entrypoint is `main.ts`. Later lanes add their folders with
- * a `module.ts` each.
+ * `closeConnection` (B040), session rooms with membership authorisation (B043), and sequencing:
+ * `SeqStore`, acks and the hot buffer (B041). The process entrypoint is `main.ts`. Later lanes add
+ * their folders with a `module.ts` each.
  */
 export { buildInfo, type BuildInfo } from './build-info.js';
 export { CloseCode, isCloseCode, type CloseCodeValue } from './close-codes.js';
@@ -109,5 +110,36 @@ export {
   type ShutdownOptions,
   type SignalSource,
 } from './shutdown.js';
+export {
+  DEFAULT_BUF_MAX_FRAMES,
+  DEFAULT_BUF_MIN_AGE_S,
+  DEFAULT_BUF_MIN_FRAMES,
+  DEFAULT_SEQ_BURST,
+  DEFAULT_SEQ_RATE,
+  loadSeqConfig,
+  seqEnvSchema,
+  type SeqConfig,
+} from './seq/config.js';
+export { createMemorySeqStore, type MemorySeqStore } from './seq/memory-store.js';
+export {
+  createRedisSeqStore,
+  createSeqRedisClient,
+  seqKeys,
+  type SeqRedisClientOptions,
+} from './seq/redis-store.js';
+export { BUFFER_TTL_MS, DEDUPE_TTL_MS } from './seq/retention.js';
+export {
+  SEQUENCED_STATE_KEY,
+  SEQUENCED_TYPES,
+  type AckTracker,
+  type AssignResult,
+  type BufferLimits,
+  type DurableAppend,
+  type SeqService,
+  type SeqStore,
+  type SequencedType,
+  type StoredFrame,
+  type UnsequencedFrame,
+} from './seq/types.js';
 export * from './slots/index.js';
 export * from './rooms/index.js';
