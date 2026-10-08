@@ -33,7 +33,6 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 | Lane | What | Size | Milestone |
 |---|---|---|---|
 | [B010](plan/backend/B010.md) | Test harness: containers, factories, contract test runner | M | M0 |
-| [B031](plan/backend/B031.md) | Member slot assignment service | S | M3 |
 | [B091](plan/backend/B091.md) | Infrastructure as code: environments dev, stage, prod | L | M3 |
 | [B017](plan/backend/B017.md) | Token service: JWT issue, refresh rotation with reuse detection, JWKS, revocation | L | M3 |
 | [B026](plan/backend/B026.md) | Account deletion and data export | M | M3 |
@@ -42,6 +41,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 | [B070](plan/backend/B070.md) | Stripe integration: customers and subscriptions | L | M4 |
 | [B093](plan/backend/B093.md) | Observability: metrics, traces, dashboards, SLOs | M | M4 |
 | [B081](plan/backend/B081.md) | Outgoing webhooks: endpoints, delivery, retries, signing | L | M5 |
+| [B097](plan/backend/B097.md) | Security hardening: headers, WAF rules, secret scanning, dependency policy | M | M6 |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
 
