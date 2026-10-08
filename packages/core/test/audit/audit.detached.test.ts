@@ -81,7 +81,7 @@ describe('emitDetached', () => {
     expect(numbers(db.rows)).toEqual(range(0, 250));
     // A retried batch may have landed the first time: it must not write its rows twice.
     for (const q of db.queries) expect(q.sql).toMatch(/ on conflict \("id"\) do nothing$/);
-    expect(count('audit_events_written_total', { path: 'detached' })).toBe(250);
+    expect(count('audit_events_written_total', { mode: 'detached' })).toBe(250);
     await vi.advanceTimersByTimeAsync(60_000);
     expect(db.queries).toHaveLength(3);
     expect(vi.getTimerCount()).toBe(0);
@@ -194,7 +194,7 @@ describe('emitDetached', () => {
     for (const event of numbered(5)) emitter.emitDetached(event);
     await vi.advanceTimersByTimeAsync(5000);
     expect(numbers(db.rows)).toEqual(range(0, 5));
-    expect(count('audit_events_written_total', { path: 'detached' })).toBe(5);
+    expect(count('audit_events_written_total', { mode: 'detached' })).toBe(5);
     expect(count('audit_events_dropped_total', { reason: 'rejected' })).toBe(0);
   });
 
@@ -258,7 +258,7 @@ describe('emitDetached', () => {
     for (const event of numbered(3)) emitter.emitDetached(event);
     await vi.advanceTimersByTimeAsync(AUDIT_BATCH_INTERVAL_MS);
     expect(observations).toEqual([
-      expect.objectContaining({ name: 'audit_emit_latency_ms', labels: { path: 'detached' } }),
+      expect.objectContaining({ name: 'audit_emit_latency_ms', labels: { mode: 'detached' } }),
     ]);
   });
 });

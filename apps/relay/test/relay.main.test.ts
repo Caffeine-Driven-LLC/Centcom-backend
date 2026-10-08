@@ -9,12 +9,17 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { createServer, type Server, type Socket } from 'node:net';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const MAIN = fileURLToPath(new URL('../src/main.ts', import.meta.url));
 const RELAY_ROOT = fileURLToPath(new URL('..', import.meta.url));
-const TSX_CLI = createRequire(import.meta.url).resolve('tsx/cli');
+/**
+ * tsx's loader, run in the relay's own process (`node --import`), never its CLI: the CLI is a
+ * wrapper that relays signals and kills its child (exit 143) when the child does not acknowledge a
+ * signal within 30 ms, which a relay busy loading its modules at startup cannot promise.
+ */
+const TSX_LOADER = pathToFileURL(createRequire(import.meta.url).resolve('tsx/esm')).href;
 const TSCONFIG = fileURLToPath(new URL('../../../tsconfig.test.json', import.meta.url));
 const CONTRACT_VERSION = (
   JSON.parse(readFileSync(new URL('../../../contracts/index.json', import.meta.url), 'utf8')) as {
@@ -73,9 +78,10 @@ interface Run {
 }
 
 function run(env: Record<string, string>): Run {
-  const child = spawn(process.execPath, [TSX_CLI, '--tsconfig', TSCONFIG, MAIN], {
+  const child = spawn(process.execPath, ['--import', TSX_LOADER, MAIN], {
     cwd: RELAY_ROOT,
     env: {
+      TSX_TSCONFIG_PATH: TSCONFIG,
       NODE_ENV: 'test',
       SERVICE_NAME: 'relay',
       LOG_LEVEL: 'info',

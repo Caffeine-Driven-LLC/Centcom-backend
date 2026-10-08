@@ -1,0 +1,10 @@
+# Outgoing webhooks whose first attempt is answered within 10 s.
+# A proposal for the owner to ratify (B093); alert thresholds derived from it live in B094.
+# Its metric is catalogued now and first emitted by B081.
+name: webhook-delivery
+objective: 0.95
+window: 30d
+owner: integrations
+sli:
+  good: 'centcom_webhook_first_attempt_seconds_bucket{result="ok", le="10"}'
+  total: 'centcom_webhook_first_attempt_seconds_count'

@@ -26,22 +26,23 @@ it('lists the members of a workspace', async () => {
 
 ## Public interface
 
-| Export                                                                                                                                    | What it is                                                                                                                                                 |
-| ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `startTestStack({reuse?, env?, runtime?})`                                                                                                | A new database `test_<unix time>_<random>`, migrated, and a Redis key prefix: `{databaseUrl, redisUrl, redisKeyPrefix, databaseName, db, reset(), stop()}` |
-| `TestStack.reset()`                                                                                                                       | Truncates every table except `schema_migrations` and deletes the stack's Redis keys                                                                        |
-| `TestStack.stop()`                                                                                                                        | Closes `db`, drops the database and deletes the Redis keys. Idempotent                                                                                     |
-| `resolveTestServers(env?, runtime?)`                                                                                                      | The Postgres and Redis the stacks use: the env URLs, or containers started once per process for what is missing                                            |
-| `reapStaleTestDatabases(url?, maxAgeMs?, now?)`                                                                                           | Drops `test_<time>_<random>` databases older than an hour (crashed runs); returns their names                                                              |
-| `assertTestDatabaseName(name)`, `TestStackError`                                                                                          | The guard every destructive step passes first; the error a stack fails with                                                                                |
-| `userFactory(db)`, `workspaceFactory(db)`, `membershipFactory(db)`, `deviceFactory(db)`, `sessionFactory(db)`, `sessionMemberFactory(db)` | `.create(...)` inserts one valid row and returns it, creating the rows it references when they are not given                                               |
-| `createFactories(db, {ids?, clock?, random?})`                                                                                            | All six over shared dependencies; with a seeded generator and a fake clock every run gives the same rows                                                   |
-| `createFakeClock(startIso?)`                                                                                                              | `{now(), advance(ms), set(iso), date()}`; starts at `DEFAULT_FAKE_TIME` (2026-01-01T00:00:00.000Z) and never reads real time                               |
-| `createSeededRandom(seed)`                                                                                                                | `{uint32(), next(), int(min, max), bytes(n), pick(items), string(n, alphabet?)}`: the same values for the same seed on every platform                      |
-| `seededIdGenerator(random, clock)`                                                                                                        | CT-IDS ids (`usr_...`) from a seeded random and a fake clock, monotonic like `createIdGenerator()`                                                         |
-| `runFixtureSuite({fixturesDir, schemaFile, defKey?, register?})`                                                                          | Registers one vitest case per `*.json` fixture in `fixturesDir`, checking it against `schemaFile`                                                          |
-| `checkFixture(file, {schemaFile, defKey?})`                                                                                               | The verdict on one fixture: `{ok, message}`                                                                                                                |
-| `withApp(build)`                                                                                                                          | Builds a Fastify app in `beforeAll` and closes it in `afterAll`; `handle.app` inside a test, for `inject()`                                                |
+| Export                                                                                                                                    | What it is                                                                                                                                                                             |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `startTestStack({reuse?, env?, runtime?})`                                                                                                | A new database `test_<unix time>_<random>`, migrated, and a Redis key prefix: `{databaseUrl, redisUrl, redisKeyPrefix, databaseName, db, reset(), stop()}`                             |
+| `TestStack.reset()`                                                                                                                       | Truncates every table except `schema_migrations` and deletes the stack's Redis keys                                                                                                    |
+| `TestStack.stop()`                                                                                                                        | Closes `db`, drops the database and deletes the Redis keys. Idempotent                                                                                                                 |
+| `resolveTestServers(env?, runtime?)`                                                                                                      | The Postgres and Redis the stacks use: the env URLs, or containers started once per process for what is missing                                                                        |
+| `reapStaleTestDatabases(url?, maxAgeMs?, now?)`                                                                                           | Drops `test_<time>_<random>` databases older than an hour (crashed runs); returns their names                                                                                          |
+| `assertTestDatabaseName(name)`, `TestStackError`                                                                                          | The guard every destructive step passes first; the error a stack fails with                                                                                                            |
+| `userFactory(db)`, `workspaceFactory(db)`, `membershipFactory(db)`, `deviceFactory(db)`, `sessionFactory(db)`, `sessionMemberFactory(db)` | `.create(...)` inserts one valid row and returns it, creating the rows it references when they are not given                                                                           |
+| `createFactories(db, {ids?, clock?, random?})`                                                                                            | All six over shared dependencies; with a seeded generator and a fake clock every run gives the same rows                                                                               |
+| `createFakeClock(startIso?)`                                                                                                              | `{now(), advance(ms), set(iso), date()}`; starts at `DEFAULT_FAKE_TIME` (2026-01-01T00:00:00.000Z) and never reads real time                                                           |
+| `createSeededRandom(seed)`                                                                                                                | `{uint32(), next(), int(min, max), bytes(n), pick(items), string(n, alphabet?)}`: the same values for the same seed on every platform                                                  |
+| `seededIdGenerator(random, clock)`                                                                                                        | CT-IDS ids (`usr_...`) from a seeded random and a fake clock, monotonic like `createIdGenerator()`                                                                                     |
+| `runFixtureSuite({fixturesDir, schemaFile, defKey?, register?})`                                                                          | Registers one vitest case per `*.json` fixture in `fixturesDir`, checking it against `schemaFile`                                                                                      |
+| `checkFixture(file, {schemaFile, defKey?})`                                                                                               | The verdict on one fixture: `{ok, message}`                                                                                                                                            |
+| `withApp(build)`                                                                                                                          | Builds a Fastify app in `beforeAll` and closes it in `afterAll`; `handle.app` inside a test, for `inject()`                                                                            |
+| `startMinio()`                                                                                                                            | An S3-compatible store (MinIO, the development stack's build) in a container with throwaway credentials: `{endpoint, region, accessKeyId, secretAccessKey, stop()}`; no buckets (B082) |
 
 ## Where the servers come from
 
@@ -129,6 +130,13 @@ describe('session events', () => {
 `events.schema.json` holds the per-kind rules; the fields every frame has are
 `envelope.schema.json`'s, which a lane checks with a second suite or `checkFixture`.
 
+## Mock client simulator (B011)
+
+`@centcom/testkit/sim` holds scripted fake clients that speak the relay's WebSocket protocol:
+`SimClient`, `SimFleet` (up to 50), the `scenario()` DSL, inbound `faults`, test relay tickets
+(`mintTestTicket`, `testJwks`) and `LoopbackRelay`, the in-process server the simulator tests
+itself against. The package root exports none of it. See [docs/simulator.md](docs/simulator.md).
+
 ## Global setup
 
 `vitest.setup.ts` reaps stale throwaway databases once per run, before any worker starts. A
@@ -146,3 +154,7 @@ under 20 s, reuse under 2 s, reset, isolation, stop, reaping), `factories.test.t
 distinct e-mails, increasing ids, determinism), `fixtures.test.ts` (every events fixture, a broken
 copy failing), `clock-random.test.ts` and `app.test.ts`. The stack tests run in CI on the service
 containers (integration job) and on testcontainers (test job), and locally when Docker runs.
+
+`test/sim/` (no servers needed): `handshake`, `heartbeat`, `sequencing`, `resume`, `faults`,
+`fleet` (50 clients and the scenario DSL), `ticket`, `fixture-conformance` (every events fixture
+sent and echoed) and `exports`.

@@ -1,0 +1,51 @@
+# Unit tests of the SLO recording rules (B093): `promtool test rules rules.test.yaml`
+# (packages/core/test/otel/observability.containers.test.ts runs it in a prom/prometheus container).
+rule_files:
+  - rules.yaml
+
+evaluation_interval: 1m
+
+tests:
+  # API availability: 144 of every 10 000 requests are 5xx, a 1.44 % error rate, so the error
+  # budget (0.1 %) burns 14.4 times too fast. Health checks failing do not count.
+  - interval: 1m
+    input_series:
+      - series: 'centcom_http_requests_total{route="/v1/me", method="GET", status_class="2xx", env="prod", region="eu"}'
+        values: '0+9856x240'
+      - series: 'centcom_http_requests_total{route="/v1/me", method="GET", status_class="5xx", env="prod", region="eu"}'
+        values: '0+144x240'
+      - series: 'centcom_http_requests_total{route="/readyz", method="GET", status_class="5xx", env="prod", region="eu"}'
+        values: '0+5000x240'
+    promql_expr_test:
+      # Rounded to whole numbers (error ratio in basis points, burn rates in tenths): promtool
+      # compares floats exactly, and the rate maths leaves noise in the last digits.
+      - expr: round(slo:sli_error:ratio_rate1h{slo="api-availability"} * 10000)
+        eval_time: 2h
+        exp_samples:
+          - labels: '{slo="api-availability", env="prod"}'
+            value: 144
+      - expr: round(slo:burn_rate:1h{slo="api-availability"} * 10)
+        eval_time: 2h
+        exp_samples:
+          - labels: '{slo="api-availability", env="prod"}'
+            value: 144
+      - expr: round(slo:burn_rate:5m{slo="api-availability"} * 10)
+        eval_time: 2h
+        exp_samples:
+          - labels: '{slo="api-availability", env="prod"}'
+            value: 144
+
+  # API latency: 95 of every 100 requests within 300 ms meets the 95 % objective exactly: a burn
+  # rate of 1.
+  - interval: 1m
+    input_series:
+      - series: 'centcom_http_request_duration_seconds_bucket{route="/v1/me", method="GET", le="0.3", env="prod", region="eu"}'
+        values: '0+950x240'
+      - series: 'centcom_http_request_duration_seconds_count{route="/v1/me", method="GET", env="prod", region="eu"}'
+        values: '0+1000x240'
+    promql_expr_test:
+      - expr: round(slo:burn_rate:6h{slo="api-latency"} * 10)
+        eval_time: 4h
+        exp_samples:
+          - labels: '{slo="api-latency", env="prod"}'
+            value: 10

@@ -1,13 +1,14 @@
 /**
- * Relay metrics (B037): what the relay counts, under fixed names and labels from small fixed sets
- * (a frame type, a close code), never a session, member or user id:
+ * Relay metrics (B037; names from B093's catalogue): what the relay counts, under fixed names and
+ * labels from small fixed sets (a frame type, a direction, a close code), never a session, member
+ * or user id:
  *
- * - `relay_connections_active`: open connections. The Metrics interface has no gauge, so it is
- *   read when scraped (`gauges()`), as the DB pool's are (B093 exports both);
+ * - `relay_connections`: open connections, a gauge read at each export (`gauges()`; the relay's
+ *   entrypoint registers it with its telemetry);
  * - `relay_connections_total`: connections accepted;
- * - `relay_frames_in_total{t}`: frames received, by envelope type (`invalid` when not one,
- *   `binary` for binary messages);
- * - `relay_closes_total{code}`: closes, by code (`other` when not a known one);
+ * - `relay_frames_total{t,direction}`: frames by envelope type (`invalid` when not one, `binary`
+ *   for binary messages) and direction (`in` today; fan-out, B044, adds `out`);
+ * - `relay_close_total{code}`: closes, by code (`other` when not a known one);
  * - `relay_handler_errors_total`: a connection handler threw;
  * - `relay_upgrades_refused_total{reason}`: upgrades answered with an HTTP error.
  *
@@ -18,15 +19,15 @@ import { CloseCode } from './close-codes.js';
 
 /** The metric names. */
 export const RELAY_METRICS = Object.freeze({
-  connectionsActive: 'relay_connections_active',
+  connectionsActive: 'relay_connections',
   connectionsTotal: 'relay_connections_total',
-  framesIn: 'relay_frames_in_total',
-  closes: 'relay_closes_total',
+  framesIn: 'relay_frames_total',
+  closes: 'relay_close_total',
   handlerErrors: 'relay_handler_errors_total',
   upgradesRefused: 'relay_upgrades_refused_total',
 } as const);
 
-/** Envelope frame types (CT-WS-ENVELOPE `t`): the values `relay_frames_in_total{t}` takes. */
+/** Envelope frame types (CT-WS-ENVELOPE `t`): the values `relay_frames_total{t}` takes. */
 export const FRAME_TYPES: readonly string[] = Object.freeze([
   'sys.hello',
   'sys.welcome',
@@ -49,7 +50,7 @@ export const FRAME_TYPES: readonly string[] = Object.freeze([
 export type UpgradeRefusal =
   'path' | 'query_credentials' | 'origin' | 'subprotocol' | 'draining' | 'bad_request';
 
-/** Close codes `relay_closes_total{code}` names: the table's, plus 1005 (none) and 1006 (abnormal). */
+/** Close codes `relay_close_total{code}` names: the table's, plus 1005 (none) and 1006 (abnormal). */
 const CLOSE_LABELS: ReadonlySet<number> = new Set([...Object.values(CloseCode), 1005, 1006]);
 
 /** The `t` label of a received message: its envelope type, `invalid` or `binary`. */
@@ -81,7 +82,7 @@ export interface RelayMetrics {
 export function createRelayMetrics(metrics: Metrics): RelayMetrics {
   return {
     connectionOpened: () => metrics.counter(RELAY_METRICS.connectionsTotal).inc(),
-    frameIn: (t) => metrics.counter(RELAY_METRICS.framesIn, { t }).inc(),
+    frameIn: (t) => metrics.counter(RELAY_METRICS.framesIn, { t, direction: 'in' }).inc(),
     closed: (code) => metrics.counter(RELAY_METRICS.closes, { code: closeLabel(code) }).inc(),
     handlerError: () => metrics.counter(RELAY_METRICS.handlerErrors).inc(),
     upgradeRefused: (reason) => metrics.counter(RELAY_METRICS.upgradesRefused, { reason }).inc(),

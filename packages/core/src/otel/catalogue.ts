@@ -1,0 +1,376 @@
+/**
+ * The metric catalogue (B093): every metric a Centcom service may export, with its type, unit,
+ * allowed labels and who emits it. Exported names carry the `centcom_` prefix
+ * (`http_requests_total` is `centcom_http_requests_total`); code records the bare name through the
+ * core `Metrics` interface (B005), and the OpenTelemetry bridge (metrics.ts) refuses anything the
+ * catalogue does not list.
+ *
+ * - `platform` metrics are the observability catalogue proper (HTTP, relay, jobs and queues, the
+ *   database pool, Redis latency, Stripe webhooks, outgoing webhooks, telemetry itself): the
+ *   dashboards and SLOs are built on them.
+ * - `module` metrics are the counters lanes already record (failures, drops, outcomes).
+ * - `planned` names the lane that will first emit a metric that nothing records yet; it is
+ *   catalogued now so dashboards and SLOs can name it. `onFailure` marks metrics recorded only when
+ *   something fails (absent after healthy traffic).
+ *
+ * Labels come from small fixed sets only (route templates, methods, status classes, frame types,
+ * close codes, queue names, outcomes): never a user, workspace, session, member or device id, an
+ * e-mail or IP address, a raw URL or path, or any content (FORBIDDEN_LABEL).
+ *
+ * Owns: the names, units and label allow-lists. Must not: list a label that could hold an id.
+ */
+
+/** A service that exports metrics. */
+export type ServiceName = 'api' | 'relay' | 'worker' | 'admin';
+
+/** What kind of instrument. */
+export type MetricType = 'counter' | 'histogram' | 'gauge';
+
+/** One catalogued metric. */
+export interface MetricDef {
+  readonly type: MetricType;
+  /** UCUM unit (`s`, `By`); empty when the name already says it or there is none. */
+  readonly unit: string;
+  /** Allowed label names; anything else is dropped. */
+  readonly labels: readonly string[];
+  /** Who emits it. */
+  readonly services: readonly ServiceName[];
+  readonly group: 'platform' | 'module';
+  readonly help: string;
+  /** Not emitted yet: the lane that will. */
+  readonly planned?: string;
+  /** Recorded only when something goes wrong (so absent after healthy traffic). */
+  readonly onFailure?: true;
+}
+
+/** The prefix of every exported metric name. */
+export const METRIC_PREFIX = 'centcom_';
+
+/** A label value set may hold at most this many values; more is a cardinality violation. */
+export const MAX_LABEL_VALUES = 100;
+
+/** Label names that must never be used: ids, addresses, paths, content. */
+export const FORBIDDEN_LABEL =
+  /^(user|usr|workspace|wsp|session|ses|member|mem|device|dev|key|email|ip|client_ip|address|path|url|branch|body|content|token|ticket|ct|p|request|req|trace|span)(_?id)?$/i;
+
+const ALL: readonly ServiceName[] = ['api', 'relay', 'worker'];
+const API: readonly ServiceName[] = ['api'];
+const RELAY: readonly ServiceName[] = ['relay'];
+const WORKER: readonly ServiceName[] = ['worker'];
+const API_WORKER: readonly ServiceName[] = ['api', 'worker'];
+
+type Extra = Partial<Pick<MetricDef, 'unit' | 'planned' | 'group' | 'onFailure'>>;
+
+/** A module counter. */
+const counter = (
+  help: string,
+  labels: readonly string[] = [],
+  services: readonly ServiceName[] = API,
+  extra: Extra = {},
+): MetricDef => ({ type: 'counter', unit: '', labels, services, group: 'module', help, ...extra });
+
+/** A platform metric. */
+const platform = (
+  type: MetricType,
+  help: string,
+  labels: readonly string[],
+  services: readonly ServiceName[],
+  extra: Extra = {},
+): MetricDef => ({
+  type,
+  unit: type === 'histogram' ? 's' : '',
+  labels,
+  services,
+  group: 'platform',
+  help,
+  ...extra,
+});
+
+/** Every metric, by its name without the prefix. */
+export const METRICS = {
+  // HTTP (B005's request context plugin).
+  http_requests_total: platform(
+    'counter',
+    'HTTP requests answered.',
+    ['route', 'method', 'status_class'],
+    API,
+  ),
+  http_request_duration_seconds: platform(
+    'histogram',
+    'HTTP request duration.',
+    ['route', 'method'],
+    API,
+  ),
+
+  // Relay (B037 on; card names).
+  relay_connections: platform('gauge', 'Open WebSocket connections.', [], RELAY),
+  relay_connections_total: platform('counter', 'WebSocket connections accepted.', [], RELAY),
+  relay_frames_total: platform(
+    'counter',
+    'Frames by envelope type and direction.',
+    ['t', 'direction'],
+    RELAY,
+  ),
+  relay_close_total: platform('counter', 'Connections closed, by close code.', ['code'], RELAY),
+  relay_handler_errors_total: platform('counter', 'Connection handlers that threw.', [], RELAY, {
+    onFailure: true,
+  }),
+  relay_upgrades_refused_total: platform(
+    'counter',
+    'Upgrades answered with an HTTP error.',
+    ['reason'],
+    RELAY,
+    { onFailure: true },
+  ),
+  relay_handshake_duration_seconds: platform(
+    'histogram',
+    'Handshake time, hello to welcome or refusal.',
+    ['result'],
+    RELAY,
+    { planned: 'B038' },
+  ),
+  relay_fanout_latency_seconds: platform(
+    'histogram',
+    'Frame receipt to in-region delivery.',
+    [],
+    RELAY,
+    { planned: 'B044' },
+  ),
+  relay_resume_total: platform('counter', 'Resume attempts by result.', ['result'], RELAY, {
+    planned: 'B042',
+  }),
+  relay_resume_duration_seconds: platform(
+    'histogram',
+    'Resume time, request to resumed.',
+    ['result'],
+    RELAY,
+    { planned: 'B042' },
+  ),
+  relay_outbound_buffer_bytes: platform(
+    'histogram',
+    'Outbound buffer size per connection when sampled.',
+    [],
+    RELAY,
+    { unit: 'By', planned: 'B046' },
+  ),
+
+  // Jobs and queues (worker; hooks.ts).
+  job_duration_seconds: platform('histogram', 'Job execution time.', ['queue'], WORKER),
+  job_failed_total: platform('counter', 'Job executions that failed.', ['queue'], WORKER, {
+    onFailure: true,
+  }),
+  queue_depth: platform('gauge', 'Jobs waiting or delayed.', ['queue'], WORKER),
+  queue_oldest_age_seconds: platform('gauge', 'Age of the oldest waiting job.', ['queue'], WORKER, {
+    unit: 's',
+  }),
+
+  // Database pool (B007) and Redis (B009).
+  db_pool_connections: platform('gauge', 'Pool connections by state.', ['state'], ALL),
+  db_pool_max_connections: platform('gauge', 'Pool size limit.', [], ALL),
+  db_pool_acquire_seconds: platform('histogram', 'Time to get a pool connection.', [], ALL),
+  db_pool_timeouts_total: platform('counter', 'Pool connection waits that timed out.', [], ALL, {
+    onFailure: true,
+  }),
+  db_connection_errors_total: platform(
+    'counter',
+    'Connections that could not be opened.',
+    [],
+    ALL,
+    { onFailure: true },
+  ),
+  db_connections_lost_total: platform('counter', 'Connections lost while in use.', [], ALL, {
+    onFailure: true,
+  }),
+  redis_ping_seconds: platform('histogram', 'Redis PING round trip, sampled.', [], ALL),
+
+  // Billing and webhooks.
+  stripe_webhook_lag_seconds: platform(
+    'histogram',
+    'Stripe event creation to processed.',
+    ['type'],
+    API,
+    { planned: 'B072' },
+  ),
+  webhook_deliveries_total: platform(
+    'counter',
+    'Outgoing webhook delivery attempts.',
+    ['attempt', 'result'],
+    WORKER,
+    { planned: 'B081' },
+  ),
+  webhook_first_attempt_seconds: platform(
+    'histogram',
+    'Event to first delivery attempt answered.',
+    ['result'],
+    WORKER,
+    { planned: 'B081' },
+  ),
+
+  // Telemetry itself.
+  otel_export_failed_total: platform(
+    'counter',
+    'Telemetry exports that failed (data dropped).',
+    ['signal'],
+    ALL,
+    { onFailure: true },
+  ),
+  otel_metric_violations_total: platform(
+    'counter',
+    'Metric records refused or rewritten by the catalogue.',
+    ['kind'],
+    ALL,
+    { onFailure: true },
+  ),
+
+  // Modules.
+  account_audit_failures_total: counter('Account audit writes that failed.'),
+  admin_audit_failures_total: counter('Admin API calls whose audit write failed.'),
+  admin_calls_total: counter('Admin API calls by outcome.', ['outcome']),
+  admin_connections_refused_total: counter(
+    'Admin listener connections from outside the allowlist.',
+  ),
+  api_key_last_used_failures_total: counter('API key last-used updates that failed.'),
+  audit_emit_latency_ms: {
+    type: 'histogram',
+    unit: '',
+    labels: ['mode'],
+    services: API_WORKER,
+    group: 'module',
+    help: 'Audit write latency, milliseconds.',
+  },
+  audit_events_dropped_total: counter('Detached audit events dropped.', ['reason'], API_WORKER),
+  audit_events_written_total: counter('Audit events written.', ['mode'], API_WORKER),
+  audit_export_dead_letters_total: counter('Audit export jobs given up on.', ['job'], WORKER),
+  audit_export_enqueue_failures_total: counter('Audit exports that could not be queued.'),
+  audit_exports_requested_total: counter('Audit exports requested.', ['format']),
+  audit_exports_total: counter('Audit exports finished, by outcome.', ['outcome'], API_WORKER),
+  auth_revocation_unavailable_total: counter('Revocation checks Redis could not answer.', [
+    'outcome',
+  ]),
+  devices_revoked_publish_failed_total: counter(
+    'Device revocations not announced on devices:revoked after every retry.',
+  ),
+  devices_revoked_total: counter('Devices revoked.'),
+  email_failed_total: counter('E-mails that failed for good.', ['template'], WORKER),
+  email_idempotency_unrecorded_total: counter(
+    'E-mail idempotency keys that could not be recorded.',
+    [],
+    API_WORKER,
+  ),
+  email_queued_total: counter('E-mails queued.', ['template'], API_WORKER),
+  email_rate_limited_total: counter('E-mails refused by the rate limit.', ['template'], API_WORKER),
+  email_rejected_total: counter('E-mails the provider rejected.', ['template'], WORKER),
+  email_sent_total: counter('E-mails sent.', ['template'], WORKER),
+  email_unrecorded_total: counter(
+    'Sent e-mails whose delivery could not be recorded.',
+    ['template'],
+    WORKER,
+  ),
+  ent_cache_load_failures_total: counter(
+    'Entitlement cache loads that failed.',
+    [],
+    ['api', 'relay'],
+  ),
+  ent_cache_loads_total: counter('Entitlement cache loads.', [], ['api', 'relay']),
+  ent_cache_stale_served_total: counter('Stale entitlements served.', [], ['api', 'relay']),
+  entitlements_invalidate_failures_total: counter('Entitlement invalidations that failed.'),
+  entitlements_rev_changes_total: counter('Entitlement revisions, by cause.', ['cause']),
+  entitlements_state_rejected_total: counter('Billing states refused.', ['code']),
+  entitlements_unavailable_total: counter('Entitlement reads that failed.'),
+  entitlements_usage_failures_total: counter('Usage reads for entitlements that failed.'),
+  flags_publish_failures_total: counter('Flag change announcements that failed.'),
+  flags_refresh_failures_total: counter('Flag cache refreshes that failed.'),
+  flags_rule_errors_total: counter('Flag rules that could not be evaluated.'),
+  idempotency_conflicts_total: counter('Idempotency key conflicts.', ['reason']),
+  idempotency_invalid_records_total: counter('Unreadable idempotency records.'),
+  idempotency_not_stored_total: counter('Responses not stored for replay.', ['reason']),
+  idempotency_replays_total: counter('Responses replayed.'),
+  idempotency_store_errors_total: counter('Idempotency store errors.'),
+  idempotency_unprotected_total: counter('Requests served without idempotency protection.'),
+  invite_expiry_failed_total: counter('Invite expiry runs that failed.', [], WORKER),
+  invite_key_bundles_dropped_total: counter('Invite key bundles dropped.', [], WORKER),
+  invite_mail_failures_total: counter('Invite e-mails that could not be queued.'),
+  invites_accepted_total: counter('Invites accepted.'),
+  invites_expired_total: counter('Invites expired.', [], WORKER),
+  log_dropped_total: counter('Log lines dropped.', [], ALL),
+  magic_link_failures_total: counter('Sign-in link failures.', ['reason']),
+  magic_link_limited_total: counter('Sign-in links refused by the rate limit.'),
+  magic_link_logins_total: counter('Sign-ins by e-mail link.'),
+  magic_link_mail_failures_total: counter('Sign-in link e-mails that could not be queued.'),
+  magic_link_requests_total: counter('Sign-in links requested.'),
+  membership_event_publish_failed_total: counter('Membership announcements that failed.', [
+    'channel',
+  ]),
+  notification_channel_failures_total: counter('Notification channel failures.', ['channel']),
+  notification_digest_failures_total: counter('Notification digests that failed.'),
+  notification_digest_runs_failed_total: counter('Digest runs that failed.', [], WORKER),
+  notification_digests_sent_total: counter('Notification digests sent.'),
+  notification_dispatch_failed_total: counter('Notification dispatches that failed.', [], WORKER),
+  notification_preferences_unavailable_total: counter('Preference reads that failed.'),
+  notifications_deduped_total: counter('Notifications deduplicated.'),
+  notifications_published_total: counter('Notifications published.', ['category']),
+  notifications_written_total: counter('Notifications written.', ['category']),
+  push_deliveries_deferred_total: counter('Push deliveries deferred.', [], WORKER),
+  push_jobs_failed_total: counter('Push jobs that failed.', [], WORKER),
+  push_sends_total: counter(
+    'Push sends by provider and result.',
+    ['provider', 'result'],
+    API_WORKER,
+  ),
+  quota_crossings_total: counter('Usage quota thresholds crossed.', ['limit', 'pct']),
+  ratelimit_blocks_total: counter('Abuse blocks applied.', [], ALL),
+  ratelimit_denied_total: counter('Requests refused by the rate limit.', ['bucket'], ALL),
+  ratelimit_store_errors_total: counter('Rate limit store errors.', [], ALL),
+  rbac_audit_failures_total: counter('RBAC refusal audits that failed.', [], ALL),
+  rbac_denied_total: counter('RBAC refusals by action.', ['action'], ALL),
+  redis_connection_errors_total: counter('Redis connection errors.', [], ALL),
+  redis_memory_evictions_total: counter('Redis evictions noticed.', [], ALL),
+  redis_pubsub_handler_errors_total: counter('Pub/sub handlers that threw.', [], ALL),
+  redis_reconnects_total: counter('Redis reconnects.', [], ALL),
+  redis_unavailable_total: counter('Redis calls refused while it was down.', [], ALL),
+  relay_codec_errors_total: counter('Frames dropped because decoding threw.', [], RELAY),
+  relay_frames_invalid_total: counter('Inbound frames refused by the codec.', ['code'], RELAY),
+  releases_corrupt_total: counter('Release manifests that could not be read.'),
+  releases_min_version_sync_failures_total: counter('Minimum client version syncs that failed.'),
+  releases_published_total: counter('Releases published, by channel.', ['channel']),
+  releases_refresh_failures_total: counter('Release cache refreshes that failed.'),
+  seat_gate_rejections_total: counter('Members refused for want of a seat.', ['reason']),
+  status_feed_build_failures_total: counter('Status feed builds that failed.'),
+  status_probes_total: counter('Status probes by component and result.', ['component', 'ok']),
+  telemetry_accepted_total: counter('Product telemetry events accepted.'),
+  telemetry_dropped_total: counter('Product telemetry events dropped.', ['reason']),
+  telemetry_fields_dropped_total: counter('Product telemetry fields dropped.'),
+  telemetry_partitions_dropped_total: counter(
+    'Product telemetry partitions dropped.',
+    [],
+    API_WORKER,
+  ),
+  telemetry_retention_failed_total: counter('Telemetry retention runs that failed.', [], WORKER),
+  telemetry_rollups_total: counter('Product telemetry rollups.', [], API_WORKER),
+  usage_aggregate_failed_total: counter('Usage aggregation runs that failed.', [], WORKER),
+  usage_daily_cap_refusals_total: counter('Usage events over the daily cap.'),
+  usage_events_accepted_total: counter('Usage events accepted.'),
+  usage_events_aggregated_total: counter('Usage events aggregated.', [], API_WORKER),
+  usage_events_duplicate_total: counter('Duplicate usage events.'),
+  usage_hint_failures_total: counter('Usage hints that failed.'),
+  usage_relay_unavailable_total: counter('Usage reports while the relay was unreachable.'),
+  workspace_announce_failures_total: counter('Workspace announcements that failed.'),
+  workspace_purge_enqueue_failures_total: counter('Workspace purges that could not be queued.'),
+  workspace_purge_failed_total: counter('Workspace purges that failed.', [], WORKER),
+  workspace_purged_total: counter('Workspaces purged.', [], WORKER),
+  workspace_settings_changed_total: counter('Workspace settings changes.'),
+  workspace_settings_publish_failures_total: counter('Settings announcements that failed.'),
+  workspaces_created_total: counter('Workspaces created.'),
+  workspaces_deleted_total: counter('Workspaces deleted.'),
+} as const satisfies Record<string, MetricDef>;
+
+/** A catalogued metric name (without the prefix). */
+export type MetricName = keyof typeof METRICS;
+
+/** The definition of `name`, if catalogued. */
+export function metricDef(name: string): MetricDef | undefined {
+  return Object.hasOwn(METRICS, name) ? (METRICS as Record<string, MetricDef>)[name] : undefined;
+}
+
+/** The exported name of `name`. */
+export const exportedName = (name: string): string => `${METRIC_PREFIX}${name}`;

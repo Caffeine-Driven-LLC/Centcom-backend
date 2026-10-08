@@ -27,7 +27,7 @@ export interface LogFn {
 
 /**
  * A structured logger. Put an error under `err` (`log.error({ err }, 'msg')`). The keys `level`,
- * `time`, `msg`, `service`, `env`, `version`, `request_id`, `session_id` and `user_id` are set by
+ * `time`, `msg`, `service`, `env`, `version`, `request_id`, `session_id`, `user_id` and `trace_id` are set by
  * the logger; don't pass them as fields.
  */
 export interface Logger {
@@ -106,6 +106,9 @@ function contextFields(): Record<string, string> {
   const fields: Record<string, string> = { request_id: contextId(ctx.requestId, 'req') };
   if (ctx.sessionId !== undefined) fields['session_id'] = contextId(ctx.sessionId, 'ses');
   if (ctx.userId !== undefined) fields['user_id'] = contextId(ctx.userId, 'usr');
+  if (ctx.traceId !== undefined) {
+    fields['trace_id'] = /^[0-9a-f]{32}$/.test(ctx.traceId) ? ctx.traceId : REDACTED;
+  }
   return fields;
 }
 
