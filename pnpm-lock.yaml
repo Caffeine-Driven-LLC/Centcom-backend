@@ -238,6 +238,9 @@ importers:
       '@centcom/db':
         specifier: workspace:*
         version: link:../../packages/db
+      jose:
+        specifier: 6.2.12
+        version: 6.2.12
       ws:
         specifier: 8.22.0
         version: 8.22.0

@@ -97,8 +97,9 @@ describe('discovery', () => {
     expect((err as ModuleError).module).toBe('broken');
   });
 
-  it('finds no module in src/ yet (later relay lanes add theirs)', async () => {
-    expect(await discoverModules()).toEqual([]);
+  it('finds the relay lanes’ modules in src/, by order (B038: the handshake at 15)', async () => {
+    const found = await discoverModules();
+    expect(found.map((m) => [m.name, m.order])).toEqual([['handshake', 15]]);
   });
 });
 
