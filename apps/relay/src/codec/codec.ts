@@ -71,27 +71,38 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 /**
+ * The index of the quote that closes the string opened at `open`, or -1 if it never closes.
+ *
+ * The next quote is found with native `indexOf`; when no backslash precedes it, it closes the
+ * string, so a plain string costs one call however long it is. Otherwise that string is walked
+ * character by character, each backslash skipping the character after it: per-quote `indexOf`
+ * calls would make a string dense with escaped quotes several times slower than walking it.
+ */
+function stringEnd(text: string, open: number): number {
+  const quote = text.indexOf('"', open + 1);
+  if (quote === -1 || text.charCodeAt(quote - 1) !== 0x5c) return quote;
+  for (let i = open + 1; i < text.length; i += 1) {
+    const ch = text.charCodeAt(i);
+    if (ch === 0x5c) i += 1;
+    else if (ch === 0x22) return i;
+  }
+  return -1;
+}
+
+/**
  * True when `text`, read as JSON, nests objects and arrays deeper than `max` (strings skipped).
  *
- * String contents are skipped with native `indexOf` rather than walked character by character:
- * a large frame is almost all string (`ct.c`, padding), and walking it in JS dominated decode
- * time. A string ends at the next `"` not escaped by an odd run of backslashes. An unterminated
- * string answers false: `JSON.parse` refuses it anyway.
+ * String contents are skipped (`stringEnd`) rather than walked: a large frame is almost all string
+ * (`ct.c`, padding), and walking it in JS dominated decode time. An unterminated string answers
+ * false: `JSON.parse` refuses it anyway.
  */
 export function nestsDeeperThan(text: string, max: number): boolean {
   let depth = 0;
   for (let i = 0; i < text.length; i += 1) {
     const ch = text.charCodeAt(i);
     if (ch === 0x22) {
-      let end = text.indexOf('"', i + 1);
-      while (end !== -1) {
-        let slashes = 0;
-        for (let k = end - 1; text.charCodeAt(k) === 0x5c; k -= 1) slashes += 1;
-        if (slashes % 2 === 0) break;
-        end = text.indexOf('"', end + 1);
-      }
-      if (end === -1) return false;
-      i = end;
+      i = stringEnd(text, i);
+      if (i === -1) return false;
     } else if (ch === 0x7b || ch === 0x5b) {
       depth += 1;
       if (depth > max) return true;

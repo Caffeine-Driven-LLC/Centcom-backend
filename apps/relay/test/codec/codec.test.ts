@@ -252,6 +252,10 @@ describe('the depth scan skipping strings natively', () => {
     [`["${bs(5)}"]]]",[[]]]`, 2, true],
     [`["${bs(5)}"]]]",[[]]]`, 3, false],
     [`["a${bs(2)}b${bs(4)}c${bs(1)}"d",[[]]]`, 2, true],
+    [`["${'a'.repeat(1000)}${bs(1)}"[[[[",[[]]]`, 2, true],
+    [`["${'a'.repeat(1000)}${bs(1)}"[[[[",[[]]]`, 3, false],
+    [`["${'a'.repeat(1000)}${bs(2)}",[[]]]`, 2, true],
+    [`["${`${bs(1)}"`.repeat(1000)}[[",[[]]]`, 2, true],
     ['["",[[]]]', 2, true],
     ['["","",""]', 1, false],
     // Unterminated strings answer false (JSON.parse refuses them), unless too deep before.
