@@ -46,6 +46,7 @@ for (let i = 0; i < connections; i += 1) {
     remoteHash: '0000000000000000',
     state: 'open',
     sessionId: null,
+    memberId: null,
     createdAt: new Date(now),
   };
   const connection: RelayConnection = {

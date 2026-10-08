@@ -16,6 +16,7 @@ import type { CoreDatabase, createDb } from '@centcom/db';
 import type { RelayConfig } from './config.js';
 import type { ConnectionRegistry } from './connection-registry.js';
 import type { FramePipeline, RelayConnection } from './pipeline.js';
+import type { SeqService } from './seq/types.js';
 
 /** The relay's database client (Kysely over the core tables). */
 export type RelayDb = ReturnType<typeof createDb<CoreDatabase>>;
@@ -35,6 +36,11 @@ export interface RelayContext {
   onShutdown(fn: () => Promise<void>): void;
   /** Adds a handler run for every accepted connection. */
   onConnection(handler: (connection: RelayConnection) => void): void;
+  /**
+   * Sequencing (B041): set by the sequence module when it registers (order 40), for the modules
+   * after it (B042 resume, B044 fan-out); undefined before then and on relays without it.
+   */
+  seq?: SeqService;
 }
 
 /** A relay lane's plug-in: the default export of `src/<lane>/module.ts`. */

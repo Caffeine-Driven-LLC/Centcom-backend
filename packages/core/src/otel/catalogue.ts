@@ -270,6 +270,13 @@ export const METRICS = {
     'outcome',
   ]),
   billing_customers_created_total: counter('Stripe customers created for workspaces.'),
+  billing_session_failures_total: counter(
+    'Checkout and portal sessions Stripe did not create, by kind and reason (stripe_unavailable, stripe_refused).',
+    ['kind', 'reason'],
+  ),
+  billing_sessions_created_total: counter('Checkout and portal sessions created, by kind.', [
+    'kind',
+  ]),
   billing_subscription_updates_total: counter(
     'Stripe subscription updates, by whether they were applied (false: a stale event).',
     ['applied'],
@@ -369,9 +376,20 @@ export const METRICS = {
   redis_pubsub_handler_errors_total: counter('Pub/sub handlers that threw.', [], ALL),
   redis_reconnects_total: counter('Redis reconnects.', [], ALL),
   redis_unavailable_total: counter('Redis calls refused while it was down.', [], ALL),
+  relay_acks_rejected_total: counter('Acks refused for naming a seq beyond the head.', [], RELAY),
   relay_codec_errors_total: counter('Frames dropped because decoding threw.', [], RELAY),
   relay_dead_peers_total: counter(
     'Connections closed after RELAY_DEAD_MS without an inbound frame.',
+    [],
+    RELAY,
+  ),
+  relay_durable_append_failed_total: counter(
+    'Durable appends of sequenced frames that failed (each attempt).',
+    [],
+    RELAY,
+  ),
+  relay_durable_append_given_up_total: counter(
+    'Sequenced frames whose durable append was given up (retries spent or backlog full).',
     [],
     RELAY,
   ),
@@ -383,6 +401,19 @@ export const METRICS = {
   ),
   relay_handshakes_total: counter(
     'Handshakes by outcome (welcome or the refusal reason).',
+    ['outcome'],
+    RELAY,
+  ),
+  relay_seq_assign_ms: {
+    type: 'histogram',
+    unit: '',
+    labels: [],
+    services: RELAY,
+    group: 'module',
+    help: 'Time to assign a seq (dedupe, counter and buffer append), milliseconds.',
+  },
+  relay_sequenced_total: counter(
+    'Sequenced frames by outcome (assigned, duplicate, rate_limited, unavailable, backlog).',
     ['outcome'],
     RELAY,
   ),

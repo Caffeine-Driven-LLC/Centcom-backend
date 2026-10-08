@@ -87,8 +87,8 @@ Every close goes through `closeConnection(connection, spec)` (B040,
 [src/connection/README.md](src/connection/README.md)): it sends the `sys.error` or `sys.bye` the
 close code requires, closes once, and cuts a socket that has not closed 1 s later.
 
-Modules today: the codec (B039, order 10), the connection state machine and heartbeat (B040, 12)
-and the handshake (B038, 15).
+Modules today: the codec (B039, order 10), the connection state machine and heartbeat (B040, 12),
+the handshake (B038, 15) and sequencing (B041, 40; it sets `ctx.seq` for the modules after it).
 
 ## Shutdown
 
