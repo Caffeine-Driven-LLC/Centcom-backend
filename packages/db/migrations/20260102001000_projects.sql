@@ -6,7 +6,8 @@
 -- repository. Names are unique per workspace ignoring case; `version` is the ETag, moved on by
 -- every change.
 --
--- Named after 20260102000800_invites: the runner refuses a file older than an applied one.
+-- Named 20260102001000: 20260102000900 went to device_grants (B016), and the runner refuses two
+-- files with one version.
 
 create table projects (
   id text primary key check (id ~ '^prj_[0-9A-HJKMNP-TV-Z]{26}$'),

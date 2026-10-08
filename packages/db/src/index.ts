@@ -6,8 +6,12 @@
  * identities (B015) in `schema/identities.ts`, refresh tokens (B017) in
  * `schema/refresh-tokens.ts`, e-mail sign-in links (B014) in
  * `schema/login-tokens.ts`, the audit log (B036) in `schema/audit-events.ts`, invites (B029) in
- * `schema/invites.ts`, projects (B035) in `schema/projects.ts`; repositories (B013 on, workspaces
- * from B027, members from B028, invites from B029, projects from B035) in `repos/`.
+ * `schema/invites.ts`, device grants (B016) in `schema/device-grants.ts`, workspace settings
+ * (B034) in `schema/workspace-settings.ts`, projects (B035) in `schema/projects.ts`,
+ * notifications (B063) in `schema/notifications.ts`, plans and entitlements (B069) in
+ * `schema/entitlements.ts`; repositories (B013 on, workspaces from B027, members from B028,
+ * invites from B029, settings from B034, projects from B035, notifications from B063) in
+ * `repos/`; the entitlements repository is the API's (B069).
  */
 export {
   ACQUIRE_BUCKETS_S,
@@ -106,6 +110,20 @@ export {
   type WorkspaceView,
 } from './repos/workspaces.js';
 export {
+  createWorkspaceSettingsStore,
+  type WorkspaceSettingsRecord,
+  type WorkspaceSettingsStore,
+  type WorkspaceSettingsTx,
+  type WorkspaceSettingsValues,
+} from './repos/workspace-settings.js';
+export {
+  createNotificationStore,
+  type NewNotification,
+  type NotificationInsert,
+  type NotificationRecord,
+  type NotificationStore,
+} from './repos/notifications.js';
+export {
   createUserRepo,
   isEmailTaken,
   USER_COLUMNS,
@@ -116,8 +134,36 @@ export {
   type UserRepo,
 } from './repos/users.js';
 export type { AuditDatabase, AuditEventsTable } from './schema/audit-events.js';
+export type {
+  DeviceGrantDatabase,
+  DeviceGrantsDatabase,
+  DeviceGrantStatus,
+  DeviceGrantsTable,
+  DevicePlatform,
+} from './schema/device-grants.js';
+export type {
+  EntitlementsDatabase,
+  EntitlementsDb,
+  EntitlementStatus,
+  LimitKey,
+  PlanId,
+  PlanLimitsTable,
+  PlansTable,
+  WorkspaceEntitlementsTable,
+} from './schema/entitlements.js';
 export type { InviteDatabase, InvitesDatabase, InvitesTable } from './schema/invites.js';
 export type { ProjectDatabase, ProjectsDatabase, ProjectsTable } from './schema/projects.js';
+export type {
+  AutoApprove,
+  WorkspaceSettingsDatabase,
+  WorkspaceSettingsDb,
+  WorkspaceSettingsTable,
+} from './schema/workspace-settings.js';
+export type {
+  NotificationDb,
+  NotificationsDatabase,
+  NotificationsTable,
+} from './schema/notifications.js';
 export type {
   IdentitiesDatabase,
   IdentitiesTable,

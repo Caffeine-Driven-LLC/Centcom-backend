@@ -112,6 +112,20 @@ registerInvitePurgeHook(hooks, createInviteStore(db)); // before startWorkspaceP
   letter, and the purge hook; on Redis 7 (CI), one scheduler with the retry options, a run, and a
   failing run dead-lettered after 3 attempts.
 
+## `workspace-settings` purge hook (B034)
+
+`registerWorkspaceSettingsPurgeHook(hooks, store)` adds the `workspace-settings` hook to B027's
+purge registry: it deletes a purged workspace's settings row before `workspace-purge` removes the
+workspace row (the row's foreign key restricts the delete). It is idempotent, and does nothing for
+a live workspace.
+
+```ts
+registerWorkspaceSettingsPurgeHook(hooks, createWorkspaceSettingsStore(db)); // before startWorkspacePurgeWorker
+```
+
+- **Tests:** `test/workspace-settings-purge.test.ts`: the hook runs before the purge, twice
+  harmlessly, and its name is taken once.
+
 ## `projects` purge hook (B035)
 
 `registerProjectPurgeHook` adds the `projects` hook to B027's purge registry: it deletes a purged
@@ -125,3 +139,30 @@ registerProjectPurgeHook(hooks, createProjectStore(db)); // before startWorkspac
 Tests: `test/projects.purge-hook.test.ts` (registration, order before the purge, a harmless
 re-run); the rows going on Postgres is checked in
 `apps/api/test/modules/projects/projects.postgres.test.ts`.
+
+## `notify.dispatch` and `notify.digest` (B063)
+
+The BullMQ side of the notification dispatcher
+([README](../api/src/modules/notifications/dispatcher/README.md)). The processing is injected:
+`process` is the API's `NotificationDispatcher.process`, `run` its `runDigest`.
+
+```ts
+const deadLetter = createNotifyDeadLetterQueue({ connection, prefix });
+startNotifyDispatchWorker({
+  connection,
+  prefix,
+  deadLetter,
+  process: (job) => dispatcher.process(job),
+});
+const digest = createNotifyDigestQueue({ connection, prefix });
+await scheduleNotifyDigest(digest); // one hourly schedule per queue
+startNotifyDigestWorker({ connection, prefix, run: () => runDigest({ store, email }) });
+```
+
+- **Dispatch:** 5 attempts, exponential backoff from 5 s with jitter 0.5; after the last, the
+  event is copied to `notify.dispatch.dlq` (job `dead-<event id>`, kept 7 days) for an operator to
+  replay, counted in `notification_dispatch_failed_total` and logged by error kind only.
+  Dispatching is idempotent, so a retry only finishes a partial run.
+- **Digest:** hourly, one run at a time, 3 attempts; a run is idempotent.
+- **Tests:** `test/notify-dispatch.test.ts`: options, dead-lettering, and on Redis 7 (CI) a
+  dispatch failing 5 times into the dead-letter queue and the hourly schedule.

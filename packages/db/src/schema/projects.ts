@@ -1,5 +1,5 @@
 /**
- * Table types of workspace projects (B035, migration 20260102000900_projects.sql). `repo_ref` is
+ * Table types of workspace projects (B035, migration 20260102001000_projects.sql). `repo_ref` is
  * an opaque identifier chosen by the client, never a local path, URL with credentials or token.
  */
 import type { ColumnType, Generated } from 'kysely';

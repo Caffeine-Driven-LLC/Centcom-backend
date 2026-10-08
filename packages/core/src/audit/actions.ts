@@ -60,11 +60,24 @@ export function defineAuditActions<const T extends Record<string, AuditActionRul
  * - `*_role`, `role`: workspace or session roles; `user_id`, `session_id`, `owner_user_id`: ids;
  * - `fields`: the names of the fields a change touched, comma-separated (never their values);
  * - `code`, `reason`, `kind`, `via`, `mode`, `plan`, `interval`: enum values;
+ * - `*_from`, `*_to` of `workspace.update`: a policy's old and new value (an enum, a flag or a
+ *   number of days);
  * - counts (`seats`, `frames`, `blobs`), flags (`self`, `enabled`) and times (`until`).
  */
 export const AUDIT_ACTIONS = defineAuditActions({
   'workspace.create': { meta: ['plan'] },
-  'workspace.update': { meta: ['fields'] },
+  // A settings change (B034) also names the old and new value of each policy it changed.
+  'workspace.update': {
+    meta: [
+      'fields',
+      'auto_approve_from',
+      'auto_approve_to',
+      'share_history_from',
+      'share_history_to',
+      'retention_days_from',
+      'retention_days_to',
+    ],
+  },
   'workspace.delete': { meta: [] },
   'member.add': { meta: ['user_id', 'role', 'via'] },
   'member.remove': { meta: ['user_id', 'role', 'self'] },

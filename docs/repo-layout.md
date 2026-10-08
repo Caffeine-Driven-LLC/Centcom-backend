@@ -48,15 +48,15 @@ references `@centcom/core` and `@centcom/contracts`; `@centcom/core` references
 
 ## Root scripts
 
-| Script                                   | What it does                                                                                                                        |
-| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm build`                             | `tsc -b` into each `dist/`, then each package's `build:assets` (contracts: copies its generated validators)                         |
-| `pnpm typecheck`                         | `tsc -b` for sources, then `tsconfig.test.json` for tests, scripts and `tools/repo` (see below)                                     |
-| `pnpm lint`                              | ESLint, then `tools/repo/check-exact-pins.mjs` (fails on any version range)                                                         |
-| `pnpm test`                              | Vitest with v8 coverage; 80 % line coverage is the hard floor                                                                       |
-| `pnpm format`                            | Prettier, writing in place                                                                                                          |
-| `pnpm contracts:gen` / `contracts:check` | regenerate `packages/contracts/src/generated/` from `contracts/` / exit 1 if it is stale (B003; see `packages/contracts/README.md`) |
-| `pnpm dev:up`                            | runs `tools/dev/up.sh` (provided by B012)                                                                                           |
+| Script                                                | What it does                                                                                                                        |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm build`                                          | `tsc -b` into each `dist/`, then each package's `build:assets` (contracts: copies its generated validators)                         |
+| `pnpm typecheck`                                      | `tsc -b` for sources, then `tsconfig.test.json` for tests, scripts and `tools/repo` (see below)                                     |
+| `pnpm lint`                                           | ESLint, then `tools/repo/check-exact-pins.mjs` (fails on any version range)                                                         |
+| `pnpm test`                                           | Vitest with v8 coverage; 80 % line coverage is the hard floor                                                                       |
+| `pnpm format`                                         | Prettier, writing in place                                                                                                          |
+| `pnpm contracts:gen` / `contracts:check`              | regenerate `packages/contracts/src/generated/` from `contracts/` / exit 1 if it is stale (B003; see `packages/contracts/README.md`) |
+| `pnpm dev:up` / `dev:down` / `dev:reset` / `dev:seed` | the local stack: start, migrate and seed / stop / wipe and start again / seed again (B012; see `docs/dev-environment.md`)           |
 
 `pnpm typecheck` emits into the (git-ignored) `dist/` folders like `pnpm build`: `tsc -b --noEmit`
 fails once one workspace references another (TS6310, a referenced project may not disable emit).
