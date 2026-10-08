@@ -130,6 +130,13 @@ describe('session events', () => {
 `events.schema.json` holds the per-kind rules; the fields every frame has are
 `envelope.schema.json`'s, which a lane checks with a second suite or `checkFixture`.
 
+## Mock client simulator (B011)
+
+`@centcom/testkit/sim` holds scripted fake clients that speak the relay's WebSocket protocol:
+`SimClient`, `SimFleet` (up to 50), the `scenario()` DSL, inbound `faults`, test relay tickets
+(`mintTestTicket`, `testJwks`) and `LoopbackRelay`, the in-process server the simulator tests
+itself against. The package root exports none of it. See [docs/simulator.md](docs/simulator.md).
+
 ## Global setup
 
 `vitest.setup.ts` reaps stale throwaway databases once per run, before any worker starts. A
@@ -147,3 +154,7 @@ under 20 s, reuse under 2 s, reset, isolation, stop, reaping), `factories.test.t
 distinct e-mails, increasing ids, determinism), `fixtures.test.ts` (every events fixture, a broken
 copy failing), `clock-random.test.ts` and `app.test.ts`. The stack tests run in CI on the service
 containers (integration job) and on testcontainers (test job), and locally when Docker runs.
+
+`test/sim/` (no servers needed): `handshake`, `heartbeat`, `sequencing`, `resume`, `faults`,
+`fleet` (50 clients and the scenario DSL), `ticket`, `fixture-conformance` (every events fixture
+sent and echoed) and `exports`.
