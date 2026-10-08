@@ -201,6 +201,22 @@ table), and `createWorkspaceSettingsStore(db)` (`src/repos/workspace-settings.ts
   worker's `workspace-settings` purge hook) before B027's purge; it does nothing for a live
   workspace.
 
+## Projects (B035)
+
+[`migrations/20260102001000_projects.sql`](migrations/20260102001000_projects.sql) creates
+`projects`; `src/schema/projects.ts` types it (`ProjectDatabase` = `CoreDatabase` plus this
+table), and `createProjectStore(db)` (`src/repos/projects.ts`) is its SQL.
+
+- **Names:** 1-60 characters, unique per workspace ignoring case
+  (`projects_workspace_id_name_key` on `(workspace_id, lower(name))`); an insert or rename that
+  meets it writes nothing (`insert` and `update` return null), never a raw unique violation.
+- **`repo_ref`:** opaque, 1-128 characters or null; the API checks what it may hold.
+- **`version`** is the ETag: 1 on insert, moved on by every `update`.
+- **Live workspaces only:** `findById`, `list` and `lockById` see projects of live workspaces;
+  `lockLiveWorkspace` share-locks the workspace row for a create.
+- **Foreign keys** restrict: a purged workspace's projects go through `deleteForWorkspace` (the
+  worker's `projects` purge hook) before B027's purge.
+
 ## Notifications (B063)
 
 [`migrations/20260102001400_notifications.sql`](migrations/20260102001400_notifications.sql)

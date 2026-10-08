@@ -115,11 +115,67 @@
   },
   "B019": {
    "pct": 1,
-   "note": "merged in #40"
+   "note": "merged in #50"
   },
   "B030": {
    "pct": 1,
    "note": "merged in #51"
+  },
+  "B035": {
+   "pct": 1,
+   "note": "merged in #38"
+  },
+  "B064": {
+   "pct": 1,
+   "note": "merged in #54"
+  },
+  "B065": {
+   "pct": 1,
+   "note": "merged in #55"
+  },
+  "B066": {
+   "pct": 1,
+   "note": "merged in #56"
+  },
+  "B074": {
+   "pct": 1,
+   "note": "merged in #58"
+  },
+  "B075": {
+   "pct": 1,
+   "note": "merged in #59"
+  },
+  "B080": {
+   "pct": 1,
+   "note": "merged in #60"
+  },
+  "B082": {
+   "pct": 1,
+   "note": "merged in #62"
+  },
+  "B083": {
+   "pct": 1,
+   "note": "merged in #63"
+  },
+  "B084": {
+   "pct": 1,
+   "note": "merged in #64"
+  },
+  "B085": {
+   "pct": 1,
+   "note": "merged in #65"
+  },
+  "B086": {
+   "pct": 1,
+   "note": "merged in #66"
+  },
+  "B087": {
+   "pct": 1,
+   "note": "merged in #67"
+  },
+  "B088": {
+   "pct": 1,
+   "note": "merged in #68"
   }
  },
  "next": [

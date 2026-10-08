@@ -10,7 +10,7 @@
   },
   "scripts": {
     "build": "tsc -b && pnpm -r --if-present run build:assets",
-    "typecheck": "tsc -b && tsc -p tsconfig.test.json",
+    "typecheck": "tsc -b && tsc -p tsconfig.test.json && tsc -p apps/admin/tsconfig.test.json",
     "lint": "eslint . && node tools/repo/check-exact-pins.mjs",
     "test": "vitest run --config vitest.workspace.ts",
     "format": "prettier --write .",
@@ -19,7 +19,8 @@
     "dev:up": "bash tools/dev/up.sh",
     "dev:down": "bash tools/dev/down.sh",
     "dev:reset": "bash tools/dev/reset.sh",
-    "dev:seed": "tsx --tsconfig tsconfig.test.json tools/dev/seed.ts"
+    "dev:seed": "tsx --tsconfig tsconfig.test.json tools/dev/seed.ts",
+    "release:publish": "tsx --tsconfig tsconfig.test.json apps/api/scripts/publish-release.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

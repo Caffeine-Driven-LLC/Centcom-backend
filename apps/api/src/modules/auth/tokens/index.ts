@@ -1,7 +1,8 @@
 /**
  * Token module (B017): the token service and its parts. Grant lanes (B016, B018) call
  * `issueTokens` and `registerGrantHandler`; API keys (B019) `registerPrincipalResolver`; devices
- * (B020) `revokeDevice`; the sessions lane `mintRelayTicket`. HTTP: `routes/auth/token.ts`,
+ * (B020) `revokeDevice`; the sessions lane `mintRelayTicket`; staff tooling (B087) `revokeUser`
+ * and the `signInGate` dependency. HTTP: `routes/auth/token.ts`,
  * `routes/auth/revoke.ts`, `routes/well-known.ts`, and `plugins/auth.ts` for every other route.
  */
 export {
@@ -38,6 +39,7 @@ export {
   invalidRefreshToken,
   newRefreshToken,
   refreshReuseDetected,
+  refreshRevokedByStaff,
   type RefreshGrant,
   type RefreshStore,
   type RotationDecision,
@@ -63,6 +65,7 @@ export {
   TokenService,
   type EntitlementsLookup,
   type GrantHandler,
+  type SignInGate,
   type IssueInput,
   type Principal,
   type PrincipalResolver,

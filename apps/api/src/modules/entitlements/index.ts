@@ -2,8 +2,21 @@
  * Plans and entitlements (B069, CT-ENTITLEMENTS, CT-API-BILLING): the resolver from subscription
  * state to limits, the plan seed, the Postgres repository, the service with `rev`, and the ETag of
  * the entitlements object. The routes are `routes/plans/` and `routes/entitlements/`; the purge
- * hook is @centcom/worker's `registerEntitlementsPurgeHook`.
+ * hook is @centcom/worker's `registerEntitlementsPurgeHook`. B080 adds the cached read side and its
+ * checks (`enforcement.ts`; the preHandlers are `plugins/entitlements.ts`).
  */
+export {
+  CachedEntitlements,
+  ENFORCEMENT_DETAILS,
+  ENT_RETRY_AFTER_S,
+  entitlementCacheEnvSchema,
+  entitlementsExpireAt,
+  loadEntitlementCacheConfig,
+  METERED_KEYS,
+  type CachedEntitlementsDeps,
+  type CheckResult,
+  type EntitlementEnforcer,
+} from './enforcement.js';
 export { entitlementsEtag, ifNoneMatchHits } from './etag.js';
 export {
   emptyUsageReader,

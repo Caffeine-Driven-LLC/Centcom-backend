@@ -67,11 +67,31 @@ const entitlements = new EntitlementService({
   // usage: B075's reader; until then usage and warnings are empty.
 });
 await app.register(planRoutes, { service: entitlements });
-await app.register(entitlementRoutes, { service: entitlements }); // after RBAC and audit
+
+// B080: reads go through the ≤ 30 s cache; checks for hosted features.
+const cached = new CachedEntitlements({
+  source: entitlements,
+  quota, // B075's QuotaService
+  pubsub: redis.pubsub,
+  ...loadEntitlementCacheConfig(),
+  logger,
+  metrics,
+});
+await cached.start(); // listens on entitlements:invalidate
+await app.register(entitlementsPlugin, { enforcer: cached });
+await app.register(entitlementRoutes, { service: cached }); // after RBAC and audit
 ```
 
 Billing lanes call `entitlements.applySubscriptionState(workspaceId, state)` (B072's webhooks,
 B078's dunning) and B075 calls `bumpRev(workspaceId, 'usage_warning')`.
+
+## Enforcement (B080)
+
+`enforcement.ts` puts B069's entitlements behind `@centcom/core`'s `EntitlementCache`, which holds
+an entry ≤ 30 s and never past a grace or billing period's end, and is invalidated on every
+change. It adds `check(workspace, key, current?)`, and `plugins/entitlements.ts` maps checks to
+`requireEntitlement` / `requireQuota` preHandlers. Unreadable entitlements fail closed (503). See
+`docs/billing/entitlements-enforcement.md`.
 
 ## Prices
 
