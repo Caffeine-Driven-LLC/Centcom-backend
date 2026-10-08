@@ -4,8 +4,8 @@
  *
  * Today: the service skeleton (B037): the server, health endpoints, configuration, metrics, the
  * module loader and frame pipeline relay lanes plug into, the connection registry, close codes
- * and graceful shutdown. The process entrypoint is `main.ts`. Later lanes add their folders with
- * a `module.ts` each.
+ * and graceful shutdown, plus member slots (B031). The process entrypoint is `main.ts`. Later
+ * lanes add their folders with a `module.ts` each.
  */
 export { buildInfo, type BuildInfo } from './build-info.js';
 export { CloseCode, isCloseCode, type CloseCodeValue } from './close-codes.js';
@@ -82,3 +82,4 @@ export {
   type ShutdownOptions,
   type SignalSource,
 } from './shutdown.js';
+export * from './slots/index.js';
