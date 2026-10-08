@@ -31,6 +31,28 @@ const ENV_SYNTAX = [
   "MemberExpression[object.name='process'][computed=true]",
 ].map((selector) => ({ selector, message: ENV_MESSAGE }));
 
+// B088: the admin console renders untrusted API text and holds a staff token. No raw HTML, no
+// eval, and no browser storage anywhere in its code.
+const ADMIN_SYNTAX = [
+  {
+    selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
+    message: 'Render API values as text (B088): no dangerouslySetInnerHTML.',
+  },
+  {
+    selector: 'AssignmentExpression[left.property.name=/^(innerHTML|outerHTML)$/]',
+    message: 'Render API values as text (B088): no innerHTML or outerHTML.',
+  },
+  {
+    selector: 'CallExpression[callee.property.name=/^(insertAdjacentHTML|write|writeln)$/]',
+    message: 'Render API values as text (B088): no HTML strings into the document.',
+  },
+];
+const ADMIN_STORAGE = [
+  { name: 'localStorage', message: 'The admin console keeps nothing in browser storage (B088).' },
+  { name: 'sessionStorage', message: 'The admin console keeps nothing in browser storage (B088).' },
+  { name: 'indexedDB', message: 'The admin console keeps nothing in browser storage (B088).' },
+];
+
 export default defineConfig([
   globalIgnores([
     '**/node_modules/',
@@ -48,7 +70,7 @@ export default defineConfig([
   js.configs.recommended,
   tseslint.configs.strict,
   {
-    files: ['**/*.{ts,mts,cts,js,mjs,cjs}'],
+    files: ['**/*.{ts,tsx,mts,cts,js,mjs,cjs}'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
       'no-console': 'error',
@@ -87,5 +109,34 @@ export default defineConfig([
     // Console output is allowed only in process entrypoints and repo tooling, never in library code.
     files: ['apps/*/src/main.ts', 'tools/**/*.{ts,mjs}'],
     rules: { 'no-console': 'off' },
+  },
+  {
+    // B088: the admin console's code (tests may inspect storage to prove it stays empty).
+    files: ['apps/admin/src/**/*.{ts,tsx}'],
+    rules: {
+      'no-eval': 'error',
+      'no-implied-eval': 'error',
+      'no-restricted-syntax': ['error', ...ENV_SYNTAX, ...ADMIN_SYNTAX],
+      'no-restricted-globals': ['error', ...ADMIN_STORAGE],
+      'no-restricted-properties': [
+        'error',
+        { object: 'process', property: 'env', message: ENV_MESSAGE },
+        {
+          object: 'document',
+          property: 'cookie',
+          message: 'The admin console sets no cookies (B088).',
+        },
+        ...ADMIN_STORAGE.map(({ name, message }) => ({
+          object: 'window',
+          property: name,
+          message,
+        })),
+        ...ADMIN_STORAGE.map(({ name, message }) => ({
+          object: 'globalThis',
+          property: name,
+          message,
+        })),
+      ],
+    },
   },
 ]);
