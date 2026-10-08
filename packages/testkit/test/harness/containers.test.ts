@@ -6,6 +6,7 @@
  * 2 s, reset empties the tables and the Redis namespace, parallel stacks are isolated, stop drops
  * the database, and stale throwaway databases are reaped.
  */
+import { newId } from '@centcom/contracts';
 import { Redis } from 'ioredis';
 import { sql } from 'kysely';
 import pg from 'pg';
@@ -21,7 +22,7 @@ import {
   type ContainerRuntime,
   type TestStack,
 } from '../../src/index.js';
-import { CONTAINER_TEST_TIMEOUT_MS, CONTAINERS, STACK } from './helpers.js';
+import { CONTAINER_TEST_TIMEOUT_MS, CONTAINERS, RUNTIME, STACK } from './helpers.js';
 
 /** A runtime that records what it was asked to do and starts nothing real. */
 function spyRuntime(opts: { available?: boolean } = {}): ContainerRuntime & { calls: string[] } {
@@ -95,7 +96,7 @@ describe('choosing the servers', () => {
 
   it("explains itself with the real runtime's message", async () => {
     const err = await testcontainersRuntime.check().catch((e: unknown) => e);
-    if (CONTAINERS) expect(err).toBeUndefined();
+    if (RUNTIME) expect(err).toBeUndefined();
     else expect(String(err)).toMatch(/Start Docker, or set DATABASE_URL .* and REDIS_URL/);
   });
 });
@@ -192,6 +193,11 @@ describe.runIf(STACK)('a real stack', () => {
       const workspace = await make.workspaces.create();
       const session = await make.sessions.create({ workspace });
       await make.sessionMembers.create({ session });
+      // audit_events is append-only (B036): its trigger refuses TRUNCATE, yet reset() empties it.
+      await sql`
+        insert into audit_events (id, workspace_id, actor_type, actor_id, action, outcome)
+        values (${newId('aud')}, ${workspace.id}, 'system', 'testkit', 'workspace.create', 'success')
+      `.execute(stack.db);
       const redis = new Redis(stack.redisUrl, { maxRetriesPerRequest: 1 });
       try {
         await redis.set(`${stack.redisKeyPrefix}left-over`, 'v', 'PX', 60_000);
@@ -204,6 +210,10 @@ describe.runIf(STACK)('a real stack', () => {
           if (table !== 'schema_migrations') expect(n, table).toBe(0);
         expect(await redis.exists(`${stack.redisKeyPrefix}left-over`)).toBe(0);
         expect(await redis.exists('ct:other-namespace:kept')).toBe(1);
+        // The trigger is back on afterwards.
+        await expect(sql`truncate table audit_events`.execute(stack.db)).rejects.toMatchObject({
+          code: '42501',
+        });
       } finally {
         await redis.del('ct:other-namespace:kept');
         redis.disconnect();
