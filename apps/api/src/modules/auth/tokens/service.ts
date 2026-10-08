@@ -78,6 +78,8 @@ export interface Principal {
   scopes: readonly string[];
   /** The access token's claims, for `user` principals. */
   claims?: AccessClaims;
+  /** The `key_` id, for `api_key` principals (B019). */
+  keyId?: string;
 }
 
 /** Turns a bearer credential with a registered prefix into a principal, or throws a 401 AppError. */
