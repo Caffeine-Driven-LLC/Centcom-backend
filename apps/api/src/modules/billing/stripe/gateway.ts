@@ -81,6 +81,12 @@ export interface CheckoutInput {
   cancelUrl: string;
 }
 
+/** A hosted checkout session (B071): its URL, and when Stripe expires it (unix seconds). */
+export interface CheckoutSession {
+  url: string;
+  expiresAt?: number;
+}
+
 /** A billing portal session (B071). */
 export interface PortalInput {
   customerId: string;
@@ -107,7 +113,8 @@ export interface StripeGateway {
   /** The customer whose `metadata.workspace_id` is `workspaceId`, if Stripe has one. */
   findCustomerByWorkspace(workspaceId: string): Promise<{ id: string } | null>;
   retrieveSubscription(id: string): Promise<StripeSub>;
-  createCheckoutSession(input: CheckoutInput, idempotencyKey: string): Promise<{ url: string }>;
+  /** Sets `client_reference_id` and `metadata.workspace_id` to the workspace. */
+  createCheckoutSession(input: CheckoutInput, idempotencyKey: string): Promise<CheckoutSession>;
   createPortalSession(input: PortalInput): Promise<{ url: string }>;
   updateSubscriptionItems(
     input: SubscriptionItemsInput,

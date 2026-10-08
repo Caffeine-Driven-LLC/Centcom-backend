@@ -32,6 +32,7 @@ import {
   parseStripeSubscription,
   StripeError,
   type CheckoutInput,
+  type CheckoutSession,
   type CreateCustomerInput,
   type PortalInput,
   type PreviewInput,
@@ -300,7 +301,7 @@ export class StripeClient implements StripeGateway {
   async createCheckoutSession(
     input: CheckoutInput,
     idempotencyKey: string,
-  ): Promise<{ url: string }> {
+  ): Promise<CheckoutSession> {
     const lineItems: FormValue[] = [{ price: input.priceId, quantity: 1 }];
     if (input.seats !== undefined && input.seats.quantity > 0) {
       lineItems.push({ price: input.seats.priceId, quantity: input.seats.quantity });
@@ -311,6 +312,7 @@ export class StripeClient implements StripeGateway {
       {
         mode: 'subscription',
         customer: input.customerId,
+        client_reference_id: input.workspaceId,
         line_items: lineItems,
         success_url: input.successUrl,
         cancel_url: input.cancelUrl,
@@ -322,7 +324,13 @@ export class StripeClient implements StripeGateway {
       },
       idempotencyKey,
     );
-    return { url: urlOf(json) };
+    const expiresAt = json['expires_at'];
+    return {
+      url: urlOf(json),
+      ...(typeof expiresAt === 'number' && Number.isSafeInteger(expiresAt) && expiresAt > 0
+        ? { expiresAt }
+        : {}),
+    };
   }
 
   async createPortalSession(input: PortalInput): Promise<{ url: string }> {

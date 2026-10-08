@@ -15,8 +15,9 @@ from B069; billing hands it each applied subscription and never decides what a p
 | `stripe/price-catalog.ts`     | `loadPriceCatalog`: plans and seat add-ons → Stripe price ids, and back.                                    |
 | `subscriptions/repository.ts` | `billing_customer` and `billing_subscription`.                                                              |
 | `subscriptions/service.ts`    | `BillingService`: `ensureCustomer`, `getSubscription`, `upsertFromStripe`.                                  |
+| `checkout/`                   | B071: `CheckoutService` (hosted checkout and billing portal sessions) and the return URLs; see its README.  |
 
-Route: `routes/subscription/index.ts`.
+Routes: `routes/subscription/index.ts`; B071's `routes/checkout/index.ts` and `routes/portal/index.ts`.
 
 ## Customers
 
@@ -102,6 +103,18 @@ const billing = new BillingService({
   metrics,
 });
 await app.register(subscriptionRoutes, { billing }); // after the auth and RBAC plugins
+// B071: checkout and portal (also after the idempotency and audit plugins).
+const checkout = new CheckoutService({
+  gateway, // the same StripeClient
+  billing,
+  repository,
+  catalog,
+  config: loadCheckoutConfig(),
+  logger,
+  metrics,
+});
+await app.register(checkoutRoutes, { checkout });
+await app.register(portalRoutes, { checkout });
 ```
 
 ## Tests
