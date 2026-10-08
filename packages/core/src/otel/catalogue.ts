@@ -247,6 +247,10 @@ export const METRICS = {
   auth_revocation_unavailable_total: counter('Revocation checks Redis could not answer.', [
     'outcome',
   ]),
+  devices_revoked_publish_failed_total: counter(
+    'Device revocations not announced on devices:revoked after every retry.',
+  ),
+  devices_revoked_total: counter('Devices revoked.'),
   email_failed_total: counter('E-mails that failed for good.', ['template'], WORKER),
   email_idempotency_unrecorded_total: counter(
     'E-mail idempotency keys that could not be recorded.',
