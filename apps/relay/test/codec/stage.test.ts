@@ -107,6 +107,7 @@ describe('the invalid-frame budget', () => {
         closes.push(code);
       },
       terminate: () => undefined,
+      onClose: () => undefined,
     };
     const stage = createCodecStage({ clock: () => now.t });
     const invalid = () => stage({ connection, raw: '{', state: {} }, () => Promise.resolve());

@@ -39,6 +39,7 @@ function fakeConnection(registry: ConnectionRegistry) {
       closes.push(code);
     },
     terminate: () => undefined,
+    onClose: () => undefined,
   };
   return { connection, sent, closes };
 }

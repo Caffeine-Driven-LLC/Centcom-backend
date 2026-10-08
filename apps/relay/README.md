@@ -76,11 +76,19 @@ export default handshake;
 
 At startup every `src/<folder>/module.(ts|js)` is loaded and registered once, by `order` then
 name. A module that fails to load or register stops the startup (exit 1, `relay.start_failed`
-naming it). Stage orders are reserved: decode 10, handshake 15, authorise 20, privacy 30, sequence
-40, fan-out 50. The `RelayContext` carries the configuration, logger, metrics, clock, Redis, the
-database, the connection registry, the pipeline, and `onShutdown` / `onConnection`. Nothing is
-global. A stage or handler that throws closes its connection with a generic `sys.error` and 1011
-(`relay_handler_errors_total`); the process stays up.
+naming it). Stage orders are reserved: activity 5, decode 10, heartbeat 12, handshake 15,
+authorise 20, privacy 30, sequence 40, fan-out 50. The `RelayContext` carries the configuration,
+logger, metrics, clock, Redis, the database, the connection registry, the pipeline, and
+`onShutdown` / `onConnection`. Nothing is global. A connection's `onClose(listener)` runs once its
+socket has closed, whoever closed it. A stage or handler that throws closes its connection with a
+`sys.error` and 1011 (`relay_handler_errors_total`); the process stays up.
+
+Every close goes through `closeConnection(connection, spec)` (B040,
+[src/connection/README.md](src/connection/README.md)): it sends the `sys.error` or `sys.bye` the
+close code requires, closes once, and cuts a socket that has not closed 1 s later.
+
+Modules today: the codec (B039, order 10), the connection state machine and heartbeat (B040, 12)
+and the handshake (B038, 15).
 
 ## Shutdown
 
@@ -120,3 +128,4 @@ A signal during startup exits 0 without serving; a port in use exits 1 (`relay.p
 - **`relay.metrics.test.ts`:** names and label values over 100 connections.
 - **`relay.main.test.ts`:** the process itself: startup with dependencies down, the version log,
   SIGTERM, a port in use, a signal during startup, bad configuration.
+- **`codec/`, `handshake/`, `connection/`:** each module's tests (see its README).

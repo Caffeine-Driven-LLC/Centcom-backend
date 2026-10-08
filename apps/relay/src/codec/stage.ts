@@ -17,6 +17,7 @@
 import { newId } from '@centcom/contracts';
 import { AppError, noopMetrics, toProblem, type Logger, type Metrics } from '@centcom/core';
 import { CloseCode } from '../close-codes.js';
+import { closeConnection } from '../connection/close.js';
 import type { ConnectionEntry } from '../connection-registry.js';
 import type { InboundStage, RelayConnection } from '../pipeline.js';
 import { decodeFrame, FRAME_LIMITS, type DecodeFailure } from './codec.js';
@@ -69,28 +70,36 @@ export function createCodecStage(deps: CodecStageDeps = {}): InboundStage {
   function refuse(connection: RelayConnection, failure: DecodeFailure): void {
     metrics.counter('relay_frames_invalid_total', { code: failure.code }).inc();
     const pointer = failure.pointer ?? '';
-    sysError(
-      connection,
-      new AppError(failure.code, {
-        detail: CODEC_DETAILS[failure.code],
-        errors: [{ pointer, code: 'invalid', detail: 'is not valid here' }],
-      }),
-    );
+    const errors = [{ pointer, code: 'invalid', detail: 'is not valid here' }];
     if (budget.spend(connection.entry, clock())) {
       deps.logger?.info(
         { close: CloseCode.ProtocolViolation, reason: 'invalid_frames' },
         'relay.codec_closed',
       );
-      connection.close(CloseCode.ProtocolViolation, 'invalid frames');
+      // This frame's sys.error precedes the close (B040's closeConnection sends it).
+      closeConnection(connection, {
+        code: CloseCode.ProtocolViolation,
+        errorCode: failure.code,
+        detail: CODEC_DETAILS[failure.code],
+        errors,
+      });
+      return;
     }
+    sysError(
+      connection,
+      new AppError(failure.code, { detail: CODEC_DETAILS[failure.code], errors }),
+    );
   }
 
   return async (fc, next) => {
     const { connection } = fc;
     if (fc.raw === null) {
       metrics.counter('relay_frames_invalid_total', { code: 'binary' }).inc();
-      sysError(connection, new AppError('invalid_frame', { detail: CODEC_DETAILS.binary }));
-      connection.close(CloseCode.ProtocolViolation, 'binary frame');
+      closeConnection(connection, {
+        code: CloseCode.ProtocolViolation,
+        errorCode: 'invalid_frame',
+        detail: CODEC_DETAILS.binary,
+      });
       return;
     }
     if (Buffer.byteLength(fc.raw, 'utf8') > FRAME_LIMITS.maxFrameBytes) {

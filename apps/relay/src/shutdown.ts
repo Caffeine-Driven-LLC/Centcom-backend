@@ -15,7 +15,8 @@
 import type { Logger } from '@centcom/core';
 import { CloseCode } from './close-codes.js';
 import type { ConnectionRegistry } from './connection-registry.js';
-import { sysBye, type RelayServer } from './server.js';
+import { closeConnection } from './connection/close.js';
+import type { RelayServer } from './server.js';
 
 /** The window `sys.bye` and close 1001 are spread over. */
 export const SHUTDOWN_JITTER_MS = 5_000;
@@ -54,8 +55,7 @@ export function createShutdown(options: ShutdownOptions): Shutdown {
       const timer = setTimeout(
         () => {
           pending.delete(timer);
-          connection.send(sysBye(SHUTDOWN_REASON));
-          connection.close(CloseCode.GoingAway, SHUTDOWN_REASON);
+          closeConnection(connection, { code: CloseCode.GoingAway, bye: SHUTDOWN_REASON });
         },
         Math.floor(random() * jitterMs),
       );

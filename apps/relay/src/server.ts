@@ -27,6 +27,7 @@ import { newId } from '@centcom/contracts';
 import {
   AppError,
   noopMetrics,
+  isAppError,
   toProblem,
   type Logger,
   type Metrics,
@@ -36,6 +37,7 @@ import { SpanKind, type Tracer } from '@opentelemetry/api';
 import { WebSocket, WebSocketServer, type RawData } from 'ws';
 import { buildInfo, type BuildInfo } from './build-info.js';
 import { CloseCode, type CloseCodeValue } from './close-codes.js';
+import { closeConnection } from './connection/close.js';
 import type { RelayConfig } from './config.js';
 import { ConnectionRegistry, type ConnectionEntry } from './connection-registry.js';
 import { handleHealth, Readiness, type ReadinessProbe } from './health.js';
@@ -100,6 +102,14 @@ class LiveConnection implements RelayConnection {
 
   terminate(): void {
     this.ws.terminate();
+  }
+
+  onClose(listener: (code: number) => void): void {
+    if (this.ws.readyState === WebSocket.CLOSED) {
+      listener(1006);
+      return;
+    }
+    this.ws.once('close', (code: number) => listener(code));
   }
 }
 
@@ -294,8 +304,12 @@ export class RelayServer {
       { error: err instanceof Error ? err.name : typeof err },
       'relay.handler_error',
     );
-    connection.send(sysError(err));
-    connection.close(CloseCode.InternalError);
+    // The code and detail of an AppError a stage threw, else a generic internal_error.
+    closeConnection(connection, {
+      code: CloseCode.InternalError,
+      errorCode: isAppError(err) ? err.code : 'internal_error',
+      ...(isAppError(err) && err.detail !== undefined ? { detail: err.detail } : {}),
+    });
   }
 }
 

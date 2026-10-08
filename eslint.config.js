@@ -6,7 +6,8 @@ import tseslint from 'typescript-eslint';
 
 const WORKSPACE_IMPORT_PATTERNS = [
   {
-    group: ['@centcom/*/*'],
+    // B011's simulator is a public subpath of the testkit's "exports" map.
+    group: ['@centcom/*/*', '!@centcom/testkit/sim'],
     message:
       'Import a workspace package by its name only; its package.json "exports" map is the public surface.',
   },
