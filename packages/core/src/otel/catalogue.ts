@@ -252,6 +252,10 @@ export const METRICS = {
     'Stripe subscription updates, by whether they were applied (false: a stale event).',
     ['applied'],
   ),
+  devices_revoked_publish_failed_total: counter(
+    'Device revocations not announced on devices:revoked after every retry.',
+  ),
+  devices_revoked_total: counter('Devices revoked.'),
   email_failed_total: counter('E-mails that failed for good.', ['template'], WORKER),
   email_idempotency_unrecorded_total: counter(
     'E-mail idempotency keys that could not be recorded.',
@@ -329,6 +333,8 @@ export const METRICS = {
   redis_pubsub_handler_errors_total: counter('Pub/sub handlers that threw.', [], ALL),
   redis_reconnects_total: counter('Redis reconnects.', [], ALL),
   redis_unavailable_total: counter('Redis calls refused while it was down.', [], ALL),
+  relay_codec_errors_total: counter('Frames dropped because decoding threw.', [], RELAY),
+  relay_frames_invalid_total: counter('Inbound frames refused by the codec.', ['code'], RELAY),
   releases_corrupt_total: counter('Release manifests that could not be read.'),
   releases_min_version_sync_failures_total: counter('Minimum client version syncs that failed.'),
   releases_published_total: counter('Releases published, by channel.', ['channel']),

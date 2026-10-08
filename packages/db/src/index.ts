@@ -71,6 +71,14 @@ export {
 } from './health.js';
 export { createMembershipRepo } from './repos/memberships.js';
 export {
+  createDeviceRepo,
+  DEVICE_COLUMNS,
+  DEVICE_LIST_SORTS,
+  type DeviceRecord,
+  type DeviceRepo,
+  type NewDevice,
+} from './repos/devices.js';
+export {
   createInviteStore,
   INVITE_LIST_SORTS,
   inviteOperations,
