@@ -3,7 +3,7 @@
  * CT-API-ACCOUNTS rows and shapes, the secret in exactly one response, CT-PAGE pages, an
  * `Idempotency-Key` replay that makes no second key, and the request checks.
  */
-import { validate } from '@centcom/contracts';
+import { newId, validate } from '@centcom/contracts';
 import { describe, expect, it } from 'vitest';
 import { apiKeysApp, arrangeWorkspace, asUser } from './helpers.js';
 
@@ -139,7 +139,7 @@ describe('Idempotency-Key (acceptance 7)', () => {
     const t = await apiKeysApp();
     const { workspaceId, users } = arrangeWorkspace(t.store);
     const body = { workspace: workspaceId, name: 'CI', scopes: ['workspaces:read'] };
-    const headers = { 'idempotency-key': '01JA3Z8K2M5N7P9Q0R1S2T3V4W' };
+    const headers = { 'idempotency-key': newId('req').slice(4) };
     const first = await post(t, users.owner, body, headers);
     const again = await post(t, users.owner, body, headers);
     expect(first.statusCode).toBe(201);
@@ -168,7 +168,7 @@ describe('Idempotency-Key (acceptance 7)', () => {
       t,
       users.owner,
       { workspace: workspaceId, name: 'CI', scopes: ['workspaces:read'] },
-      { 'idempotency-key': '01JA3Z8K2M5N7P9Q0R1S2T3V4X' },
+      { 'idempotency-key': newId('req').slice(4) },
     );
     const secret = String(res.json().secret);
     expect(written.length).toBeGreaterThan(0);
