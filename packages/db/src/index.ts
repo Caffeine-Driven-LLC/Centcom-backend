@@ -6,8 +6,9 @@
  * identities (B015) in `schema/identities.ts`, refresh tokens (B017) in
  * `schema/refresh-tokens.ts`, e-mail sign-in links (B014) in
  * `schema/login-tokens.ts`, the audit log (B036) in `schema/audit-events.ts`, invites (B029) in
- * `schema/invites.ts`; repositories (B013 on, workspaces from B027, members from B028, invites
- * from B029) in `repos/`.
+ * `schema/invites.ts`, notifications (B063) in `schema/notifications.ts`; repositories (B013 on,
+ * workspaces from B027, members from B028, invites from B029, notifications from B063) in
+ * `repos/`.
  */
 export {
   ACQUIRE_BUCKETS_S,
@@ -95,6 +96,13 @@ export {
   type WorkspaceView,
 } from './repos/workspaces.js';
 export {
+  createNotificationStore,
+  type NewNotification,
+  type NotificationInsert,
+  type NotificationRecord,
+  type NotificationStore,
+} from './repos/notifications.js';
+export {
   createUserRepo,
   isEmailTaken,
   USER_COLUMNS,
@@ -106,6 +114,11 @@ export {
 } from './repos/users.js';
 export type { AuditDatabase, AuditEventsTable } from './schema/audit-events.js';
 export type { InviteDatabase, InvitesDatabase, InvitesTable } from './schema/invites.js';
+export type {
+  NotificationDb,
+  NotificationsDatabase,
+  NotificationsTable,
+} from './schema/notifications.js';
 export type {
   IdentitiesDatabase,
   IdentitiesTable,
