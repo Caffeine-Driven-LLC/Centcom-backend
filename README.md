@@ -40,8 +40,8 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 | [B026](plan/backend/B026.md) | Account deletion and data export | M | M3 |
 | [B029](plan/backend/B029.md) | Invites: create, accept, revoke, expiry, key-bundle storage | L | M3 |
 | [B039](plan/backend/B039.md) | Envelope codec and schema-enforced validation with size limits | M | M3 |
-| [B066](plan/backend/B066.md) | Notification preferences and quiet hours | S | M4 |
 | [B070](plan/backend/B070.md) | Stripe integration: customers and subscriptions | L | M4 |
+| [B080](plan/backend/B080.md) | Entitlement cache and enforcement middleware | M | M4 |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
 
