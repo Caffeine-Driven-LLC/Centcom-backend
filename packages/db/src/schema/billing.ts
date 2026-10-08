@@ -1,5 +1,5 @@
 /**
- * Table types of billing (B070, migration 20260102002000_billing_customers_subscriptions.sql).
+ * Table types of billing (B070, migration 20260102003200_billing_customers_subscriptions.sql).
  * Written by the subscriptions repository (apps/api `modules/billing/subscriptions/repository.ts`):
  * Stripe ids and the subscription's state, never card data or full Stripe payloads.
  */

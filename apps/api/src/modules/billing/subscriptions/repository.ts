@@ -111,7 +111,7 @@ const rowOf = (r: Selected): SubscriptionRow => ({
   stripeEventCreated: Number(r.stripe_event_created),
 });
 
-/** The repository on Postgres (migration 20260102002000). */
+/** The repository on Postgres (migration 20260102003200). */
 export function createBillingRepository<DB extends BillingDb>(
   database: Kysely<DB>,
 ): BillingRepository {

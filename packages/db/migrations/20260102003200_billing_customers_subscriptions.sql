@@ -10,7 +10,8 @@
 --   ignored.
 --
 -- Rows go with their workspace (B027's purge). Named after main's newest migration
--- (20260102001900, B066) instead of the card's 0070_*.
+-- (20260102002900, B087) instead of the card's 0070_*, skipping 20260102003000 and
+-- 20260102003100, which the open PRs of B081 and B031 use.
 
 create table billing_customer (
   workspace_id text primary key references workspaces (id) on delete cascade,
