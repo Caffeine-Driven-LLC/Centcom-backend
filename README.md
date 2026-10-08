@@ -40,8 +40,8 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 | [B026](plan/backend/B026.md) | Account deletion and data export | M | M3 |
 | [B029](plan/backend/B029.md) | Invites: create, accept, revoke, expiry, key-bundle storage | L | M3 |
 | [B037](plan/backend/B037.md) | Relay service skeleton: ws server, health, graceful shutdown | M | M3 |
-| [B034](plan/backend/B034.md) | Workspace settings and policies | S | M4 |
 | [B035](plan/backend/B035.md) | Projects registry | S | M4 |
+| [B064](plan/backend/B064.md) | Push delivery: web push, APNs, FCM abstraction | M | M4 |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
 
