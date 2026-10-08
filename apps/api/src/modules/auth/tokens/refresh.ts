@@ -62,8 +62,10 @@ type RefreshRow = Selectable<RefreshTokensTable>;
 export type RotationDecision = 'rotate' | 'reuse' | 'invalid';
 
 /**
- * Decides a rotation (pure): unknown or revoked is invalid; spent is reuse (whatever else is
- * wrong with the request); another client, a revoked device or a passed expiry is invalid.
+ * Decides a rotation (pure): unknown is invalid; spent is reuse, whatever else is wrong with the
+ * request and even when its family is already revoked (CT-AUTH: reuse of a spent token returns
+ * `refresh_reuse_detected`); revoked, another client, a revoked device or a passed expiry is
+ * invalid.
  */
 export function decideRotation(
   row:
@@ -74,8 +76,9 @@ export function decideRotation(
     | undefined,
   ctx: { nowMs: number; clientId: string; deviceRevoked: boolean },
 ): RotationDecision {
-  if (row === undefined || row.revoked_at !== null) return 'invalid';
+  if (row === undefined) return 'invalid';
   if (row.used_at !== null) return 'reuse';
+  if (row.revoked_at !== null) return 'invalid';
   if (row.client_id !== ctx.clientId || ctx.deviceRevoked) return 'invalid';
   if (ctx.nowMs >= row.expires_at.getTime() || ctx.nowMs >= row.absolute_expires_at.getTime())
     return 'invalid';

@@ -222,7 +222,8 @@ app.get(
   - Every use rotates the token in one transaction that locks its row, sliding 30 days within
     180 days absolute.
   - A spent token presented again revokes the whole family (`refresh_reuse_detected`, logged as
-    `auth.refresh_reuse_detected` with the family id).
+    `auth.refresh_reuse_detected` with the family id), and stays reuse after the family is
+    revoked: every loser of a refresh race gets `refresh_reuse_detected`.
   - Every other problem is one `invalid_grant` body.
   - `scope` on a refresh may narrow the access token, never widen it.
 - **Hooks for other lanes:**
