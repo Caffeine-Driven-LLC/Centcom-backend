@@ -7,7 +7,8 @@
  *   then 409. One user owns at most WORKSPACES_MAX_OWNED live workspaces (409 beyond).
  * - **Update:** the row is locked, the ETag (`If-Match`) checked (412 when stale), then the name
  *   and the extensions' fields change, the version moves on and `workspace.update` is written,
- *   all in one transaction: of two updates with one ETag, exactly one wins.
+ *   all in one transaction: of two updates with one ETag, exactly one wins. The steps extensions
+ *   return run after the commit.
  * - **Delete:** one transaction hides the workspace (every read is a 404 from then on) and writes
  *   `workspace.delete` as an account-level event, so the record outlives the purge. After the
  *   commit, `workspace.deleted` is announced on Redis, cached roles are dropped, and the
@@ -173,26 +174,32 @@ export class WorkspaceService {
     ifMatch: IfMatch,
     ctx: RequestCtx,
   ): Promise<WorkspaceRecord> {
-    return this.#o.store.transaction(async (tx) => {
+    let afterCommit: (() => Promise<void>)[] = [];
+    const record = await this.#o.store.transaction(async (tx) => {
+      afterCommit = [];
       const current = await tx.lockLive(workspaceId);
       if (current === null) throw notFound(WORKSPACE_DETAILS.notFound);
       if (!ifMatchAccepts(ifMatch, String(current.version))) {
         throw new AppError('precondition_failed', { detail: WORKSPACE_DETAILS.stale });
       }
-      const record = await tx.update(
+      const updated = await tx.update(
         workspaceId,
         update.name === undefined ? {} : { name: update.name },
       );
       for (const { extension, value } of update.extensions) {
-        await extension.apply(tx, workspaceId, value);
+        const then = await extension.apply(tx, workspaceId, value, ctx);
+        if (typeof then === 'function') afterCommit.push(then);
       }
       await ctx.audit(tx.trx, {
         action: 'workspace.update',
         target: { type: 'workspace', id: workspaceId },
         meta: { fields: update.fields.join(',') },
       });
-      return record;
+      return updated;
     });
+    // The extensions' announcements, once the change is committed.
+    for (const step of afterCommit) await step();
+    return record;
   }
 
   /**

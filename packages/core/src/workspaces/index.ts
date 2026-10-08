@@ -1,11 +1,11 @@
 /**
- * Workspace lifecycle names (B027, B028) shared by the API, which changes workspaces and their
- * members, and the services that react: the Redis channels `workspace.deleted` and membership
- * changes are announced on (the relay listens), and the `workspace-purge` queue with its job
- * options (the worker purges).
+ * Workspace lifecycle names (B027, B028, B034) shared by the API, which changes workspaces, their
+ * members and their settings, and the services that react: the Redis channels `workspace.deleted`,
+ * `workspace.settings_changed` and membership changes are announced on (the relay and the
+ * retention job listen), and the `workspace-purge` queue with its job options (the worker purges).
  *
  * Owns: the channels, the message shapes, the queue name and the job options. Must not: carry
- * anything but ids, roles and times in a message or a job.
+ * anything but ids, roles, field names and times in a message or a job.
  */
 import type { WorkspaceRole } from '../rbac/actions.js';
 import type { PubSub } from '../redis/types.js';
@@ -47,6 +47,34 @@ export function publishWorkspaceDeleted(
   const event: WorkspaceDeletedEvent = {
     type: 'workspace.deleted',
     wsp: workspaceId,
+    at: at.toISOString(),
+  };
+  return pubsub.publish(WORKSPACE_EVENTS_CHANNEL, JSON.stringify(event));
+}
+
+/** `workspace.settings_changed`: the policies named in `changed` (wire names) changed at `at`. */
+export interface WorkspaceSettingsChangedEvent {
+  type: 'workspace.settings_changed';
+  wsp: string;
+  /** `auto_approve`, `share_history`, `history_retention_days`. */
+  changed: string[];
+  at: string;
+}
+
+/**
+ * Announces that settings of `workspaceId` changed (the relay and the retention job re-read
+ * them); rejects when Redis does.
+ */
+export function publishWorkspaceSettingsChanged(
+  pubsub: Pick<PubSub, 'publish'>,
+  workspaceId: string,
+  changed: readonly string[],
+  at: Date,
+): Promise<void> {
+  const event: WorkspaceSettingsChangedEvent = {
+    type: 'workspace.settings_changed',
+    wsp: workspaceId,
+    changed: [...changed],
     at: at.toISOString(),
   };
   return pubsub.publish(WORKSPACE_EVENTS_CHANNEL, JSON.stringify(event));

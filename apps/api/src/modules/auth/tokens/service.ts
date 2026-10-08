@@ -169,8 +169,11 @@ export class TokenService {
   /**
    * An access token and the first refresh token of a new family for a signed-in user: what grant
    * handlers return once they have authenticated someone. The device must be the user's and live.
+   *
+   * With `tx`, the device is read and the refresh token written in that transaction, so a grant
+   * can create a device and its tokens together, or neither (B016).
    */
-  async issueTokens(input: IssueInput): Promise<TokenResponse> {
+  async issueTokens(input: IssueInput, tx?: Kysely<TokenDatabase>): Promise<TokenResponse> {
     const scopes = checkScopes(input.scopes);
     if (
       !isId('usr', input.userId) ||
@@ -178,8 +181,9 @@ export class TokenService {
     ) {
       throw new AppError('invalid_request', { detail: 'The user or workspace id is not valid.' });
     }
+    const store = tx === undefined ? this.store : new RefreshTokenStore({ db: tx, now: this.now });
     const clientId = input.clientId ?? 'centcom-cli';
-    if (input.deviceId !== null) await this.checkDevice(input.deviceId, input.userId);
+    if (input.deviceId !== null) await this.checkDevice(input.deviceId, input.userId, store);
     const grant: RefreshGrant = {
       userId: input.userId,
       deviceId: input.deviceId,
@@ -187,7 +191,7 @@ export class TokenService {
       scope: scopes.join(' '),
       workspaceId: input.workspaceId ?? null,
     };
-    const refreshToken = await guarded(() => this.store.issue(grant));
+    const refreshToken = await guarded(() => store.issue(grant));
     return this.respond(grant, scopes, refreshToken);
   }
 
@@ -314,10 +318,12 @@ export class TokenService {
   }
 
   /** 401 `device_revoked` for a revoked device, 400 `invalid_grant` for one that is unknown or another user's. */
-  private async checkDevice(deviceId: string, userId: string): Promise<void> {
-    const device = isId('dev', deviceId)
-      ? await guarded(() => this.store.device(deviceId))
-      : undefined;
+  private async checkDevice(
+    deviceId: string,
+    userId: string,
+    store: RefreshStore = this.store,
+  ): Promise<void> {
+    const device = isId('dev', deviceId) ? await guarded(() => store.device(deviceId)) : undefined;
     if (device?.userId !== userId)
       throw new AppError('invalid_grant', { detail: 'The device is not valid for this user.' });
     if (device.revoked) throw new AppError('device_revoked', { detail: 'The device was revoked.' });

@@ -13,13 +13,13 @@ const env = defineConfig(
 
 /** Both URLs are set: stacks use those servers and no container starts. */
 export const ENV_SERVERS = env.DATABASE_URL !== undefined && env.REDIS_URL !== undefined;
+/** A container runtime answers, whether or not the URLs are set (CI's integration job has both). */
+export const RUNTIME = await testcontainersRuntime.check().then(
+  () => true,
+  () => false,
+);
 /** No URLs, but a container runtime answers: stacks run on containers. */
-export const CONTAINERS =
-  !ENV_SERVERS &&
-  (await testcontainersRuntime.check().then(
-    () => true,
-    () => false,
-  ));
+export const CONTAINERS = !ENV_SERVERS && RUNTIME;
 /** Stacks can start here. */
 export const STACK = ENV_SERVERS || CONTAINERS;
 
