@@ -10,7 +10,8 @@
  * `schema/invites.ts`, device grants (B016) in `schema/device-grants.ts`, API keys (B019) in
  * `schema/api-keys.ts`, workspace settings (B034) in `schema/workspace-settings.ts`, projects
  * (B035) in `schema/projects.ts`, notifications (B063) in `schema/notifications.ts`, plans and
- * entitlements (B069) in `schema/entitlements.ts`; repositories (B013 on, workspaces from B027,
+ * entitlements (B069) in `schema/entitlements.ts`, feature flags (B083) in
+ * `schema/feature-flags.ts`; repositories (B013 on, workspaces from B027,
  * members from B028, invites from B029, settings from B034, projects from B035, notifications
  * from B063) in `repos/`; the entitlements repository is the API's (B069).
  */
@@ -147,6 +148,12 @@ export type {
   AuditExportJobsTable,
   AuditExportStatus,
 } from './schema/audit-exports.js';
+export type {
+  FeatureFlagsMetaTable,
+  FeatureFlagsTable,
+  FlagDatabase,
+  FlagType,
+} from './schema/feature-flags.js';
 export type {
   DeviceGrantDatabase,
   DeviceGrantsDatabase,
