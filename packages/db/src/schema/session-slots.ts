@@ -1,5 +1,5 @@
 /**
- * Table types of member slots (B031, migration 20260102001200_session_member_slots.sql). Written
+ * Table types of member slots (B031, migration 20260102003100_session_member_slots.sql). Written
  * by the slot store (`repos/session-slots.ts`); ids and integers only.
  */
 import type { ColumnType } from 'kysely';

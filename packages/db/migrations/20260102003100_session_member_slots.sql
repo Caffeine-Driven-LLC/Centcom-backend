@@ -8,8 +8,9 @@
 -- CT-IDS `mem_` id with no foreign key. A session's slots are deleted by the retention job
 -- (`deleteForSession`) before the session row.
 --
--- Named after 20260102000800_invites: the runner refuses a file older than an applied one (and
--- 20260102000900 to 20260102001100 are taken by lanes in review).
+-- Named after 20260102002900_staff_users, the newest migration on main when this file was
+-- renamed: the runner refuses a file older than an applied one (and 20260102003000 and
+-- 20260102003200 are taken by lanes in review).
 
 create table session_member_slots (
   session_id text not null references sessions (id) on delete restrict,

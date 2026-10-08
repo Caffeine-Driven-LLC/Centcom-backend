@@ -33,7 +33,7 @@ export interface SessionSlotStore {
   deleteForSession(sessionId: string): Promise<number>;
 }
 
-/** The store on Postgres (table `session_member_slots`, migration 20260102001200). */
+/** The store on Postgres (table `session_member_slots`, migration 20260102003100). */
 export function createSessionSlotStore(db: Kysely<SessionSlotDatabase>): SessionSlotStore {
   return {
     assign(sessionId, memberId, cap) {
