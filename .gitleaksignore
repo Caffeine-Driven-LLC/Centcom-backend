@@ -24,6 +24,8 @@ a4852c89d6c40af30617ab092f0c2f7a0a854185:packages/contracts/src/generated/valida
 d913b969d1cc5942d5b1f0af866bbba06383edc2:apps/api/test/modules/apikeys/routes.test.ts:generic-api-key:142
 d913b969d1cc5942d5b1f0af866bbba06383edc2:apps/api/test/modules/apikeys/routes.test.ts:generic-api-key:171
 d913b969d1cc5942d5b1f0af866bbba06383edc2:apps/api/test/modules/apikeys/config.test.ts:generic-api-key:20
+# The same three values in B019's squash commit on main (PR #40), which the history scan reports
+# under new fingerprints.
 2191980b833867b68ea6440f135aa41f454e6311:apps/api/test/modules/apikeys/routes.test.ts:generic-api-key:142
 2191980b833867b68ea6440f135aa41f454e6311:apps/api/test/modules/apikeys/routes.test.ts:generic-api-key:171
 2191980b833867b68ea6440f135aa41f454e6311:apps/api/test/modules/apikeys/config.test.ts:generic-api-key:20
