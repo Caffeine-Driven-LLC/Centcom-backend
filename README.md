@@ -17,7 +17,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 ![Progress](docs/progress.svg)
 
-**42% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
+**44% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
 
 ## Next steps
 
@@ -37,11 +37,11 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 | [B017](plan/backend/B017.md) | Token service: JWT issue, refresh rotation with reuse detection, JWKS, revocation | L | M3 |
 | [B026](plan/backend/B026.md) | Account deletion and data export | M | M3 |
 | [B029](plan/backend/B029.md) | Invites: create, accept, revoke, expiry, key-bundle storage | L | M3 |
+| [B040](plan/backend/B040.md) | Heartbeat, liveness and connection state machine | M | M3 |
+| [B043](plan/backend/B043.md) | Session room registry and membership authorisation | M | M3 |
 | [B055](plan/backend/B055.md) | Encrypted history store (blob storage of ciphertext frames) | M | M3 |
 | [B071](plan/backend/B071.md) | Checkout and customer portal sessions | M | M4 |
 | [B072](plan/backend/B072.md) | Stripe webhook ingestion: verified, idempotent, replay-safe | M | M4 |
-| [B079](plan/backend/B079.md) | Trials, coupons and promotions | S | M4 |
-| [B093](plan/backend/B093.md) | Observability: metrics, traces, dashboards, SLOs | M | M4 |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
 
