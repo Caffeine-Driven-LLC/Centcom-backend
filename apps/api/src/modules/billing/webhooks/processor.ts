@@ -20,6 +20,9 @@ import { BillingStateError } from '../subscriptions/service.js';
 import { handleEvent, type HandlerDeps } from './handlers.js';
 import type { StripeEventStore } from './store.js';
 
+/** Buckets of `stripe_webhook_lag_seconds`, in seconds. */
+export const LAG_BUCKETS_S: readonly number[] = [0.5, 1, 2, 5, 10, 30, 60, 300, 900, 3600];
+
 /** What processing an event came to. */
 export type ProcessOutcome = 'processed' | 'ignored' | 'failed' | 'skipped';
 
@@ -28,6 +31,8 @@ export interface EventProcessorDeps extends HandlerDeps {
   events: StripeEventStore;
   /** Publishes the billing outbox (`publishOutbox` with B081's emitter and B063's dispatcher). */
   publish?: () => Promise<unknown>;
+  /** Milliseconds; default Date.now (for `stripe_webhook_lag_seconds`). */
+  clock?: () => number;
   logger?: Logger;
   metrics?: Metrics;
 }
@@ -80,6 +85,12 @@ export class EventProcessor {
     }
     await events.finish(eventId, outcome);
     this.#metrics.counter('stripe_events_total', { outcome }).inc();
+    if (outcome === 'processed') {
+      const lag = (this.deps.clock ?? Date.now)() / 1000 - event.created;
+      this.#metrics
+        .histogram('stripe_webhook_lag_seconds', LAG_BUCKETS_S)
+        .observe(Math.max(0, lag), { type: event.type });
+    }
     logger?.info({ ...fields, outcome }, 'stripe_event.done');
     if (outcome === 'processed' && this.deps.publish !== undefined) {
       try {
