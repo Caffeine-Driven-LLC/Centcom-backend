@@ -224,6 +224,28 @@ export const METRICS = {
 
   // Modules.
   account_audit_failures_total: counter('Account audit writes that failed.'),
+  account_deletions_blocked_total: counter(
+    'Account deletions refused: the only owner of a workspace with other members.',
+  ),
+  account_deletions_requested_total: counter('Account deletions scheduled.'),
+  account_deletions_restored_total: counter('Pending account deletions cancelled.'),
+  account_export_dead_letters_total: counter('Account export jobs given up on.', ['job'], WORKER),
+  account_exports_expired_total: counter('Account export files expired.', [], API_WORKER),
+  account_exports_failed_total: counter('Account exports failed, by code.', ['code'], API_WORKER),
+  account_exports_limited_total: counter('Account exports refused by the 24-hour limit.'),
+  account_exports_requested_total: counter('Account exports requested.'),
+  account_exports_written_total: counter('Account export files written.', [], API_WORKER),
+  account_lifecycle_after_commit_failures_total: counter(
+    'Account lifecycle steps after a commit that failed (revocation flags, queueing).',
+    ['step'],
+  ),
+  account_purge_blocked_total: counter(
+    'Account purges not run: the user owns a workspace with other members.',
+    [],
+    API_WORKER,
+  ),
+  account_purge_failed_total: counter('Account purges that failed.', [], WORKER),
+  account_purges_total: counter('Account purge runs, by outcome.', ['outcome'], API_WORKER),
   admin_audit_failures_total: counter('Admin API calls whose audit write failed.'),
   admin_calls_total: counter('Admin API calls by outcome.', ['outcome']),
   admin_connections_refused_total: counter(

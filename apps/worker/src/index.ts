@@ -2,7 +2,8 @@
  * @centcom/worker: BullMQ jobs: webhooks, notifications, billing, retention. Today: the email
  * delivery job (B032), the workspace purge (B027) with the settings (B034), entitlements (B069)
  * and projects (B035) purge hooks, invite expiry (B029), notification dispatch and digests
- * (B063), audit log exports (B082), and telemetry retention (B085). Later lanes add theirs under
+ * (B063), audit log exports (B082), telemetry retention (B085), and account exports and purges
+ * (B026). Later lanes add theirs under
  * `src/jobs/`.
  */
 export {
@@ -114,3 +115,39 @@ export {
   type TelemetryRetentionDeps,
   type TelemetryRetentionWorkerOptions,
 } from './jobs/telemetry-retention/index.js';
+export {
+  ACCOUNT_EXPORT_ATTEMPTS,
+  ACCOUNT_EXPORT_JOB,
+  ACCOUNT_EXPORT_QUEUE,
+  ACCOUNT_EXPORT_SWEEP_JOB,
+  accountExportJobOptions,
+  createAccountExportQueue,
+  enqueueAccountExport,
+  onAccountExportFailed,
+  processAccountExport,
+  scheduleAccountExportSweep,
+  startAccountExportWorker,
+  type AccountExportDeps,
+  type AccountExportJobData,
+  type AccountExportWorkerOptions,
+} from './jobs/account-export.js';
+export {
+  ACCOUNT_PURGE_ATTEMPTS,
+  ACCOUNT_PURGE_JOB,
+  ACCOUNT_PURGE_QUEUE,
+  ACCOUNT_PURGE_SWEEP_JOB,
+  accountPurgeJobId,
+  accountPurgeJobOptions,
+  AccountPurgeWaitingError,
+  cancelAccountPurge,
+  createAccountPurgeQueue,
+  onAccountPurgeFailed,
+  processAccountPurge,
+  scheduleAccountPurge,
+  scheduleAccountPurgeSweep,
+  startAccountPurgeWorker,
+  type AccountPurgeDeps,
+  type AccountPurgeJobData,
+  type AccountPurgeOutcome,
+  type AccountPurgeWorkerOptions,
+} from './jobs/account-purge.js';
