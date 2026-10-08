@@ -1,0 +1,18 @@
+{{/*
+  Notification text (B094) for the PagerDuty, Opsgenie, Slack and e-mail contact points.
+  `pnpm alerts:render` replaces the Grafana and runbook base URL placeholders: alerts carry
+  relative paths (the `dashboard` annotation, the `runbook` label), so links follow the deployment.
+  Only alert names, severities, summaries and service-level labels appear: never customer data.
+*/}}
+{{ define "centcom.title" -}}
+[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .GroupLabels.service }} in {{ .GroupLabels.env }}: {{ with .CommonLabels.alertname }}{{ . }}{{ else }}several alerts{{ end }}
+{{- end }}
+
+{{ define "centcom.text" -}}
+{{ range .Alerts -}}
+{{ .Labels.alertname }} ({{ .Labels.severity }}, {{ .Status }}): {{ .Annotations.summary }}
+Impact: {{ .Annotations.impact }}
+Dashboard: ${ALERT_GRAFANA_URL}{{ .Annotations.dashboard }}
+Runbook: ${ALERT_RUNBOOK_BASE_URL}{{ .Labels.runbook }}
+{{ end -}}
+{{- end }}

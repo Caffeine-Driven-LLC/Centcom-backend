@@ -1,0 +1,32 @@
+# promtool unit tests for backup.nonprod.rules.yaml (B094); see api.test.yaml.
+rule_files:
+  - ../../observability/slo/rules.yaml
+  - ../recording/slo-30m.rules.yaml
+  - backup.nonprod.rules.yaml
+
+evaluation_interval: 1m
+
+tests:
+  # The newest backup ages past 26 h (93 600 s) at 11m; BackupStale fires after `for: 15m`.
+  - interval: 1m
+    input_series:
+      - series: 'centcom_backup_age_seconds{env="stage"}'
+        values: '93000+60x40'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: BackupStale
+        exp_alerts: []
+      - eval_time: 30m
+        alertname: BackupStale
+        exp_alerts:
+          - exp_labels:
+              env: 'stage'
+              owner: 'platform'
+              runbook: 'infra/runbooks/alerts/BackupStale.md'
+              service: 'backup'
+              severity: 'ticket'
+            exp_annotations:
+              dashboard: '/d/centcom-database-redis?var-env=stage'
+              impact: 'Restores would start from an older base and replay more WAL: recovery takes longer, and if WAL archiving fails too, more data is at risk.'
+              pending_metric: 'B099'
+              summary: 'The newest Postgres base backup in stage is over 26 hours old.'

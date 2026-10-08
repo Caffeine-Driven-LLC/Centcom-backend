@@ -1,0 +1,95 @@
+# promtool unit tests for platform.rules.yaml (B094); see api.test.yaml. Test time starts at the
+# Unix epoch, so a certificate expiring at 13 days (1 123 200 s) has 13 days left at 0m.
+rule_files:
+  - ../../observability/slo/rules.yaml
+  - ../recording/slo-30m.rules.yaml
+  - platform.rules.yaml
+
+evaluation_interval: 1m
+
+tests:
+  # A certificate with 13 days left fires after `for: 15m`; one with 30 days never does.
+  - interval: 1m
+    input_series:
+      - series: 'probe_ssl_earliest_cert_expiry{job="tls", env="prod", instance="api.example.test"}'
+        values: '1123200x30'
+      - series: 'probe_ssl_earliest_cert_expiry{job="tls", env="prod", instance="releases.example.test"}'
+        values: '2592000x30'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: CertExpirySoon
+        exp_alerts: []
+      - eval_time: 20m
+        alertname: CertExpirySoon
+        exp_alerts:
+          - exp_labels:
+              env: 'prod'
+              instance: 'api.example.test'
+              owner: 'platform'
+              runbook: 'infra/runbooks/alerts/CertExpirySoon.md'
+              service: 'platform'
+              severity: 'ticket'
+            exp_annotations:
+              dashboard: '/d/centcom-api-overview?var-env=prod'
+              impact: 'When it expires, clients refuse the connection: the API, the relay or downloads stop working for everyone.'
+              summary: 'A TLS certificate served in prod expires in less than 14 days.'
+
+  # Two API instances fail /readyz (fires after 5 minutes); one relay instance alone does not.
+  - interval: 1m
+    input_series:
+      - series: 'probe_success{job="readyz", component="api", instance="api-a", env="prod"}'
+        values: '0x15'
+      - series: 'probe_success{job="readyz", component="api", instance="api-b", env="prod"}'
+        values: '0x15'
+      - series: 'probe_success{job="readyz", component="api", instance="api-c", env="prod"}'
+        values: '1x15'
+      - series: 'probe_success{job="readyz", component="relay", instance="relay-a", env="prod"}'
+        values: '0x15'
+      - series: 'probe_success{job="readyz", component="relay", instance="relay-b", env="prod"}'
+        values: '1x15'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: ReadyzFailing
+        exp_alerts: []
+      - eval_time: 7m
+        alertname: ReadyzFailing
+        exp_alerts:
+          - exp_labels:
+              component: 'api'
+              env: 'prod'
+              owner: 'platform'
+              runbook: 'infra/runbooks/alerts/ReadyzFailing.md'
+              service: 'platform'
+              severity: 'ticket'
+            exp_annotations:
+              dashboard: '/d/centcom-api-overview?var-env=prod'
+              impact: 'The load balancer has taken those instances out: less capacity, and a dependency (database, Redis or migrations) may be failing. If customers notice, the SLO alerts page.'
+              summary: 'More than one api instance in prod has failed /readyz for 5 minutes.'
+
+  # The API stops exporting after 90m while the relay goes on: ObservabilityDown fires for
+  # the API once nothing has arrived for 10 minutes and `for: 5m` has passed.
+  - interval: 1m
+    input_series:
+      - series: 'centcom_db_pool_max_connections{env="prod", region="eu", job="centcom/centcom-api"}'
+        values: '20x90'
+      - series: 'centcom_db_pool_max_connections{env="prod", region="eu", job="centcom/centcom-relay"}'
+        values: '20x150'
+    alert_rule_test:
+      - eval_time: 100m
+        alertname: ObservabilityDown
+        exp_alerts: []
+      - eval_time: 110m
+        alertname: ObservabilityDown
+        exp_alerts:
+          - exp_labels:
+              env: 'prod'
+              job: 'centcom/centcom-api'
+              owner: 'platform'
+              runbook: 'infra/runbooks/alerts/ObservabilityDown.md'
+              service: 'platform'
+              severity: 'page'
+            exp_annotations:
+              dashboard: '/d/centcom-database-redis?var-env=prod'
+              impact: 'Alerts that read these metrics cannot fire: an outage of this service would go unnoticed.'
+              summary: 'No metrics from centcom/centcom-api in prod for 10 minutes.'
+              user_impact: 'Customers are not protected by alerting while metrics are missing; an outage they notice would reach on-call only through support.'

@@ -1,0 +1,38 @@
+# promtool unit tests for redis.rules.yaml (B094); see api.test.yaml.
+rule_files:
+  - ../../observability/slo/rules.yaml
+  - ../recording/slo-30m.rules.yaml
+  - redis.rules.yaml
+
+evaluation_interval: 1m
+
+tests:
+  # 85 % of maxmemory in prod fires after 10 minutes; stage has no limit (maxmemory 0) and is
+  # skipped.
+  - interval: 1m
+    input_series:
+      - series: 'redis_memory_used_bytes{env="prod", instance="redis-1"}'
+        values: '850x20'
+      - series: 'redis_memory_max_bytes{env="prod", instance="redis-1"}'
+        values: '1000x20'
+      - series: 'redis_memory_used_bytes{env="stage", instance="redis-2"}'
+        values: '900x20'
+      - series: 'redis_memory_max_bytes{env="stage", instance="redis-2"}'
+        values: '0x20'
+    alert_rule_test:
+      - eval_time: 8m
+        alertname: RedisMemoryHigh
+        exp_alerts: []
+      - eval_time: 12m
+        alertname: RedisMemoryHigh
+        exp_alerts:
+          - exp_labels:
+              env: 'prod'
+              owner: 'platform'
+              runbook: 'infra/runbooks/alerts/RedisMemoryHigh.md'
+              service: 'redis'
+              severity: 'ticket'
+            exp_annotations:
+              dashboard: '/d/centcom-database-redis?var-env=prod'
+              impact: 'At the limit Redis evicts keys or refuses writes: queues, rate limits, presence and relay state degrade.'
+              summary: 'Redis in prod has used over 80 % of its maxmemory for 10 minutes.'

@@ -50,12 +50,17 @@ export {
 export { withApp, type AppHandle } from './app.js';
 export { MINIO_IMAGE, startMinio, type TestMinio } from './minio.js';
 export {
+  ALERTMANAGER_IMAGE,
   GRAFANA_IMAGE,
+  HOST_FROM_CONTAINER,
   OTEL_COLLECTOR_IMAGE,
   PROMETHEUS_IMAGE,
+  runAmtool,
   runPromtool,
+  startAlertmanager,
   startCollector,
   startGrafana,
+  type TestAlertmanager,
   type TestCollector,
   type TestGrafana,
 } from './observability.js';

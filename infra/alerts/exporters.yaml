@@ -1,0 +1,26 @@
+# Metrics from standard exporters that alert rules may read (B094), next to B093's catalogue
+# (packages/core/src/otel/catalogue.ts), which lists only what Centcom's own services export.
+# `pnpm alerts:lint` accepts a metric in an `expr` when it is catalogued, recorded by a rule file, or
+# listed here. Deploying the exporters is not this lane's (B091 provisions the infrastructure).
+#
+# Scrape conventions the rules rely on:
+# - blackbox_exporter probes every instance's /readyz under `job="readyz"`, with a `component` label
+#   (`api`, `relay`) and the instance in `instance`; every public TLS endpoint under `job="tls"`.
+# - postgres_exporter runs against each replica, redis_exporter against each Redis.
+# - Every series carries `env` (and `region` where it has one), as the collector adds to Centcom's
+#   own metrics.
+exporters:
+  postgres_exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.15.0
+    metrics:
+      pg_replication_lag_seconds: Seconds the replica's last replayed transaction is behind the primary.
+  redis_exporter:
+    image: oliver006/redis_exporter:v1.62.0
+    metrics:
+      redis_memory_used_bytes: Memory Redis has allocated (INFO memory used_memory).
+      redis_memory_max_bytes: The maxmemory limit; 0 when none is set.
+  blackbox_exporter:
+    image: prom/blackbox-exporter:v0.25.0
+    metrics:
+      probe_success: 1 when the last probe succeeded, else 0.
+      probe_ssl_earliest_cert_expiry: Unix time at which the first certificate in the chain expires.

@@ -1,0 +1,15 @@
+# A broken fixture for the lint tests (B094): an alert reading a metric no catalogue lists.
+groups:
+  - name: alerts-fixture-unknown-metric
+    rules:
+      - alert: FixtureUnknownMetric
+        expr: sum by (env) (rate(centcom_no_such_thing_total[5m])) > 0
+        labels:
+          severity: ticket
+          service: fixture
+          owner: platform
+          runbook: infra/runbooks/alerts/FixtureUnknownMetric.md
+        annotations:
+          summary: 'Something nobody exports happened in {{ $labels.env }}.'
+          impact: 'None: the metric does not exist.'
+          dashboard: '/d/centcom-api-overview?var-env={{ $labels.env }}'

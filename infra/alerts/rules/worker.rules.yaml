@@ -1,0 +1,72 @@
+# Worker alerts (B094): dead-letter queues and outgoing webhook delivery (the webhook-delivery SLO,
+# B093). Every threshold for the worker lives in this file. Burn-rate tiers and rounding as in
+# api.rules.yaml.
+groups:
+  - name: alerts-worker
+    interval: 1m
+    rules:
+      # A dead-letter queue (BullMQ queues named *.dlq or *.dead: notify.dispatch.dlq,
+      # stripe.event.dlq, webhook.dead) has held a job for 15 minutes.
+      - alert: DeadLetterNonEmpty
+        expr: |
+          max by (env, queue) (centcom_queue_depth{queue=~".+[.](dlq|dead)"}) > 0
+        for: 15m
+        labels:
+          severity: page
+          service: worker
+          owner: platform
+          runbook: infra/runbooks/alerts/DeadLetterNonEmpty.md
+        annotations:
+          summary: 'Dead-lettered jobs have waited in {{ $labels.queue }} ({{ $labels.env }}) for 15 minutes.'
+          impact: 'Work that failed every retry is waiting for an operator: a billing event, a notification or a webhook has not been applied or sent.'
+          user_impact: 'Data-loss risk: dead letters are kept 7 days and then lost, and until they are replayed customers miss what they carried (plan changes, notifications, webhook deliveries).'
+          dashboard: '/d/centcom-workers-queues?var-env={{ $labels.env }}'
+
+      - alert: WebhookDeliveryFailing
+        expr: |
+          (
+            round(slo:burn_rate:1h{slo="webhook-delivery"}, 0.001) >= 14.4
+            and round(slo:burn_rate:5m{slo="webhook-delivery"}, 0.001) >= 14.4
+          )
+          or
+          (
+            round(slo:burn_rate:6h{slo="webhook-delivery"}, 0.001) >= 6
+            and round(slo:burn_rate:30m{slo="webhook-delivery"}, 0.001) >= 6
+          )
+        for: 2m
+        labels:
+          severity: page
+          service: worker
+          owner: integrations
+          slo: webhook-delivery
+          runbook: infra/runbooks/alerts/WebhookDeliveryFailing.md
+        annotations:
+          summary: 'Outgoing webhooks whose first attempt fails or takes over 10 s are spending the webhook-delivery error budget too fast (6x or more) in {{ $labels.env }}.'
+          impact: "Customers' integrations get events late or not at all; deliveries are retried, so they arrive late rather than never while retries last."
+          dashboard: '/d/centcom-workers-queues?var-env={{ $labels.env }}'
+
+      # More than half of all delivery attempts failing (sustained for the 15 minutes of `for`), or
+      # the 3-day budget burn.
+      - alert: WebhookDeliveryFailing
+        expr: |
+          max by (env) (
+            sum by (env) (rate(centcom_webhook_deliveries_total{result!="ok"}[5m]))
+            / sum by (env) (rate(centcom_webhook_deliveries_total[5m]))
+            > 0.5
+          )
+          or
+          max by (env) (
+            round(slo:burn_rate:3d{slo="webhook-delivery"}, 0.001) >= 3
+            and round(slo:burn_rate:6h{slo="webhook-delivery"}, 0.001) >= 3
+          )
+        for: 15m
+        labels:
+          severity: ticket
+          service: worker
+          owner: integrations
+          slo: webhook-delivery
+          runbook: infra/runbooks/alerts/WebhookDeliveryFailing.md
+        annotations:
+          summary: 'Outgoing webhooks are failing in {{ $labels.env }}: over 50 % of delivery attempts for 15 minutes, or the webhook-delivery error budget spent 3x too fast for 3 days.'
+          impact: 'Either many customer endpoints are down or the sender is broken; deliveries are retried and may end in the webhook.dead queue.'
+          dashboard: '/d/centcom-workers-queues?var-env={{ $labels.env }}'

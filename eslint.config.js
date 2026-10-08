@@ -92,8 +92,9 @@ export default defineConfig([
     },
   },
   {
-    // The config loader (B004), service entrypoints and repo tooling may read the environment.
-    files: ['apps/*/src/main.ts', 'packages/core/src/config/**', 'tools/**'],
+    // The config loader (B004), service entrypoints and repo tooling may read the environment,
+    // and so may deploy scripts under infra/ (B094's alerts:render reads contact points).
+    files: ['apps/*/src/main.ts', 'packages/core/src/config/**', 'tools/**', 'infra/**/*.mjs'],
     rules: {
       'no-restricted-properties': 'off',
       'no-restricted-syntax': 'off',

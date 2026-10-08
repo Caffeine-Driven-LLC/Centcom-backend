@@ -1,0 +1,22 @@
+# Backup alerts (B094), non-prod until B099 exports `centcom_backup_age_seconds`: a non-prod rule
+# file is loaded in dev and stage only, and is the only place `pending_metric` is allowed. When
+# B099 lands, catalogue the metric, drop `pending_metric` and rename this to backup.rules.yaml.
+groups:
+  - name: alerts-backup
+    interval: 1m
+    rules:
+      # The newest base backup is over 26 hours old (B099's BACKUP_MAX_AGE_S, 93 600 s).
+      - alert: BackupStale
+        expr: |
+          max by (env) (centcom_backup_age_seconds) > 26 * 3600
+        for: 15m
+        labels:
+          severity: ticket
+          service: backup
+          owner: platform
+          runbook: infra/runbooks/alerts/BackupStale.md
+        annotations:
+          summary: 'The newest Postgres base backup in {{ $labels.env }} is over 26 hours old.'
+          impact: 'Restores would start from an older base and replay more WAL: recovery takes longer, and if WAL archiving fails too, more data is at risk.'
+          dashboard: '/d/centcom-database-redis?var-env={{ $labels.env }}'
+          pending_metric: 'B099'
