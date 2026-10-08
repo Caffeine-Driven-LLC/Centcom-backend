@@ -320,9 +320,25 @@ async function createStack(opts: TestStackOptions, onStop?: () => void): Promise
         where schemaname = 'public' and tablename <> 'schema_migrations'
       `.execute(db);
       if (rows.length > 0) {
-        await sql`truncate table ${sql.join(rows.map((r) => sql.table(r.name)))} restart identity cascade`.execute(
-          db,
-        );
+        const tables = sql.join(rows.map((r) => sql.table(r.name)));
+        // Append-only tables (audit_events, B036) refuse TRUNCATE through a trigger. The stack's
+        // role owns this throwaway database, so it switches user triggers off for the truncate
+        // only, in one transaction: a failure leaves every trigger in place.
+        const guarded = await sql<{ name: string }>`
+          select distinct c.relname as name from pg_trigger t
+          join pg_class c on c.oid = t.tgrelid
+          join pg_namespace n on n.oid = c.relnamespace
+          where n.nspname = 'public' and not t.tgisinternal
+        `.execute(db);
+        await db.transaction().execute(async (trx) => {
+          for (const { name } of guarded.rows) {
+            await sql`alter table ${sql.table(name)} disable trigger user`.execute(trx);
+          }
+          await sql`truncate table ${tables} restart identity cascade`.execute(trx);
+          for (const { name } of guarded.rows) {
+            await sql`alter table ${sql.table(name)} enable trigger user`.execute(trx);
+          }
+        });
       }
       await clearNamespace(servers.redisUrl, redisKeyPrefix);
     },
