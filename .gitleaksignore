@@ -16,3 +16,10 @@ c5a1eff1dfe7301923c4ff9e4bfbdbfb90d87eb3:plan/lanes/backend/B101.json:aws-access
 # file cannot shift them; a squash merge never brings the commit to main.
 a4852c89d6c40af30617ab092f0c2f7a0a854185:packages/contracts/src/generated/validators.js:generic-api-key:35353
 a4852c89d6c40af30617ab092f0c2f7a0a854185:packages/contracts/src/generated/validators.js:generic-api-key:35410
+#
+# Deliberate fake tokens in the B035 repo-reference tests (the API must refuse token-shaped
+# values). Pinned to the branch commit 77c1620; the test now builds them from pieces, so the
+# squash merge brings no token shape to main (lane B035).
+77c1620040320fcf3a973424e481bd1c9ff72736:apps/api/test/modules/projects/projects.validation.test.ts:gitlab-pat:61
+77c1620040320fcf3a973424e481bd1c9ff72736:apps/api/test/modules/projects/projects.validation.test.ts:stripe-access-token:64
+77c1620040320fcf3a973424e481bd1c9ff72736:apps/api/test/modules/projects/projects.validation.test.ts:aws-access-token:65
