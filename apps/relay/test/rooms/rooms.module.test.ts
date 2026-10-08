@@ -42,6 +42,41 @@ describe('rooms/module.ts', () => {
   });
 });
 
+describe('rooms/module.ts shutdown', () => {
+  it('stops the membership subscription and flushes queued audit events', async () => {
+    const shutdown: (() => Promise<void>)[] = [];
+    let unsubscribed = 0;
+    const ctx = {
+      config: {},
+      log: undefined,
+      metrics: {
+        counter: () => ({ inc: () => undefined }),
+        histogram: () => ({ observe: () => undefined }),
+      },
+      clock: Date.now,
+      redis: {
+        pubsub: {
+          subscribe: () =>
+            Promise.resolve(() => {
+              unsubscribed += 1;
+              return Promise.resolve();
+            }),
+        },
+      },
+      db: {},
+      connections: {},
+      pipeline: { use: () => undefined },
+      onShutdown: (fn: () => Promise<void>) => void shutdown.push(fn),
+      onConnection: () => undefined,
+    } as unknown as Parameters<typeof roomsModule.register>[0];
+    await roomsModule.register(ctx);
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(shutdown).toHaveLength(1);
+    await shutdown[0]?.();
+    expect(unsubscribed).toBe(1);
+  });
+});
+
 describe('the handshake’s B043 hooks', () => {
   it('closes 4403 with the code SessionAccess refused with (403)', async () => {
     const h = await handshakeRelay({
