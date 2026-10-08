@@ -1,0 +1,10 @@
+# Resumes that succeed within 5 s.
+# A proposal for the owner to ratify (B093); alert thresholds derived from it live in B094.
+# Its metric is catalogued now and first emitted by B042.
+name: resume-success
+objective: 0.99
+window: 30d
+owner: realtime
+sli:
+  good: 'centcom_relay_resume_duration_seconds_bucket{result="ok", le="5"}'
+  total: 'centcom_relay_resume_duration_seconds_count'

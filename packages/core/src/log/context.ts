@@ -15,6 +15,8 @@ export interface RequestContext {
   userId?: string;
   /** A CT-IDS `ses_` id. */
   sessionId?: string;
+  /** The W3C trace id (32 hex) of the request's sampled span (B093), for log correlation. */
+  traceId?: string;
 }
 
 const storage = new AsyncLocalStorage<RequestContext>();
