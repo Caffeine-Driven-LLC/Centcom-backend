@@ -11,6 +11,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./entitlements": {
+      "types": "./dist/entitlements/index.d.ts",
+      "default": "./dist/entitlements/index.js"
     }
   },
   "scripts": {
