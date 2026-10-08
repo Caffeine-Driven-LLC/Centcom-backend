@@ -1,0 +1,20 @@
+# Redis alerts (B094): memory against maxmemory (redis_exporter, see ../exporters.yaml). Every
+# threshold for Redis lives in this file.
+groups:
+  - name: alerts-redis
+    interval: 1m
+    rules:
+      # Used memory over 80 % of maxmemory for 10 minutes (an instance without a limit is skipped).
+      - alert: RedisMemoryHigh
+        expr: |
+          max by (env) (redis_memory_used_bytes / (redis_memory_max_bytes > 0)) > 0.8
+        for: 10m
+        labels:
+          severity: ticket
+          service: redis
+          owner: platform
+          runbook: infra/runbooks/alerts/RedisMemoryHigh.md
+        annotations:
+          summary: 'Redis in {{ $labels.env }} has used over 80 % of its maxmemory for 10 minutes.'
+          impact: 'At the limit Redis evicts keys or refuses writes: queues, rate limits, presence and relay state degrade.'
+          dashboard: '/d/centcom-database-redis?var-env={{ $labels.env }}'

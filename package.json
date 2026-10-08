@@ -20,7 +20,10 @@
     "dev:down": "bash tools/dev/down.sh",
     "dev:reset": "bash tools/dev/reset.sh",
     "dev:seed": "tsx --tsconfig tsconfig.test.json tools/dev/seed.ts",
-    "release:publish": "tsx --tsconfig tsconfig.test.json apps/api/scripts/publish-release.ts"
+    "release:publish": "tsx --tsconfig tsconfig.test.json apps/api/scripts/publish-release.ts",
+    "alerts:lint": "tsx --tsconfig tsconfig.test.json infra/alerts/lint.mjs",
+    "alerts:test": "node infra/alerts/promtool.mjs",
+    "alerts:render": "node infra/alerts/render.mjs"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
@@ -32,6 +35,7 @@
     "typescript": "5.9.3",
     "typescript-eslint": "8.71.0",
     "vite": "8.3.3",
-    "vitest": "5.0.3"
+    "vitest": "5.0.3",
+    "yaml": "2.9.1"
   }
 }

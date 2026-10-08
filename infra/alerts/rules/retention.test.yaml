@@ -1,0 +1,47 @@
+# promtool unit tests for retention.nonprod.rules.yaml (B094); see api.test.yaml.
+rule_files:
+  - ../../observability/slo/rules.yaml
+  - ../recording/slo-30m.rules.yaml
+  - retention.nonprod.rules.yaml
+
+evaluation_interval: 1m
+
+tests:
+  # In stage a retention run aborts at 11m (the counter goes 0 to 1); in prod the telemetry
+  # retention failure counter first appears at 20m, already at 1, which increase() alone would
+  # miss.
+  - interval: 1m
+    input_series:
+      - series: 'centcom_retention_aborted_total{policy="audit", env="stage", region="eu"}'
+        values: '0x10 1x20'
+      - series: 'centcom_telemetry_retention_failed_total{env="prod", region="eu"}'
+        values: '_x20 1x20'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: RetentionJobFailed
+        exp_alerts: []
+      - eval_time: 25m
+        alertname: RetentionJobFailed
+        exp_alerts:
+          - exp_labels:
+              env: 'prod'
+              owner: 'platform'
+              runbook: 'infra/runbooks/alerts/RetentionJobFailed.md'
+              service: 'retention'
+              severity: 'ticket'
+            exp_annotations:
+              dashboard: '/d/centcom-workers-queues?var-env=prod'
+              impact: 'Data past its retention period is kept longer than the policy allows (a privacy commitment), and the next run has more to delete.'
+              pending_metric: 'B090'
+              summary: 'A data-retention run failed or was aborted in prod in the last hour.'
+          - exp_labels:
+              env: 'stage'
+              owner: 'platform'
+              runbook: 'infra/runbooks/alerts/RetentionJobFailed.md'
+              service: 'retention'
+              severity: 'ticket'
+            exp_annotations:
+              dashboard: '/d/centcom-workers-queues?var-env=stage'
+              impact: 'Data past its retention period is kept longer than the policy allows (a privacy commitment), and the next run has more to delete.'
+              pending_metric: 'B090'
+              summary: 'A data-retention run failed or was aborted in stage in the last hour.'

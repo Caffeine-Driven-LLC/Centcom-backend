@@ -1,0 +1,53 @@
+# Platform alerts (B094): TLS certificates and per-instance readiness (blackbox_exporter, see
+# ../exporters.yaml), and the metrics pipeline itself. Every platform threshold lives in this file.
+groups:
+  - name: alerts-platform
+    interval: 1m
+    rules:
+      - alert: CertExpirySoon
+        expr: |
+          min by (env, instance) (probe_ssl_earliest_cert_expiry{job="tls"}) - time() < 14 * 86400
+        for: 15m
+        labels:
+          severity: ticket
+          service: platform
+          owner: platform
+          runbook: infra/runbooks/alerts/CertExpirySoon.md
+        annotations:
+          summary: 'A TLS certificate served in {{ $labels.env }} expires in less than 14 days.'
+          impact: 'When it expires, clients refuse the connection: the API, the relay or downloads stop working for everyone.'
+          dashboard: '/d/centcom-api-overview?var-env={{ $labels.env }}'
+
+      # More than one instance of a component has failed its /readyz probe for 5 minutes.
+      - alert: ReadyzFailing
+        expr: |
+          count by (env, component) (probe_success{job="readyz"} == 0) > 1
+        for: 5m
+        labels:
+          severity: ticket
+          service: platform
+          owner: platform
+          runbook: infra/runbooks/alerts/ReadyzFailing.md
+        annotations:
+          summary: 'More than one {{ $labels.component }} instance in {{ $labels.env }} has failed /readyz for 5 minutes.'
+          impact: 'The load balancer has taken those instances out: less capacity, and a dependency (database, Redis or migrations) may be failing. If customers notice, the SLO alerts page.'
+          dashboard: '/d/centcom-api-overview?var-env={{ $labels.env }}'
+
+      # A service that exported its pool gauge an hour ago (15 to 75 minutes back) has exported
+      # nothing for 10 minutes: the collector, the export path or the service's telemetry is down.
+      - alert: ObservabilityDown
+        expr: |
+          group by (env, job) (max_over_time(centcom_db_pool_max_connections[1h] offset 15m))
+          unless on (env, job)
+          group by (env, job) (max_over_time(centcom_db_pool_max_connections[10m]))
+        for: 5m
+        labels:
+          severity: page
+          service: platform
+          owner: platform
+          runbook: infra/runbooks/alerts/ObservabilityDown.md
+        annotations:
+          summary: 'No metrics from {{ $labels.job }} in {{ $labels.env }} for 10 minutes.'
+          impact: 'Alerts that read these metrics cannot fire: an outage of this service would go unnoticed.'
+          user_impact: 'Customers are not protected by alerting while metrics are missing; an outage they notice would reach on-call only through support.'
+          dashboard: '/d/centcom-database-redis?var-env={{ $labels.env }}'

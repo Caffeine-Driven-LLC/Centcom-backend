@@ -1,0 +1,74 @@
+# Alert routing (B094), for the Prometheus Alertmanager (Grafana Cloud's Mimir Alertmanager runs
+# the same format). Receivers have no integrations here: `pnpm alerts:render <dir>` adds each
+# contact point from its environment variable (infra/alerts/render.mjs, documented in
+# infra/alerts/README.md) and writes the deployable config. As committed, this file is valid and
+# notifies nobody, which is what the routing tests check it with.
+#
+# Severities (docs/ops/oncall.md):
+# - page: the primary on-call at once; the fallback channel after 5 minutes and the secondary
+#   on-call after 15 minutes, unless acknowledged first. Acknowledge = silence the alert in
+#   Alertmanager (an ack in the pager app alone does not stop the escalation). Repeats every 4 h
+#   while it fires.
+# - ticket: the ticket queue, repeated daily. Never pages.
+# - info: the info channel, repeated daily. Never pages.
+global:
+  resolve_timeout: 5m
+
+templates:
+  - centcom.tmpl
+
+route:
+  receiver: info
+  # One notification per service and environment: an outage paging every API alert at once is
+  # still one page (failure mode: an alert storm stays within a few pages).
+  group_by: [env, service]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    # B092's deploy window marker: an inhibition source only, never a notification.
+    - receiver: blackhole
+      matchers: ['deploy_in_progress="true"']
+
+    # The metrics pipeline is down: also to the separate fallback channel at once, since the
+    # normal path may share the failure.
+    - receiver: fallback
+      matchers: ['alertname="ObservabilityDown"']
+      group_wait: 30s
+      continue: true
+
+    - receiver: pager-primary
+      matchers: ['severity="page"']
+      continue: true
+    - receiver: fallback
+      matchers: ['severity="page"', 'alertname!="ObservabilityDown"']
+      group_wait: 5m
+      continue: true
+    - receiver: pager-secondary
+      matchers: ['severity="page"']
+      group_wait: 15m
+
+    - receiver: ticket
+      matchers: ['severity="ticket"']
+      repeat_interval: 24h
+    - receiver: info
+      matchers: ['severity="info"']
+      repeat_interval: 24h
+
+inhibit_rules:
+  # A deploy sheds relay connections on purpose (B092 drains one region at a time).
+  - source_matchers: ['deploy_in_progress="true"']
+    target_matchers: ['alertname="RelayConnectionDrop"']
+    equal: [env]
+  # While a service pages, its tickets and info add nothing.
+  - source_matchers: ['severity="page"']
+    target_matchers: ['severity=~"ticket|info"']
+    equal: [env, service]
+
+receivers:
+  - name: pager-primary
+  - name: pager-secondary
+  - name: fallback
+  - name: ticket
+  - name: info
+  - name: blackhole

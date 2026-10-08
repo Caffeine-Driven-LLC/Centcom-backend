@@ -1,0 +1,89 @@
+# promtool unit tests for worker.rules.yaml (B094); see api.test.yaml.
+rule_files:
+  - ../../observability/slo/rules.yaml
+  - ../recording/slo-30m.rules.yaml
+  - worker.rules.yaml
+
+evaluation_interval: 1m
+
+tests:
+  # Card acceptance: one job lands in notify.dispatch.dlq at 10m. After 14 minutes (24m)
+  # DeadLetterNonEmpty has not fired; after 16 minutes (26m) it has. A busy queue that is not a
+  # dead-letter queue never fires.
+  - interval: 1m
+    input_series:
+      - series: 'centcom_queue_depth{queue="notify.dispatch.dlq", env="prod", region="eu"}'
+        values: '0x9 1x30'
+      - series: 'centcom_queue_depth{queue="notify.dispatch", env="prod", region="eu"}'
+        values: '50x40'
+    alert_rule_test:
+      - eval_time: 24m
+        alertname: DeadLetterNonEmpty
+        exp_alerts: []
+      - eval_time: 26m
+        alertname: DeadLetterNonEmpty
+        exp_alerts:
+          - exp_labels:
+              env: 'prod'
+              owner: 'platform'
+              queue: 'notify.dispatch.dlq'
+              runbook: 'infra/runbooks/alerts/DeadLetterNonEmpty.md'
+              service: 'worker'
+              severity: 'page'
+            exp_annotations:
+              dashboard: '/d/centcom-workers-queues?var-env=prod'
+              impact: 'Work that failed every retry is waiting for an operator: a billing event, a notification or a webhook has not been applied or sent.'
+              summary: 'Dead-lettered jobs have waited in notify.dispatch.dlq (prod) for 15 minutes.'
+              user_impact: 'Data-loss risk: dead letters are kept 7 days and then lost, and until they are replayed customers miss what they carried (plan changes, notifications, webhook deliveries).'
+
+  # Webhook SLO: 90 % of first attempts time out (budget 5 %, burn rate 18): pages within
+  # minutes; the 3-day ticket waits for its `for: 15m`.
+  - interval: 1m
+    input_series:
+      - series: 'centcom_webhook_first_attempt_seconds_bucket{result="ok", le="10", env="prod", region="eu"}'
+        values: '0+10x60'
+      - series: 'centcom_webhook_first_attempt_seconds_count{result="ok", env="prod", region="eu"}'
+        values: '0+10x60'
+      - series: 'centcom_webhook_first_attempt_seconds_count{result="timeout", env="prod", region="eu"}'
+        values: '0+90x60'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: WebhookDeliveryFailing
+        exp_alerts:
+          - exp_labels:
+              env: 'prod'
+              owner: 'integrations'
+              runbook: 'infra/runbooks/alerts/WebhookDeliveryFailing.md'
+              service: 'worker'
+              severity: 'page'
+              slo: 'webhook-delivery'
+            exp_annotations:
+              dashboard: '/d/centcom-workers-queues?var-env=prod'
+              impact: "Customers' integrations get events late or not at all; deliveries are retried, so they arrive late rather than never while retries last."
+              summary: 'Outgoing webhooks whose first attempt fails or takes over 10 s are spending the webhook-delivery error budget too fast (6x or more) in prod.'
+
+  # Webhook cause: 60 % of delivery attempts fail; the ticket fires after 15 minutes.
+  - interval: 1m
+    input_series:
+      - series: 'centcom_webhook_deliveries_total{attempt="1", result="ok", env="prod", region="eu"}'
+        values: '0+40x40'
+      - series: 'centcom_webhook_deliveries_total{attempt="1", result="error", env="prod", region="eu"}'
+        values: '0+60x40'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: WebhookDeliveryFailing
+        exp_alerts: []
+      - eval_time: 20m
+        alertname: WebhookDeliveryFailing
+        exp_alerts:
+          - exp_labels:
+              env: 'prod'
+              owner: 'integrations'
+              runbook: 'infra/runbooks/alerts/WebhookDeliveryFailing.md'
+              service: 'worker'
+              severity: 'ticket'
+              slo: 'webhook-delivery'
+            exp_annotations:
+              dashboard: '/d/centcom-workers-queues?var-env=prod'
+              impact: 'Either many customer endpoints are down or the sender is broken; deliveries are retried and may end in the webhook.dead queue.'
+              summary: 'Outgoing webhooks are failing in prod: over 50 % of delivery attempts for 15 minutes, or the webhook-delivery error budget spent 3x too fast for 3 days.'

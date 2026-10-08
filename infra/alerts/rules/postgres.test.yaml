@@ -1,0 +1,61 @@
+# promtool unit tests for postgres.rules.yaml (B094); see api.test.yaml.
+rule_files:
+  - ../../observability/slo/rules.yaml
+  - ../recording/slo-30m.rules.yaml
+  - postgres.rules.yaml
+
+evaluation_interval: 1m
+
+tests:
+  # A replica 45 s behind from 11m fires after `for: 2m`.
+  - interval: 1m
+    input_series:
+      - series: 'pg_replication_lag_seconds{env="prod", instance="replica-1"}'
+        values: '5x10 45x20'
+    alert_rule_test:
+      - eval_time: 12m
+        alertname: PostgresReplicationLag
+        exp_alerts: []
+      - eval_time: 14m
+        alertname: PostgresReplicationLag
+        exp_alerts:
+          - exp_labels:
+              env: 'prod'
+              owner: 'platform'
+              runbook: 'infra/runbooks/alerts/PostgresReplicationLag.md'
+              service: 'postgres'
+              severity: 'ticket'
+            exp_annotations:
+              dashboard: '/d/centcom-database-redis?var-env=prod'
+              impact: 'A failover now would lose the transactions the replica has not replayed; reads served by the replica are stale.'
+              summary: 'A Postgres replica in prod is more than 30 s behind the primary.'
+
+  # The API's pool is 95 % in use (fires after 5 minutes); the relay's 50 % (never).
+  - interval: 1m
+    input_series:
+      - series: 'centcom_db_pool_connections{state="in_use", env="prod", region="eu", job="centcom/centcom-api"}'
+        values: '19x20'
+      - series: 'centcom_db_pool_max_connections{env="prod", region="eu", job="centcom/centcom-api"}'
+        values: '20x20'
+      - series: 'centcom_db_pool_connections{state="in_use", env="prod", region="eu", job="centcom/centcom-relay"}'
+        values: '10x20'
+      - series: 'centcom_db_pool_max_connections{env="prod", region="eu", job="centcom/centcom-relay"}'
+        values: '20x20'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: DbPoolSaturation
+        exp_alerts: []
+      - eval_time: 7m
+        alertname: DbPoolSaturation
+        exp_alerts:
+          - exp_labels:
+              env: 'prod'
+              job: 'centcom/centcom-api'
+              owner: 'platform'
+              runbook: 'infra/runbooks/alerts/DbPoolSaturation.md'
+              service: 'postgres'
+              severity: 'ticket'
+            exp_annotations:
+              dashboard: '/d/centcom-database-redis?var-env=prod'
+              impact: 'Requests and jobs queue for a connection; latency rises and pool timeouts follow. If customers notice, ApiLatencyBurn or ApiAvailabilityFastBurn pages.'
+              summary: 'A database pool of centcom/centcom-api (prod) has been over 90 % in use for 5 minutes.'

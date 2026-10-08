@@ -1,0 +1,145 @@
+# API alerts (B094): the availability and latency SLOs and the Stripe webhook SLO (B093), and the
+# Stripe event queue. Every threshold for the API lives in this file.
+#
+# Burn rates are B093's `slo:burn_rate:<window>` (5m, 1h, 6h, 3d) and the 30m window from
+# ../recording/slo-30m.rules.yaml. Tiers (Google SRE workbook, multi-window):
+# - fast: 14.4x over 1h and 5m pages (2 % of the 30-day budget in an hour);
+# - slow: 6x over 6h and 30m pages (5 % in 6 hours);
+# - 3x over 3d (and still over 6h, so it clears once fixed) opens a ticket (10 % in 3 days).
+# Burn rates are rounded to 0.001 before the comparison: an error rate of exactly 1.44 % against
+# 99.9 % computes to 14.39999…, and that must fire.
+groups:
+  - name: alerts-api
+    interval: 1m
+    rules:
+      - alert: ApiAvailabilityFastBurn
+        expr: |
+          round(slo:burn_rate:1h{slo="api-availability"}, 0.001) >= 14.4
+          and round(slo:burn_rate:5m{slo="api-availability"}, 0.001) >= 14.4
+        for: 2m
+        labels:
+          severity: page
+          service: api
+          owner: platform
+          slo: api-availability
+          runbook: infra/runbooks/alerts/ApiAvailabilityFastBurn.md
+        annotations:
+          summary: 'API 5xx answers are spending the availability error budget 14.4x too fast in {{ $labels.env }}.'
+          impact: 'Customers get errors from the API: sign-in, workspaces, billing and session setup fail. At this rate the 30-day budget is gone in 2 days.'
+          dashboard: '/d/centcom-api-overview?var-env={{ $labels.env }}'
+
+      - alert: ApiAvailabilitySlowBurn
+        expr: |
+          round(slo:burn_rate:6h{slo="api-availability"}, 0.001) >= 6
+          and round(slo:burn_rate:30m{slo="api-availability"}, 0.001) >= 6
+        for: 2m
+        labels:
+          severity: page
+          service: api
+          owner: platform
+          slo: api-availability
+          runbook: infra/runbooks/alerts/ApiAvailabilitySlowBurn.md
+        annotations:
+          summary: 'API 5xx answers have spent the availability error budget 6x too fast for 6 hours in {{ $labels.env }}.'
+          impact: 'A steady share of API requests fails for customers. At this rate the 30-day budget is gone in 5 days.'
+          dashboard: '/d/centcom-api-overview?var-env={{ $labels.env }}'
+
+      - alert: ApiAvailabilitySlowBurn
+        expr: |
+          round(slo:burn_rate:3d{slo="api-availability"}, 0.001) >= 3
+          and round(slo:burn_rate:6h{slo="api-availability"}, 0.001) >= 3
+        for: 1h
+        labels:
+          severity: ticket
+          service: api
+          owner: platform
+          slo: api-availability
+          runbook: infra/runbooks/alerts/ApiAvailabilitySlowBurn.md
+        annotations:
+          summary: 'API 5xx answers have spent the availability error budget 3x too fast for 3 days in {{ $labels.env }}.'
+          impact: 'A small, persistent share of API requests fails. At this rate the 30-day budget is gone in 10 days.'
+          dashboard: '/d/centcom-api-overview?var-env={{ $labels.env }}'
+
+      - alert: ApiLatencyBurn
+        expr: |
+          (
+            round(slo:burn_rate:1h{slo="api-latency"}, 0.001) >= 14.4
+            and round(slo:burn_rate:5m{slo="api-latency"}, 0.001) >= 14.4
+          )
+          or
+          (
+            round(slo:burn_rate:6h{slo="api-latency"}, 0.001) >= 6
+            and round(slo:burn_rate:30m{slo="api-latency"}, 0.001) >= 6
+          )
+        for: 2m
+        labels:
+          severity: page
+          service: api
+          owner: platform
+          slo: api-latency
+          runbook: infra/runbooks/alerts/ApiLatencyBurn.md
+        annotations:
+          summary: 'API answers slower than 300 ms are spending the latency error budget too fast (6x or more) in {{ $labels.env }}.'
+          impact: 'Customers wait on the API: the client and the web app feel slow or time out.'
+          dashboard: '/d/centcom-api-overview?var-env={{ $labels.env }}'
+
+      - alert: ApiLatencyBurn
+        expr: |
+          round(slo:burn_rate:3d{slo="api-latency"}, 0.001) >= 3
+          and round(slo:burn_rate:6h{slo="api-latency"}, 0.001) >= 3
+        for: 1h
+        labels:
+          severity: ticket
+          service: api
+          owner: platform
+          slo: api-latency
+          runbook: infra/runbooks/alerts/ApiLatencyBurn.md
+        annotations:
+          summary: 'API answers slower than 300 ms have spent the latency error budget 3x too fast for 3 days in {{ $labels.env }}.'
+          impact: 'The API is persistently slower than its objective for some requests.'
+          dashboard: '/d/centcom-api-overview?var-env={{ $labels.env }}'
+
+      # The SLO (events processed within 30 s) or the queue behind it: oldest waiting event over
+      # 10 minutes, or more than 100 waiting.
+      - alert: StripeWebhookLag
+        expr: |
+          max by (env) (
+            (
+              round(slo:burn_rate:1h{slo="stripe-webhook"}, 0.001) >= 14.4
+              and round(slo:burn_rate:5m{slo="stripe-webhook"}, 0.001) >= 14.4
+            )
+            or
+            (
+              round(slo:burn_rate:6h{slo="stripe-webhook"}, 0.001) >= 6
+              and round(slo:burn_rate:30m{slo="stripe-webhook"}, 0.001) >= 6
+            )
+          )
+          or max by (env) (centcom_queue_oldest_age_seconds{queue="stripe.event.process"}) > 600
+          or max by (env) (centcom_queue_depth{queue="stripe.event.process"}) > 100
+        for: 2m
+        labels:
+          severity: page
+          service: api
+          owner: billing
+          slo: stripe-webhook
+          runbook: infra/runbooks/alerts/StripeWebhookLag.md
+        annotations:
+          summary: 'Stripe events are processed late in {{ $labels.env }}: the stripe-webhook SLO is burning fast, or the stripe.event.process queue is over 10 minutes old or 100 deep.'
+          impact: 'Customers who pay, upgrade or cancel do not see the change: plans, seats and limits stay stale until the events are processed.'
+          dashboard: '/d/centcom-billing-stripe?var-env={{ $labels.env }}'
+
+      - alert: StripeWebhookLag
+        expr: |
+          round(slo:burn_rate:3d{slo="stripe-webhook"}, 0.001) >= 3
+          and round(slo:burn_rate:6h{slo="stripe-webhook"}, 0.001) >= 3
+        for: 1h
+        labels:
+          severity: ticket
+          service: api
+          owner: billing
+          slo: stripe-webhook
+          runbook: infra/runbooks/alerts/StripeWebhookLag.md
+        annotations:
+          summary: 'Stripe events processed later than 30 s have spent the stripe-webhook error budget 3x too fast for 3 days in {{ $labels.env }}.'
+          impact: 'Some billing changes reach customers late, persistently.'
+          dashboard: '/d/centcom-billing-stripe?var-env={{ $labels.env }}'

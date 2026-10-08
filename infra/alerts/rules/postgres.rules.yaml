@@ -1,0 +1,37 @@
+# Postgres alerts (B094): replica lag (postgres_exporter, see ../exporters.yaml) and the services'
+# connection pools (B007's pool gauges). Every threshold for Postgres lives in this file.
+groups:
+  - name: alerts-postgres
+    interval: 1m
+    rules:
+      - alert: PostgresReplicationLag
+        expr: |
+          max by (env) (pg_replication_lag_seconds) > 30
+        for: 2m
+        labels:
+          severity: ticket
+          service: postgres
+          owner: platform
+          runbook: infra/runbooks/alerts/PostgresReplicationLag.md
+        annotations:
+          summary: 'A Postgres replica in {{ $labels.env }} is more than 30 s behind the primary.'
+          impact: 'A failover now would lose the transactions the replica has not replayed; reads served by the replica are stale.'
+          dashboard: '/d/centcom-database-redis?var-env={{ $labels.env }}'
+
+      # In-use connections over 90 % of a service's pool size for 5 minutes.
+      - alert: DbPoolSaturation
+        expr: |
+          max by (env, job) (
+            centcom_db_pool_connections{state="in_use"}
+            / ignoring (state) (centcom_db_pool_max_connections > 0)
+          ) > 0.9
+        for: 5m
+        labels:
+          severity: ticket
+          service: postgres
+          owner: platform
+          runbook: infra/runbooks/alerts/DbPoolSaturation.md
+        annotations:
+          summary: 'A database pool of {{ $labels.job }} ({{ $labels.env }}) has been over 90 % in use for 5 minutes.'
+          impact: 'Requests and jobs queue for a connection; latency rises and pool timeouts follow. If customers notice, ApiLatencyBurn or ApiAvailabilityFastBurn pages.'
+          dashboard: '/d/centcom-database-redis?var-env={{ $labels.env }}'

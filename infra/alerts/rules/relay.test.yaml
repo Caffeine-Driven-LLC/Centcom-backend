@@ -1,0 +1,151 @@
+# promtool unit tests for relay.rules.yaml (B094); see api.test.yaml.
+rule_files:
+  - ../../observability/slo/rules.yaml
+  - ../recording/slo-30m.rules.yaml
+  - relay.rules.yaml
+
+evaluation_interval: 1m
+
+tests:
+  # SLO burns: 10 % of handshakes fail (budget 0.5 %, burn rate 20), 20 % of frames are
+  # late (budget 1 %, burn rate 20) and 30 % of resumes fail (burn rate 30): each pages.
+  - interval: 1m
+    input_series:
+      - series: 'centcom_relay_handshake_duration_seconds_bucket{result="ok", le="2", env="prod", region="eu"}'
+        values: '0+90x60'
+      - series: 'centcom_relay_handshake_duration_seconds_count{result="ok", env="prod", region="eu"}'
+        values: '0+92x60'
+      - series: 'centcom_relay_handshake_duration_seconds_count{result="refused", env="prod", region="eu"}'
+        values: '0+8x60'
+      - series: 'centcom_relay_fanout_latency_seconds_bucket{le="0.15", env="prod", region="eu"}'
+        values: '0+80x60'
+      - series: 'centcom_relay_fanout_latency_seconds_count{env="prod", region="eu"}'
+        values: '0+100x60'
+      - series: 'centcom_relay_resume_duration_seconds_bucket{result="ok", le="5", env="prod", region="eu"}'
+        values: '0+70x60'
+      - series: 'centcom_relay_resume_duration_seconds_count{result="ok", env="prod", region="eu"}'
+        values: '0+75x60'
+      - series: 'centcom_relay_resume_duration_seconds_count{result="failed", env="prod", region="eu"}'
+        values: '0+25x60'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: RelayConnectBurn
+        exp_alerts:
+          - exp_labels:
+              env: 'prod'
+              owner: 'realtime'
+              runbook: 'infra/runbooks/alerts/RelayConnectBurn.md'
+              service: 'relay'
+              severity: 'page'
+              slo: 'relay-connect'
+            exp_annotations:
+              dashboard: '/d/centcom-relay-overview?var-env=prod'
+              impact: 'Customers cannot open or join sessions: the client keeps reconnecting.'
+              summary: 'Relay handshakes that fail or take over 2 s are spending the relay-connect error budget too fast (6x or more) in prod.'
+      - eval_time: 30m
+        alertname: RelayFanoutBurn
+        exp_alerts:
+          - exp_labels:
+              env: 'prod'
+              owner: 'realtime'
+              runbook: 'infra/runbooks/alerts/RelayFanoutBurn.md'
+              service: 'relay'
+              severity: 'page'
+              slo: 'relay-fanout'
+            exp_annotations:
+              dashboard: '/d/centcom-relay-overview?var-env=prod'
+              impact: 'Session members see each other late: prompts, approvals and output lag behind.'
+              summary: 'Frames delivered in-region slower than 150 ms are spending the relay-fanout error budget too fast (6x or more) in prod.'
+      - eval_time: 30m
+        alertname: ResumeFailureBurn
+        exp_alerts:
+          - exp_labels:
+              env: 'prod'
+              owner: 'realtime'
+              runbook: 'infra/runbooks/alerts/ResumeFailureBurn.md'
+              service: 'relay'
+              severity: 'page'
+              slo: 'resume-success'
+            exp_annotations:
+              dashboard: '/d/centcom-relay-overview?var-env=prod'
+              impact: 'Customers who reconnect lose their place in a session: they rejoin from a snapshot or not at all.'
+              summary: 'Session resumes that fail or take over 5 s are spending the resume-success error budget too fast (6x or more) in prod.'
+
+  # Overload: in eu 5 % of closes are 4503 (fires after `for: 5m`), in us 0.5 % (never).
+  - interval: 1m
+    input_series:
+      - series: 'centcom_relay_close_total{code="1000", env="prod", region="eu"}'
+        values: '0+95x30'
+      - series: 'centcom_relay_close_total{code="4503", env="prod", region="eu"}'
+        values: '0+5x30'
+      - series: 'centcom_relay_close_total{code="1000", env="prod", region="us"}'
+        values: '0+995x30'
+      - series: 'centcom_relay_close_total{code="4503", env="prod", region="us"}'
+        values: '0+5x30'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: RelayOverloaded
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: RelayOverloaded
+        exp_alerts:
+          - exp_labels:
+              env: 'prod'
+              owner: 'realtime'
+              region: 'eu'
+              runbook: 'infra/runbooks/alerts/RelayOverloaded.md'
+              service: 'relay'
+              severity: 'ticket'
+            exp_annotations:
+              dashboard: '/d/centcom-relay-overview?var-env=prod'
+              impact: 'Relays shed connections at their limit; clients reconnect elsewhere. If reconnects fail, RelayConnectBurn and ResumeFailureBurn page.'
+              summary: 'Over 1 % of relay connections in eu (prod) are closed with 4503 (overloaded).'
+
+  # Drops: eu falls from 1 000 to 600 at 11m (40 %: fires, then clears once the 5-minute
+  # comparison sees 600 both times); sa stops reporting after 10m (counted as 0 once its last
+  # sample is older than the 5-minute lookback); us falls 80 % but from under 100; ap only 20 %.
+  - interval: 1m
+    input_series:
+      - series: 'centcom_relay_connections{env="prod", region="eu"}'
+        values: '1000x10 600x20'
+      - series: 'centcom_relay_connections{env="prod", region="sa"}'
+        values: '1000x10'
+      - series: 'centcom_relay_connections{env="prod", region="us"}'
+        values: '50x10 10x20'
+      - series: 'centcom_relay_connections{env="prod", region="ap"}'
+        values: '1000x10 800x20'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: RelayConnectionDrop
+        exp_alerts: []
+      - eval_time: 12m
+        alertname: RelayConnectionDrop
+        exp_alerts:
+          - exp_labels:
+              env: 'prod'
+              owner: 'realtime'
+              region: 'eu'
+              runbook: 'infra/runbooks/alerts/RelayConnectionDrop.md'
+              service: 'relay'
+              severity: 'ticket'
+            exp_annotations:
+              dashboard: '/d/centcom-relay-overview?var-env=prod'
+              impact: 'Many clients were disconnected at once. They reconnect and resume; if that fails, RelayConnectBurn and ResumeFailureBurn page.'
+              summary: 'Relay connections in eu (prod) fell by more than 30 % in 5 minutes.'
+      - eval_time: 17m
+        alertname: RelayConnectionDrop
+        exp_alerts:
+          - exp_labels:
+              env: 'prod'
+              owner: 'realtime'
+              region: 'sa'
+              runbook: 'infra/runbooks/alerts/RelayConnectionDrop.md'
+              service: 'relay'
+              severity: 'ticket'
+            exp_annotations:
+              dashboard: '/d/centcom-relay-overview?var-env=prod'
+              impact: 'Many clients were disconnected at once. They reconnect and resume; if that fails, RelayConnectBurn and ResumeFailureBurn page.'
+              summary: 'Relay connections in sa (prod) fell by more than 30 % in 5 minutes.'
+      - eval_time: 25m
+        alertname: RelayConnectionDrop
+        exp_alerts: []

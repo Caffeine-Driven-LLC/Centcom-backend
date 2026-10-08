@@ -1,0 +1,164 @@
+# Relay alerts (B094): the connect, fan-out and resume SLOs (B093), overload closes and sudden
+# connection drops. Every threshold for the relay lives in this file. Burn-rate tiers and rounding
+# as in api.rules.yaml.
+groups:
+  - name: alerts-relay
+    interval: 1m
+    rules:
+      - alert: RelayConnectBurn
+        expr: |
+          (
+            round(slo:burn_rate:1h{slo="relay-connect"}, 0.001) >= 14.4
+            and round(slo:burn_rate:5m{slo="relay-connect"}, 0.001) >= 14.4
+          )
+          or
+          (
+            round(slo:burn_rate:6h{slo="relay-connect"}, 0.001) >= 6
+            and round(slo:burn_rate:30m{slo="relay-connect"}, 0.001) >= 6
+          )
+        for: 2m
+        labels:
+          severity: page
+          service: relay
+          owner: realtime
+          slo: relay-connect
+          runbook: infra/runbooks/alerts/RelayConnectBurn.md
+        annotations:
+          summary: 'Relay handshakes that fail or take over 2 s are spending the relay-connect error budget too fast (6x or more) in {{ $labels.env }}.'
+          impact: 'Customers cannot open or join sessions: the client keeps reconnecting.'
+          dashboard: '/d/centcom-relay-overview?var-env={{ $labels.env }}'
+
+      - alert: RelayConnectBurn
+        expr: |
+          round(slo:burn_rate:3d{slo="relay-connect"}, 0.001) >= 3
+          and round(slo:burn_rate:6h{slo="relay-connect"}, 0.001) >= 3
+        for: 1h
+        labels:
+          severity: ticket
+          service: relay
+          owner: realtime
+          slo: relay-connect
+          runbook: infra/runbooks/alerts/RelayConnectBurn.md
+        annotations:
+          summary: 'Failed or slow relay handshakes have spent the relay-connect error budget 3x too fast for 3 days in {{ $labels.env }}.'
+          impact: 'Some session joins fail or are slow, persistently.'
+          dashboard: '/d/centcom-relay-overview?var-env={{ $labels.env }}'
+
+      - alert: RelayFanoutBurn
+        expr: |
+          (
+            round(slo:burn_rate:1h{slo="relay-fanout"}, 0.001) >= 14.4
+            and round(slo:burn_rate:5m{slo="relay-fanout"}, 0.001) >= 14.4
+          )
+          or
+          (
+            round(slo:burn_rate:6h{slo="relay-fanout"}, 0.001) >= 6
+            and round(slo:burn_rate:30m{slo="relay-fanout"}, 0.001) >= 6
+          )
+        for: 2m
+        labels:
+          severity: page
+          service: relay
+          owner: realtime
+          slo: relay-fanout
+          runbook: infra/runbooks/alerts/RelayFanoutBurn.md
+        annotations:
+          summary: 'Frames delivered in-region slower than 150 ms are spending the relay-fanout error budget too fast (6x or more) in {{ $labels.env }}.'
+          impact: 'Session members see each other late: prompts, approvals and output lag behind.'
+          dashboard: '/d/centcom-relay-overview?var-env={{ $labels.env }}'
+
+      - alert: RelayFanoutBurn
+        expr: |
+          round(slo:burn_rate:3d{slo="relay-fanout"}, 0.001) >= 3
+          and round(slo:burn_rate:6h{slo="relay-fanout"}, 0.001) >= 3
+        for: 1h
+        labels:
+          severity: ticket
+          service: relay
+          owner: realtime
+          slo: relay-fanout
+          runbook: infra/runbooks/alerts/RelayFanoutBurn.md
+        annotations:
+          summary: 'Slow in-region frame delivery has spent the relay-fanout error budget 3x too fast for 3 days in {{ $labels.env }}.'
+          impact: 'Sessions are persistently laggier than the objective for some frames.'
+          dashboard: '/d/centcom-relay-overview?var-env={{ $labels.env }}'
+
+      - alert: ResumeFailureBurn
+        expr: |
+          (
+            round(slo:burn_rate:1h{slo="resume-success"}, 0.001) >= 14.4
+            and round(slo:burn_rate:5m{slo="resume-success"}, 0.001) >= 14.4
+          )
+          or
+          (
+            round(slo:burn_rate:6h{slo="resume-success"}, 0.001) >= 6
+            and round(slo:burn_rate:30m{slo="resume-success"}, 0.001) >= 6
+          )
+        for: 2m
+        labels:
+          severity: page
+          service: relay
+          owner: realtime
+          slo: resume-success
+          runbook: infra/runbooks/alerts/ResumeFailureBurn.md
+        annotations:
+          summary: 'Session resumes that fail or take over 5 s are spending the resume-success error budget too fast (6x or more) in {{ $labels.env }}.'
+          impact: 'Customers who reconnect lose their place in a session: they rejoin from a snapshot or not at all.'
+          dashboard: '/d/centcom-relay-overview?var-env={{ $labels.env }}'
+
+      - alert: ResumeFailureBurn
+        expr: |
+          round(slo:burn_rate:3d{slo="resume-success"}, 0.001) >= 3
+          and round(slo:burn_rate:6h{slo="resume-success"}, 0.001) >= 3
+        for: 1h
+        labels:
+          severity: ticket
+          service: relay
+          owner: realtime
+          slo: resume-success
+          runbook: infra/runbooks/alerts/ResumeFailureBurn.md
+        annotations:
+          summary: 'Failed or slow resumes have spent the resume-success error budget 3x too fast for 3 days in {{ $labels.env }}.'
+          impact: 'Some reconnects lose their place in the session, persistently.'
+          dashboard: '/d/centcom-relay-overview?var-env={{ $labels.env }}'
+
+      # Over 1 % of the connections closing in a region close with 4503 (overloaded) for 5 minutes.
+      - alert: RelayOverloaded
+        expr: |
+          sum by (env, region) (rate(centcom_relay_close_total{code="4503"}[5m]))
+          / sum by (env, region) (rate(centcom_relay_close_total[5m]))
+          > 0.01
+        for: 5m
+        labels:
+          severity: ticket
+          service: relay
+          owner: realtime
+          runbook: infra/runbooks/alerts/RelayOverloaded.md
+        annotations:
+          summary: 'Over 1 % of relay connections in {{ $labels.region }} ({{ $labels.env }}) are closed with 4503 (overloaded).'
+          impact: 'Relays shed connections at their limit; clients reconnect elsewhere. If reconnects fail, RelayConnectBurn and ResumeFailureBurn page.'
+          dashboard: '/d/centcom-relay-overview?var-env={{ $labels.env }}'
+
+      # Open connections in a region fell by more than 30 % within 5 minutes, from at least 100. A
+      # region with no series left counts as 0. Inhibited while B092 deploys (deploy_in_progress).
+      - alert: RelayConnectionDrop
+        expr: |
+          (
+            1 - (
+              (
+                sum by (env, region) (centcom_relay_connections)
+                or 0 * sum by (env, region) (centcom_relay_connections offset 5m)
+              )
+              / sum by (env, region) (centcom_relay_connections offset 5m)
+            )
+          ) > 0.3
+          and sum by (env, region) (centcom_relay_connections offset 5m) >= 100
+        labels:
+          severity: ticket
+          service: relay
+          owner: realtime
+          runbook: infra/runbooks/alerts/RelayConnectionDrop.md
+        annotations:
+          summary: 'Relay connections in {{ $labels.region }} ({{ $labels.env }}) fell by more than 30 % in 5 minutes.'
+          impact: 'Many clients were disconnected at once. They reconnect and resume; if that fails, RelayConnectBurn and ResumeFailureBurn page.'
+          dashboard: '/d/centcom-relay-overview?var-env={{ $labels.env }}'

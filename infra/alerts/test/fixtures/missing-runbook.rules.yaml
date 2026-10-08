@@ -1,0 +1,16 @@
+# A broken fixture for the lint tests (B094): a well-formed alert whose runbook file does not exist.
+groups:
+  - name: alerts-fixture-missing-runbook
+    rules:
+      - alert: FixtureMissingRunbook
+        expr: max by (env) (centcom_queue_depth{queue="email-send"}) > 1000
+        for: 10m
+        labels:
+          severity: ticket
+          service: fixture
+          owner: platform
+          runbook: infra/runbooks/alerts/FixtureMissingRunbook.md
+        annotations:
+          summary: 'The e-mail queue is deep in {{ $labels.env }}.'
+          impact: 'E-mails go out late.'
+          dashboard: '/d/centcom-workers-queues?var-env={{ $labels.env }}'

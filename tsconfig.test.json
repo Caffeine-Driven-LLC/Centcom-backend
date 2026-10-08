@@ -32,6 +32,8 @@
     "tools/repo/**/*.mjs",
     "tools/dev/**/*.ts",
     "tools/ci/**/*.mjs",
+    "infra/**/*.ts",
+    "infra/**/*.mjs",
     "vitest.workspace.ts"
   ],
   "exclude": ["**/node_modules", "**/dist"]
