@@ -247,6 +247,11 @@ export const METRICS = {
   auth_revocation_unavailable_total: counter('Revocation checks Redis could not answer.', [
     'outcome',
   ]),
+  billing_customers_created_total: counter('Stripe customers created for workspaces.'),
+  billing_subscription_updates_total: counter(
+    'Stripe subscription updates, by whether they were applied (false: a stale event).',
+    ['applied'],
+  ),
   devices_revoked_publish_failed_total: counter(
     'Device revocations not announced on devices:revoked after every retry.',
   ),

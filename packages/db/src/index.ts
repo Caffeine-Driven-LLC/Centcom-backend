@@ -244,6 +244,12 @@ export type {
   NotificationPrefTable,
 } from './schema/notification-preferences.js';
 export type {
+  BillingCustomerTable,
+  BillingDatabase,
+  BillingDb,
+  BillingSubscriptionTable,
+} from './schema/billing.js';
+export type {
   QuotaStateTable,
   UsageAggregateCursorTable,
   UsageAggregationDatabase,
