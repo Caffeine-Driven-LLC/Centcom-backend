@@ -159,6 +159,12 @@ export type {
   NotificationsTable,
 } from './schema/notifications.js';
 export type {
+  PushDatabase,
+  PushSubscriptionsDatabase,
+  PushSubscriptionsTable,
+  SealedColumn,
+} from './schema/push-subscriptions.js';
+export type {
   IdentitiesDatabase,
   IdentitiesTable,
   IdentityProvider,
