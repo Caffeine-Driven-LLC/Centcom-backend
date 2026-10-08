@@ -11,10 +11,10 @@
  * `schema/api-keys.ts`, workspace settings (B034) in `schema/workspace-settings.ts`, projects
  * (B035) in `schema/projects.ts`, notifications (B063) in `schema/notifications.ts`, plans and
  * entitlements (B069) in `schema/entitlements.ts`, feature flags (B083) in
- * `schema/feature-flags.ts`, release manifests (B084) in `schema/releases.ts`; repositories
- * (B013 on, workspaces from B027, members from B028, invites from B029, settings from B034,
- * projects from B035, notifications from B063) in `repos/`; the entitlements repository is the
- * API's (B069).
+ * `schema/feature-flags.ts`, release manifests (B084) in `schema/releases.ts`, telemetry (B085)
+ * in `schema/telemetry.ts`; repositories (B013 on, workspaces from B027, members from B028,
+ * invites from B029, settings from B034, projects from B035, notifications from B063) in
+ * `repos/`; the entitlements repository is the API's (B069).
  */
 export {
   ACQUIRE_BUCKETS_S,
@@ -161,6 +161,12 @@ export type {
   ReleaseDatabase,
   ReleasesTable,
 } from './schema/releases.js';
+export type {
+  TelemetryDailyAggTable,
+  TelemetryDatabase,
+  TelemetryEventsTable,
+  TelemetryRollupsTable,
+} from './schema/telemetry.js';
 export type {
   DeviceGrantDatabase,
   DeviceGrantsDatabase,
