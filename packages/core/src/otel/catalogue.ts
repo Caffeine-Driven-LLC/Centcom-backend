@@ -356,6 +356,11 @@ export const METRICS = {
   redis_reconnects_total: counter('Redis reconnects.', [], ALL),
   redis_unavailable_total: counter('Redis calls refused while it was down.', [], ALL),
   relay_codec_errors_total: counter('Frames dropped because decoding threw.', [], RELAY),
+  relay_dead_peers_total: counter(
+    'Connections closed after RELAY_DEAD_MS without an inbound frame.',
+    [],
+    RELAY,
+  ),
   relay_frames_invalid_total: counter('Inbound frames refused by the codec.', ['code'], RELAY),
   relay_handshake_frames_dropped_total: counter(
     'Frames dropped while a hello was being checked.',

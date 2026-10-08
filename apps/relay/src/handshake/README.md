@@ -27,13 +27,15 @@ On success the client gets `sys.welcome` with:
 
 - the negotiated `protocol` and `caps` (only capabilities both sides advertise);
 - `member` (id, name, slot, and the **live** role, never the ticket's);
-- `roster_v`, `heartbeat {ping_ms: 20000, dead_ms: 50000}` and `server_time`;
+- `roster_v`, `heartbeat {ping_ms, dead_ms}` (the values B040's connection module enforces:
+  `RELAY_PING_MS` and `RELAY_DEAD_MS`, 20 000 and 50 000 by default) and `server_time`;
 - `limits` (CT-WS-ENVELOPE defaults, `max_members` capped at 50), `session.state` and `resume: null`.
 
 The connection becomes `authenticated` with its `sessionId`, and later frames pass to the next
 stages. Nothing else is sent before the welcome; frames that arrive while the hello is being
 checked are dropped. A connection of the same `(member, device)` already on this node gets
-`sys.bye {reason: "superseded"}` and close **4409**.
+`sys.bye {reason: "superseded"}` and close **4409**. Every refusal and the supersede close
+through B040's `closeConnection`, which sends the frame first and closes once.
 
 ## Tickets and keys
 

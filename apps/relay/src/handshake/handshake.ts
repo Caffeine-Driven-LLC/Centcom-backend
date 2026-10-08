@@ -27,12 +27,11 @@
  * Owns: the handshake. Must not: authorise from ticket claims, or let a connection through
  * without a consumed ticket.
  */
-import { newId, validate } from '@centcom/contracts';
+import { validate } from '@centcom/contracts';
 import {
   AppError,
   isAppError,
   noopMetrics,
-  toProblem,
   unavailable,
   type ErrorCode,
   type KeyValue,
@@ -42,7 +41,8 @@ import {
 import { CloseCode, type CloseCodeValue } from '../close-codes.js';
 import type { ConnectionEntry, ConnectionRegistry } from '../connection-registry.js';
 import type { FrameContext, InboundStage, RelayConnection } from '../pipeline.js';
-import { sysBye } from '../server.js';
+import { closeConnection } from '../connection/close.js';
+import { DEFAULT_DEAD_MS, DEFAULT_PING_MS } from '../connection/config.js';
 import type { SessionAccess, SessionAccessResult } from './access.js';
 import type { HandshakeConfig } from './config.js';
 import type { JwksCache } from './jwks.js';
@@ -55,8 +55,8 @@ export const HELLO_TIMEOUT_MS = 5_000;
 export const JTI_TTL_MS = 120_000;
 /** The longest wait for the live records. */
 export const ACCESS_TIMEOUT_MS = 2_000;
-/** CT-WS-ENVELOPE heartbeat. */
-export const HEARTBEAT = Object.freeze({ ping_ms: 20_000, dead_ms: 50_000 });
+/** CT-WS-ENVELOPE heartbeat defaults; a relay advertises its configured values (B040). */
+export const HEARTBEAT = Object.freeze({ ping_ms: DEFAULT_PING_MS, dead_ms: DEFAULT_DEAD_MS });
 /** CT-WS-ENVELOPE limits (defaults); `max_members` comes from the session's plan. */
 export const WELCOME_LIMITS = Object.freeze({
   max_frame_bytes: 262_144,
@@ -103,6 +103,11 @@ export interface HandshakeDeps {
   clock?: () => number;
   /** Runs `fn` after `ms`; default an unref'd setTimeout. */
   setTimer?: (fn: () => void, ms: number) => Timer;
+  /**
+   * The heartbeat `sys.welcome` advertises: the values the connection module enforces
+   * (RELAY_PING_MS, RELAY_DEAD_MS, B040); default HEARTBEAT.
+   */
+  heartbeat?: { ping_ms: number; dead_ms: number };
 }
 
 type Phase =
@@ -157,6 +162,8 @@ export function welcomeFrame(input: {
   caps: readonly string[];
   access: SessionAccessResult & { member: NonNullable<SessionAccessResult['member']> };
   nowMs: number;
+  /** Default HEARTBEAT. */
+  heartbeat?: { ping_ms: number; dead_ms: number };
 }): object {
   const { access } = input;
   return {
@@ -172,7 +179,7 @@ export function welcomeFrame(input: {
         role: access.member.role,
       },
       roster_v: access.rosterV ?? 0,
-      heartbeat: { ...HEARTBEAT },
+      heartbeat: { ...(input.heartbeat ?? HEARTBEAT) },
       server_time: new Date(input.nowMs).toISOString(),
       limits: {
         ...WELCOME_LIMITS,
@@ -228,9 +235,14 @@ export function createHandshake(deps: HandshakeDeps): {
     metrics.counter('relay_handshakes_total', { outcome: refusal.reason }).inc();
     deps.logger?.info({ close: refusal.close, reason: refusal.reason }, 'relay.handshake_refused');
     if (!isOpen(connection)) return;
-    const problem = { ...toProblem(refusal.error, { requestId: newId('req') }), ...refusal.extra };
-    connection.send({ v: 1, t: 'sys.error', p: problem });
-    connection.close(refusal.close);
+    const { error } = refusal;
+    closeConnection(connection, {
+      code: refusal.close,
+      errorCode: error.code,
+      ...(error.detail === undefined ? {} : { detail: error.detail }),
+      ...(error.retryAfterS === undefined ? {} : { retryAfterS: error.retryAfterS }),
+      extra: refusal.extra,
+    });
   }
 
   /** The hello's frame: decoded by an earlier stage, or parsed here. */
@@ -373,8 +385,7 @@ export function createHandshake(deps: HandshakeDeps): {
     phases.set(connection.entry, { phase: 'active', key });
     if (previous !== undefined && previous !== connection && isOpen(previous)) {
       metrics.counter('relay_superseded_total').inc();
-      previous.send(sysBye('superseded'));
-      previous.close(CloseCode.Superseded, 'superseded');
+      closeConnection(previous, { code: CloseCode.Superseded, bye: 'superseded' });
     }
     // Forget connections that closed since, so the map stays as small as the live set.
     if (active.size > 64) {
@@ -409,6 +420,7 @@ export function createHandshake(deps: HandshakeDeps): {
           caps: admitted.caps,
           access: { ...access, member: access.member },
           nowMs: clock(),
+          ...(deps.heartbeat === undefined ? {} : { heartbeat: deps.heartbeat }),
         }),
       );
       connection.entry.state = 'authenticated';

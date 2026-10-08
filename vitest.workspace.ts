@@ -24,10 +24,17 @@ export default defineConfig({
   // A workspace imported by package name resolves to its source, as in tsconfig.test.json, so
   // tests need no build first (their package.json "exports" point at dist/).
   resolve: {
-    alias: workspaces.map((dir) => ({
-      find: new RegExp(`^@centcom/${basename(dir)}$`),
-      replacement: resolve(root, dir, 'src/index.ts'),
-    })),
+    alias: [
+      ...workspaces.map((dir) => ({
+        find: new RegExp(`^@centcom/${basename(dir)}$`),
+        replacement: resolve(root, dir, 'src/index.ts'),
+      })),
+      // B011's simulator, a public subpath of the testkit (B040 drives the relay with it).
+      {
+        find: /^@centcom\/testkit\/sim$/,
+        replacement: resolve(root, 'packages/testkit/src/sim/index.ts'),
+      },
+    ],
   },
   test: {
     passWithNoTests: true,

@@ -53,11 +53,13 @@ describe('workspaces', () => {
     const cfg = readJson('tsconfig.test.json');
     const opts = cfg.compilerOptions as { noEmit?: boolean; paths?: Record<string, string[]> };
     expect(opts.noEmit).toBe(true);
-    expect(opts.paths).toEqual(
-      Object.fromEntries(
+    expect(opts.paths).toEqual({
+      ...Object.fromEntries(
         Object.entries(WORKSPACES).map(([dir, name]) => [name, [`./${dir}/src/index.ts`]]),
       ),
-    );
+      // B011's simulator, the testkit's one public subpath (B040's relay tests use it).
+      '@centcom/testkit/sim': ['./packages/testkit/src/sim/index.ts'],
+    });
     const include = cfg.include as string[];
     for (const glob of [
       'apps/*/test/**/*.ts',
