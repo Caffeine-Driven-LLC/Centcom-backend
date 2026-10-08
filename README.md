@@ -33,7 +33,6 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 | Lane | What | Size | Milestone |
 |---|---|---|---|
 | [B010](plan/backend/B010.md) | Test harness: containers, factories, contract test runner | M | M0 |
-| [B012](plan/backend/B012.md) | Local dev environment: compose stack, seed data, one-command up | S | M0 |
 | [B031](plan/backend/B031.md) | Member slot assignment service | S | M3 |
 | [B091](plan/backend/B091.md) | Infrastructure as code: environments dev, stage, prod | L | M3 |
 | [B017](plan/backend/B017.md) | Token service: JWT issue, refresh rotation with reuse detection, JWKS, revocation | L | M3 |
@@ -42,6 +41,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 | [B037](plan/backend/B037.md) | Relay service skeleton: ws server, health, graceful shutdown | M | M3 |
 | [B035](plan/backend/B035.md) | Projects registry | S | M4 |
 | [B064](plan/backend/B064.md) | Push delivery: web push, APNs, FCM abstraction | M | M4 |
+| [B030](plan/backend/B030.md) | Seat accounting and seat-limit enforcement | S | M4 |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
 
