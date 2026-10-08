@@ -7,9 +7,9 @@
  * `schema/refresh-tokens.ts`, e-mail sign-in links (B014) in
  * `schema/login-tokens.ts`, the audit log (B036) in `schema/audit-events.ts`, invites (B029) in
  * `schema/invites.ts`, workspace settings (B034) in `schema/workspace-settings.ts`, notifications
- * (B063) in `schema/notifications.ts`; repositories (B013 on, workspaces from B027, members from
- * B028, invites from B029, settings from B034, notifications from B063) in
- * `repos/`.
+ * (B063) in `schema/notifications.ts`, plans and entitlements (B069) in `schema/entitlements.ts`;
+ * repositories (B013 on, workspaces from B027, members from B028, invites from B029, settings from
+ * B034, notifications from B063) in `repos/`; the entitlements repository is the API's (B069).
  */
 export {
   ACQUIRE_BUCKETS_S,
@@ -121,6 +121,16 @@ export {
   type UserRepo,
 } from './repos/users.js';
 export type { AuditDatabase, AuditEventsTable } from './schema/audit-events.js';
+export type {
+  EntitlementsDatabase,
+  EntitlementsDb,
+  EntitlementStatus,
+  LimitKey,
+  PlanId,
+  PlanLimitsTable,
+  PlansTable,
+  WorkspaceEntitlementsTable,
+} from './schema/entitlements.js';
 export type { InviteDatabase, InvitesDatabase, InvitesTable } from './schema/invites.js';
 export type {
   AutoApprove,

@@ -896,3 +896,31 @@ app.notificationDeeplink(sessionId, 'approval'); // centcom://session/<ses_id>?f
 the default and a configured `WEB_BASE_URL` (from options and from the environment), `http://`
 refused at boot, links that read back through `parseDeepLink`, the contract's notification fixture
 and schema, and B029's token shape and 7-day lifetime.
+
+## Plans and entitlements (B069)
+
+`src/modules/entitlements/` ([README](src/modules/entitlements/README.md)) resolves each
+workspace's subscription state to CT-ENTITLEMENTS limits with a revision `rev`, from the
+`plans`/`plan_limits` rows the migration `20260102001500_plans_entitlements.sql` seeds.
+`src/routes/plans/` serves the public `GET /v1/plans`; `src/routes/entitlements/` serves
+`GET /v1/workspaces/{id}/entitlements` (`workspaces:read`, member+, guests 403, `ETag` and 304).
+Billing lanes change entitlements through `EntitlementService.applySubscriptionState`, which moves
+`rev` only when the resolved plan, status or limits change and announces it on
+`entitlements:invalidate`.
+
+### Tests
+
+`test/entitlements/`:
+
+- **`entitlements.resolve.test.ts`:** every plan under every status, the grace and cancellation
+  boundaries, add-on seats, typed errors, the digest, and properties over random states.
+- **`entitlements.service.test.ts`:** the default row, idempotent changes, the invalidation and
+  its retry, changes time makes, refused states, usage, the catalog cache, and a property that
+  `rev` never goes back and every move is announced.
+- **`entitlements.routes.test.ts`:** the public plans (USD and EUR integers), the entitlements
+  object by role and API key, 404s, and `If-None-Match`.
+- **`entitlements.seed.test.ts`:** the seed equals the contract's table and the migration's rows;
+  `validateSeedPlans` refusals.
+- **`entitlements.contract.test.ts`:** the contract's fixtures round-trip through the service.
+- **`entitlements.postgres.test.ts`:** the migration's seed and backfill, the service over the
+  SQL repository with ten racing changes, the purge, and the constraints (CI).
