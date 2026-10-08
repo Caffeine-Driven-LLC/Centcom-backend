@@ -139,8 +139,17 @@ describe('GET /v1/workspaces/{id}/subscription', () => {
     expect(none.json<{ code: string }>().code).toBe('not_found');
     const customer = stripeId('cus');
     ctx.billing.customers.set(ws, customer);
-    await ctx.service.upsertFromStripe(stripeSub(customer, { status: 'incomplete_expired' }), 1);
+    const sub = stripeSub(customer, { status: 'incomplete_expired' });
+    await ctx.service.upsertFromStripe(sub, 1);
     expect((await get()).statusCode).toBe(404);
+    // CT-API-BILLING's Subscription.status has no `none`: a status Stripe adds later maps to
+    // `none` (with a warning) and is a 404 too, not a body with an off-contract status.
+    await ctx.service.upsertFromStripe({ ...sub, status: 'active' }, 2);
+    expect((await get()).statusCode).toBe(200);
+    await ctx.service.upsertFromStripe({ ...sub, status: 'suspended' }, 3);
+    const unknown = await get();
+    expect(unknown.statusCode).toBe(404);
+    expect(unknown.json<{ code: string }>().code).toBe('not_found');
     await ctx.app.close();
   });
 
