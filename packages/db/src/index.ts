@@ -260,6 +260,14 @@ export type {
   UsageEventTable,
 } from './schema/usage.js';
 export type {
+  WebhookDatabase,
+  WebhookDb,
+  WebhookDeliveriesTable,
+  WebhookEndpointsTable,
+  WebhookEventsTable,
+  WebhookOutboxTable,
+} from './schema/webhooks.js';
+export type {
   IdentitiesDatabase,
   IdentitiesTable,
   IdentityProvider,

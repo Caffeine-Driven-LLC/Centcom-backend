@@ -379,6 +379,28 @@ export const METRICS = {
   usage_events_duplicate_total: counter('Duplicate usage events.'),
   usage_hint_failures_total: counter('Usage hints that failed.'),
   usage_relay_unavailable_total: counter('Usage reports while the relay was unreachable.'),
+  webhook_attempts_total: counter('Outgoing webhook attempts, by result.', ['result'], API_WORKER),
+  webhook_deliveries_created_total: counter(
+    'Outgoing webhook deliveries created by fan-out.',
+    [],
+    API_WORKER,
+  ),
+  webhook_deliveries_dead_total: counter(
+    'Outgoing webhook deliveries that failed every retry.',
+    [],
+    WORKER,
+  ),
+  webhook_endpoints_disabled_total: counter(
+    'Webhook endpoints disabled after 3 days of failures.',
+    [],
+    API_WORKER,
+  ),
+  webhook_jobs_failed_total: counter('Webhook jobs that crashed.', ['queue'], WORKER),
+  webhook_secret_unavailable_total: counter(
+    'Deliveries paused for want of the signing key.',
+    [],
+    API_WORKER,
+  ),
   workspace_announce_failures_total: counter('Workspace announcements that failed.'),
   workspace_purge_enqueue_failures_total: counter('Workspace purges that could not be queued.'),
   workspace_purge_failed_total: counter('Workspace purges that failed.', [], WORKER),
