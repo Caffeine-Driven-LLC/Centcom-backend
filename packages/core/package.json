@@ -15,6 +15,10 @@
     "./entitlements": {
       "types": "./dist/entitlements/index.d.ts",
       "default": "./dist/entitlements/index.js"
+    },
+    "./webhooks": {
+      "types": "./dist/webhooks/index.d.ts",
+      "default": "./dist/webhooks/index.js"
     }
   },
   "scripts": {
