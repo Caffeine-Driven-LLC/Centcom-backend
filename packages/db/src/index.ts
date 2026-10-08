@@ -9,13 +9,14 @@
  * (B082) in `schema/audit-exports.ts`, invites (B029) in
  * `schema/invites.ts`, device grants (B016) in `schema/device-grants.ts`, API keys (B019) in
  * `schema/api-keys.ts`, workspace settings (B034) in `schema/workspace-settings.ts`, projects
- * (B035) in `schema/projects.ts`, notifications (B063) in `schema/notifications.ts`, plans and
- * entitlements (B069) in `schema/entitlements.ts`, feature flags (B083) in
- * `schema/feature-flags.ts`, release manifests (B084) in `schema/releases.ts`, telemetry (B085)
- * in `schema/telemetry.ts`, the status feed (B086) in `schema/status.ts`, staff access (B087) in
- * `schema/staff.ts`; repositories (B013 on,
- * workspaces from B027, members from B028, invites from B029, settings from B034, projects from
- * B035, notifications from B063) in `repos/`; the entitlements repository is the API's (B069).
+ * (B035) in `schema/projects.ts`, member slots (B031) in `schema/session-slots.ts`, notifications
+ * (B063) in `schema/notifications.ts`, plans and entitlements (B069) in `schema/entitlements.ts`,
+ * feature flags (B083) in `schema/feature-flags.ts`, release manifests (B084) in
+ * `schema/releases.ts`, telemetry (B085) in `schema/telemetry.ts`, the status feed (B086) in
+ * `schema/status.ts`, staff access (B087) in `schema/staff.ts`; repositories (B013 on, devices
+ * from B020, workspaces from B027, members from B028, invites from B029, settings from B034,
+ * projects from B035, slots from B031, notifications from B063) in `repos/`; the entitlements
+ * repository is the API's (B069).
  */
 export {
   ACQUIRE_BUCKETS_S,
@@ -70,6 +71,20 @@ export {
   type HealthReport,
 } from './health.js';
 export { createMembershipRepo } from './repos/memberships.js';
+export {
+  createSessionSlotStore,
+  SLOT_STATEMENT_TIMEOUT_MS,
+  type SessionSlotStore,
+  type SlotAssignment,
+} from './repos/session-slots.js';
+export {
+  createDeviceRepo,
+  DEVICE_COLUMNS,
+  DEVICE_LIST_SORTS,
+  type DeviceRecord,
+  type DeviceRepo,
+  type NewDevice,
+} from './repos/devices.js';
 export {
   createInviteStore,
   INVITE_LIST_SORTS,
@@ -190,6 +205,11 @@ export type {
   DevicePlatform,
 } from './schema/device-grants.js';
 export type {
+  SessionMemberSlotsTable,
+  SessionSlotDatabase,
+  SessionSlotsDatabase,
+} from './schema/session-slots.js';
+export type {
   EntitlementsDatabase,
   EntitlementsDb,
   EntitlementStatus,
@@ -223,6 +243,12 @@ export type {
   NotificationPrefDb,
   NotificationPrefTable,
 } from './schema/notification-preferences.js';
+export type {
+  BillingCustomerTable,
+  BillingDatabase,
+  BillingDb,
+  BillingSubscriptionTable,
+} from './schema/billing.js';
 export type {
   QuotaStateTable,
   UsageAggregateCursorTable,
