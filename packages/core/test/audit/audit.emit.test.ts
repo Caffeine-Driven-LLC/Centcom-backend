@@ -193,17 +193,17 @@ describe('emit', () => {
     const { emitter, trx, recorded } = setup();
     trx.failWith = () => pgError('23503', 'violates foreign key constraint');
     await expect(emitter.emit(trx, sampleEvent())).rejects.toMatchObject({ code: '23503' });
-    expect(recorded.count('audit_events_written_total', { path: 'emit' })).toBe(0);
+    expect(recorded.count('audit_events_written_total', { mode: 'emit' })).toBe(0);
     trx.failWith = undefined;
     await emitter.emit(trx, sampleEvent());
-    expect(recorded.count('audit_events_written_total', { path: 'emit' })).toBe(1);
+    expect(recorded.count('audit_events_written_total', { mode: 'emit' })).toBe(1);
     const latencies = recorded.observations.filter((o) => o.name === 'audit_emit_latency_ms');
     expect(latencies).toEqual([
       {
         name: 'audit_emit_latency_ms',
         buckets: AUDIT_LATENCY_BUCKETS_MS,
         value: expect.any(Number),
-        labels: { path: 'emit' },
+        labels: { mode: 'emit' },
       },
     ]);
   });

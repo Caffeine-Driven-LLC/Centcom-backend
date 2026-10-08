@@ -3,7 +3,7 @@
  * row of `audit_events`.
  *
  * - The action must be in the emitter's catalogue (InvalidAuditActionError otherwise), and ids
- *   must be CT-IDS ids of the right kind: `wsp_` workspaces, `usr_`/`key_`/`dev_` actors (or a
+ *   must be CT-IDS ids of the right kind: `wsp_` workspaces, `usr_` (users and staff), `key_` and `dev_` actors (or a
  *   service name for `system`), any entity id as the target, a `req_` request id.
  * - `meta` keeps only the action's allowlisted keys. Values are strings, finite numbers, booleans
  *   or null; a string over 200 characters, or meta over 2 KiB serialised, is refused. A string
@@ -18,8 +18,11 @@ import { REDACTED } from '../config/secret.js';
 import { MAX_AUDIT_ACTION_LENGTH, type AuditAction, type AuditCatalog } from './actions.js';
 import type { NewAuditRow } from './table.js';
 
-/** Who acted: a user, an API key, a device, or the system (a service, by name). */
-export type AuditActorType = 'user' | 'api_key' | 'system' | 'device';
+/**
+ * Who acted: a user, an API key, a device, the system (a service, by name), or Centcom staff
+ * through the internal admin API (B087; a `usr_` id).
+ */
+export type AuditActorType = 'user' | 'api_key' | 'system' | 'device' | 'staff';
 /** How it ended: done, refused by policy, or failed. */
 export type AuditOutcome = 'success' | 'denied' | 'failed';
 /** A meta value: ids and enums (strings), counts, flags, or null. */
@@ -28,7 +31,7 @@ export type AuditMetaValue = string | number | boolean | null;
 /** The actor of an event. */
 export interface AuditActor {
   type: AuditActorType;
-  /** A `usr_`, `key_` or `dev_` id; for `system`, the service's name (`relay`, `retention`). */
+  /** A `usr_` (users and staff), `key_` or `dev_` id; for `system`, a service name (`relay`). */
   id: string;
 }
 
@@ -68,10 +71,10 @@ export class InvalidAuditActionError extends InvalidAuditEventError {
   override name = 'InvalidAuditActionError';
 }
 
-const ACTOR_TYPES: ReadonlySet<string> = new Set(['user', 'api_key', 'system', 'device']);
+const ACTOR_TYPES: ReadonlySet<string> = new Set(['user', 'api_key', 'system', 'device', 'staff']);
 const OUTCOMES: ReadonlySet<string> = new Set(['success', 'denied', 'failed']);
 /** The id prefix of each actor type that has one. */
-const ACTOR_PREFIX = { user: 'usr', api_key: 'key', device: 'dev' } as const;
+const ACTOR_PREFIX = { user: 'usr', api_key: 'key', device: 'dev', staff: 'usr' } as const;
 /** A service acting on its own: `relay`, `retention`, `billing-webhooks`. */
 const SYSTEM_ACTOR = /^[a-z][a-z0-9_.-]{0,39}$/;
 const TARGET_TYPE = /^[a-z][a-z0-9_]{0,31}$/;
@@ -154,7 +157,7 @@ function checkActor(actor: unknown): AuditActor {
   if (typeof actor !== 'object' || actor === null) return fail('actor is required');
   const { type, id } = actor as { type?: unknown; id?: unknown };
   if (typeof type !== 'string' || !ACTOR_TYPES.has(type)) {
-    return fail('actor.type must be user, api_key, system or device');
+    return fail('actor.type must be user, api_key, system, device or staff');
   }
   const kind = type as AuditActorType;
   const ok =

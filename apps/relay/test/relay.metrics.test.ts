@@ -1,6 +1,7 @@
 /**
- * Metrics (B037, card test relay.metrics.test.ts, acceptance 7): `relay_connections_active`,
- * `relay_connections_total`, `relay_frames_in_total{t}` and `relay_closes_total{code}` exist and
+ * Metrics (B037, card test relay.metrics.test.ts, acceptance 7; names from B093's catalogue):
+ * `relay_connections`, `relay_connections_total`, `relay_frames_total{t,direction}` and
+ * `relay_close_total{code}` exist and
  * move during a 100-connection run; every label comes from a small fixed set, never a session,
  * member or user id, whatever the frames carry.
  */
@@ -27,9 +28,11 @@ describe('relay metrics over 100 connections (acceptance 7)', () => {
         c.ws.send('not json');
         c.ws.send(Buffer.from([1, 2, 3]));
       }
-      await until(() => relay.recorded.count(RELAY_METRICS.framesIn, { t: 'binary' }) === 100);
-      expect(relay.recorded.count(RELAY_METRICS.framesIn, { t: 'event' })).toBe(100);
-      expect(relay.recorded.count(RELAY_METRICS.framesIn, { t: 'invalid' })).toBe(200);
+      const frames = (t: string) =>
+        relay.recorded.count(RELAY_METRICS.framesIn, { t, direction: 'in' });
+      await until(() => frames('binary') === 100);
+      expect(frames('event')).toBe(100);
+      expect(frames('invalid')).toBe(200);
 
       for (const [i, c] of clients.entries()) {
         if (i % 2 === 0) c.ws.close(1000);
@@ -52,6 +55,7 @@ describe('relay metrics over 100 connections (acceptance 7)', () => {
       }
       const allowed: Record<string, readonly string[]> = {
         t: [...FRAME_TYPES, 'invalid', 'binary'],
+        direction: ['in'],
         code: [
           '1000',
           '1001',

@@ -9,11 +9,21 @@
  * Owns: wiring and the process. Must not: hold logic a test cannot reach (it lives in the
  * modules it calls).
  */
-import { baseConfig, createLogger, createRedis, keyPrefixFor, type Logger } from '@centcom/core';
-import { closeDb, createDb, healthCheck, type CoreDatabase } from '@centcom/db';
+import {
+  baseConfig,
+  createLogger,
+  createRedis,
+  initTelemetry,
+  keyPrefixFor,
+  observeDbPool,
+  sampleRedisLatency,
+  type Logger,
+} from '@centcom/core';
+import { closeDb, createDb, healthCheck, poolStats, type CoreDatabase } from '@centcom/db';
 import { buildInfo } from './build-info.js';
 import { loadRelayConfig } from './config.js';
 import { dependencyProbe } from './health.js';
+import { RELAY_METRICS } from './metrics.js';
 import { ModuleError } from './modules.js';
 import { startRelay } from './server.js';
 import { createShutdown, onShutdownSignals } from './shutdown.js';
@@ -57,14 +67,36 @@ async function main(): Promise<number> {
     'relay.starting',
   );
 
-  const redis = createRedis({ url: base.redisUrl, keyPrefix: keyPrefixFor(base.nodeEnv), logger });
-  const db = createDb<CoreDatabase>({ url: base.databaseUrl.reveal(), applicationName: 'relay' });
+  // B093: metrics and traces (off under OTEL_ENABLED=false, and always under tests).
+  const telemetry = initTelemetry({
+    service: 'relay',
+    version: build.version,
+    env: base.nodeEnv,
+    region: config.region,
+    logger,
+  });
+  const { metrics } = telemetry;
+  const redis = createRedis({
+    url: base.redisUrl,
+    keyPrefix: keyPrefixFor(base.nodeEnv),
+    logger,
+    metrics,
+  });
+  const db = createDb<CoreDatabase>({
+    url: base.databaseUrl.reveal(),
+    applicationName: 'relay',
+    metrics,
+  });
+  observeDbPool(metrics, () => poolStats(db));
+  const redisLatency = sampleRedisLatency(metrics, () => redis.ping());
   // Closing clients of a dependency that never answered must not keep the process alive.
   const release = (): Promise<void> =>
     Promise.race([
-      Promise.all([redis.close().catch(() => undefined), closeDb(db).catch(() => undefined)]).then(
-        () => undefined,
-      ),
+      Promise.all([
+        redis.close().catch(() => undefined),
+        closeDb(db).catch(() => undefined),
+        telemetry.shutdown(),
+      ]).then(() => undefined),
       new Promise<void>((resolve) => setTimeout(resolve, RELEASE_TIMEOUT_MS).unref()),
     ]);
 
@@ -74,6 +106,8 @@ async function main(): Promise<number> {
       config,
       host: base.host,
       logger,
+      metrics,
+      tracer: telemetry.tracer,
       redis,
       db,
       probe: dependencyProbe({ redis, db: () => healthCheck(db) }),
@@ -87,9 +121,15 @@ async function main(): Promise<number> {
   }
   if (running === null) {
     logger.info({}, 'relay.start_aborted');
+    redisLatency.stop();
     await release();
     return 0;
   }
+  const server = running.server;
+  metrics.gauge(
+    RELAY_METRICS.connectionsActive,
+    () => server.gauges()[RELAY_METRICS.connectionsActive] ?? 0,
+  );
 
   const shutdown = createShutdown({
     server: running.server,
@@ -101,6 +141,7 @@ async function main(): Promise<number> {
   logger.info({ signal: await signal }, 'relay.signal');
   const code = await shutdown();
   running.readiness.stop();
+  redisLatency.stop();
   await release();
   return code;
 }

@@ -104,3 +104,27 @@ export function notifyDispatchJobOptions(): {
     removeOnFail: { age: NOTIFY_FAILED_RETENTION_S },
   };
 }
+
+/** The queue a user's pushes are sent from (B064). */
+export const NOTIFY_PUSH_QUEUE = 'notify.push';
+
+/** A push job: one notification for all of one user's push subscriptions. */
+export interface NotifyPushJobData {
+  userId: string;
+  /** The CT-NOTIF-PAYLOAD object (keys, ids, enums and integers; never display text). */
+  payload: Record<string, unknown>;
+  /** Only these subscriptions (a delivery deferred while a provider's circuit was open). */
+  subscriptionIds?: string[];
+}
+
+/**
+ * Options of a push job: one attempt (the sender retries each provider call itself and delays
+ * the job while a provider's circuit is open), completed jobs dropped, failures kept 7 days.
+ */
+export function notifyPushJobOptions(): {
+  attempts: number;
+  removeOnComplete: true;
+  removeOnFail: { age: number };
+} {
+  return { attempts: 1, removeOnComplete: true, removeOnFail: { age: NOTIFY_FAILED_RETENTION_S } };
+}
