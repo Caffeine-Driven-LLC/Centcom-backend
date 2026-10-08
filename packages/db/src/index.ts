@@ -6,15 +6,11 @@
  * identities (B015) in `schema/identities.ts`, refresh tokens (B017) in
  * `schema/refresh-tokens.ts`, e-mail sign-in links (B014) in
  * `schema/login-tokens.ts`, the audit log (B036) in `schema/audit-events.ts`, invites (B029) in
-<<<<<<< HEAD
- * `schema/invites.ts`, device grants (B016) in `schema/device-grants.ts`; repositories (B013 on,
- * workspaces from B027, members from B028, invites from B029) in `repos/`.
-=======
- * `schema/invites.ts`, workspace settings (B034) in `schema/workspace-settings.ts`, notifications
- * (B063) in `schema/notifications.ts`, plans and entitlements (B069) in `schema/entitlements.ts`;
- * repositories (B013 on, workspaces from B027, members from B028, invites from B029, settings from
- * B034, notifications from B063) in `repos/`; the entitlements repository is the API's (B069).
->>>>>>> origin/main
+ * `schema/invites.ts`, device grants (B016) in `schema/device-grants.ts`, workspace settings
+ * (B034) in `schema/workspace-settings.ts`, notifications (B063) in `schema/notifications.ts`,
+ * plans and entitlements (B069) in `schema/entitlements.ts`; repositories (B013 on, workspaces
+ * from B027, members from B028, invites from B029, settings from B034, notifications from B063)
+ * in `repos/`; the entitlements repository is the API's (B069).
  */
 export {
   ACQUIRE_BUCKETS_S,
@@ -127,14 +123,13 @@ export {
 } from './repos/users.js';
 export type { AuditDatabase, AuditEventsTable } from './schema/audit-events.js';
 export type {
-<<<<<<< HEAD
   DeviceGrantDatabase,
   DeviceGrantsDatabase,
   DeviceGrantStatus,
   DeviceGrantsTable,
   DevicePlatform,
 } from './schema/device-grants.js';
-=======
+export type {
   EntitlementsDatabase,
   EntitlementsDb,
   EntitlementStatus,
@@ -144,7 +139,6 @@ export type {
   PlansTable,
   WorkspaceEntitlementsTable,
 } from './schema/entitlements.js';
->>>>>>> origin/main
 export type { InviteDatabase, InvitesDatabase, InvitesTable } from './schema/invites.js';
 export type {
   AutoApprove,
