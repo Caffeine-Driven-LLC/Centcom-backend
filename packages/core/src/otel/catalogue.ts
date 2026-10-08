@@ -247,6 +247,11 @@ export const METRICS = {
   auth_revocation_unavailable_total: counter('Revocation checks Redis could not answer.', [
     'outcome',
   ]),
+  billing_customers_created_total: counter('Stripe customers created for workspaces.'),
+  billing_subscription_updates_total: counter(
+    'Stripe subscription updates, by whether they were applied (false: a stale event).',
+    ['applied'],
+  ),
   email_failed_total: counter('E-mails that failed for good.', ['template'], WORKER),
   email_idempotency_unrecorded_total: counter(
     'E-mail idempotency keys that could not be recorded.',
