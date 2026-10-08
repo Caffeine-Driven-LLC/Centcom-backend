@@ -5,7 +5,8 @@
  * packages/db/CONVENTIONS.md. Table types: the core schema (B008) in `schema/core.ts`, social-login
  * identities (B015) in `schema/identities.ts`, refresh tokens (B017) in
  * `schema/refresh-tokens.ts`, e-mail sign-in links (B014) in
- * `schema/login-tokens.ts`, the audit log (B036) in `schema/audit-events.ts`, invites (B029) in
+ * `schema/login-tokens.ts`, the audit log (B036) in `schema/audit-events.ts` and its export jobs
+ * (B082) in `schema/audit-exports.ts`, invites (B029) in
  * `schema/invites.ts`, device grants (B016) in `schema/device-grants.ts`, API keys (B019) in
  * `schema/api-keys.ts`, workspace settings (B034) in `schema/workspace-settings.ts`, projects
  * (B035) in `schema/projects.ts`, notifications (B063) in `schema/notifications.ts`, plans and
@@ -140,6 +141,12 @@ export type {
   ApiKeysTable,
 } from './schema/api-keys.js';
 export type { AuditDatabase, AuditEventsTable } from './schema/audit-events.js';
+export type {
+  AuditApiDb,
+  AuditExportDatabase,
+  AuditExportJobsTable,
+  AuditExportStatus,
+} from './schema/audit-exports.js';
 export type {
   DeviceGrantDatabase,
   DeviceGrantsDatabase,

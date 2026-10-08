@@ -1,8 +1,9 @@
 /**
  * @centcom/testkit (B010): the backend's test harness. A migrated Postgres database and a Redis
- * namespace per test file (`startTestStack`, on CI's services or on containers), factories for the
- * core schema, a fake clock and seeded randomness, the contract fixture runner and a Fastify app
- * helper. Test-only: other packages list it as a devDependency, and production code never imports it.
+ * namespace per test file (`startTestStack`, on CI's services or on containers), a MinIO object
+ * store (`startMinio`, B082), factories for the core schema, a fake clock and seeded randomness,
+ * the contract fixture runner and a Fastify app helper. Test-only: other packages list it as a
+ * devDependency, and production code never imports it.
  */
 export { createFakeClock, DEFAULT_FAKE_TIME, type FakeClock } from './clock.js';
 export { createSeededRandom, seededIdGenerator, type SeededRandom } from './random.js';
@@ -47,3 +48,4 @@ export {
   type FixtureSuiteOptions,
 } from './fixtures.js';
 export { withApp, type AppHandle } from './app.js';
+export { MINIO_IMAGE, startMinio, type TestMinio } from './minio.js';
