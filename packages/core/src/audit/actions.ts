@@ -101,7 +101,7 @@ export const AUDIT_ACTIONS = defineAuditActions({
   'webhook.update': { meta: ['fields', 'enabled'] },
   'webhook.delete': { meta: [] },
   'billing.checkout': { meta: ['plan', 'seats', 'interval'] },
-  'billing.portal': { meta: [] },
+  'billing.portal': { meta: ['plan'] },
   'billing.seats': { meta: ['from_seats', 'to_seats'] },
   'billing.coupon': { meta: ['plan'] },
   'auth.device_revoked': { meta: ['reason'] },

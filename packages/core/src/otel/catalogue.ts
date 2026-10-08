@@ -270,6 +270,13 @@ export const METRICS = {
     'outcome',
   ]),
   billing_customers_created_total: counter('Stripe customers created for workspaces.'),
+  billing_session_failures_total: counter(
+    'Checkout and portal sessions Stripe did not create, by kind and reason (stripe_unavailable, stripe_refused).',
+    ['kind', 'reason'],
+  ),
+  billing_sessions_created_total: counter('Checkout and portal sessions created, by kind.', [
+    'kind',
+  ]),
   billing_subscription_updates_total: counter(
     'Stripe subscription updates, by whether they were applied (false: a stale event).',
     ['applied'],
