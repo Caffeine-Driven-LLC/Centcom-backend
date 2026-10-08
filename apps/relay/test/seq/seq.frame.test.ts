@@ -15,7 +15,9 @@ import {
 } from '../../src/seq/frame.js';
 
 // JSON has no -0 (stringify writes 0), so frames, which always travel as JSON, never hold it.
-const json = fc.jsonValue({ maxDepth: 3 }).map((v) => JSON.parse(JSON.stringify(v)) as fc.JsonValue);
+const json = fc
+  .jsonValue({ maxDepth: 3 })
+  .map((v) => JSON.parse(JSON.stringify(v)) as fc.JsonValue);
 
 const sequencable: fc.Arbitrary<SequencableFrame> = fc.record(
   {
