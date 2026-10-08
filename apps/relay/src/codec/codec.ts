@@ -70,18 +70,28 @@ const utf8 = new TextDecoder('utf-8', { fatal: true });
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-/** True when `text`, read as JSON, nests objects and arrays deeper than `max` (strings skipped). */
+/**
+ * True when `text`, read as JSON, nests objects and arrays deeper than `max` (strings skipped).
+ *
+ * String contents are skipped with native `indexOf` rather than walked character by character:
+ * a large frame is almost all string (`ct.c`, padding), and walking it in JS dominated decode
+ * time. A string ends at the next `"` not escaped by an odd run of backslashes. An unterminated
+ * string answers false: `JSON.parse` refuses it anyway.
+ */
 export function nestsDeeperThan(text: string, max: number): boolean {
   let depth = 0;
-  let inString = false;
   for (let i = 0; i < text.length; i += 1) {
     const ch = text.charCodeAt(i);
-    if (inString) {
-      if (ch === 0x5c)
-        i += 1; // backslash: skip the escaped character
-      else if (ch === 0x22) inString = false;
-    } else if (ch === 0x22) {
-      inString = true;
+    if (ch === 0x22) {
+      let end = text.indexOf('"', i + 1);
+      while (end !== -1) {
+        let slashes = 0;
+        for (let k = end - 1; text.charCodeAt(k) === 0x5c; k -= 1) slashes += 1;
+        if (slashes % 2 === 0) break;
+        end = text.indexOf('"', end + 1);
+      }
+      if (end === -1) return false;
+      i = end;
     } else if (ch === 0x7b || ch === 0x5b) {
       depth += 1;
       if (depth > max) return true;

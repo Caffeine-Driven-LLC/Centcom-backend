@@ -4,7 +4,8 @@
  * kinds passing untouched and unknown types failing, unknown fields dropped, server-set fields
  * never surviving (property over 1 000 frames), the session check, `ct` and `queue.submit` size
  * boundaries, the nesting limit, canonical encoding, and 100 000 random byte strings that never
- * make it throw. Decoding a 256 KiB frame takes under 5 ms p95 (child process).
+ * make it throw. Decoding a 256 KiB frame takes under 5 ms p95 (child process). The pre-parse
+ * depth scan, which skips string contents natively, answers as a character-by-character walk does.
  */
 import { execFileSync } from 'node:child_process';
 import { randomBytes, randomInt } from 'node:crypto';
@@ -200,6 +201,115 @@ describe('nesting', () => {
     expect(nestsDeeperThan('{"a":"[[[[{{{{\\"]]]"}', 2)).toBe(false);
     expect(nestsDeeperThan('[[[]]]', 2)).toBe(true);
     expect(nestsDeeperThan('{"a":"\\\\"}', 1)).toBe(false);
+  });
+});
+
+describe('the depth scan skipping strings natively', () => {
+  /** The scan as first written: every character walked in JS, strings included. */
+  function walkEveryCharacter(text: string, max: number): boolean {
+    let depth = 0;
+    let inString = false;
+    for (let i = 0; i < text.length; i += 1) {
+      const ch = text.charCodeAt(i);
+      if (inString) {
+        if (ch === 0x5c) i += 1;
+        else if (ch === 0x22) inString = false;
+      } else if (ch === 0x22) {
+        inString = true;
+      } else if (ch === 0x7b || ch === 0x5b) {
+        depth += 1;
+        if (depth > max) return true;
+      } else if (ch === 0x7d || ch === 0x5d) {
+        depth -= 1;
+      }
+    }
+    return false;
+  }
+
+  const dense = (pairs: number): string => `[${'[],'.repeat(pairs)}[]]`;
+  const nested = (levels: number): string =>
+    `${'{"k":'.repeat(levels - 1)}{"s":"[{"}${'}'.repeat(levels - 1)}`;
+  /** `n` backslashes, as characters of the JSON text. */
+  const bs = (n: number): string => '\\'.repeat(n);
+
+  // [text, max, expected]: each also checked against the character walk.
+  const cases: [string, number, boolean][] = [
+    // Brackets inside strings never count, in values or keys.
+    ['{"a":"[[[[{{{{]]]]"}', 1, false],
+    ['{"[[[":{"]]]":1}}', 2, false],
+    ['["{{{{",[[]]]', 2, true],
+    ['["{{{{",[[]]]', 3, false],
+    // An escaped quote does not end the string.
+    [`{"a":"${bs(1)}"[[[["}`, 1, false],
+    [`["${bs(1)}"",[[]]]`, 2, true],
+    [`["${bs(1)}"",[[]]]`, 3, false],
+    [`{"a":"${bs(1)}u0022[[["}`, 1, false],
+    // Runs of backslashes before a quote: even ends the string, odd escapes the quote.
+    [`["${bs(2)}",[[]]]`, 2, true],
+    [`["${bs(3)}"[[[",[]]`, 1, true],
+    [`["${bs(3)}"[[[",[]]`, 2, false],
+    [`["${bs(4)}",[[]]]`, 2, true],
+    [`["${bs(5)}"]]]",[[]]]`, 2, true],
+    [`["${bs(5)}"]]]",[[]]]`, 3, false],
+    [`["a${bs(2)}b${bs(4)}c${bs(1)}"d",[[]]]`, 2, true],
+    ['["",[[]]]', 2, true],
+    ['["","",""]', 1, false],
+    // Unterminated strings answer false (JSON.parse refuses them), unless too deep before.
+    ['["abc[[[[[[', 1, false],
+    [`["abc${bs(1)}`, 1, false],
+    [`["${bs(1)}"]`, 1, false],
+    [`["${bs(3)}"[[[[[[`, 1, false],
+    ['[[[["abc', 2, true],
+    ['"', 0, false],
+    // A backslash outside a string is not an escape.
+    [`[${bs(1)}"[[]]]`, 1, false],
+    // Token-dense input.
+    [dense(20_000), 2, false],
+    [dense(20_000), 1, true],
+    [`{${'"a":[],'.repeat(10_000)}"b":{}}`, 2, false],
+    [`{${'"a":[],'.repeat(10_000)}"b":{}}`, 1, true],
+    // Exactly at the limit, and one past it.
+    [`${'['.repeat(16)}${']'.repeat(16)}`, FRAME_LIMITS.maxDepth, false],
+    [`${'['.repeat(17)}${']'.repeat(17)}`, FRAME_LIMITS.maxDepth, true],
+    [nested(16), FRAME_LIMITS.maxDepth, false],
+    [nested(17), FRAME_LIMITS.maxDepth, true],
+    [nestedFrame(16), FRAME_LIMITS.maxDepth, false],
+    [nestedFrame(17), FRAME_LIMITS.maxDepth, true],
+  ];
+
+  const label = (text: string): string => (text.length > 40 ? `${text.slice(0, 37)}...` : text);
+  it.each(cases.map(([text, max, expected]) => [label(text), max, expected, text] as const))(
+    '%s deeper than %i: %s',
+    (_label, max, expected, text) => {
+      expect(nestsDeeperThan(text, max)).toBe(expected);
+      expect(walkEveryCharacter(text, max)).toBe(expected);
+    },
+  );
+
+  it('agrees with the character walk on 50 000 random strings of JSON punctuation', () => {
+    const alphabet = ['"', '\\', '[', ']', '{', '}', 'a', ',', ':'];
+    const mismatches: { text: string; max: number }[] = [];
+    for (let i = 0; i < 50_000; i += 1) {
+      let text = '';
+      const length = randomInt(0, 48);
+      for (let c = 0; c < length; c += 1) text += alphabet[randomInt(alphabet.length)] ?? '';
+      const max = randomInt(0, 6);
+      if (nestsDeeperThan(text, max) !== walkEveryCharacter(text, max))
+        mismatches.push({ text, max });
+    }
+    expect(mismatches).toEqual([]);
+  });
+
+  it('agrees with the character walk on every event fixture and the 256 KiB frame', () => {
+    const texts = [
+      ...eventFixtures().map((f) => JSON.stringify(f.frame)),
+      frameOfBytes(FRAME_LIMITS.maxFrameBytes),
+    ];
+    for (const text of texts) {
+      for (const max of [1, 2, 3, FRAME_LIMITS.maxDepth]) {
+        expect(nestsDeeperThan(text, max)).toBe(walkEveryCharacter(text, max));
+      }
+    }
   });
 });
 
