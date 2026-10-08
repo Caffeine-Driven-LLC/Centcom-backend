@@ -112,6 +112,20 @@ registerInvitePurgeHook(hooks, createInviteStore(db)); // before startWorkspaceP
   letter, and the purge hook; on Redis 7 (CI), one scheduler with the retry options, a run, and a
   failing run dead-lettered after 3 attempts.
 
+## `workspace-settings` purge hook (B034)
+
+`registerWorkspaceSettingsPurgeHook(hooks, store)` adds the `workspace-settings` hook to B027's
+purge registry: it deletes a purged workspace's settings row before `workspace-purge` removes the
+workspace row (the row's foreign key restricts the delete). It is idempotent, and does nothing for
+a live workspace.
+
+```ts
+registerWorkspaceSettingsPurgeHook(hooks, createWorkspaceSettingsStore(db)); // before startWorkspacePurgeWorker
+```
+
+- **Tests:** `test/workspace-settings-purge.test.ts`: the hook runs before the purge, twice
+  harmlessly, and its name is taken once.
+
 ## `notify.dispatch` and `notify.digest` (B063)
 
 The BullMQ side of the notification dispatcher

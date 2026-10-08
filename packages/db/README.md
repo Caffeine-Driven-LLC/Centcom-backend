@@ -184,6 +184,23 @@ and `createInviteStore(db)` (`src/repos/invites.ts`) is its SQL.
   worker's `invites` purge hook) before B027's purge; deleting a user who created or accepted an
   invite is refused (B026's job).
 
+## Workspace settings (B034)
+
+[`migrations/20260102001300_workspace_settings.sql`](migrations/20260102001300_workspace_settings.sql)
+creates `workspace_settings`, one row per workspace that changed its defaults;
+`src/schema/workspace-settings.ts` types it (`WorkspaceSettingsDb` = `CoreDatabase` plus this
+table), and `createWorkspaceSettingsStore(db)` (`src/repos/workspace-settings.ts`) is its SQL.
+
+- **Columns:** `auto_approve` (`ask`, `trusted`, `everyone`; CHECK), `share_history`,
+  `retention_days` (null or 0 and up; the API caps it at the plan's `history_days`), `version`
+  (1 for the first change, the settings' ETag) and `updated_at`. No row: the defaults.
+- **Changes** run in a transaction that locks the live workspace's row first (`lockWorkspace`, the
+  lock B027's PATCH takes), then `read` and `write` (an upsert). `within(trx)` runs the same
+  operations in B027's PATCH transaction, compiling the queries and executing them on its `trx`.
+- **Foreign key** restricts: a purged workspace's settings go through `deleteForWorkspace` (the
+  worker's `workspace-settings` purge hook) before B027's purge; it does nothing for a live
+  workspace.
+
 ## Notifications (B063)
 
 [`migrations/20260102001400_notifications.sql`](migrations/20260102001400_notifications.sql)

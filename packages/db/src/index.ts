@@ -6,8 +6,9 @@
  * identities (B015) in `schema/identities.ts`, refresh tokens (B017) in
  * `schema/refresh-tokens.ts`, e-mail sign-in links (B014) in
  * `schema/login-tokens.ts`, the audit log (B036) in `schema/audit-events.ts`, invites (B029) in
- * `schema/invites.ts`, notifications (B063) in `schema/notifications.ts`; repositories (B013 on,
- * workspaces from B027, members from B028, invites from B029, notifications from B063) in
+ * `schema/invites.ts`, workspace settings (B034) in `schema/workspace-settings.ts`, notifications
+ * (B063) in `schema/notifications.ts`; repositories (B013 on, workspaces from B027, members from
+ * B028, invites from B029, settings from B034, notifications from B063) in
  * `repos/`.
  */
 export {
@@ -96,6 +97,13 @@ export {
   type WorkspaceView,
 } from './repos/workspaces.js';
 export {
+  createWorkspaceSettingsStore,
+  type WorkspaceSettingsRecord,
+  type WorkspaceSettingsStore,
+  type WorkspaceSettingsTx,
+  type WorkspaceSettingsValues,
+} from './repos/workspace-settings.js';
+export {
   createNotificationStore,
   type NewNotification,
   type NotificationInsert,
@@ -114,6 +122,12 @@ export {
 } from './repos/users.js';
 export type { AuditDatabase, AuditEventsTable } from './schema/audit-events.js';
 export type { InviteDatabase, InvitesDatabase, InvitesTable } from './schema/invites.js';
+export type {
+  AutoApprove,
+  WorkspaceSettingsDatabase,
+  WorkspaceSettingsDb,
+  WorkspaceSettingsTable,
+} from './schema/workspace-settings.js';
 export type {
   NotificationDb,
   NotificationsDatabase,
