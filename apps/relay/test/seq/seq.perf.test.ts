@@ -8,7 +8,7 @@
  *
  * The 2 ms bound is the card's target on reference hardware: it applies locally and wherever
  * PERF_STRICT=1. On a shared CI runner (CI=true), Redis round trips alone take several
- * milliseconds, so there the best round must stay under PERF_CI_P95_MS (25 ms): still a guard
+ * milliseconds, so there the best round must stay under 25 ms (`PERF_CI_P95_MS`): still a guard
  * against a slow assign path (a lost pipeline or an extra round trip per frame), without failing
  * every build on the runner's latency.
  */
