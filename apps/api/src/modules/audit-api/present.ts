@@ -3,7 +3,7 @@
  *
  * - `actor`: `user`, `api_key` and `system` as stored (a system actor's id is its service name,
  *   `retention`). The contract has no device actor, so a device's event shows as `user` with the
- *   device's `dev_` id.
+ *   device's `dev_` id, nor a staff one (B087), shown as `system`.
  * - `result`: `allowed` for a `success`, `denied` for a `denied`; a `failed` event has none.
  * - `metadata`: the event's meta cut to its action's allowlist again (B036's catalogue and
  *   `audit.export`), so a row can only show ids, enums, counts, flags and times. An action outside
@@ -38,6 +38,8 @@ const ACTOR_TYPES: Readonly<Record<AuditActorType, AuditEventBody['actor']['type
   api_key: 'api_key',
   system: 'system',
   device: 'user',
+  // Centcom staff (B087): not a workspace member, so shown as the system acting.
+  staff: 'system',
 };
 
 /** The allowlisted meta of `row`, or none when its action is unknown or its meta unreadable. */
