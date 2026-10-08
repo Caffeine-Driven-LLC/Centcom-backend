@@ -335,6 +335,21 @@ export const METRICS = {
   redis_unavailable_total: counter('Redis calls refused while it was down.', [], ALL),
   relay_codec_errors_total: counter('Frames dropped because decoding threw.', [], RELAY),
   relay_frames_invalid_total: counter('Inbound frames refused by the codec.', ['code'], RELAY),
+  relay_handshake_frames_dropped_total: counter(
+    'Frames dropped while a hello was being checked.',
+    [],
+    RELAY,
+  ),
+  relay_handshakes_total: counter(
+    'Handshakes by outcome (welcome or the refusal reason).',
+    ['outcome'],
+    RELAY,
+  ),
+  relay_superseded_total: counter(
+    'Connections superseded by a newer one of the same member and device.',
+    [],
+    RELAY,
+  ),
   releases_corrupt_total: counter('Release manifests that could not be read.'),
   releases_min_version_sync_failures_total: counter('Minimum client version syncs that failed.'),
   releases_published_total: counter('Releases published, by channel.', ['channel']),

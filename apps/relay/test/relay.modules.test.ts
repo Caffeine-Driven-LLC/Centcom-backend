@@ -97,9 +97,12 @@ describe('discovery', () => {
     expect((err as ModuleError).module).toBe('broken');
   });
 
-  it('finds the relay lanes’ modules in src/, by order (B039: the codec at 10)', async () => {
+  it('finds the relay lanes’ modules in src/, by order (B039: the codec at 10, B038: the handshake at 15)', async () => {
     const found = await discoverModules();
-    expect(found.map((m) => [m.name, m.order])).toEqual([['codec', 10]]);
+    expect(found.map((m) => [m.name, m.order])).toEqual([
+      ['codec', 10],
+      ['handshake', 15],
+    ]);
   });
 });
 

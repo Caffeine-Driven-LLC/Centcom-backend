@@ -282,6 +282,9 @@ importers:
       '@opentelemetry/api':
         specifier: 1.9.1
         version: 1.9.1
+      jose:
+        specifier: 6.2.12
+        version: 6.2.12
       ws:
         specifier: 8.22.0
         version: 8.22.0
