@@ -17,7 +17,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 ![Progress](docs/progress.svg)
 
-**39% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
+**40% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
 
 ## Next steps
 
@@ -38,7 +38,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 | [B017](plan/backend/B017.md) | Token service: JWT issue, refresh rotation with reuse detection, JWKS, revocation | L | M3 |
 | [B026](plan/backend/B026.md) | Account deletion and data export | M | M3 |
 | [B029](plan/backend/B029.md) | Invites: create, accept, revoke, expiry, key-bundle storage | L | M3 |
-| [B039](plan/backend/B039.md) | Envelope codec and schema-enforced validation with size limits | M | M3 |
+| [B055](plan/backend/B055.md) | Encrypted history store (blob storage of ciphertext frames) | M | M3 |
 | [B070](plan/backend/B070.md) | Stripe integration: customers and subscriptions | L | M4 |
 | [B093](plan/backend/B093.md) | Observability: metrics, traces, dashboards, SLOs | M | M4 |
 | [B081](plan/backend/B081.md) | Outgoing webhooks: endpoints, delivery, retries, signing | L | M5 |
