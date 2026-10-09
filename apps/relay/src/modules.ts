@@ -19,6 +19,7 @@ import type { BackpressureController } from './backpressure/controller.js';
 import type { ClusterNode } from './cluster/node.js';
 import type { FanOut } from './fanout/fanout.js';
 import type { HandshakeResume } from './handshake/handshake.js';
+import type { createPresence } from './presence/service.js';
 import type { FramePipeline, RelayConnection } from './pipeline.js';
 import type { SeqService } from './seq/types.js';
 
@@ -71,6 +72,12 @@ export interface RelayContext {
    * modules after it and for B042's replay (`whenDrained`, looked up when a replay waits).
    */
   backpressure?: BackpressureController;
+  /**
+   * Presence (B047): set by the presence module when it registers (order 35): the service, the
+   * snapshot after a welcome (`welcomed`, called by the handshake module) and other nodes' frames
+   * (`receiveRemote`, from the cluster module).
+   */
+  presence?: ReturnType<typeof createPresence>;
 }
 
 /** A relay lane's plug-in: the default export of `src/<lane>/module.ts`. */

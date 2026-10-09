@@ -80,6 +80,11 @@ export interface ClusterNodeDeps {
   setTimer?: (fn: () => void, ms: number) => ClusterTimer;
   /** [0, 1), for jitter; default Math.random. */
   random?: () => number;
+  /**
+   * Takes another node's ephemeral frame of `sid` (B047's presence: snapshot ordering and the
+   * welcome); true when it did. Default: to every local connection of the session.
+   */
+  onEphemeral?: (sid: string, frameText: string) => boolean;
   logger?: Logger;
   metrics?: Metrics;
 }
@@ -255,6 +260,7 @@ export function createClusterNode(deps: ClusterNodeDeps): ClusterNode {
 
   /** Sends an ephemeral frame's text to the session's local connections (droppable). */
   function deliverEphemeral(sid: string, text: string): void {
+    if (deps.onEphemeral?.(sid, text) === true) return;
     const room = deps.rooms.get(sid);
     if (room === undefined) return;
     for (const conn of room.connections()) {
