@@ -4,7 +4,6 @@
  *
  * Owns: these shapes. Must not: describe a field beyond `status`, `activity` and `agent_count`.
  */
-import type { RelayConnection } from '../pipeline.js';
 
 /** The kind this lane handles; other presence kinds (cursor, nudge) are B048's. */
 export const PRESENCE_UPDATE = 'presence.update';

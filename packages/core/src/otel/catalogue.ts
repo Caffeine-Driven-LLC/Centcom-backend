@@ -575,6 +575,32 @@ export const METRICS = {
     [],
     RELAY,
   ),
+  relay_presence_delivered_total: counter(
+    'Presence frames written to local connections, by result (queued, dropped under backpressure, closed, error).',
+    ['result'],
+    RELAY,
+  ),
+  relay_presence_fanouts_total: counter(
+    'Coalesced presence frames sent out (one per member at most every 500 ms).',
+    [],
+    RELAY,
+  ),
+  relay_presence_offline_total: counter(
+    'Members gone offline here after the 10 s grace.',
+    [],
+    RELAY,
+  ),
+  relay_presence_snapshots_total: counter('Presence snapshots sent after a welcome.', [], RELAY),
+  relay_presence_store_failed_total: counter(
+    'Presence store calls that failed (Redis; node-local memory took over).',
+    [],
+    RELAY,
+  ),
+  relay_presence_updates_total: counter(
+    'presence.update frames, by result (accepted, coalesced, invalid, over_cap).',
+    ['result'],
+    RELAY,
+  ),
   relay_replay_frames_total: counter(
     'Frames replayed to resuming clients, by source (hot, durable).',
     ['source'],
