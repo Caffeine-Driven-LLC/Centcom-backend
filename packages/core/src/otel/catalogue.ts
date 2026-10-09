@@ -184,12 +184,33 @@ export const METRICS = {
   redis_ping_seconds: platform('histogram', 'Redis PING round trip, sampled.', [], ALL),
 
   // Billing and webhooks.
+  stripe_event_dead_letters_total: counter(
+    'Stripe event jobs moved to stripe.event.dlq after their last attempt.',
+    [],
+    WORKER,
+  ),
+  stripe_event_enqueue_failures_total: counter(
+    'Stored Stripe events that could not be queued (the sweep queues them).',
+  ),
+  stripe_events_stale_total: counter(
+    'Sweeps that found an unprocessed Stripe event older than 10 minutes.',
+    [],
+    WORKER,
+  ),
+  stripe_events_total: counter(
+    'Stripe events processed, by outcome (processed, ignored, failed, unknown_customer, unknown_plan).',
+    ['outcome'],
+    API_WORKER,
+  ),
+  stripe_webhooks_total: counter(
+    'Stripe webhook deliveries, by outcome (stored, duplicate, ignored, rejected_*).',
+    ['outcome'],
+  ),
   stripe_webhook_lag_seconds: platform(
     'histogram',
     'Stripe event creation to processed.',
     ['type'],
-    API,
-    { planned: 'B072' },
+    API_WORKER,
   ),
   webhook_deliveries_total: platform(
     'counter',
@@ -270,6 +291,16 @@ export const METRICS = {
     'outcome',
   ]),
   billing_customers_created_total: counter('Stripe customers created for workspaces.'),
+  billing_outbox_publish_failures_total: counter(
+    'Billing outbox rows (or runs) that failed to publish, by type.',
+    ['type'],
+    API_WORKER,
+  ),
+  billing_outbox_published_total: counter(
+    'Billing outbox rows published, by type.',
+    ['type'],
+    API_WORKER,
+  ),
   billing_session_failures_total: counter(
     'Checkout and portal sessions Stripe did not create, by kind and reason (stripe_unavailable, stripe_refused).',
     ['kind', 'reason'],
