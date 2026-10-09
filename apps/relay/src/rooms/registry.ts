@@ -68,6 +68,17 @@ export interface RoomRegistry {
   rooms(): Iterable<Room>;
   /** The room and member `conn` joined as, or undefined. */
   locate(conn: RelayConnection): { room: Room; member: MemberView } | undefined;
+  /**
+   * B045: told of every join and leave on this node, after the room changed (`room.memberCount()`,
+   * `room.hasMember` already reflect it). A listener that throws is skipped.
+   */
+  listen(listener: RoomListener): void;
+}
+
+/** Joins and leaves on this node (B045's subscriptions). */
+export interface RoomListener {
+  joined?(room: Room, conn: RelayConnection, member: MemberView): void;
+  left?(room: Room, conn: RelayConnection, member: MemberView): void;
 }
 
 /** A timer that can be cancelled. */
@@ -102,6 +113,16 @@ export function createRoomRegistry(options: RoomRegistryOptions = {}): RoomRegis
   const rooms = new Map<string, Room>();
   /** Where each connection is, for the stage's lookup. */
   const placed = new WeakMap<ConnectionEntry, { room: Room; member: MemberView }>();
+  const listeners: RoomListener[] = [];
+  const tell = (event: 'joined' | 'left', room: Room, conn: RelayConnection, m: MemberView) => {
+    for (const listener of listeners) {
+      try {
+        listener[event]?.(room, conn, m);
+      } catch {
+        // A listener's failure is its own; the room is unchanged by it.
+      }
+    }
+  };
 
   function createRoom(sid: string): Room {
     /** member id → view; member id → connections. */
@@ -131,7 +152,9 @@ export function createRoomRegistry(options: RoomRegistryOptions = {}): RoomRegis
         }
         set.add(conn);
         views.set(m.id, { ...m, sid });
-        placed.set(conn.entry, { room, member: views.get(m.id) ?? m });
+        const view = views.get(m.id) ?? m;
+        placed.set(conn.entry, { room, member: view });
+        tell('joined', room, conn, view);
       },
       leave(conn) {
         const where = placed.get(conn.entry);
@@ -144,6 +167,7 @@ export function createRoomRegistry(options: RoomRegistryOptions = {}): RoomRegis
           views.delete(where.member.id);
         }
         if (conns.size === 0) scheduleEviction();
+        tell('left', room, conn, where.member);
       },
       members: () => [...views.values()].map((v) => ({ ...v })),
       *connections() {
@@ -191,6 +215,9 @@ export function createRoomRegistry(options: RoomRegistryOptions = {}): RoomRegis
       if (where === undefined) return undefined;
       const member = where.room.memberOf(conn);
       return member === undefined ? undefined : { room: where.room, member };
+    },
+    listen(listener) {
+      listeners.push(listener);
     },
   };
 }

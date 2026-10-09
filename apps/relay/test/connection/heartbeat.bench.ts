@@ -47,6 +47,7 @@ for (let i = 0; i < connections; i += 1) {
     state: 'open',
     sessionId: null,
     memberId: null,
+    deviceId: null,
     createdAt: new Date(now),
   };
   const connection: RelayConnection = {

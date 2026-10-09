@@ -76,7 +76,7 @@ export interface ResumerDeps {
   snapshots: SnapshotLookup;
   hydrator: Pick<Hydrator, 'ensure'>;
   /** Fan-out (`ctx.fanout`), looked up when needed: its module registers after this one. */
-  fanout: () => Pick<FanOut, 'hold'> | undefined;
+  fanout: () => Pick<FanOut, 'hold' | 'release'> | undefined;
   /** RELAY_REPLAY_BATCH. */
   batch: number;
   /** RELAY_REPLAY_MAX_FRAMES. */
@@ -148,11 +148,20 @@ export function createResumer(deps: ResumerDeps): Resumer {
 
   const isOpen = (conn: RelayConnection): boolean => conn.entry.state !== 'closing';
 
-  /** The plan for `lastSeq` in session `sid` (see the module comment). */
-  async function planFor(sid: string, lastSeq: number | null): Promise<Plan> {
+  /**
+   * The store's head, and fan-out's order for the session starts after it when it has none yet
+   * (B045: with frames from other nodes, the first to arrive need not be the lowest).
+   */
+  async function headOf(sid: string): Promise<number> {
+    const head = await deps.store.head(sid);
+    deps.fanout()?.release.prime(sid, head + 1);
+    return head;
+  }
+
+  /** The plan for `lastSeq` in session `sid` at `head` (see the module comment). */
+  async function planFor(sid: string, lastSeq: number | null, head: number): Promise<Plan> {
     if (lastSeq === null) return { kind: 'none' };
     const last = Math.max(0, lastSeq);
-    const head = await deps.store.head(sid);
     const newest = (): Plan => ({
       kind: 'replay',
       after: Math.max(0, head - deps.maxFrames),
@@ -360,7 +369,7 @@ export function createResumer(deps: ResumerDeps): Resumer {
   async function prepare(conn: RelayConnection, admitted: AdmittedHello): Promise<object | null> {
     const state = states.get(conn.entry);
     await deps.hydrator.ensure(admitted.sid);
-    const plan = await planFor(admitted.sid, admitted.lastSeq);
+    const plan = await planFor(admitted.sid, admitted.lastSeq, await headOf(admitted.sid));
     if (state !== undefined) state.plan = plan;
     return welcomeResume(plan);
   }
@@ -389,7 +398,7 @@ export function createResumer(deps: ResumerDeps): Resumer {
     const state = states.get(conn.entry) as ConnState;
     try {
       await deps.hydrator.ensure(sid);
-      state.plan = await planFor(sid, lastSeq);
+      state.plan = await planFor(sid, lastSeq, await headOf(sid));
     } catch (err) {
       // Planning failed (recovery or the store): reported, and live traffic goes on.
       failed(conn, sid, state, err);

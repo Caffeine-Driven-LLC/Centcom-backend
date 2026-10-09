@@ -41,11 +41,16 @@ It is a relay module (`module.ts`, order 50) and sets `ctx.fanout` for the modul
 - **Server frames:** `emitServer(sid, kind, t, p)` builds a frame from `srv` (CT-WS-SESSION-EVENTS
   "Server identity"; the card said `server`, but the contract wins). It sequences it through
   B041's `submitServer` (same `seq` space, buffered, durably appended) and delivers it in order.
-- **Other nodes:** `deliver` hands each locally sequenced frame to the `RemoteDispatcher` (B045
-  publishes it; default none). Its failures are counted and never touch local delivery. B045
-  offers other nodes' frames to `release`.
+- **Other nodes:** `deliver` hands each locally sequenced frame to the `RemoteDispatcher` (B045's
+  `ClusterDispatcher` publishes it; default none). Its failures are counted and never touch local
+  delivery. B045 offers other nodes' frames to `release`.
 - **Backpressure:** `ConnectionSender` (`send(text, {droppable})`, `bufferedBytes()`) is the seam
   B046 enforces slow-consumer policy on. This lane never drops a sequenced frame.
+- **Where a session starts:** the first frame offered sets it, unless B042 primed it
+  (`release.prime(sid, head + 1)`, done for each connection's handshake). That matters with
+  frames from other nodes (B045), whose first arrival need not be the lowest. A pinned session
+  (`pin`, B045 while subscribed) is never forgotten as idle. `setGapAfterMs` is B045's
+  `RELAY_CLUSTER_GAP_MS`.
 - **Holds (B042):** `hold(conn)` keeps what fan-out would send a replaying connection (and its
   resends' echoes, which B041 hands to `sendTo`) in a queue of at most `MAX_HELD_FRAMES` (10 000),
   in arrival order; the resume module takes them with `next()` after the replay and `end(sentUpTo)`

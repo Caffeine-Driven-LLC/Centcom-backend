@@ -10,6 +10,7 @@ import {
   type Logger,
   type MetricLabels,
   type Metrics,
+  type RedisBackend,
 } from '@centcom/core';
 import WebSocket from 'ws';
 import {
@@ -122,6 +123,8 @@ export async function testRelay(
     config?: Partial<RelayConfig>;
     modules?: RelayModule[];
     probe?: ReturnType<typeof stubProbe>;
+    /** Shared by several relays (B045's nodes); default a fresh in-memory one. */
+    redis?: RedisBackend;
   } = {},
 ): Promise<TestRelay> {
   const log = captureLogger();
@@ -132,7 +135,7 @@ export async function testRelay(
     host: '127.0.0.1',
     logger: log.logger,
     metrics: recorded.metrics,
-    redis: createMemoryRedis(),
+    redis: options.redis ?? createMemoryRedis(),
     db: {} as RelayDb,
     probe,
     modules: options.modules ?? [],
