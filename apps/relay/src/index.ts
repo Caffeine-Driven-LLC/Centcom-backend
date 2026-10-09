@@ -5,8 +5,9 @@
  * Today: the service skeleton (B037): the server, health endpoints, configuration, metrics, the
  * module loader and frame pipeline relay lanes plug into, the connection registry, close codes
  * and graceful shutdown, plus member slots (B031), the connection state machine and
- * `closeConnection` (B040), and sequencing: `SeqStore`, acks and the hot buffer (B041). The process
- * entrypoint is `main.ts`. Later lanes add their folders with a `module.ts` each.
+ * `closeConnection` (B040), session rooms with membership authorisation (B043), and sequencing:
+ * `SeqStore`, acks and the hot buffer (B041). The process entrypoint is `main.ts`. Later lanes add
+ * their folders with a `module.ts` each.
  */
 export { buildInfo, type BuildInfo } from './build-info.js';
 export { CloseCode, isCloseCode, type CloseCodeValue } from './close-codes.js';
@@ -141,3 +142,4 @@ export {
   type UnsequencedFrame,
 } from './seq/types.js';
 export * from './slots/index.js';
+export * from './rooms/index.js';

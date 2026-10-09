@@ -13,8 +13,9 @@
  * 4. The live records decide (`SessionAccess`, 2 s at most): unknown session 4404
  *    (`session_not_found`), ended or expired 4404 (`session_ended`), membership gone 4403
  *    (`not_a_member`), device revoked 4403 (`forbidden`), no `relay_access` 4403
- *    (`entitlement_required`). Keys, Redis or the records unavailable: 503, close 4503, never an
- *    unchecked ticket.
+ *    (`entitlement_required`); a 403 from the access itself (B043: `session_full`) closes 4403
+ *    with its code. Keys, Redis or the records unavailable: 503, close 4503, never an unchecked
+ *    ticket. Then `onAdmitted` (B043's room join) may still refuse with a 4403.
  * 5. `sys.welcome` goes out with the member's live role (never the ticket's), the negotiated
  *    protocol and capabilities, `roster_v`, heartbeat, server time, limits and session state; the
  *    connection becomes `authenticated`, its entry names the session and the member (the `from`
@@ -82,7 +83,19 @@ export type HandshakeRefusal =
   | 'membership'
   | 'device'
   | 'entitlement'
+  | 'session_full'
+  | 'admission'
   | 'unavailable';
+
+/** A hello that passed every live check, about to be welcomed. */
+export interface AdmittedHello {
+  sid: string;
+  dev: string;
+  access: SessionAccessResult & { member: NonNullable<SessionAccessResult['member']> };
+}
+
+/** What `onAdmitted` decided: welcome, or refuse with a 4403 and this CT-ERR code. */
+export type AdmissionDecision = { ok: true } | { ok: false; code: ErrorCode; detail: string };
 
 /** A timer that can be cancelled. */
 export interface Timer {
@@ -114,6 +127,14 @@ export interface HandshakeDeps {
    * (RELAY_SEQ_RATE, RELAY_SEQ_BURST, B041); default WELCOME_LIMITS.
    */
   seqLimits?: { seq_rate: number; seq_burst: number };
+  /**
+   * Runs after the live checks, right before the welcome (B043 joins the member's room here);
+   * a refusal closes 4403. A throw is a 503 (4503).
+   */
+  onAdmitted?: (
+    connection: RelayConnection,
+    admitted: AdmittedHello,
+  ) => AdmissionDecision | Promise<AdmissionDecision>;
 }
 
 type Phase =
@@ -352,6 +373,14 @@ export function createHandshake(deps: HandshakeDeps): {
         setTimer,
       );
     } catch (err) {
+      if (isAppError(err) && err.status === 403) {
+        throw refuse(
+          CloseCode.Forbidden,
+          err.code === 'session_full' ? 'session_full' : 'membership',
+          err.code,
+          err.detail ?? 'You may not join this session.',
+        );
+      }
       throw unavailableRefusal(err);
     }
     if (access === null) {
@@ -423,6 +452,22 @@ export function createHandshake(deps: HandshakeDeps): {
       if (!isOpen(connection)) return;
       const { access } = admitted;
       if (access.member === null) return;
+      if (deps.onAdmitted !== undefined) {
+        let decision: AdmissionDecision;
+        try {
+          decision = await deps.onAdmitted(connection, {
+            sid: admitted.claims.sid,
+            dev: admitted.claims.dev,
+            access: { ...access, member: access.member },
+          });
+        } catch (err) {
+          throw unavailableRefusal(err);
+        }
+        if (!decision.ok) {
+          throw refuse(CloseCode.Forbidden, 'admission', decision.code, decision.detail);
+        }
+        if (!isOpen(connection)) return;
+      }
       connection.send(
         welcomeFrame({
           protocol: admitted.protocol,

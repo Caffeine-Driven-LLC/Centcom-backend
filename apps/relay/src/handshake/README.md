@@ -21,6 +21,7 @@ Turns an upgraded WebSocket into a session member, or closes it
 | Member still a member                                                | `not_a_member`, **4403**                                             |
 | Device not revoked                                                   | `forbidden`, **4403**                                                |
 | Workspace has `relay_access`                                         | `entitlement_required`, **4403**                                     |
+| Room has space (B043, `SessionAccess` or `onAdmitted`)               | `session_full`, **4403**                                             |
 | Keys, Redis or `SessionAccess` (2 s) answer                          | `service_unavailable` with `retry_after_s`, **4503**                 |
 
 On success the client gets `sys.welcome` with:
@@ -50,9 +51,11 @@ through B040's `closeConnection`, which sends the frame first and closes once.
 
 `access.ts` defines the port: `resolve(sid, mid, dev)` gives the session state and member limit,
 the member (or null when the membership is gone), whether the device is revoked, `relay_access`,
-and optionally `rosterV`. B043 provides the Postgres implementation. Until it is wired into
-`module.ts`, the module uses `unavailableSessionAccess`, so every valid hello closes 4503: the
-handshake fails closed, never open.
+and optionally `rosterV`. `module.ts` uses B043's Postgres implementation (`rooms/access.ts`,
+through `roomsFor`). A 403 from the access itself (`session_full`) closes **4403** with that code.
+After the live checks, `onAdmitted` (B043's room join) runs before the welcome: a refusal closes
+4403, a throw 4503. `unavailableSessionAccess` (every lookup a 503, so hellos close 4503) stays
+for relays without the rooms.
 
 ## Configuration
 
