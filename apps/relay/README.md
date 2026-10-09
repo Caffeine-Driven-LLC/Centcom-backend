@@ -89,7 +89,9 @@ close code requires, closes once, and cuts a socket that has not closed 1 s late
 
 Modules today: the codec (B039, order 10), the connection state machine and heartbeat (B040, 12),
 the handshake (B038, 15), the rooms (B043, 20), key grants and epochs (B049, 25 and 41;
-[src/keys/README.md](src/keys/README.md), it sets `ctx.epoch`), presence (B047, 35;
+[src/keys/README.md](src/keys/README.md), it sets `ctx.epoch`), the privacy gate (B050, 30;
+[src/privacy/README.md](src/privacy/README.md); `startRelay` also scrubs every module's logs and
+guards its metric labels), presence (B047, 35;
 [src/presence/README.md](src/presence/README.md), it sets `ctx.presence`), cursors and typing
 (B048, 36; [src/cursors/README.md](src/cursors/README.md)), sequencing (B041, 40; it sets `ctx.seq` for the
 modules after it), resume (B042, 45; [src/resume/README.md](src/resume/README.md), it sets

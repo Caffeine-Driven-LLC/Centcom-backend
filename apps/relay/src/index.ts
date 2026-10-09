@@ -151,3 +151,4 @@ export * from './backpressure/index.js';
 export * from './presence/index.js';
 export * from './cursors/index.js';
 export * from './keys/index.js';
+export * from './privacy/index.js';
