@@ -23,7 +23,7 @@ import {
   EMPTY_SHA256,
   presignQuery,
   type SigningCredentials,
-} from '../../src/modules/audit-api/sigv4.js';
+} from '@centcom/storage';
 import { auditRow, T0 } from './helpers.js';
 
 const WSP = 'wsp_01JA3Z8K2M5N7P9Q0R1S2T3V4W';

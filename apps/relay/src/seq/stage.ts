@@ -20,6 +20,9 @@
  *   4400. Acks never wait behind sequenced frames: an ack within the head this node has seen is
  *   taken at once, and per connection one ack at most waits for the store's head (later ones
  *   only raise the value it waits with).
+ * - B042's readiness gate (`setReadiness`): before a session's first frame on this node is
+ *   assigned, the session is recovered from the durable log if Redis lost it; a recovery that
+ *   fails refuses the frame like a store outage (sequencing paused, never a restart at 1).
  * - Store down: the frame is refused with `sys.error service_unavailable` (`retry_after_s`) and
  *   `sys.slow_down`, the connection stays, and nothing is sequenced locally.
  * - Everything else passes on untouched (`presence`, `sys.*`).
@@ -195,6 +198,22 @@ export function createSequencer(deps: SequencerDeps): Sequencer {
   let outage = false;
   /** Fan-out (B044) delivers new frames to their senders, in order; the stage echoes duplicates only. */
   let echoDelegated = false;
+  /** How a duplicate is echoed once fan-out took the echo over (B042 holds it during a replay). */
+  let echoDuplicate = (conn: RelayConnection, frame: StoredFrame): void => void conn.send(frame);
+  /** B042's gate: may the session be sequenced now? */
+  let readiness: (sid: string) => true | Promise<void> = () => true;
+
+  /** True once the session may be sequenced; false when its gate refused (recovery failed). */
+  async function sessionReady(sid: string): Promise<boolean> {
+    const ready = readiness(sid);
+    if (ready === true) return true;
+    try {
+      await ready;
+      return true;
+    } catch {
+      return false;
+    }
+  }
 
   const count = (outcome: string): void =>
     metrics.counter(SEQ_METRICS.sequenced, { outcome }).inc();
@@ -403,6 +422,10 @@ export function createSequencer(deps: SequencerDeps): Sequencer {
       new Date(now).toISOString(),
       state.sid,
     );
+    if (!(await sessionReady(state.sid))) {
+      refuse(conn, state, id, now, 'unavailable');
+      return;
+    }
     const started = monotonic();
     let result: AssignResult;
     try {
@@ -432,7 +455,8 @@ export function createSequencer(deps: SequencerDeps): Sequencer {
     );
     // The echo: the sender learns the frame's place (CT-WS-ENVELOPE), even for a resend. Once
     // fan-out delivers new frames to their senders too (in seq order), only resends are echoed here.
-    if (result.duplicate || !echoDelegated) conn.send(stored);
+    if (!echoDelegated) conn.send(stored);
+    else if (result.duplicate) echoDuplicate(conn, stored);
     if (result.duplicate) {
       count('duplicate');
       return;
@@ -508,10 +532,16 @@ export function createSequencer(deps: SequencerDeps): Sequencer {
       store: deps.store,
       acks,
       setDurableAppend: (port: DurableAppend) => durable.setPort(port),
-      delegateEcho: () => {
+      delegateEcho: (echo?: (conn: RelayConnection, frame: StoredFrame) => void) => {
         echoDelegated = true;
+        if (echo !== undefined) echoDuplicate = echo;
+      },
+      setReadiness: (ready: (sid: string) => true | Promise<void>) => {
+        readiness = ready;
       },
       async submitServer(sid: string, frame: UnsequencedFrame): Promise<StoredFrame> {
+        const ready = readiness(sid);
+        if (ready !== true) await ready;
         const result = await deps.store.assign(
           sid,
           { from: frame.from, id: frame.id },

@@ -20,6 +20,7 @@ const WORKSPACES: Record<string, string> = {
   'packages/contracts': '@centcom/contracts',
   'packages/core': '@centcom/core',
   'packages/db': '@centcom/db',
+  'packages/storage': '@centcom/storage',
   'packages/testkit': '@centcom/testkit',
 };
 

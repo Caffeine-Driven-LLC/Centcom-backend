@@ -21,6 +21,7 @@ export const STAGE_ORDER = Object.freeze({
   authorise: 20,
   privacy: 30,
   sequence: 40,
+  resume: 45,
   fanOut: 50,
 } as const);
 

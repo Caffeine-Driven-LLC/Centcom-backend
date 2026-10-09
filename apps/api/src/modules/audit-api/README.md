@@ -9,7 +9,7 @@ The operator's guide is [docs/audit/audit-api.md](../../../../../docs/audit/audi
 | File              | What it does                                                                                |
 | ----------------- | ------------------------------------------------------------------------------------------- |
 | `actions.ts`      | `AUDIT_API_ACTIONS`: B036's catalogue plus `audit.export`, for this module's emitter only.  |
-| `config.ts`       | `loadAuditApiConfig`: the export limits and the object store's keys.                        |
+| `config.ts`       | `loadAuditApiConfig`: the export limits and the object store's keys (`@centcom/storage`).   |
 | `filters.ts`      | `actor`, `action`, `from`, `to` for the list and the export body; the cursor's filter hash. |
 | `present.ts`      | Rows as contract `AuditEvent`s (ids, enums and allowlisted meta only).                      |
 | `csv.ts`          | The export formats: CSV (RFC 4180, formula guard) and JSON, one event at a time.            |
@@ -17,7 +17,9 @@ The operator's guide is [docs/audit/audit-api.md](../../../../../docs/audit/audi
 | `service.ts`      | `AuditApiService`: retention, the list, export requests and their status.                   |
 | `exporter.ts`     | `AuditExportRunner`: writes, uploads and expires export files (the worker calls it).        |
 | `object-store.ts` | The `ObjectStore` port and its S3 client (path-style, SigV4; R2 or MinIO).                  |
-| `sigv4.ts`        | AWS Signature Version 4: signed headers and pre-signed URLs.                                |
+
+The SigV4 signer (`sigv4.ts`) lives in `@centcom/storage` since B042, shared with the history
+store's S3 client.
 
 Routes: `routes/audit.ts`. Worker: `apps/worker/src/jobs/audit-export/`. Migration:
 `20260102002400_audit_export_jobs.sql`.

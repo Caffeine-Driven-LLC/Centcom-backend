@@ -15,6 +15,7 @@
       "@centcom/contracts": ["./packages/contracts/src/index.ts"],
       "@centcom/core": ["./packages/core/src/index.ts"],
       "@centcom/db": ["./packages/db/src/index.ts"],
+      "@centcom/storage": ["./packages/storage/src/index.ts"],
       "@centcom/testkit": ["./packages/testkit/src/index.ts"],
       "@centcom/testkit/sim": ["./packages/testkit/src/sim/index.ts"]
     }

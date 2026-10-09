@@ -47,6 +47,7 @@ export interface SequencedFrame {
   from?: unknown;
   ts?: unknown;
   seq?: unknown;
+  ref?: unknown;
   k?: unknown;
   p?: unknown;
   ct?: unknown;
@@ -76,7 +77,7 @@ export function toStoredFrame(
   frame: SequencedFrame,
 ): { ok: true; frame: StoredFrame } | { ok: false; reason: RejectReason } {
   if (!KEPT_TYPES.has(frame.t)) return { ok: false, reason: 'ephemeral' };
-  const { id, from, ts, seq, k, p, ct, sig } = frame;
+  const { id, from, ts, seq, ref, k, p, ct, sig } = frame;
   if (
     typeof id !== 'string' ||
     !FRAME_ID.test(id) ||
@@ -87,6 +88,7 @@ export function toStoredFrame(
     typeof seq !== 'number' ||
     !Number.isSafeInteger(seq) ||
     seq < 1 ||
+    (ref !== undefined && (typeof ref !== 'string' || !FRAME_ID.test(ref))) ||
     (k !== undefined && typeof k !== 'string') ||
     (ct !== undefined && !isCt(ct)) ||
     (p !== undefined && !isRecord(p)) ||
@@ -109,6 +111,7 @@ export function toStoredFrame(
     from,
     ts,
     kindClass: frame.t as KindClass,
+    ...(typeof ref === 'string' ? { ref } : {}),
     ...(typeof k === 'string' ? { k } : {}),
     size: 0,
     kid: ct === undefined ? null : ct.kid,

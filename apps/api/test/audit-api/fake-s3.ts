@@ -8,11 +8,7 @@
 import { createHash } from 'node:crypto';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import {
-  authorizationHeader,
-  presignQuery,
-  type SigningCredentials,
-} from '../../src/modules/audit-api/sigv4.js';
+import { authorizationHeader, presignQuery, type SigningCredentials } from '@centcom/storage';
 
 /** A running fake. */
 export interface FakeS3 {

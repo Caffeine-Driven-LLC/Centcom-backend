@@ -30,7 +30,15 @@ On success the client gets `sys.welcome` with:
 - `member` (id, name, slot, and the **live** role, never the ticket's);
 - `roster_v`, `heartbeat {ping_ms, dead_ms}` (the values B040's connection module enforces:
   `RELAY_PING_MS` and `RELAY_DEAD_MS`, 20 000 and 50 000 by default) and `server_time`;
-- `limits` (CT-WS-ENVELOPE defaults, `max_members` capped at 50), `session.state` and `resume: null`.
+- `limits` (CT-WS-ENVELOPE defaults, `max_members` capped at 50) and `session.state`;
+- `resume`: null for a fresh join (or a relay without B042), else B042's plan
+  (`{from_seq, to_seq}` or `{snapshot_required, snapshot_seq}`).
+
+With B042's resume module (`resume`, looked up as `ctx.resume` for each hello), the connection's
+live frames are held from before its room join; the session is recovered from the durable log if
+it must be and the replay planned before the welcome (a failure is `service_unavailable`,
+**4503**); the replay starts right after the welcome. See
+[../resume/README.md](../resume/README.md).
 
 The connection becomes `authenticated` with its `sessionId`, and later frames pass to the next
 stages. Nothing else is sent before the welcome; frames that arrive while the hello is being
