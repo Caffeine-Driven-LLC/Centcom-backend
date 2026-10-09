@@ -17,7 +17,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 ![Progress](docs/progress.svg)
 
-**50% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
+**51% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
 
 ## Next steps
 
@@ -34,14 +34,14 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 |---|---|---|---|
 | [B010](plan/backend/B010.md) | Test harness: containers, factories, contract test runner | M | M0 |
 | [B041](plan/backend/B041.md) | Sequencing, acks and at-least-once delivery per session | L | M3 |
+| [B046](plan/backend/B046.md) | Backpressure and slow-consumer handling | M | M3 |
+| [B049](plan/backend/B049.md) | Key-grant routing and epoch rotation signalling | M | M3 |
 | [B056](plan/backend/B056.md) | Snapshot service: descriptors, pre-signed upload, commit, pruning | M | M3 |
 | [B091](plan/backend/B091.md) | Infrastructure as code: environments dev, stage, prod | L | M3 |
 | [B017](plan/backend/B017.md) | Token service: JWT issue, refresh rotation with reuse detection, JWKS, revocation | L | M3 |
 | [B026](plan/backend/B026.md) | Account deletion and data export | M | M3 |
 | [B029](plan/backend/B029.md) | Invites: create, accept, revoke, expiry, key-bundle storage | L | M3 |
-| [B047](plan/backend/B047.md) | Presence service (ephemeral, TTL, coalescing) | M | M3 |
-| [B053](plan/backend/B053.md) | Session lifecycle service: create, live, paused, ended, expired, host-loss policy | M | M3 |
-| [B079](plan/backend/B079.md) | Trials, coupons and promotions | S | M4 |
+| [B045](plan/backend/B045.md) | Cross-node routing over pub/sub (multi-instance relay) | L | M3 |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
 
