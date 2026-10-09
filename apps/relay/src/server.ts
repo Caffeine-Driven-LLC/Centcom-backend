@@ -57,6 +57,8 @@ import {
   type RelayModule,
 } from './modules.js';
 import { FramePipeline, type RelayConnection } from './pipeline.js';
+import { createRelayLogger } from './privacy/logger.js';
+import { guardMetrics } from './privacy/metrics.js';
 
 /** Where clients connect. */
 export const WS_PATH = '/v1/ws';
@@ -362,7 +364,9 @@ export interface RunningRelay {
  * (nothing listens then).
  */
 export async function startRelay(options: StartRelayOptions): Promise<RunningRelay | null> {
-  const metrics = options.metrics ?? noopMetrics;
+  // B050: every module logs through the scrubber and counts through the label guard.
+  const metrics = guardMetrics(options.metrics ?? noopMetrics);
+  const logger = createRelayLogger(options.logger);
   const registry = new ConnectionRegistry({
     max: options.config.maxConnections,
     ...(options.clock === undefined ? {} : { clock: options.clock }),
@@ -374,14 +378,14 @@ export async function startRelay(options: StartRelayOptions): Promise<RunningRel
     registry,
     readiness,
     pipeline,
-    logger: options.logger,
+    logger,
     metrics,
     ...(options.tracer === undefined ? {} : { tracer: options.tracer }),
   });
   const shutdownSteps: (() => Promise<void>)[] = [];
   const ctx: RelayContext = {
     config: options.config,
-    log: options.logger,
+    log: logger,
     metrics,
     clock: options.clock ?? Date.now,
     redis: options.redis,
@@ -398,7 +402,7 @@ export async function startRelay(options: StartRelayOptions): Promise<RunningRel
   const port = await server.listen(options.config.port, options.host);
   readiness.start();
   const build = options.build ?? buildInfo();
-  options.logger.info(
+  logger.info(
     {
       version: build.version,
       contract_version: build.contract_version,
