@@ -100,6 +100,7 @@ describe('the dispatcher under any delivery (property)', () => {
             seq: {
               store,
               submitServer: () => Promise.reject(new Error('unused')),
+              submitServerBatch: () => Promise.reject(new Error('unused')),
             },
             setTimer: timers.setTimer,
           });

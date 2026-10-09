@@ -128,6 +128,13 @@ export interface LiveHold {
   readonly overflowed: boolean;
 }
 
+/** A frame the relay emits: its kind, type and clear payload. */
+export interface ServerFrameSpec {
+  kind: string;
+  t: 'control' | 'queue' | 'event';
+  p: Record<string, unknown>;
+}
+
 /** `ctx.fanout`: what the fan-out module offers the modules after it (B042, B047, B051, ...). */
 export interface FanOut {
   /** Delivers a locally sequenced frame of session `sid` (and hands it to other nodes). */
@@ -139,6 +146,11 @@ export interface FanOut {
     t: 'control' | 'queue' | 'event',
     p: Record<string, unknown>,
   ): Promise<StoredFrame>;
+  /**
+   * B049: several frames the relay emits, sequenced back to back (consecutive `seq`s: a kick and its
+   * key rotation) and delivered in order.
+   */
+  emitServerBatch(sid: string, frames: readonly ServerFrameSpec[]): Promise<StoredFrame[]>;
   /** The ordered release (B045 offers frames from other nodes to it). */
   readonly release: OrderedRelease;
   /** Replaces the RemoteDispatcher (B045). */
@@ -155,7 +167,7 @@ export interface FanOut {
 /** What fan-out needs. */
 export interface FanOutDeps {
   rooms: Pick<RoomRegistry, 'get'>;
-  seq: Pick<SeqService, 'store' | 'submitServer'>;
+  seq: Pick<SeqService, 'store' | 'submitServer' | 'submitServerBatch'>;
   remote?: RemoteDispatcher;
   logger?: Logger;
   metrics?: Metrics;
@@ -307,6 +319,19 @@ export function createFanOut(deps: FanOutDeps): FanOut & { stage: InboundStage; 
     });
   }
 
+  /** A frame the relay emits in `sid` (`from` = `srv`). */
+  const serverFrame = (sid: string, f: ServerFrameSpec): UnsequencedFrame =>
+    ({
+      v: 1,
+      t: f.t,
+      id: newId('msg'),
+      sid,
+      from: SERVER_FROM,
+      ts: new Date(clock()).toISOString(),
+      k: f.kind,
+      p: f.p,
+    }) as UnsequencedFrame;
+
   const stage: InboundStage = async (fc, next) => {
     const frame = fc.state[SEQUENCED_STATE_KEY] as StoredFrame | undefined;
     const sid = fc.connection.entry.sessionId;
@@ -317,18 +342,16 @@ export function createFanOut(deps: FanOutDeps): FanOut & { stage: InboundStage; 
   return {
     deliver,
     async emitServer(sid, kind, t, p) {
-      const frame = {
-        v: 1,
-        t,
-        id: newId('msg'),
-        sid,
-        from: SERVER_FROM,
-        ts: new Date(clock()).toISOString(),
-        k: kind,
-        p,
-      } as UnsequencedFrame;
-      const stored = await deps.seq.submitServer(sid, frame);
+      const stored = await deps.seq.submitServer(sid, serverFrame(sid, { kind, t, p }));
       deliver(sid, stored);
+      return stored;
+    },
+    async emitServerBatch(sid, frames) {
+      const stored = await deps.seq.submitServerBatch(
+        sid,
+        frames.map((f) => serverFrame(sid, f)),
+      );
+      for (const frame of stored) deliver(sid, frame);
       return stored;
     },
     release,

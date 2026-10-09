@@ -136,6 +136,7 @@ describe('acked_seq (unit)', () => {
       range: (...args) => memory.range(...args),
       oldest: (sid) => memory.oldest(sid),
       hydrate: (...args) => memory.hydrate(...args),
+      assignBatch: (...args) => memory.assignBatch(...args),
       head: (sid) => {
         heads += 1;
         return memory.head(sid);
@@ -166,6 +167,7 @@ describe('acked_seq (unit)', () => {
       range: (...args) => memory.range(...args),
       oldest: (sid) => memory.oldest(sid),
       hydrate: (...args) => memory.hydrate(...args),
+      assignBatch: (...args) => memory.assignBatch(...args),
       head: () => Promise.reject(new Error('down')),
     };
     const { unit, sid, fake } = await withFrames(2, { store });

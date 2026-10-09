@@ -549,6 +549,21 @@ export const METRICS = {
     [],
     RELAY,
   ),
+  relay_epoch_rotate_failed_total: counter(
+    'control.rotate_request rotations that failed (the epoch store or sequencing was down).',
+    [],
+    RELAY,
+  ),
+  relay_epoch_rotation_due_total: counter(
+    'Key epochs found due a scheduled rotation (7 days or 100 000 frames), once each.',
+    [],
+    RELAY,
+  ),
+  relay_epoch_rotations_total: counter(
+    'control.rotate_key frames emitted, by reason (member_removed, scheduled, requested).',
+    ['reason'],
+    RELAY,
+  ),
   relay_fanout_deliveries_total: counter(
     'Fan-out writes to connections, by result (queued, closed, dropped, error, no_room; held, replayed and overflow around a resume).',
     ['result'],
@@ -642,6 +657,21 @@ export const METRICS = {
   relay_sequenced_total: counter(
     'Sequenced frames by outcome (assigned, duplicate, rate_limited, unavailable, backlog).',
     ['outcome'],
+    RELAY,
+  ),
+  relay_key_checks_unavailable_total: counter(
+    'Grants or encrypted frames refused 503 because the epoch store or device lookup failed.',
+    [],
+    RELAY,
+  ),
+  relay_key_grants_total: counter(
+    'key.grant frames, by result (routed, forbidden, invalid_frame).',
+    ['result'],
+    RELAY,
+  ),
+  relay_kid_refused_total: counter(
+    'Encrypted frames refused for their ct.kid, by reason (invalid, future, stale).',
+    ['reason'],
     RELAY,
   ),
   relay_membership_events_total: counter(

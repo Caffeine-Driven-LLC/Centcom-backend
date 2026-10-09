@@ -33,7 +33,11 @@ function nodeUnit(opts: { reconcileMs?: number } = {}) {
   const timers = manualTimers();
   const fanout = createFanOut({
     rooms,
-    seq: { store, submitServer: () => Promise.reject(new Error('unused')) },
+    seq: {
+      store,
+      submitServer: () => Promise.reject(new Error('unused')),
+      submitServerBatch: () => Promise.reject(new Error('unused')),
+    },
     setTimer: timers.setTimer,
   });
   const recorded = recordingMetrics();

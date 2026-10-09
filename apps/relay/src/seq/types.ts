@@ -79,6 +79,16 @@ export interface SeqStore {
     frame: UnsequencedFrame,
     nowMs: number,
   ): Promise<AssignResult>;
+  /**
+   * B049: sequences `items` of session `sid` atomically and back to back: no other frame of the
+   * session gets a `seq` between them (a kick and its key rotation, CT-WS-CONTROL). Each item is
+   * deduplicated as `assign` does. Rejects with a 503 AppError when the store is down.
+   */
+  assignBatch(
+    sid: string,
+    items: readonly { key: { from: string; id: string }; frame: UnsequencedFrame }[],
+    nowMs: number,
+  ): Promise<AssignResult[]>;
   /** The newest `seq` of the session; 0 before the first frame. */
   head(sid: string): Promise<number>;
   /** Up to `limit` buffered frames after `afterSeq`, in `seq` order. */
@@ -112,6 +122,8 @@ export interface AckTracker {
   onAck(connId: string, seq: number): void;
   /** The lowest `acked_seq` of the session's connections on this node; 0 when none has acked. */
   lowestAcked(sid: string): number;
+  /** B049: `acked_seq` of connection `connId`; 0 when unknown. */
+  acked(connId: string): number;
 }
 
 /** The `from` of frames the relay itself emits (CT-WS-SESSION-EVENTS "Server identity"). */
@@ -143,6 +155,11 @@ export interface SeqService {
    * append like any other frame. Rejects when the store fails.
    */
   submitServer(sid: string, frame: UnsequencedFrame): Promise<StoredFrame>;
+  /**
+   * B049: `submitServer` for several frames, sequenced back to back (`SeqStore.assignBatch`): a
+   * kick and its key rotation get consecutive `seq`s whatever else the session is sending.
+   */
+  submitServerBatch(sid: string, frames: readonly UnsequencedFrame[]): Promise<StoredFrame[]>;
 }
 
 /** The key `fc.state` carries a frame's StoredFrame under, for the stages after this one. */

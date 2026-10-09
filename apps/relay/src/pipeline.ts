@@ -19,10 +19,12 @@ export const STAGE_ORDER = Object.freeze({
   heartbeat: 12,
   handshake: 15,
   authorise: 20,
+  keys: 25,
   privacy: 30,
   presence: 35,
   cursors: 36,
   sequence: 40,
+  rotate: 41,
   resume: 45,
   fanOut: 50,
 } as const);
