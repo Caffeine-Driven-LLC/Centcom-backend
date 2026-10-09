@@ -105,7 +105,7 @@ export function presenceFrame(
 
 /** The service, with the welcome hook, remote delivery, session end and `stop`. */
 export function createPresence(deps: PresenceDeps): PresenceService & {
-  /** After a welcome: the snapshot, then the presence that came meanwhile. */
+  /** After a welcome: the snapshot, then the presence that came meanwhile. Never rejects. */
   welcomed(conn: RelayConnection): Promise<void>;
   /** A presence frame (text) from another node: to this node's welcomed connections. */
   receiveRemote(sid: string, frameText: string): void;
@@ -267,12 +267,20 @@ export function createPresence(deps: PresenceDeps): PresenceService & {
           if (mine !== null && (other === undefined || mine.at >= other.at)) stored.set(mid, mine);
         }
         const sender = connectionSender(conn);
-        for (const [mid, entry] of stored) {
-          sender.send(JSON.stringify(presenceFrame(sid, mid, entry)), { droppable: true });
-        }
+        /** One frame to the joiner; a socket that throws is counted, never thrown. */
+        const send = (text: string): void => {
+          try {
+            counted('relay_presence_delivered_total', {
+              result: sender.send(text, { droppable: true }),
+            });
+          } catch {
+            counted('relay_presence_delivered_total', { result: 'error' });
+          }
+        };
+        for (const [mid, entry] of stored) send(JSON.stringify(presenceFrame(sid, mid, entry)));
         counted('relay_presence_snapshots_total');
         // What came meanwhile is newer: after the snapshot.
-        for (const text of held.values()) sender.send(text, { droppable: true });
+        for (const text of held.values()) send(text);
       } finally {
         waiting.delete(conn.entry);
       }

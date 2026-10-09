@@ -67,6 +67,21 @@ describe('the snapshot (acceptance 2)', () => {
     expect(presenceOf(joiner)).toEqual([[a.entry.memberId, { status: 'busy', activity: 'idle' }]]);
   });
 
+  it('a joiner whose socket throws: welcomed resolves, the failures are counted', async () => {
+    const u = presenceUnit();
+    await u.update(u.join(), ONLINE_IDLE);
+    await u.update(u.join(), { status: 'busy', activity: 'idle' });
+    const joiner = u.join();
+    joiner.failing = true;
+    await expect(u.presence.welcomed(joiner)).resolves.toBeUndefined();
+    expect(u.recorded.count('relay_presence_delivered_total', { result: 'error' })).toBe(2);
+    // The joiner is no longer held: live presence reaches it once it works again.
+    joiner.failing = false;
+    u.time.advance(2_000);
+    await u.update(u.join(), { status: 'away', activity: 'idle' });
+    expect(presenceOf(joiner)).toHaveLength(1);
+  });
+
   it('sends nothing to a connection before its welcome', async () => {
     const u = presenceUnit();
     const early = u.join();

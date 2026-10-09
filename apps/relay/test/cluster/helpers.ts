@@ -170,7 +170,7 @@ export async function cluster(
             resume: () => ctx.resume,
             onWelcomed: (conn, admitted) => {
               ctx.cluster?.welcomed(conn, admitted);
-              void ctx.presence?.welcomed(conn);
+              ctx.presence?.welcomed(conn).catch(() => undefined);
             },
           });
           ctx.pipeline.use(15, handshake.stage);

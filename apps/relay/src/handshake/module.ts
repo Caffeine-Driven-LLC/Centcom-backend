@@ -42,7 +42,7 @@ const relayModule: RelayModule = {
       resume: () => ctx.resume,
       onWelcomed: (connection, admitted) => {
         ctx.cluster?.welcomed(connection, admitted);
-        void ctx.presence?.welcomed(connection);
+        ctx.presence?.welcomed(connection).catch(() => undefined);
       },
     });
     ctx.pipeline.use(STAGE_ORDER.handshake, handshake.stage);
