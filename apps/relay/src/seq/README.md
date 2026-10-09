@@ -115,6 +115,8 @@ new ones are given up at once. Delivery never depends on the port.
   the session may be sequenced (true at once for a known session; a promise while it is recovered
   from the durable log). A rejection refuses the frame with `service_unavailable` (sequencing
   paused for that session), never a `seq` from 1;
+- `submitServerBatch(sid, frames)`: B049. Several server frames back to back (`SeqStore.assignBatch`:
+  one MULTI/EXEC on Redis), so a kick and its `rotate_key` get consecutive `seq`s.
 - `submitServer(sid, frame)`: B044's `emitServer`. A frame from `srv`, assigned in the session's
   `seq` space (deduplicated by its id), buffered and handed to the durable append.
 
