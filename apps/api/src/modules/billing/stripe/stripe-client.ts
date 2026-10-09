@@ -445,6 +445,101 @@ export class StripeClient implements StripeGateway {
     return this.#request('GET', `/v1/invoices/${id}`);
   }
 
+  /**
+   * B079: the active promotion codes with this code (Stripe matches it case-insensitively; one
+   * code text may be active once per customer restriction), at most 10, their coupons'
+   * `applies_to` and `currency_options` expanded, as Stripe sent them. A code Stripe cannot hold
+   * (it takes letters, digits and dashes) is not asked about: none.
+   */
+  async findPromotionCodes(code: string): Promise<unknown[]> {
+    if (!/^[A-Za-z0-9-]{1,64}$/.test(code)) return [];
+    const json = await this.#request('GET', '/v1/promotion_codes', {
+      code,
+      active: true,
+      limit: 10,
+      expand: ['data.coupon.applies_to', 'data.coupon.currency_options'],
+    });
+    const data = json['data'];
+    if (!Array.isArray(data)) throw new StripeError('invalid_response', 'Stripe promotion codes');
+    return data;
+  }
+
+  /**
+   * B079: promotion code `promo_…`, its coupon's `applies_to` and `currency_options` expanded, as
+   * Stripe sent it.
+   */
+  async retrievePromotionCode(id: string): Promise<unknown> {
+    if (!/^promo_[A-Za-z0-9]{1,250}$/.test(id)) {
+      throw new StripeError('request', 'not a Stripe promotion code id');
+    }
+    return this.#request('GET', `/v1/promotion_codes/${id}`, {
+      expand: ['coupon.applies_to', 'coupon.currency_options'],
+    });
+  }
+
+  /**
+   * B079: the subscription's discounts (`di_…`, with the `promo_…` each came from; expanded) and
+   * its items' products (`prod_…`).
+   */
+  async subscriptionDiscounts(subscriptionId: string): Promise<{
+    discounts: { id: string; promotionCodeId: string | null }[];
+    productIds: string[];
+  }> {
+    if (!/^sub_[A-Za-z0-9]{1,250}$/.test(subscriptionId)) {
+      throw new StripeError('request', 'not a Stripe subscription id');
+    }
+    const json = await this.#request('GET', `/v1/subscriptions/${subscriptionId}`, {
+      expand: ['discounts'],
+    });
+    const idOf = (value: unknown): string | null => {
+      const id = isRecord(value) ? value['id'] : value;
+      return typeof id === 'string' ? id : null;
+    };
+    const discounts = Array.isArray(json['discounts']) ? json['discounts'] : [];
+    const items =
+      isRecord(json['items']) && Array.isArray(json['items']['data']) ? json['items']['data'] : [];
+    return {
+      discounts: discounts.flatMap((discount: unknown) => {
+        const id = idOf(discount);
+        if (id === null || !id.startsWith('di_')) return [];
+        const promo = isRecord(discount) ? idOf(discount['promotion_code']) : null;
+        return [
+          { id, promotionCodeId: promo !== null && promo.startsWith('promo_') ? promo : null },
+        ];
+      }),
+      productIds: items
+        .map((item: unknown) =>
+          idOf(isRecord(item) && isRecord(item['price']) ? item['price']['product'] : null),
+        )
+        .filter((id): id is string => id !== null),
+    };
+  }
+
+  /**
+   * B079: adds promotion code `promotionCodeId` to the subscription, keeping `keepDiscountIds`
+   * (Stripe replaces the discount list it is given), with the caller's idempotency key.
+   */
+  async applyPromotionCode(
+    input: { subscriptionId: string; promotionCodeId: string; keepDiscountIds: string[] },
+    idempotencyKey: string,
+  ): Promise<StripeSub> {
+    if (!/^sub_[A-Za-z0-9]{1,250}$/.test(input.subscriptionId)) {
+      throw new StripeError('request', 'not a Stripe subscription id');
+    }
+    const json = await this.#request(
+      'POST',
+      `/v1/subscriptions/${input.subscriptionId}`,
+      {
+        discounts: [
+          ...input.keepDiscountIds.map((discount) => ({ discount })),
+          { promotion_code: input.promotionCodeId },
+        ],
+      },
+      idempotencyKey,
+    );
+    return parseStripeSubscription(json);
+  }
+
   constructEvent(rawBody: string | Buffer, signature: string): StripeEvent {
     const { webhookSecret, webhookSecrets } = this.options.config;
     const secrets =

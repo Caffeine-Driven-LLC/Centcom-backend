@@ -13,6 +13,11 @@
  *   `past_due_since` once and keeps it on later failures); outbox
  *   `billing.invoice.payment_failed` and one `notify.billing_issue` per invoice.
  * - A reconcile that B070 applied writes `billing.subscription.updated` (once per event).
+ * - `customer.subscription.trial_will_end` (B079): reconcile; outbox `billing.subscription.updated`
+ *   (once per event, applied or not) and one `notify.trial_ending` (CT-NOTIF `trial_ending
+ *   {days}`, per subscription and trial end); B079's `trialWillEnd` emails the billing contact.
+ * - A reconciled subscription that Stripe reports `trialing` is handed to B079's `recordTrial`
+ *   (trials are recorded only once Stripe confirms them).
  * - Anything else is ignored.
  *
  * `reduceObject` is what ingestion keeps of an event's object: ids, status, amounts and currency.
@@ -21,7 +26,7 @@
  * Owns: the per-type rules. Must not: change entitlements other than through B070/B069, or keep
  * more of a payload than `reduceObject` does.
  */
-import type { StripeGateway } from '../stripe/gateway.js';
+import type { StripeGateway, StripeSub } from '../stripe/gateway.js';
 import type { BillingService } from '../subscriptions/service.js';
 import { BillingStateError } from '../subscriptions/service.js';
 import type { OutboxStore } from './outbox.js';
@@ -31,6 +36,7 @@ export const HANDLED_TYPES: ReadonlySet<string> = new Set([
   'customer.subscription.created',
   'customer.subscription.updated',
   'customer.subscription.deleted',
+  'customer.subscription.trial_will_end',
   'checkout.session.completed',
   'invoice.paid',
   'invoice.payment_failed',
@@ -69,6 +75,14 @@ export function reduceObject(object: unknown): Record<string, string | number> {
   return out;
 }
 
+/** B079's trials, told about the subscriptions the handlers reconcile. */
+export interface TrialHooks {
+  /** Keeps a trial Stripe confirmed (the subscription is `trialing`). */
+  recordTrial(workspaceId: string, sub: StripeSub): Promise<unknown>;
+  /** Stripe's `trial_will_end`: the trial-ending email. */
+  trialWillEnd(workspaceId: string, sub: StripeSub): Promise<unknown>;
+}
+
 /** What handlers need. */
 export interface HandlerDeps {
   gateway: Pick<StripeGateway, 'retrieveSubscription'>;
@@ -76,6 +90,8 @@ export interface HandlerDeps {
   outbox: Pick<OutboxStore, 'add'>;
   /** The workspace of a Stripe customer (B070's link), or null. */
   workspaceOfCustomer(customerId: string): Promise<string | null>;
+  /** B079's trials; without them no trial is recorded and no trial-ending email is sent. */
+  trials?: TrialHooks;
 }
 
 /** An event as a handler reads it. */
@@ -88,8 +104,22 @@ export interface HandledEvent {
 
 const str = (v: unknown): string | null => (typeof v === 'string' ? v : null);
 
-/** Re-fetches subscription `subId`, stores it, and announces an applied change; the workspace. */
-async function reconcile(event: HandledEvent, subId: string, deps: HandlerDeps): Promise<string> {
+/** A reconciled subscription: its workspace, Stripe's view and the stored one (null: none). */
+interface Reconciled {
+  workspaceId: string;
+  sub: StripeSub;
+  view: { plan: string; status: string; seats: number } | null;
+}
+
+/**
+ * Re-fetches subscription `subId`, stores it, announces an applied change, and hands a trialing
+ * subscription to B079.
+ */
+async function reconcile(
+  event: HandledEvent,
+  subId: string,
+  deps: HandlerDeps,
+): Promise<Reconciled> {
   const sub = await deps.gateway.retrieveSubscription(subId);
   const result = await deps.billing.upsertFromStripe(sub, event.created);
   const workspaceId =
@@ -103,13 +133,14 @@ async function reconcile(event: HandledEvent, subId: string, deps: HandlerDeps):
       dedupeKey: event.eventId,
     });
   }
-  return workspaceId;
+  if (sub.status === 'trialing') await deps.trials?.recordTrial(workspaceId, sub);
+  return { workspaceId, sub, view: result.view };
 }
 
 /** The workspace of an invoice: its subscription's (reconciled), else its customer's. */
 async function invoiceWorkspace(event: HandledEvent, deps: HandlerDeps): Promise<string> {
   const subId = str(event.object['subscription']);
-  if (subId !== null) return reconcile(event, subId, deps);
+  if (subId !== null) return (await reconcile(event, subId, deps)).workspaceId;
   const customer = str(event.object['customer']);
   const workspaceId = customer === null ? null : await deps.workspaceOfCustomer(customer);
   if (workspaceId === null) throw new BillingStateError('unknown_workspace');
@@ -139,6 +170,30 @@ export async function handleEvent(
       const subId = str(event.object['id']);
       if (subId === null || !subId.startsWith('sub_')) return 'ignored';
       await reconcile(event, subId, deps);
+      return 'processed';
+    }
+    case 'customer.subscription.trial_will_end': {
+      const subId = str(event.object['id']);
+      if (subId === null || !subId.startsWith('sub_')) return 'ignored';
+      const { workspaceId, sub, view } = await reconcile(event, subId, deps);
+      if (view !== null) {
+        // Announced even when the store had a newer event (one row per event either way).
+        await deps.outbox.add({
+          type: 'billing.subscription.updated',
+          workspaceId,
+          payload: { plan: view.plan, status: view.status, seats: view.seats },
+          dedupeKey: event.eventId,
+        });
+      }
+      if (sub.status === 'trialing' && sub.trialEnd !== null) {
+        await deps.outbox.add({
+          type: 'notify.trial_ending',
+          workspaceId,
+          payload: { days: Math.max(0, Math.ceil((sub.trialEnd - event.created) / 86_400)) },
+          dedupeKey: `${sub.id}-${sub.trialEnd}`,
+        });
+      }
+      await deps.trials?.trialWillEnd(workspaceId, sub);
       return 'processed';
     }
     case 'checkout.session.completed': {

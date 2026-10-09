@@ -311,6 +311,14 @@ export const METRICS = {
     'Stripe subscription updates, by whether they were applied (false: a stale event).',
     ['applied'],
   ),
+  coupon_redemptions_total: counter(
+    'Coupon redeem attempts and promotion grants, by outcome (redeemed, replayed, refused, malformed, inactive, rate_limited, stripe_unavailable, busy).',
+    ['outcome'],
+  ),
+  coupon_refusals_total: counter(
+    'Coupon redemptions refused, by reason (never shown to the client).',
+    ['reason'],
+  ),
   devices_revoked_publish_failed_total: counter(
     'Device revocations not announced on devices:revoked after every retry.',
   ),
@@ -517,6 +525,12 @@ export const METRICS = {
   ),
   telemetry_retention_failed_total: counter('Telemetry retention runs that failed.', [], WORKER),
   telemetry_rollups_total: counter('Product telemetry rollups.', [], API_WORKER),
+  trial_ending_emails_total: counter(
+    'Trial-ending emails, by outcome (sent, not_trialing, not_configured, no_contact).',
+    ['outcome'],
+    API_WORKER,
+  ),
+  trials_recorded_total: counter('Trials recorded once Stripe confirmed them.', [], API_WORKER),
   usage_aggregate_failed_total: counter('Usage aggregation runs that failed.', [], WORKER),
   usage_daily_cap_refusals_total: counter('Usage events over the daily cap.'),
   usage_events_accepted_total: counter('Usage events accepted.'),
