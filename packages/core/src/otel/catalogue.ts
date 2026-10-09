@@ -461,7 +461,7 @@ export const METRICS = {
     labels: [],
     services: RELAY,
     group: 'module',
-    help: "Cross-node lag: a frame's sequencing on its node to its arrival on another.",
+    help: 'Cross-node lag: a frame published by its node to its arrival on another.',
   },
   relay_cluster_publish_failed_total: counter(
     'Cluster publishes that failed, by channel (frames, eph, ctl).',

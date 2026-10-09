@@ -2,8 +2,9 @@
  * The cluster's Redis channels and messages (B045). Channels and keys live under the backend's
  * `ct:<env>:` namespace:
  *
- * - `relay:{sid}:frames`: each sequenced frame of the session, `{node, sid, frame}`; `frame` is the
- *   frame exactly as B041 stored it (ciphertext opaque).
+ * - `relay:{sid}:frames`: each sequenced frame of the session, `{node, sid, at, frame}`; `frame` is
+ *   the frame exactly as B041 stored it (ciphertext opaque), `at` the publish time (ms), for the
+ *   cross-node lag.
  * - `relay:{sid}:eph`: the session's ephemeral frames (presence), `{node, sid, frame}`; never
  *   buffered, logged durably or replayed.
  * - `relay:member:{mid}:ctl`: commands for a member's connections on every node,
@@ -43,6 +44,8 @@ export interface MemberCommand {
 export interface FrameMessage {
   node: string;
   sid: string;
+  /** When the node published it (ms since the epoch); absent from older publishers. */
+  at?: number;
   frame: StoredFrame;
 }
 
@@ -86,7 +89,13 @@ export function parseFrameMessage(text: string, sid: string): FrameMessage | nul
   ) {
     return null;
   }
-  return { node: m['node'], sid, frame: f as unknown as StoredFrame };
+  const at = m['at'];
+  return {
+    node: m['node'],
+    sid,
+    ...(typeof at === 'number' && Number.isFinite(at) ? { at } : {}),
+    frame: f as unknown as StoredFrame,
+  };
 }
 
 /** An ephemeral message of session `sid`, or null for anything else. */

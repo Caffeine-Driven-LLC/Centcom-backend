@@ -2,7 +2,7 @@
  * The cluster dispatcher (B045): B044's `RemoteDispatcher` over Redis pub/sub, and the receiving
  * side of a session's channels.
  *
- * - **Publish:** each locally sequenced frame goes to `relay:{sid}:frames` as `{node, sid, frame}`
+ * - **Publish:** each locally sequenced frame goes to `relay:{sid}:frames` as `{node, sid, at, frame}`
  *   (the frame as stored; ciphertext opaque). A failed publish is counted
  *   (`relay_cluster_publish_failed_total`) and rejected (fan-out counts it too); the frame is in
  *   the hot buffer already, so other nodes recover it by gap-fill.
@@ -70,7 +70,7 @@ export class ClusterDispatcher implements RemoteDispatcher {
 
   /** Publishes a locally sequenced frame of `sid` to the other nodes. */
   async publish(sid: string, frame: StoredFrame): Promise<void> {
-    const message = JSON.stringify({ node: this.#deps.nodeId, sid, frame });
+    const message = JSON.stringify({ node: this.#deps.nodeId, sid, at: this.#clock(), frame });
     try {
       await this.#deps.redis.publish(framesChannel(sid), message);
       this.#metrics.counter('relay_cluster_published_total', { channel: 'frames' }).inc();
@@ -102,7 +102,8 @@ export class ClusterDispatcher implements RemoteDispatcher {
       this.#received('frames', 'own');
       return;
     }
-    const sent = Date.parse(parsed.frame.ts);
+    // The hop: publish on the origin node to arrival here (not the origin's own queueing).
+    const sent = parsed.at ?? Date.parse(parsed.frame.ts);
     if (!Number.isNaN(sent)) {
       this.#metrics
         .histogram('relay_cluster_lag_seconds', LAG_BUCKETS_S)

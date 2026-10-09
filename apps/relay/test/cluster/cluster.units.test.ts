@@ -221,7 +221,9 @@ describe('the dispatcher', () => {
     const sid = newId('ses');
     const frame = frameOf(sid, 1);
     await dispatcher.publish(sid, frame);
-    expect(sent).toEqual([[framesChannel(sid), JSON.stringify({ node: 'me', sid, frame })]]);
+    expect(sent.map(([channel]) => channel)).toEqual([framesChannel(sid)]);
+    const published = JSON.parse(sent[0]?.[1] ?? '{}') as Record<string, unknown>;
+    expect(published).toEqual({ node: 'me', sid, at: expect.any(Number), frame });
     fail = true;
     await expect(dispatcher.publish(sid, frame)).rejects.toThrow('down');
     await expect(dispatcher.publishEphemeral(sid, { t: 'presence' })).resolves.toBeUndefined();

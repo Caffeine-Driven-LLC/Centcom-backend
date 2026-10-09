@@ -23,7 +23,7 @@ All under the backend's `ct:<env>:` namespace. Messages are JSON and never logge
 
 | Channel                  | Message                         | What it carries                                                                 |
 | ------------------------ | ------------------------------- | ------------------------------------------------------------------------------- |
-| `relay:{sid}:frames`     | `{node, sid, frame}`            | Each sequenced frame, exactly as B041 stored it (ciphertext opaque).            |
+| `relay:{sid}:frames`     | `{node, sid, at, frame}`        | Each sequenced frame, exactly as B041 stored it (ciphertext opaque).            |
 | `relay:{sid}:eph`        | `{node, sid, frame}`            | Ephemeral frames (presence, B047): local delivery only, never buffered.         |
 | `relay:member:{mid}:ctl` | `{node, mid, cmd}`              | `cmd: {code, bye?, device?, before?, error?}`: close that member's connections. |
 | `relay:node:{id}` (key)  | `{node, sessions, members, at}` | Heartbeat, 15 s TTL, refreshed every 5 s, for diagnostics.                      |
@@ -88,7 +88,7 @@ All under the backend's `ct:<env>:` namespace. Messages are JSON and never logge
 - `relay_cluster_published_total{channel}`, `relay_cluster_publish_failed_total{channel}`
 - `relay_cluster_received_total{channel, result}`: `offered`, `delivered`, `applied`, `own`,
   `invalid`.
-- `relay_cluster_lag_seconds`: a frame's sequencing on its node to its arrival on another.
+- `relay_cluster_lag_seconds`: a frame published by its node (`at`) to its arrival on another.
 - `relay_cluster_subscriptions_total{kind, op}`: `session` or `member`; `subscribed`,
   `unsubscribed` or `failed`.
 - `relay_cluster_reconciled_total`, `relay_cluster_reconcile_failed_total`
