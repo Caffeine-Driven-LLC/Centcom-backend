@@ -149,3 +149,4 @@ export * from './resume/index.js';
 export * from './cluster/index.js';
 export * from './backpressure/index.js';
 export * from './presence/index.js';
+export * from './cursors/index.js';
