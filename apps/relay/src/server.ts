@@ -95,6 +95,16 @@ class LiveConnection implements RelayConnection {
     return true;
   }
 
+  sendText(text: string): boolean {
+    if (this.ws.readyState !== WebSocket.OPEN) return false;
+    this.ws.send(text);
+    return true;
+  }
+
+  bufferedBytes(): number {
+    return this.ws.bufferedAmount;
+  }
+
   close(code: CloseCodeValue, reason?: string): void {
     this.entry.state = 'closing';
     this.ws.close(code, reason);

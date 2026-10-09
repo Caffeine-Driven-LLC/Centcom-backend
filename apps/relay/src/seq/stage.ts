@@ -50,6 +50,7 @@ import {
   type SeqService,
   type SeqStore,
   type StoredFrame,
+  type UnsequencedFrame,
 } from './types.js';
 
 /** Invalid acks a connection may send per window before it is closed 4400 (as the codec's frames). */
@@ -192,6 +193,8 @@ export function createSequencer(deps: SequencerDeps): Sequencer {
   /** Sequenced frames are refused at once until then (the store just failed). */
   let unavailableUntil = Number.NEGATIVE_INFINITY;
   let outage = false;
+  /** Fan-out (B044) delivers new frames to their senders, in order; the stage echoes duplicates only. */
+  let echoDelegated = false;
 
   const count = (outcome: string): void =>
     metrics.counter(SEQ_METRICS.sequenced, { outcome }).inc();
@@ -427,8 +430,9 @@ export function createSequencer(deps: SequencerDeps): Sequencer {
       result.duplicate ? { ...unsequenced, ts: result.ts } : unsequenced,
       result.seq,
     );
-    // The echo: the sender learns the frame's place (CT-WS-ENVELOPE), even for a resend.
-    conn.send(stored);
+    // The echo: the sender learns the frame's place (CT-WS-ENVELOPE), even for a resend. Once
+    // fan-out delivers new frames to their senders too (in seq order), only resends are echoed here.
+    if (result.duplicate || !echoDelegated) conn.send(stored);
     if (result.duplicate) {
       count('duplicate');
       return;
@@ -504,6 +508,25 @@ export function createSequencer(deps: SequencerDeps): Sequencer {
       store: deps.store,
       acks,
       setDurableAppend: (port: DurableAppend) => durable.setPort(port),
+      delegateEcho: () => {
+        echoDelegated = true;
+      },
+      async submitServer(sid: string, frame: UnsequencedFrame): Promise<StoredFrame> {
+        const result = await deps.store.assign(
+          sid,
+          { from: frame.from, id: frame.id },
+          frame,
+          clock(),
+        );
+        const session = sessions.get(sid);
+        if (session !== undefined && result.seq > session.head) session.head = result.seq;
+        const stored = withSeq(result.duplicate ? { ...frame, ts: result.ts } : frame, result.seq);
+        if (!result.duplicate) {
+          count('assigned');
+          durable.append(sid, stored);
+        }
+        return stored;
+      },
     }),
     stats: () => ({
       connections,
