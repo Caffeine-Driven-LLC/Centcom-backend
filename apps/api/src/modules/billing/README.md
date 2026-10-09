@@ -16,6 +16,7 @@ from B069; billing hands it each applied subscription and never decides what a p
 | `subscriptions/repository.ts` | `billing_customer` and `billing_subscription`.                                                              |
 | `subscriptions/service.ts`    | `BillingService`: `ensureCustomer`, `getSubscription`, `upsertFromStripe`.                                  |
 | `checkout/`                   | B071: `CheckoutService` (hosted checkout and billing portal sessions) and the return URLs; see its README.  |
+| `webhooks/`                   | B072: Stripe webhook ingestion, processing and the billing outbox; see its README.                          |
 
 Routes: `routes/subscription/index.ts`; B071's `routes/checkout/index.ts` and `routes/portal/index.ts`.
 
@@ -78,17 +79,17 @@ client's retries, the call is a 503 with `retry_after_s`; if Stripe refuses it, 
   3 more times, with full-jitter backoff (500 ms base, 5 s cap) and the same key. After that the
   error kind is `unavailable`. Other 4xx fail at once (`request`, `auth`).
 - **Webhooks:** `constructEvent` verifies `Stripe-Signature` (HMAC-SHA256, any `v1`, 300 s
-  tolerance) for B072.
+  tolerance) against each configured secret (two while rolling) for B072; see `webhooks/README.md`.
 
 ## Configuration
 
-| Key                                                       | Notes                                                                         |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `STRIPE_SECRET_KEY`                                       | `sk_…`/`rk_…`; required in production. Without it (elsewhere) billing is off. |
-| `STRIPE_API_VERSION`                                      | Default `2025-03-31.basil`.                                                   |
-| `STRIPE_WEBHOOK_SECRET`                                   | `whsec_…`, for B072's webhook.                                                |
-| `STRIPE_API_BASE`                                         | Default `https://api.stripe.com` (stripe-mock in tests).                      |
-| `STRIPE_PRICE_<PRO\|TEAM\|SEAT>_<MONTH\|YEAR>_<USD\|EUR>` | Stripe price ids, all 12 required in production; no id may sell two things.   |
+| Key                                                       | Notes                                                                          |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `STRIPE_SECRET_KEY`                                       | `sk_…`/`rk_…`; required in production. Without it (elsewhere) billing is off.  |
+| `STRIPE_API_VERSION`                                      | Default `2025-03-31.basil`.                                                    |
+| `STRIPE_WEBHOOK_SECRET`                                   | `whsec_…`, for B072's webhook; two, comma-separated, while rolling the secret. |
+| `STRIPE_API_BASE`                                         | Default `https://api.stripe.com` (stripe-mock in tests).                       |
+| `STRIPE_PRICE_<PRO\|TEAM\|SEAT>_<MONTH\|YEAR>_<USD\|EUR>` | Stripe price ids, all 12 required in production; no id may sell two things.    |
 
 ## Wiring
 

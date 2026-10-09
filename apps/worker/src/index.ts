@@ -2,8 +2,9 @@
  * @centcom/worker: BullMQ jobs: webhooks, notifications, billing, retention. Today: the email
  * delivery job (B032), the workspace purge (B027) with the settings (B034), entitlements (B069),
  * projects (B035) and session history (B055) purge hooks, invite expiry (B029), notification
- * dispatch and digests (B063), audit log exports (B082), telemetry retention (B085), and account
- * exports and purges (B026). Later lanes add theirs under `src/jobs/`.
+ * dispatch and digests (B063), audit log exports (B082), telemetry retention (B085), account
+ * exports and purges (B026), and Stripe webhook event processing (B072). Later lanes add theirs
+ * under `src/jobs/`.
  */
 export {
   createEmailQueue,
@@ -151,3 +152,21 @@ export {
   type AccountPurgeOutcome,
   type AccountPurgeWorkerOptions,
 } from './jobs/account-purge.js';
+export {
+  createStripeEventDlq,
+  createStripeEventQueue,
+  enqueueStripeEvent,
+  onStripeEventFailed,
+  processStripeEventJob,
+  scheduleStripeEventSweep,
+  startStripeEventWorker,
+  STRIPE_EVENT_ATTEMPTS,
+  STRIPE_EVENT_DLQ,
+  STRIPE_EVENT_JOB,
+  STRIPE_EVENT_QUEUE,
+  STRIPE_EVENT_SWEEP_JOB,
+  stripeEventJobOptions,
+  type StripeEventDeps,
+  type StripeEventJobData,
+  type StripeEventWorkerOptions,
+} from './jobs/stripe-event-process.js';

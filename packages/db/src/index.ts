@@ -14,8 +14,9 @@
  * feature flags (B083) in `schema/feature-flags.ts`, release manifests (B084) in
  * `schema/releases.ts`, telemetry (B085) in `schema/telemetry.ts`, the status feed (B086) in
  * `schema/status.ts`, staff access (B087) in `schema/staff.ts`, account deletion and data
- * exports (B026) in `schema/account-lifecycle.ts`, the durable history index (B055) in
- * `schema/history.ts`; repositories (B013 on, devices
+ * exports (B026) in `schema/account-lifecycle.ts`, Stripe webhook events and the billing outbox
+ * (B072) in `schema/stripe-events.ts`, the durable history index (B055) in `schema/history.ts`;
+ * repositories (B013 on, devices
  * from B020, workspaces from B027, members from B028, invites from B029, settings from B034,
  * projects from B035, slots from B031, notifications from B063) in `repos/`; the entitlements
  * repository is the API's (B069).
@@ -173,6 +174,12 @@ export type {
   HistoryRetentionTable,
   HistoryTables,
 } from './schema/history.js';
+export type {
+  BillingOutboxTable,
+  StripeEventStatus,
+  StripeEventsDatabase,
+  StripeEventTable,
+} from './schema/stripe-events.js';
 export type {
   AuditApiDb,
   AuditExportDatabase,
