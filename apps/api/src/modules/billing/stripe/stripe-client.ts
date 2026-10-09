@@ -10,7 +10,8 @@
  *   key. After that the call fails as `unavailable`, which the API answers with 503. Other 4xx
  *   fail at once (`request`, or `auth` for 401/403).
  * - **Webhooks:** `constructEvent` checks `Stripe-Signature` (HMAC-SHA256 of `t.body`, any `v1`,
- *   300 s tolerance) with STRIPE_WEBHOOK_SECRET.
+ *   300 s tolerance) with STRIPE_WEBHOOK_SECRET: one secret, or two separated by a comma while
+ *   the endpoint's secret is rolled (B072); a signature from either verifies.
  *
  * Configuration: STRIPE_SECRET_KEY (required in production), STRIPE_API_VERSION,
  * STRIPE_WEBHOOK_SECRET, STRIPE_API_BASE (stripe-mock in tests).
@@ -26,7 +27,7 @@ import {
   secretString,
   z,
   type Env,
-  type Secret,
+  Secret,
 } from '@centcom/core';
 import {
   parseStripeSubscription,
@@ -75,7 +76,8 @@ export const stripeEnvSchema = z.object({
     .default(STRIPE_API_VERSION_DEFAULT)
     .meta({ description: 'The pinned Stripe API version.' }),
   STRIPE_WEBHOOK_SECRET: secretString().optional().meta({
-    description: 'Signing secret of the Stripe webhook endpoint (whsec_…), for B072.',
+    description:
+      'Signing secret of the Stripe webhook endpoint (whsec_…), for B072; two separated by a comma while rolling it.',
   }),
   STRIPE_API_BASE: envUrl({ protocols: ['https:', 'http:'], plain: true })
     .default('https://api.stripe.com')
@@ -87,8 +89,13 @@ export interface StripeConfig {
   secretKey: Secret<string>;
   apiVersion: string;
   webhookSecret: Secret<string> | null;
+  /** Every accepted webhook secret: the current one, and the previous one while rolling. */
+  webhookSecrets?: readonly Secret<string>[];
   apiBase: string;
 }
+
+/** Most webhook secrets accepted at once (the new and the old one while rolling). */
+export const MAX_WEBHOOK_SECRETS = 2;
 
 /**
  * Reads the Stripe keys; null when no secret key is set outside production (billing off). A
@@ -107,13 +114,19 @@ export function loadStripeConfig(env?: Env): StripeConfig | null {
       problem: 'must be a Stripe secret key (sk_… or rk_…)',
     });
   }
+  const webhookParts =
+    v.STRIPE_WEBHOOK_SECRET === undefined
+      ? []
+      : v.STRIPE_WEBHOOK_SECRET.reveal()
+          .split(',')
+          .map((part) => part.trim());
   if (
-    v.STRIPE_WEBHOOK_SECRET !== undefined &&
-    !WEBHOOK_SECRET.test(v.STRIPE_WEBHOOK_SECRET.reveal())
+    webhookParts.length > MAX_WEBHOOK_SECRETS ||
+    webhookParts.some((part) => !WEBHOOK_SECRET.test(part))
   ) {
     issues.push({
       key: 'STRIPE_WEBHOOK_SECRET',
-      problem: 'must be a webhook signing secret (whsec_…)',
+      problem: 'must be one or two webhook signing secrets (whsec_…), separated by a comma',
     });
   }
   if (issues.length > 0) throw new ConfigError(issues);
@@ -121,7 +134,8 @@ export function loadStripeConfig(env?: Env): StripeConfig | null {
   return {
     secretKey: v.STRIPE_SECRET_KEY,
     apiVersion: v.STRIPE_API_VERSION,
-    webhookSecret: v.STRIPE_WEBHOOK_SECRET ?? null,
+    webhookSecret: webhookParts[0] === undefined ? null : new Secret(webhookParts[0]),
+    webhookSecrets: webhookParts.map((part) => new Secret(part)),
     apiBase: v.STRIPE_API_BASE.replace(/\/+$/, ''),
   };
 }
@@ -397,8 +411,14 @@ export class StripeClient implements StripeGateway {
   }
 
   constructEvent(rawBody: string | Buffer, signature: string): StripeEvent {
-    const secret = this.options.config.webhookSecret;
-    if (secret === null)
+    const { webhookSecret, webhookSecrets } = this.options.config;
+    const secrets =
+      webhookSecrets !== undefined && webhookSecrets.length > 0
+        ? webhookSecrets
+        : webhookSecret === null
+          ? []
+          : [webhookSecret];
+    if (secrets.length === 0)
       throw new StripeError('not_configured', 'STRIPE_WEBHOOK_SECRET is not set');
     let timestamp: number | null = null;
     const candidates: string[] = [];
@@ -412,11 +432,13 @@ export class StripeClient implements StripeGateway {
       throw new StripeError('signature', 'the Stripe-Signature header is malformed');
     }
     const body = typeof rawBody === 'string' ? Buffer.from(rawBody) : rawBody;
-    const expected = createHmac('sha256', secret.reveal())
-      .update(`${timestamp}.`)
-      .update(body)
-      .digest();
-    const matches = candidates.some((hex) => timingSafeEqual(Buffer.from(hex, 'hex'), expected));
+    const expected = secrets.map((secret) =>
+      createHmac('sha256', secret.reveal()).update(`${timestamp}.`).update(body).digest(),
+    );
+    const matches = candidates.some((hex) => {
+      const given = Buffer.from(hex, 'hex');
+      return expected.some((digest) => timingSafeEqual(given, digest));
+    });
     if (!matches) throw new StripeError('signature', 'the webhook signature does not verify');
     if (Math.abs(Math.floor(this.#clock() / 1000) - timestamp) > WEBHOOK_TOLERANCE_S) {
       throw new StripeError('signature', 'the webhook signature is too old');
