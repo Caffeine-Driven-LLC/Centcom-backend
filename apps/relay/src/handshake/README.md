@@ -40,8 +40,9 @@ it must be and the replay planned before the welcome (a failure is `service_unav
 **4503**); the replay starts right after the welcome. See
 [../resume/README.md](../resume/README.md).
 
-The connection becomes `authenticated` with its `sessionId`, and later frames pass to the next
-stages. Nothing else is sent before the welcome; frames that arrive while the hello is being
+The connection becomes `authenticated` with its `sessionId`, `memberId` and `deviceId`, and later
+frames pass to the next stages. Then `onWelcomed` runs (B045: the cluster supersedes the same
+`(member, device)` on other nodes); a throw there is logged, never the connection's problem. Nothing else is sent before the welcome; frames that arrive while the hello is being
 checked are dropped. A connection of the same `(member, device)` already on this node gets
 `sys.bye {reason: "superseded"}` and close **4409**. Every refusal and the supersede close
 through B040's `closeConnection`, which sends the frame first and closes once.

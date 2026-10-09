@@ -54,7 +54,7 @@ export function fakeConnection(sid: string | null = null): FakeConnection {
       state: 'authenticated',
       sessionId: sid,
       memberId: null,
-    deviceId: null,
+      deviceId: null,
       createdAt: new Date(0),
     },
     sent: [],

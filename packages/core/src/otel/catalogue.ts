@@ -422,6 +422,54 @@ export const METRICS = {
   redis_reconnects_total: counter('Redis reconnects.', [], ALL),
   redis_unavailable_total: counter('Redis calls refused while it was down.', [], ALL),
   relay_acks_rejected_total: counter('Acks refused for naming a seq beyond the head.', [], RELAY),
+  relay_cluster_control_closed_total: counter(
+    'Local connections closed by member commands (supersede, removal, kick) from any node.',
+    [],
+    RELAY,
+  ),
+  relay_cluster_heartbeat_failed_total: counter(
+    'Node heartbeat writes (relay:node:{id}) that failed.',
+    [],
+    RELAY,
+  ),
+  relay_cluster_lag_seconds: {
+    type: 'histogram',
+    unit: 's',
+    labels: [],
+    services: RELAY,
+    group: 'module',
+    help: "Cross-node lag: a frame's sequencing on its node to its arrival on another.",
+  },
+  relay_cluster_publish_failed_total: counter(
+    'Cluster publishes that failed, by channel (frames, eph, ctl).',
+    ['channel'],
+    RELAY,
+  ),
+  relay_cluster_published_total: counter(
+    'Cluster messages published, by channel (frames, eph, ctl).',
+    ['channel'],
+    RELAY,
+  ),
+  relay_cluster_received_total: counter(
+    'Cluster messages received, by channel and result (offered, delivered, applied, own, invalid).',
+    ['channel', 'result'],
+    RELAY,
+  ),
+  relay_cluster_reconcile_failed_total: counter(
+    'Reconciles of a session against the head that failed (the store did not answer).',
+    [],
+    RELAY,
+  ),
+  relay_cluster_reconciled_total: counter(
+    'Frames fetched from the hot buffer by a reconcile (lost or not yet subscribed).',
+    [],
+    RELAY,
+  ),
+  relay_cluster_subscriptions_total: counter(
+    'Cluster channel subscriptions, by kind (session, member) and op (subscribed, unsubscribed, failed).',
+    ['kind', 'op'],
+    RELAY,
+  ),
   relay_codec_errors_total: counter('Frames dropped because decoding threw.', [], RELAY),
   relay_dead_peers_total: counter(
     'Connections closed after RELAY_DEAD_MS without an inbound frame.',

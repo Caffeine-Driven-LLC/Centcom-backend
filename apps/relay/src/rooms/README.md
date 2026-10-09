@@ -12,11 +12,15 @@ who may send which frame, from the **live** membership record, never the ticket
 | File             | What it does                                                                                                                                            |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `kind-policy.ts` | `KIND_MIN_ROLE` (roles per kind; empty = server-only), `authorizeFrame(m, frame, mute)`, the `MuteState` port with `noMutes` and `memoryMuteState`.     |
-| `registry.ts`    | `RoomRegistry` / `Room`: rooms created on first join, connections per member, eviction 60 s after the last leave, `closeMember`.                        |
+| `registry.ts`    | `RoomRegistry` / `Room`: rooms created on first join, connections per member, eviction 60 s after the last leave, `closeMember`, `listen` (B045).       |
 | `membership.ts`  | The live record (`createPostgresMembership`) and `LiveMembership`, its cache: at most 2 s old, invalidated by membership events, failures never cached. |
 | `access.ts`      | `createPostgresSessionAccess`: B038's `SessionAccess` port over Postgres, with the plan's `relay_access` / `max_session_members` and the room cap.      |
 | `authorise.ts`   | `createRooms`: the handshake's `onAdmitted` join hook, the authorise stage (order 20) and the `centcom:membership` listener.                            |
 | `runtime.ts`     | `roomsFor(ctx)`: one set of the above per relay, shared by the handshake module (which takes `access` and `onAdmitted`) and this module.                |
+
+`RoomRegistry.listen` (B045) tells the cluster module of every join and leave, after the room
+changed, so it subscribes to a session's and a member's channels while they have local
+connections.
 
 ## Rules
 
@@ -25,7 +29,7 @@ who may send which frame, from the **live** membership record, never the ticket
   `guest` is at most `viewer`, `billing` may not join). The session holds at most
   `max_session_members` distinct members (null means 50, and never more than 50); a member's other
   devices are not counted again. Over the cap: `session_full`, close **4403**, and no slot is
-  assigned. The room cap is per node (cross-node is B045).
+  assigned. The room cap is still per node; B045 routes frames across nodes, a shared count is a follow-up.
 - **Frames** (order 20): `sys.*` and `ack` pass. `event`, `queue`, `control` and `presence` frames
   are checked against the live role (re-read at least every 2 s):
 
