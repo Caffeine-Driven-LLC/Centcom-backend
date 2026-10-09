@@ -122,6 +122,8 @@ describe.runIf(ADMIN_URL !== undefined)('trials and promotions on Postgres 16', 
   it('keeps one trial per subscription and workspace, with every owner, across purges', async () => {
     const s = await setup();
     try {
+      // The database allows one owner per workspace; drop that index to cover several owners.
+      await sql`drop index memberships_workspace_id_owner_key`.execute(s.t.db);
       const coOwner = await pgUser(s.t.db);
       await pgJoin(s.t.db, s.ws, coOwner, 'owner');
       const member = await pgUser(s.t.db);
