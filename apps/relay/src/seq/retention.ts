@@ -17,8 +17,8 @@ export const BUFFER_TTL_MS = 48 * 60 * 60 * 1000;
 /**
  * A session's `seq` counter expires this long after its last frame (31 days, B009's longest TTL,
  * beyond the 30-day `history_days` of any plan), so a live session that stays quiet for days never
- * starts again at 1. Losing it to a Redis flush is B042's to recover (hydration from the durable
- * log).
+ * starts again at 1. Losing it to a Redis flush is B042's to recover (`SeqStore.hydrate` from the
+ * durable log).
  */
 export const COUNTER_TTL_MS = 31 * 24 * 60 * 60 * 1000;
 /** At most this many aged-out frames are trimmed per append (bounds one script's work). */
@@ -46,6 +46,29 @@ export function dropCount(
     drop += 1;
   }
   return drop;
+}
+
+/**
+ * Throws a RangeError for a `hydrate` call outside the rules: `head` a whole number from 1, and
+ * `frames` the contiguous run of frames ending at `head` (none at all is allowed), at most
+ * `maxFrames` of them.
+ */
+export function checkHydrate(
+  head: number,
+  frames: readonly { seq: number }[],
+  limits: Pick<BufferLimits, 'maxFrames'>,
+): void {
+  if (!Number.isSafeInteger(head) || head < 1) {
+    throw new RangeError('hydrate: head must be a whole number from 1');
+  }
+  if (frames.length > limits.maxFrames) {
+    throw new RangeError('hydrate: more frames than the buffer keeps');
+  }
+  frames.forEach((f, i) => {
+    if (f.seq !== head - frames.length + 1 + i) {
+      throw new RangeError('hydrate: frames must be the contiguous run ending at head');
+    }
+  });
 }
 
 /** Throws a RangeError for a `range` call outside the rules. */

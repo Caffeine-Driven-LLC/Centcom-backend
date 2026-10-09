@@ -7,7 +7,7 @@
  * relay serving clients.
  */
 import { seqParts, parseStoredFrame } from './frame.js';
-import { checkRange, DEDUPE_TTL_MS, dropCount } from './retention.js';
+import { checkHydrate, checkRange, DEDUPE_TTL_MS, dropCount } from './retention.js';
 import type { AssignResult, BufferLimits, SeqStore, StoredFrame } from './types.js';
 
 interface Buffer {
@@ -101,6 +101,20 @@ export function createMemorySeqStore(limits: BufferLimits): MemorySeqStore {
       const b = buffers.get(sid);
       if (b === undefined || length(b) === 0) return Promise.resolve(null);
       return Promise.resolve(b.head - length(b) + 1);
+    },
+    hydrate(sid, head, frames, nowMs): Promise<number> {
+      try {
+        checkHydrate(head, frames, limits);
+      } catch (err) {
+        return Promise.reject(err as RangeError);
+      }
+      const b = bufferOf(sid);
+      if (b.head >= head) return Promise.resolve(b.head);
+      b.head = head;
+      b.frames = frames.map((f) => JSON.stringify(f));
+      b.times = frames.map(() => nowMs);
+      b.start = 0;
+      return Promise.resolve(head);
     },
     size: (sid) => {
       const b = buffers.get(sid);

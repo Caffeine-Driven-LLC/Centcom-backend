@@ -1,6 +1,6 @@
 /**
  * The fan-out relay module (B044), order 50: registers the fan-out stage (STAGE_ORDER.fanOut,
- * after sequencing), takes over the sender's echo from B041 (`ctx.seq.delegateEcho()`, so each
+ * after sequencing), takes over the sender's echo from B041 (`ctx.seq.delegateEcho`, so each
  * connection gets frames strictly in `seq` order), and offers `ctx.fanout` to the modules after
  * it. Rooms come from B043 (`roomsFor(ctx)`). A relay without the sequence module (no `ctx.seq`)
  * has nothing to fan out: the module registers nothing and says so in the log.
@@ -27,7 +27,8 @@ const relayModule: RelayModule = {
       metrics: ctx.metrics,
       clock: ctx.clock,
     });
-    ctx.seq.delegateEcho();
+    // Resends' echoes go through fan-out too, so a connection's hold (B042) keeps them in order.
+    ctx.seq.delegateEcho((conn, frame) => fanout.sendTo(conn, frame));
     ctx.pipeline.use(STAGE_ORDER.fanOut, fanout.stage);
     ctx.fanout = fanout;
     ctx.onShutdown(() => {

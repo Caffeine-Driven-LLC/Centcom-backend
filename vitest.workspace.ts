@@ -17,6 +17,7 @@ const workspaces = [
   'packages/contracts',
   'packages/core',
   'packages/db',
+  'packages/storage',
   'packages/testkit',
 ];
 

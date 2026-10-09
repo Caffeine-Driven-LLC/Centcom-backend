@@ -4,7 +4,8 @@
  * - `StoredFrame`: one sequenced frame as the durable log keeps it. Besides the card's fields
  *   (seq, id, from, ts, kind class, size, kid, `ct`, `p`) it keeps the envelope's `k` and `sig`,
  *   because CT-API-SESSIONS' `HistoryFrame` returns them: a client verifies the signature and
- *   applies the frame by kind. Only the index fields reach Postgres; the rest lives in the blob.
+ *   applies the frame by kind. It also keeps `ref` (an id, never content), so the relay's replay
+ *   from the log (B042) sends the frame exactly as it was first delivered. Only the index fields reach Postgres; the rest lives in the blob.
  * - `HistoryAccess`: who the caller is in a session (the session role, workspace ownership, and
  *   whether the session shares its history with share-link guests). Postgres answers for users;
  *   share-link guests come with B068.
@@ -33,6 +34,8 @@ export interface StoredFrame {
   /** RFC 3339, as the relay stamped it. */
   ts: string;
   kindClass: KindClass;
+  /** The id of the frame this one answers (`ref`), when it has one (B042's replay). */
+  ref?: string;
   /** The kind (`k`), when the frame has one. */
   k?: string;
   /** Bytes of the frame as stored (set by the store). */

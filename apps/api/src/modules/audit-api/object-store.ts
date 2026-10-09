@@ -26,7 +26,7 @@ import {
   EMPTY_SHA256,
   presignQuery,
   type SigningCredentials,
-} from './sigv4.js';
+} from '@centcom/storage';
 
 /** A finished file to upload. */
 export interface LocalFile {

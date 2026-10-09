@@ -22,6 +22,10 @@
  *    later stages stamp, B041), and later frames pass to the next stages. A connection of
  *    the same `(member, device)` already on this node gets `sys.bye` (`superseded`) and close 4409.
  *
+ * With B042's resume (`resume`, `ctx.resume`): the connection's live frames are held from before
+ * its room join, the session is recovered if it must be and the replay planned before the welcome
+ * (`welcome.resume`; a failure is a 503, close 4503), and the replay starts after it.
+ *
  * Nothing but `sys.error` and `sys.welcome` is sent before the welcome; frames that arrive while
  * the hello is being checked are dropped. Logs carry the close code and a reason only, never the
  * ticket or `hello.p`.
@@ -92,6 +96,23 @@ export interface AdmittedHello {
   sid: string;
   dev: string;
   access: SessionAccessResult & { member: NonNullable<SessionAccessResult['member']> };
+  /** The hello's `last_seq`: null for a fresh join. */
+  lastSeq: number | null;
+}
+
+/** B042's resume, around the welcome (`ctx.resume`). */
+export interface HandshakeResume {
+  /** Before the room join: from now on the connection's live frames are held. */
+  hold(connection: RelayConnection): void;
+  /**
+   * After the join, before the welcome: recovers the session when it must be and plans the
+   * replay; resolves with `welcome.resume`'s value (null for a fresh join). A rejection is a 503.
+   */
+  prepare(connection: RelayConnection, admitted: AdmittedHello): Promise<object | null>;
+  /** After the welcome: replays, sends `sys.resumed`, then the held frames. Never throws. */
+  start(connection: RelayConnection): void;
+  /** The handshake ended without a welcome after `hold`: forgets the connection. */
+  abandon(connection: RelayConnection): void;
 }
 
 /** What `onAdmitted` decided: welcome, or refuse with a 4403 and this CT-ERR code. */
@@ -135,6 +156,8 @@ export interface HandshakeDeps {
     connection: RelayConnection,
     admitted: AdmittedHello,
   ) => AdmissionDecision | Promise<AdmissionDecision>;
+  /** B042's resume, looked up per hello (its module registers after this one); none: no replay. */
+  resume?: () => HandshakeResume | undefined;
 }
 
 type Phase =
@@ -193,6 +216,8 @@ export function welcomeFrame(input: {
   heartbeat?: { ping_ms: number; dead_ms: number };
   /** Default WELCOME_LIMITS' `seq_rate` and `seq_burst`. */
   seqLimits?: { seq_rate: number; seq_burst: number };
+  /** `resume` (B042's plan); default null. */
+  resume?: object | null;
 }): object {
   const { access } = input;
   return {
@@ -216,7 +241,7 @@ export function welcomeFrame(input: {
         max_members: Math.min(access.session.maxMembers, MAX_MEMBERS_CAP),
       },
       session: { state: access.session.state },
-      resume: null,
+      resume: input.resume ?? null,
     },
   };
 }
@@ -314,6 +339,7 @@ export function createHandshake(deps: HandshakeDeps): {
     access: SessionAccessResult;
     protocol: number;
     caps: string[];
+    lastSeq: number | null;
   }> {
     const ticket = isRecord(frame['p']) ? frame['p']['ticket'] : undefined;
     if (typeof ticket !== 'string' || ticket.length < 10) throw badTicket();
@@ -413,7 +439,8 @@ export function createHandshake(deps: HandshakeDeps): {
         "The workspace's plan does not include the relay.",
       );
     }
-    return { claims, access, ...negotiated };
+    const lastSeq = typeof hello.last_seq === 'number' ? hello.last_seq : null;
+    return { claims, access, ...negotiated, lastSeq };
   }
 
   /** Registers the welcomed connection; a previous one of the same `(member, device)` is superseded. */
@@ -446,36 +473,58 @@ export function createHandshake(deps: HandshakeDeps): {
     }
     phase?.timer.cancel();
     phases.set(connection.entry, { phase: 'verifying' });
+    let resume: HandshakeResume | undefined;
     try {
       const frame = helloFrame(fc);
       const admitted = await admit(frame);
       if (!isOpen(connection)) return;
       const { access } = admitted;
       if (access.member === null) return;
+      const hello: AdmittedHello = {
+        sid: admitted.claims.sid,
+        dev: admitted.claims.dev,
+        access: { ...access, member: access.member },
+        lastSeq: admitted.lastSeq,
+      };
+      // Held from before the room join, so nothing reaches the client ahead of its welcome.
+      resume = deps.resume?.();
+      resume?.hold(connection);
       if (deps.onAdmitted !== undefined) {
         let decision: AdmissionDecision;
         try {
-          decision = await deps.onAdmitted(connection, {
-            sid: admitted.claims.sid,
-            dev: admitted.claims.dev,
-            access: { ...access, member: access.member },
-          });
+          decision = await deps.onAdmitted(connection, hello);
         } catch (err) {
           throw unavailableRefusal(err);
         }
         if (!decision.ok) {
           throw refuse(CloseCode.Forbidden, 'admission', decision.code, decision.detail);
         }
-        if (!isOpen(connection)) return;
+        if (!isOpen(connection)) {
+          resume?.abandon(connection);
+          return;
+        }
+      }
+      let resumed: object | null = null;
+      if (resume !== undefined) {
+        try {
+          resumed = await resume.prepare(connection, hello);
+        } catch (err) {
+          throw unavailableRefusal(err);
+        }
+        if (!isOpen(connection)) {
+          resume.abandon(connection);
+          return;
+        }
       }
       connection.send(
         welcomeFrame({
           protocol: admitted.protocol,
           caps: admitted.caps,
-          access: { ...access, member: access.member },
+          access: hello.access,
           nowMs: clock(),
           ...(deps.heartbeat === undefined ? {} : { heartbeat: deps.heartbeat }),
           ...(deps.seqLimits === undefined ? {} : { seqLimits: deps.seqLimits }),
+          resume: resumed,
         }),
       );
       connection.entry.state = 'authenticated';
@@ -483,7 +532,9 @@ export function createHandshake(deps: HandshakeDeps): {
       connection.entry.memberId = access.member.id;
       activate(connection, `${access.member.id}:${admitted.claims.dev}`);
       metrics.counter('relay_handshakes_total', { outcome: 'welcome' }).inc();
+      resume?.start(connection);
     } catch (err) {
+      resume?.abandon(connection);
       if (err instanceof Refusal) {
         close(connection, err);
         return;

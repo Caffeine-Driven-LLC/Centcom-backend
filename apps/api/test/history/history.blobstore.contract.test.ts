@@ -12,12 +12,7 @@ import { randomBytes } from 'node:crypto';
 import { Secret } from '@centcom/core';
 import { startMinio, testcontainersRuntime, type TestMinio } from '@centcom/testkit';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import {
-  authorizationHeader,
-  amzDate,
-  canonicalPath,
-  EMPTY_SHA256,
-} from '../../src/modules/audit-api/sigv4.js';
+import { authorizationHeader, amzDate, canonicalPath, EMPTY_SHA256 } from '@centcom/storage';
 import {
   BlobNotFoundError,
   createMemoryBlobStore,

@@ -145,3 +145,4 @@ export {
 export * from './slots/index.js';
 export * from './rooms/index.js';
 export * from './fanout/index.js';
+export * from './resume/index.js';
