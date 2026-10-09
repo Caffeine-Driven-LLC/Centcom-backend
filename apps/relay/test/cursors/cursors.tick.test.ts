@@ -63,6 +63,8 @@ describe('the tick (acceptance 2)', () => {
     });
     expect(frame).not.toHaveProperty('seq');
     expect(u.published).toEqual([frame]);
+    // Not back to the sender's own connections.
+    expect(cursorsOf(sender)).toEqual([]);
   });
 });
 

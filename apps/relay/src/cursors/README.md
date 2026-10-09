@@ -34,7 +34,7 @@ invalid_frame` (pointer `/ct`), and the connection stays.
   - Every `RELAY_CURSOR_TICK_MS` (100 ms), each slot that changed goes out once as
     `{v, t: "presence", sid, from, ts, k: "presence.cursor", ct, sig?}`. Unchanged slots send
     nothing.
-  - It goes to every welcomed connection of the session here, as droppable: B046 drops it for a
+  - It goes to every welcomed connection of the session here except the member's own, as droppable: B046 drops it for a
     connection over its soft mark, and counts it. It is also published to the other nodes on
     B045's ephemeral channel.
   - `ct` is measured for the cap and carried as it came; it is never read, logged or stored.

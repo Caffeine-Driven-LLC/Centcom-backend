@@ -6,7 +6,7 @@
  *   its last 10 accepted, a ring); more are dropped (`dropped_rate`). A `ct` over RELAY_CURSOR_MAX_CT_BYTES (4 KiB, serialised)
  *   is `dropped_size`. An accepted cursor replaces the member's slot: there is no queue.
  * - **Out:** every RELAY_CURSOR_TICK_MS (100 ms) each slot that changed goes out once, to every
- *   welcomed connection of the session on this node, as a droppable frame (B046 drops it for a
+ *   welcomed connection of the session on this node but the member's own, as a droppable frame (B046 drops it for a
  *   connection over its soft mark, so a connection never has more than the socket's own buffer),
  *   and to the other nodes (B045's ephemeral channel). A slot that did not change sends nothing.
  * - **Floods:** a member offering more than 10x the limit every second for 10 seconds is closed 4429
@@ -141,11 +141,12 @@ export function createCursorThrottle(deps: CursorThrottleDeps): CursorThrottle &
     metrics.counter('relay_cursor_flood_closed_total').inc();
   }
 
-  function send(sid: string, text: string): void {
+  /** A member's cursor to the session's other members here (not back to its own connections). */
+  function send(sid: string, mid: string, text: string): void {
     const room = deps.rooms.get(sid);
     if (room === undefined) return;
     for (const conn of room.connections()) {
-      if (conn.entry.state !== 'authenticated') continue;
+      if (conn.entry.state !== 'authenticated' || conn.entry.memberId === mid) continue;
       let result: string;
       try {
         result = connectionSender(conn as RelayConnection).send(text, { droppable: true });
@@ -163,7 +164,7 @@ export function createCursorThrottle(deps: CursorThrottleDeps): CursorThrottle &
       const text = slot.pending;
       slot.pending = null;
       if (at === undefined || text === null) continue;
-      send(at.sid, text);
+      send(at.sid, at.mid, text);
       deps.publish?.(at.sid, JSON.parse(text) as Record<string, unknown>);
     }
     dirty.clear();
