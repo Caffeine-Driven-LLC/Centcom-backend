@@ -15,6 +15,7 @@ import type { Logger, Metrics, RedisBackend } from '@centcom/core';
 import type { CoreDatabase, createDb } from '@centcom/db';
 import type { RelayConfig } from './config.js';
 import type { ConnectionRegistry } from './connection-registry.js';
+import type { FanOut } from './fanout/fanout.js';
 import type { FramePipeline, RelayConnection } from './pipeline.js';
 import type { SeqService } from './seq/types.js';
 
@@ -41,6 +42,11 @@ export interface RelayContext {
    * after it (B042 resume, B044 fan-out); undefined before then and on relays without it.
    */
   seq?: SeqService;
+  /**
+   * Fan-out (B044): set by the fan-out module when it registers (order 50), for the modules after
+   * it (B042 resume, B047 presence, B051 control); undefined before then and on relays without it.
+   */
+  fanout?: FanOut;
 }
 
 /** A relay lane's plug-in: the default export of `src/<lane>/module.ts`. */

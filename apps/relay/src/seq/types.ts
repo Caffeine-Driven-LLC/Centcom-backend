@@ -99,12 +99,27 @@ export interface AckTracker {
   lowestAcked(sid: string): number;
 }
 
+/** The `from` of frames the relay itself emits (CT-WS-SESSION-EVENTS "Server identity"). */
+export const SERVER_FROM = 'srv';
+
 /** `ctx.seq`: what the sequence module offers the modules registered after it. */
 export interface SeqService {
   readonly store: SeqStore;
   readonly acks: AckTracker;
   /** Replaces the DurableAppend port (default: one that keeps nothing). */
   setDurableAppend(port: DurableAppend): void;
+  /**
+   * B044: from now on, a newly sequenced frame is not echoed to its sender by the stage; fan-out
+   * delivers it to every connection of the room, the sender's included, in `seq` order. A
+   * resend (duplicate) is still echoed here with its original `seq`.
+   */
+  delegateEcho(): void;
+  /**
+   * B044: sequences a frame the relay emits itself (`from` = `srv`) in the session's `seq` space:
+   * assigned and buffered by the store (deduplicated by its id), then handed to the durable
+   * append like any other frame. Rejects when the store fails.
+   */
+  submitServer(sid: string, frame: UnsequencedFrame): Promise<StoredFrame>;
 }
 
 /** The key `fc.state` carries a frame's StoredFrame under, for the stages after this one. */

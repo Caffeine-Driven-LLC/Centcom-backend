@@ -29,6 +29,13 @@ export interface RelayConnection {
   readonly entry: ConnectionEntry;
   /** Sends `frame` as one JSON text message; false when the socket is not open. */
   send(frame: object): boolean;
+  /**
+   * Sends an already serialised frame as one text message, unchanged (B044: one serialisation
+   * shared by every recipient); false when the socket is not open. Absent on test doubles.
+   */
+  sendText?(text: string): boolean;
+  /** Bytes queued on the socket and not yet written (B044, B046); absent on test doubles. */
+  bufferedBytes?(): number;
   /** Starts the closing handshake with `code`. */
   close(code: CloseCodeValue, reason?: string): void;
   /** Cuts the connection at once. */

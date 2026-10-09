@@ -25,7 +25,9 @@ consumed (CT-CRYPTO does not sign it, and it says nothing to other members). A c
 `from`, `ts` or `seq` never survives (the codec strips them, and the stage stamps its own).
 Replies about one frame carry its `id` as `ref`.
 
-The sender's echo is this module's; fan-out (B044) delivers the frame to everyone else.
+Until fan-out (B044) takes it over (`delegateEcho()`, which its module calls), the sender's echo
+is this module's. After that, fan-out delivers a new frame to every connection of the room, the
+sender's included, strictly in `seq` order; this stage still echoes a resend (duplicate) itself.
 
 ### Bounds
 
@@ -102,8 +104,14 @@ new ones are given up at once. Delivery never depends on the port.
 
 ## `ctx.seq`
 
-`SeqService`: `store` (B042 replays from `range`, B044 gap-fills), `acks` (`onAck`,
-`lowestAcked(sid)`, for B046 and B042) and `setDurableAppend(port)`.
+`SeqService`:
+
+- `store`: B042 replays from `range`, B044 gap-fills;
+- `acks`: `onAck`, `lowestAcked(sid)`, for B046 and B042;
+- `setDurableAppend(port)`;
+- `delegateEcho()`: B044, see above;
+- `submitServer(sid, frame)`: B044's `emitServer`. A frame from `srv`, assigned in the session's
+  `seq` space (deduplicated by its id), buffered and handed to the durable append.
 
 ## Configuration
 

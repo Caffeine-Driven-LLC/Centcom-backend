@@ -131,6 +131,7 @@ export { BUFFER_TTL_MS, DEDUPE_TTL_MS } from './seq/retention.js';
 export {
   SEQUENCED_STATE_KEY,
   SEQUENCED_TYPES,
+  SERVER_FROM,
   type AckTracker,
   type AssignResult,
   type BufferLimits,
@@ -143,3 +144,4 @@ export {
 } from './seq/types.js';
 export * from './slots/index.js';
 export * from './rooms/index.js';
+export * from './fanout/index.js';
