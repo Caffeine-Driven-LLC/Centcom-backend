@@ -55,7 +55,8 @@ export interface StripeEvent {
 export interface StripeInvoicePreview {
   currency: string;
   amountDue: number;
-  lines: { amount: number; proration: boolean }[];
+  /** `periodStart`: Unix seconds the line's period starts, when Stripe gave one. */
+  lines: { amount: number; proration: boolean; periodStart?: number }[];
   /** Unix seconds, or null. */
   nextPaymentAttempt: number | null;
 }
@@ -105,6 +106,8 @@ export interface PreviewInput {
   customerId: string;
   subscriptionId: string;
   items: SubscriptionItemsInput['items'];
+  /** Unix seconds the change is prorated from (Stripe's `proration_date`); default now. */
+  prorationDate?: number;
 }
 
 /** What billing asks of Stripe. */

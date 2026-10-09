@@ -170,3 +170,19 @@ export {
   type StripeEventJobData,
   type StripeEventWorkerOptions,
 } from './jobs/stripe-event-process.js';
+export {
+  BILLING_SEATS_RECONCILE_ATTEMPTS,
+  BILLING_SEATS_RECONCILE_EVERY_MS,
+  BILLING_SEATS_RECONCILE_FAILED_RETENTION_S,
+  BILLING_SEATS_RECONCILE_QUEUE,
+  BILLING_SEATS_RECONCILE_SCHEDULER_ID,
+  billingSeatsReconcileJobOptions,
+  createBillingSeatsReconcileQueue,
+  onBillingSeatsReconcileFailed,
+  processBillingSeatsReconcile,
+  scheduleBillingSeatsReconcile,
+  startBillingSeatsReconcileWorker,
+  type BillingSeatsReconcileDeps,
+  type BillingSeatsReconcileResult,
+  type BillingSeatsReconcileWorkerOptions,
+} from './jobs/billing-seats-reconcile.js';

@@ -2,7 +2,8 @@
  * The seat gate (B030 acceptance 1 and 3; tests "seats.gate.test.ts"): the boundary with 5 seats
  * (4 members + 1 pending refused, 3 + 1 allowed), `max_seats: null` never refusing, `0` always
  * refusing, limits read from CT-ENTITLEMENTS fixtures, the lock taken in the caller's
- * transaction before the count (and its `lock_timeout` restored), a refusal that names the limit
+ * transaction before the count (and its `lock_timeout` restored), the limit read again under the
+ * lock (B073: a seat decrease holding it may have lowered it), a refusal that names the limit
  * only, the rejection metric, and the `seatGate` decorator B029's invite routes require.
  */
 import { AppError, isAppError } from '@centcom/core';
@@ -87,6 +88,19 @@ describe('assertCanAdd', () => {
     ]);
     expect(trx.parameters).toEqual([[], [`${SEAT_LOCK_TIMEOUT_MS}ms`], [workspaceId], ['0']]);
     expect(seats.calls).toEqual([{ workspaceId, trx }]);
+  });
+
+  it('checks against the limit read under the lock, not the one before it (B073)', async () => {
+    // 6 of 8 seats used when the add starts; a seat decrease to 6 holds the lock meanwhile.
+    const limits = [8, 6];
+    const gate = createSeatGate({
+      seats: fixedSeats(6),
+      limits: { maxSeats: () => Promise.resolve(limits.shift() ?? 6) },
+    });
+    expect(await outcome(gate.assertCanAdd(scriptedTrx(), newId('wsp')))).toBe(
+      '403 seat_limit_reached',
+    );
+    expect(limits).toEqual([]);
   });
 
   it('names the limit and nothing else when it refuses, and counts the refusal', async () => {

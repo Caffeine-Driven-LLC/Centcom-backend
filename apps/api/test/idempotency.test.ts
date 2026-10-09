@@ -117,7 +117,7 @@ async function idemApp(opts: Partial<IdempotencyPluginOptions> = {}) {
     reply.raw.end('raw');
   });
   app.route({
-    method: ['POST', 'PUT'],
+    method: ['POST', 'PUT', 'PATCH'],
     url: '/v1/multi',
     config: { idempotency: 'accepted' },
     handler: async () => {
@@ -398,7 +398,7 @@ describe('the idempotency plugin guardrails', () => {
     expect(recorded.count('idempotency_store_errors_total')).toBe(2);
   });
 
-  it('applies to POST only', async () => {
+  it('applies to POST and PATCH only', async () => {
     const { app, runs } = await idemApp();
     const key = randomUUID();
     const put: InjectOptions = {
@@ -414,6 +414,14 @@ describe('the idempotency plugin guardrails', () => {
       'true',
     );
     expect(runs).toEqual(['multi', 'multi', 'multi']);
+    // PATCH (B073's changeSeats): kept per method, and its query is part of the request.
+    const patch: InjectOptions = { ...put, method: 'PATCH', url: '/v1/multi?preview=true' };
+    await app.inject(patch);
+    expect((await app.inject(patch)).headers['idempotency-replayed']).toBe('true');
+    const other = await app.inject({ ...patch, url: '/v1/multi' });
+    expect(other.statusCode).toBe(409);
+    expect(other.json<{ code: string }>().code).toBe('idempotency_conflict');
+    expect(runs).toEqual(['multi', 'multi', 'multi', 'multi']);
   });
 
   it.each([
