@@ -71,7 +71,8 @@ All under the backend's `ct:<env>:` namespace. Messages are JSON and never logge
   thing for session-level removal and B051's kick.
 - **Ephemeral frames.**
   - `ctx.cluster.publishEphemeral(sid, frame)` sends one to the other nodes (for B047).
-  - The receivers send it to their local connections as droppable.
+  - The receivers hand it to B047's presence (`onEphemeral`), which sends it to welcomed
+    connections after their snapshot; without presence, to every local connection, as droppable.
   - It never touches the release, the hot buffer or the durable log.
 
 ## Config

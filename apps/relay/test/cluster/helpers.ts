@@ -168,7 +168,10 @@ export async function cluster(
               return { ok: true };
             },
             resume: () => ctx.resume,
-            onWelcomed: (conn, admitted) => ctx.cluster?.welcomed(conn, admitted),
+            onWelcomed: (conn, admitted) => {
+              ctx.cluster?.welcomed(conn, admitted);
+              ctx.presence?.welcomed(conn).catch(() => undefined);
+            },
           });
           ctx.pipeline.use(15, handshake.stage);
           ctx.onConnection(handshake.onConnection);
@@ -253,6 +256,11 @@ export async function cluster(
               ...opts.config,
             },
             clock: ctx.clock,
+            onEphemeral: (sid, text) => {
+              if (ctx.presence === undefined) return false;
+              ctx.presence.receiveRemote(sid, text);
+              return true;
+            },
             metrics: metrics.metrics,
           });
           ctx.cluster = node;

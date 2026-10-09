@@ -20,6 +20,7 @@ export const STAGE_ORDER = Object.freeze({
   handshake: 15,
   authorise: 20,
   privacy: 30,
+  presence: 35,
   sequence: 40,
   resume: 45,
   fanOut: 50,

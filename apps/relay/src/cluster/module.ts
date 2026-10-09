@@ -41,6 +41,11 @@ export function createClusterModule(env?: Env): RelayModule {
         store: ctx.seq.store,
         config,
         clock: ctx.clock,
+        onEphemeral: (sid, text) => {
+          if (ctx.presence === undefined) return false;
+          ctx.presence.receiveRemote(sid, text);
+          return true;
+        },
         logger: ctx.log,
         metrics: ctx.metrics,
       });
