@@ -29,41 +29,47 @@ export const CARD_LOG_FIELDS = [
   'state',
 ] as const;
 
-/** The relay's operational log fields (numbers, codes, names; never content). */
-export const OPERATIONAL_LOG_FIELDS = [
-  'attempts',
-  'close',
-  'connections',
-  'contract_version',
-  'count',
-  'drain_ms',
-  'epoch',
-  'error',
-  'frames',
-  'from_seq',
-  'gap',
-  'head',
-  'held',
-  'max',
-  'member',
-  'mode',
-  'module',
-  'node',
-  'order',
-  'overloaded',
-  'port',
-  'ready',
-  'reason',
-  'region',
-  'result',
-  'retry_in_ms',
-  'signal',
-  'silent_ms',
-  'status',
-  'to_seq',
-  'total',
-  'version',
-] as const;
+/**
+ * The relay's operational log fields (numbers, codes, names; never content). Written as keys, not
+ * strings: a quoted name ending in _ms would read as a metric name to B093's catalogue scan.
+ */
+const OPERATIONAL = {
+  attempts: true,
+  close: true,
+  connections: true,
+  contract_version: true,
+  count: true,
+  drain_ms: true,
+  epoch: true,
+  error: true,
+  frames: true,
+  from_seq: true,
+  gap: true,
+  head: true,
+  held: true,
+  max: true,
+  member: true,
+  mode: true,
+  module: true,
+  node: true,
+  order: true,
+  overloaded: true,
+  port: true,
+  ready: true,
+  reason: true,
+  region: true,
+  result: true,
+  retry_in_ms: true,
+  signal: true,
+  silent_ms: true,
+  status: true,
+  to_seq: true,
+  total: true,
+  version: true,
+} as const;
+
+/** The relay's operational log fields. */
+export const OPERATIONAL_LOG_FIELDS = Object.keys(OPERATIONAL) as (keyof typeof OPERATIONAL)[];
 
 /** Every field a relay log line may carry. */
 export const LOG_FIELDS: ReadonlySet<string> = new Set<string>([

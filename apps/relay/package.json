@@ -14,7 +14,8 @@
     }
   },
   "scripts": {
-    "build": "tsc -b"
+    "build": "tsc -b",
+    "test:privacy": "cd ../.. && vitest run --config vitest.workspace.ts --coverage.enabled=false apps/relay/test/privacy && tsx apps/relay/scripts/privacy-guard.ts"
   },
   "dependencies": {
     "@centcom/contracts": "workspace:*",

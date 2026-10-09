@@ -631,6 +631,11 @@ export const METRICS = {
     ['result'],
     RELAY,
   ),
+  relay_privacy_violations_total: counter(
+    'Fields or labels the privacy guard dropped, by where (frame: a clear field off the catalogue; size: a clear payload over 8 KiB; metric: a label).',
+    ['where'],
+    RELAY,
+  ),
   relay_replay_frames_total: counter(
     'Frames replayed to resuming clients, by source (hot, durable).',
     ['source'],
