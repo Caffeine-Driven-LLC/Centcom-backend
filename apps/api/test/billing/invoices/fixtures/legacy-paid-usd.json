@@ -1,0 +1,50 @@
+{
+  "id": "in_FixtureLegacyPaidUsd",
+  "object": "invoice",
+  "amount_due": 3045,
+  "amount_paid": 3045,
+  "amount_remaining": 0,
+  "attempt_count": 1,
+  "attempted": true,
+  "billing_reason": "subscription_cycle",
+  "charge": "ch_FixtureLegacyCharge",
+  "collection_method": "charge_automatically",
+  "created": 1785110400,
+  "currency": "usd",
+  "customer": "cus_FixtureCustomerA",
+  "customer_email": "billing@fixture.example",
+  "hosted_invoice_url": "https://invoice.stripe.com/i/acct_FixtureAccount/test_FixtureLegacyPaidUsd",
+  "invoice_pdf": "https://pay.stripe.com/invoice/acct_FixtureAccount/test_FixtureLegacyPaidUsd/pdf",
+  "lines": {
+    "object": "list",
+    "data": [
+      {
+        "id": "il_FixtureLegacyPaidUsdPro",
+        "object": "line_item",
+        "amount": 2900,
+        "currency": "usd",
+        "period": { "start": 1785110400, "end": 1787788800 },
+        "proration": false
+      }
+    ],
+    "has_more": false,
+    "total_count": 1
+  },
+  "livemode": false,
+  "number": "FIXTURE-0007",
+  "payment_intent": "pi_FixtureLegacyIntent",
+  "period_end": 1785110400,
+  "period_start": 1782432000,
+  "status": "paid",
+  "status_transitions": {
+    "finalized_at": 1785114000,
+    "marked_uncollectible_at": null,
+    "paid_at": 1785114060,
+    "voided_at": null
+  },
+  "subscription": "sub_FixtureSubscriptionA",
+  "subtotal": 2900,
+  "tax": 145,
+  "total": 3045,
+  "total_tax_amounts": [{ "amount": 145, "inclusive": false, "tax_rate": "txr_FixtureLegacy" }]
+}

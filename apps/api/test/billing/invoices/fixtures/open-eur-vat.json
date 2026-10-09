@@ -1,0 +1,74 @@
+{
+  "id": "in_FixtureOpenEurVat",
+  "object": "invoice",
+  "account_country": "DE",
+  "amount_due": 11305,
+  "amount_paid": 0,
+  "amount_remaining": 11305,
+  "attempt_count": 1,
+  "attempted": true,
+  "automatic_tax": { "enabled": true, "status": "complete" },
+  "billing_reason": "subscription_cycle",
+  "collection_method": "charge_automatically",
+  "created": 1791417600,
+  "currency": "eur",
+  "customer": {
+    "id": "cus_FixtureCustomerA",
+    "object": "customer",
+    "email": "billing@fixture.example"
+  },
+  "customer_email": "billing@fixture.example",
+  "customer_name": "Fixture GmbH",
+  "default_payment_method": "pm_FixtureCardMastercard",
+  "hosted_invoice_url": "https://invoice.stripe.com/i/acct_FixtureAccount/test_FixtureOpenEurVat",
+  "invoice_pdf": "https://pay.stripe.com/invoice/acct_FixtureAccount/test_FixtureOpenEurVat/pdf",
+  "last_finalization_error": null,
+  "lines": {
+    "object": "list",
+    "data": [
+      {
+        "id": "il_FixtureOpenEurVatTeam",
+        "object": "line_item",
+        "amount": 7900,
+        "currency": "eur",
+        "description": "1 x Centcom Team (at EUR 79.00 / month)",
+        "period": { "start": 1791417600, "end": 1794096000 }
+      },
+      {
+        "id": "il_FixtureOpenEurVatSeats",
+        "object": "line_item",
+        "amount": 1600,
+        "currency": "eur",
+        "description": "2 x Centcom seat (at EUR 8.00 / month)",
+        "period": { "start": 1791417600, "end": 1794096000 }
+      }
+    ],
+    "has_more": false,
+    "total_count": 2,
+    "url": "/v1/invoices/in_FixtureOpenEurVat/lines"
+  },
+  "livemode": false,
+  "next_payment_attempt": 1791504000,
+  "number": "FIXTURE-0002",
+  "period_end": 1791417600,
+  "period_start": 1788739200,
+  "status": "open",
+  "status_transitions": {
+    "finalized_at": 1791421200,
+    "marked_uncollectible_at": null,
+    "paid_at": null,
+    "voided_at": null
+  },
+  "subtotal": 9500,
+  "total": 11305,
+  "total_taxes": [
+    {
+      "amount": 1805,
+      "tax_behavior": "exclusive",
+      "tax_rate_details": { "tax_rate": "txr_FixtureGermanyVat" },
+      "taxability_reason": "standard_rated",
+      "taxable_amount": 9500,
+      "type": "tax_rate_details"
+    }
+  ]
+}
