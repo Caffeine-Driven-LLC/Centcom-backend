@@ -35,11 +35,14 @@ webhooks are not part of CT-API-BILLING, so the endpoint stays out of public doc
    | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
    | `customer.subscription.created/updated/deleted` | re-fetch the subscription from Stripe, `upsertFromStripe` (stale guard on `created`)                                              |
    | `checkout.session.completed`                    | the same for its subscription; ignored without one                                                                                |
+   | `customer.subscription.trial_will_end`          | reconcile; outbox `billing.subscription.updated` for the event and one `notify.trial_ending`; B079's `trialWillEnd` emails        |
    | `invoice.paid`                                  | reconcile; outbox `billing.invoice.paid`                                                                                          |
    | `invoice.payment_failed`                        | reconcile (`past_due_since` set once by B070); outbox `billing.invoice.payment_failed` and one `notify.billing_issue` per invoice |
    | anything else                                   | `ignored`                                                                                                                         |
 
-   A reconcile that B070 applied also writes `billing.subscription.updated`.
+   A reconcile that B070 applied also writes `billing.subscription.updated`. A reconciled
+   subscription Stripe reports `trialing` is handed to B079's `recordTrial` (`trials` in the
+   handler deps; without it no trial is recorded and no trial-ending email is sent).
 
 5. **Publish.** After a success, and on every sweep, outbox rows go out in id order and are marked
    published, at least once (B081 and B063 de-duplicate).

@@ -5,8 +5,9 @@
  * - Webhook events (`billing.subscription.updated`, `billing.invoice.paid`,
  *   `billing.invoice.payment_failed`) go to B081's `emitWebhookEvent`, which checks them against
  *   CT-WEBHOOKS and fans them out to the workspace's endpoints.
- * - Notification requests (`notify.billing_issue`) go to B063's dispatcher (`NotifyPort.publish`)
- *   for the workspace's owner and billing members, with the invoice as the dedupe key.
+ * - Notification requests (`notify.billing_issue`, B079's `notify.trial_ending`) go to B063's
+ *   dispatcher (`NotifyPort.publish`) for the workspace's owner and billing members, with the
+ *   invoice (or the subscription and its trial end) as the dedupe key.
  * - One row per `(type, dedupe_key)`: reprocessing an event, or another event about the same
  *   invoice, adds nothing. So `billing_issue` is requested once per invoice.
  * - `publishOutbox` drains unpublished rows in id order and marks each published after its
@@ -31,7 +32,8 @@ export type OutboxType =
   | 'billing.subscription.updated'
   | 'billing.invoice.paid'
   | 'billing.invoice.payment_failed'
-  | 'notify.billing_issue';
+  | 'notify.billing_issue'
+  | 'notify.trial_ending';
 
 /** An entry to write. */
 export interface OutboxEntry {
@@ -126,6 +128,15 @@ async function publishRow(row: OutboxRow, deps: PublishDeps): Promise<void> {
       params: { kind: 'payment_failed' },
       priority: 'high',
       dedupeKey: `billing_issue:${row.dedupeKey}`,
+    });
+    return;
+  }
+  if (row.type === 'notify.trial_ending') {
+    await deps.notify.publish({
+      category: 'trial_ending',
+      recipients: { workspace: row.workspaceId, roles: ['owner', 'billing'] },
+      params: { days: Number(row.payload['days'] ?? 0) },
+      dedupeKey: `trial_ending:${row.dedupeKey}`,
     });
     return;
   }
