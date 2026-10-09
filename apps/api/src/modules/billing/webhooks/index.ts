@@ -9,6 +9,7 @@ export {
   reduceObject,
   type HandledEvent,
   type HandlerDeps,
+  type TrialHooks,
 } from './handlers.js';
 export {
   WebhookIngest,

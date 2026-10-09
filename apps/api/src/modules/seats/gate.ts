@@ -7,7 +7,9 @@
  *    fails is a 503 (retryable): the gate fails closed, never unlimited.
  * 2. Take `pg_advisory_xact_lock(hashtext(workspace_id))` in that transaction, waiting at most
  *    5 s (`lock_timeout`, restored afterwards); a longer wait is a 503 with `Retry-After`.
- * 3. Count seats in the same transaction (`SeatService.usage`); `total >= max_seats` is 403
+ * 3. Read `limits.max_seats` again under the lock: a seat change (B073) holding the lock while
+ *    this add waited may have lowered it.
+ * 4. Count seats in the same transaction (`SeatService.usage`); `total >= max_seats` is 403
  *    `seat_limit_reached`. `null` never refuses, `0` always does. Nobody is removed when a
  *    downgrade leaves usage above the limit: only new adds are blocked.
  *
@@ -119,18 +121,21 @@ export function createSeatGate(deps: SeatGateDeps): SeatGate {
 
   return {
     async assertCanAdd(trx, workspaceId) {
-      let limit: number | null;
-      try {
-        limit = await deps.limits.maxSeats(workspaceId);
-      } catch (err) {
-        if (isAppError(err) && err.code === 'entitlement_required') {
-          reject('no_entitlements');
-          throw err;
+      const readLimit = async (): Promise<number | null> => {
+        try {
+          return await deps.limits.maxSeats(workspaceId);
+        } catch (err) {
+          if (isAppError(err) && err.code === 'entitlement_required') {
+            reject('no_entitlements');
+            throw err;
+          }
+          reject('entitlements_unavailable');
+          deps.logger?.warn({ err, workspace_id: workspaceId }, 'seats.entitlements_unavailable');
+          throw unavailable(undefined, undefined, { cause: new Error('entitlements unavailable') });
         }
-        reject('entitlements_unavailable');
-        deps.logger?.warn({ err, workspace_id: workspaceId }, 'seats.entitlements_unavailable');
-        throw unavailable(undefined, undefined, { cause: new Error('entitlements unavailable') });
-      }
+      };
+      // Before the lock too: an add with no entitlements to read waits for no lock.
+      await readLimit();
 
       try {
         await lockWorkspaceSeats(trx, workspaceId);
@@ -144,6 +149,7 @@ export function createSeatGate(deps: SeatGateDeps): SeatGate {
         throw err;
       }
 
+      const limit = await readLimit();
       if (limit === null) return;
       const usage = await deps.seats.usage(workspaceId, trx);
       if (usage.total >= limit) {

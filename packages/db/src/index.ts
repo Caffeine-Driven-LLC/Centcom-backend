@@ -279,6 +279,13 @@ export type {
   InvoiceTaxLine,
 } from './schema/invoices.js';
 export type {
+  BillingTrialOwnersTable,
+  BillingTrialsTable,
+  CouponRedemptionsTable,
+  PromotionsDatabase,
+  PromotionsDb,
+} from './schema/promotions.js';
+export type {
   QuotaStateTable,
   UsageAggregateCursorTable,
   UsageAggregationDatabase,

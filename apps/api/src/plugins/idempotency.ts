@@ -1,7 +1,9 @@
 /**
  * Idempotency plugin (B024, CT-PAGE): POST routes that declare `config.idempotency` accept an
  * `Idempotency-Key` (`accepted`) or need one (`required`; without it, 400
- * `idempotency_key_required` before any handler runs).
+ * `idempotency_key_required` before any handler runs). PATCH routes may declare it too: the
+ * contract marks one, `changeSeats` (B073), `x-idempotency: accepted`. A PATCH's query string is
+ * part of its request (`changeSeats?preview=true` is not the change itself).
  *
  * - The first request with a key runs; its response (2xx and 4xx, never 5xx) is kept for 24 hours.
  * - The same key with the same request (method, route, path params, body) replays that response
@@ -37,7 +39,7 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 
 declare module 'fastify' {
   interface FastifyContextConfig {
-    /** How a POST route uses `Idempotency-Key` (B024): `required` or `accepted`. */
+    /** How a POST (or PATCH) route uses `Idempotency-Key` (B024): `required` or `accepted`. */
     idempotency?: 'required' | 'accepted';
     /** Keep the stored body encrypted: the response carries a secret (an API key, ...). */
     sensitiveResponse?: boolean;
@@ -93,7 +95,9 @@ function checkRoute(
     throw new TypeError(`${where}: config.idempotency must be required or accepted`);
   }
   const methods = Array.isArray(route.method) ? route.method : [route.method];
-  if (!methods.includes('POST')) throw new TypeError(`${where}: idempotency applies to POST only`);
+  if (!methods.includes('POST') && !methods.includes('PATCH')) {
+    throw new TypeError(`${where}: idempotency applies to POST and PATCH only`);
+  }
   if (sensitiveResponse !== undefined && typeof sensitiveResponse !== 'boolean') {
     throw new TypeError(`${where}: config.sensitiveResponse must be a boolean`);
   }
@@ -157,15 +161,24 @@ const plugin: FastifyPluginAsync<IdempotencyPluginOptions> = async (app, options
   // After parsing (the body is part of the fingerprint) and before the handler.
   app.addHook('preHandler', async (request, reply) => {
     const mode = request.routeOptions.config.idempotency;
-    if (mode === undefined || request.method !== 'POST') return;
+    if (mode === undefined || (request.method !== 'POST' && request.method !== 'PATCH')) return;
     const key = parseIdempotencyKey(request.headers['idempotency-key']);
     if (key === undefined) {
       if (mode === 'accepted') return;
       throw new AppError('idempotency_key_required', { detail: IDEMPOTENCY_DETAILS.keyRequired });
     }
     const route = request.routeOptions.url ?? '';
-    const storeKey = storeKeyFor(options.principal(request), 'POST', route, key);
-    const fp = fingerprintRequest('POST', route, request.params as object, request.body);
+    const storeKey = storeKeyFor(options.principal(request), request.method, route, key);
+    // A PATCH's query counts (a preview and the change with one key are two requests); a POST's
+    // fingerprint stays the body alone, so keys stored before PATCH existed still match.
+    const fp = fingerprintRequest(
+      request.method,
+      route,
+      request.params as object,
+      request.method === 'PATCH'
+        ? { body: request.body ?? null, query: { ...(request.query as object) } }
+        : request.body,
+    );
     let claim: Awaited<ReturnType<typeof store.claim>>;
     try {
       claim = await store.claim(storeKey, fp);
