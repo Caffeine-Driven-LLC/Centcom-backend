@@ -114,7 +114,6 @@ export function createFanOut(deps: FanOutDeps): FanOut & { stage: InboundStage; 
   const clock = deps.clock ?? Date.now;
   let remote = deps.remote ?? noRemoteDispatcher;
   const latency = metrics.histogram('relay_fanout_latency_seconds', LATENCY_BUCKETS_S);
-  const recipients = metrics.histogram('relay_fanout_recipients', [1, 2, 5, 10, 20, 50]);
   const deliveries = (result: string) =>
     metrics.counter('relay_fanout_deliveries_total', { result });
 
@@ -125,7 +124,6 @@ export function createFanOut(deps: FanOutDeps): FanOut & { stage: InboundStage; 
       return;
     }
     const text = JSON.stringify(frame);
-    let count = 0;
     for (const conn of room.connections()) {
       let result: 'queued' | 'dropped' | 'closed' | 'error';
       try {
@@ -134,9 +132,7 @@ export function createFanOut(deps: FanOutDeps): FanOut & { stage: InboundStage; 
         result = 'error';
       }
       deliveries(result).inc();
-      if (result === 'queued') count += 1;
     }
-    recipients.observe(count);
     const received = Date.parse(frame.ts);
     if (!Number.isNaN(received)) latency.observe(Math.max(0, clock() - received) / 1000);
   }

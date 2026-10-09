@@ -134,7 +134,6 @@ export const METRICS = {
     'Frame receipt to in-region delivery.',
     [],
     RELAY,
-    { planned: 'B044' },
   ),
   relay_resume_total: platform('counter', 'Resume attempts by result.', ['result'], RELAY, {
     planned: 'B042',
@@ -421,6 +420,21 @@ export const METRICS = {
   ),
   relay_durable_append_given_up_total: counter(
     'Sequenced frames whose durable append was given up (retries spent or backlog full).',
+    [],
+    RELAY,
+  ),
+  relay_fanout_deliveries_total: counter(
+    'Fan-out writes to connections, by result (queued, closed, dropped, error, no_room).',
+    ['result'],
+    RELAY,
+  ),
+  relay_fanout_gaps_total: counter(
+    'Fan-out gaps, by result (filled from the hot buffer, or resync: the room was closed 1001).',
+    ['result'],
+    RELAY,
+  ),
+  relay_fanout_remote_failures_total: counter(
+    'Frames the RemoteDispatcher (B045) failed to publish to other nodes.',
     [],
     RELAY,
   ),

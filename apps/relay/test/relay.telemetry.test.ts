@@ -89,9 +89,15 @@ describe('relay telemetry', () => {
         'centcom_relay_close_total',
         'centcom_relay_connections',
         'centcom_relay_connections_total',
+        'centcom_relay_fanout_latency_seconds',
         'centcom_relay_frames_total',
       ]);
-      for (const name of [...owned, 'centcom_relay_upgrades_refused_total']) {
+      // Recorded by a module (none run here): fan-out's own tests cover it (fanout.isolation).
+      const byModules = new Set(['centcom_relay_fanout_latency_seconds']);
+      for (const name of [
+        ...owned.filter((n) => !byModules.has(n)),
+        'centcom_relay_upgrades_refused_total',
+      ]) {
         expect(names.has(name), name).toBe(true);
       }
       for (const name of names)
