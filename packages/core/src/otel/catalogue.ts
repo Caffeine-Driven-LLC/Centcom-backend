@@ -135,15 +135,17 @@ export const METRICS = {
     [],
     RELAY,
   ),
-  relay_resume_total: platform('counter', 'Resume attempts by result.', ['result'], RELAY, {
-    planned: 'B042',
-  }),
-  relay_resume_duration_seconds: platform(
-    'histogram',
-    'Resume time, request to resumed.',
+  relay_resume_total: platform(
+    'counter',
+    'Resume attempts by result (replayed, snapshot_required, failed, busy).',
     ['result'],
     RELAY,
-    { planned: 'B042' },
+  ),
+  relay_resume_duration_seconds: platform(
+    'histogram',
+    'Resume time, request to resumed, by result (ok, failed).',
+    ['result'],
+    RELAY,
   ),
   relay_outbound_buffer_bytes: platform(
     'histogram',
@@ -345,17 +347,13 @@ export const METRICS = {
   flags_publish_failures_total: counter('Flag change announcements that failed.'),
   flags_refresh_failures_total: counter('Flag cache refreshes that failed.'),
   flags_rule_errors_total: counter('Flag rules that could not be evaluated.'),
-  history_append_failures_total: counter(
-    'History batches given up on after retries.',
-    [],
-    API_WORKER,
-  ),
+  history_append_failures_total: counter('History batches given up on after retries.', [], ALL),
   history_frames_refused_total: counter(
     'Frames the history store refused (encrypted kind with p, malformed).',
     ['reason'],
-    API_WORKER,
+    ALL,
   ),
-  history_frames_stored_total: counter('Frames written to the durable history.', [], API_WORKER),
+  history_frames_stored_total: counter('Frames written to the durable history.', [], ALL),
   history_purge_failures_total: counter('History purges that failed partway (resumable).'),
   history_purges_total: counter('Session histories purged on request.'),
   history_read_failures_total: counter('History reads answered 503 (a blob could not be read).'),
@@ -441,7 +439,7 @@ export const METRICS = {
     RELAY,
   ),
   relay_fanout_deliveries_total: counter(
-    'Fan-out writes to connections, by result (queued, closed, dropped, error, no_room).',
+    'Fan-out writes to connections, by result (queued, closed, dropped, error, no_room; held, replayed and overflow around a resume).',
     ['result'],
     RELAY,
   ),
@@ -469,6 +467,26 @@ export const METRICS = {
   relay_handshakes_total: counter(
     'Handshakes by outcome (welcome or the refusal reason).',
     ['outcome'],
+    RELAY,
+  ),
+  relay_hydrate_failed_total: counter(
+    'Sessions the relay could not recover from the durable log (sequencing paused; alert).',
+    [],
+    RELAY,
+  ),
+  relay_hydrated_total: counter(
+    'Sessions recovered from the durable log after the hot buffer lost them.',
+    [],
+    RELAY,
+  ),
+  relay_replay_frames_total: counter(
+    'Frames replayed to resuming clients, by source (hot, durable).',
+    ['source'],
+    RELAY,
+  ),
+  relay_resume_stalled_total: counter(
+    'Replays stopped because the client read nothing (closed 4429).',
+    [],
     RELAY,
   ),
   relay_seq_assign_ms: {

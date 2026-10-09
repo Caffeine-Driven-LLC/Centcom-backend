@@ -106,12 +106,21 @@ new ones are given up at once. Delivery never depends on the port.
 
 `SeqService`:
 
-- `store`: B042 replays from `range`, B044 gap-fills;
+- `store`: B042 replays from `range` and recovers lost sessions with `hydrate`, B044 gap-fills;
 - `acks`: `onAck`, `lowestAcked(sid)`, for B046 and B042;
-- `setDurableAppend(port)`;
-- `delegateEcho()`: B044, see above;
+- `setDurableAppend(port)`: B042 wires B055's history writer;
+- `delegateEcho(echo?)`: B044, see above. A resend's echo goes through `echo` when given (fan-out's
+  `sendTo`, so a connection that is replaying holds it in order);
+- `setReadiness(ready)`: B042's gate. Before a session's frame is assigned, `ready(sid)` must say
+  the session may be sequenced (true at once for a known session; a promise while it is recovered
+  from the durable log). A rejection refuses the frame with `service_unavailable` (sequencing
+  paused for that session), never a `seq` from 1;
 - `submitServer(sid, frame)`: B044's `emitServer`. A frame from `srv`, assigned in the session's
   `seq` space (deduplicated by its id), buffered and handed to the durable append.
+
+`SeqStore.hydrate(sid, head, frames, now)` (B042): when the store's head is below `head` (a Redis
+flush), the counter becomes `head` and the buffer holds exactly `frames` (the contiguous run ending
+at `head`), atomically (`SEQ_HYDRATE_LUA`); otherwise nothing changes.
 
 ## Configuration
 

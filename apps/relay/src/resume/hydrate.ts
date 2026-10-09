@@ -71,24 +71,23 @@ export function createHydrator(deps: HydratorDeps): Hydrator {
     }
   };
 
-  /** The newest contiguous run of frames ending at `head`: at most `limit` frames and the byte cap. */
+  /**
+   * The newest frames, at most `limit` of them and HYDRATE_MAX_BYTES, when they form a contiguous
+   * run ending at `head`; none otherwise (the log reads stop at a gap, so frames after a hole
+   * cannot be reached: the head alone is put back, and replays read the log).
+   */
   async function tail(sid: string, head: number): Promise<StoredFrame[]> {
     if (limit === 0) return [];
-    let run: StoredFrame[] = [];
+    const run: StoredFrame[] = [];
     let after = Math.max(0, head - limit);
     while (after < head) {
       const page = await deps.durable.range(sid, after, Math.min(MAX_RANGE, head - after));
       const frames = page.filter((f) => f.seq > after && f.seq <= head);
-      if (frames.length === 0) break;
-      for (const f of frames) {
-        const previous = run.at(-1);
-        // A gap: only the run after it can end at head.
-        if (previous !== undefined && f.seq !== previous.seq + 1) run = [];
-        run.push(f);
-      }
+      // The first page may start later (older frames are gone); after that, frames must follow on.
+      if (frames.length === 0 || (run.length > 0 && frames[0]?.seq !== after + 1)) return [];
+      run.push(...frames);
       after = frames.at(-1)?.seq ?? head;
     }
-    if (run.at(-1)?.seq !== head) return [];
     let bytes = 0;
     let keep = run.length;
     for (let i = run.length - 1; i >= 0; i -= 1) {

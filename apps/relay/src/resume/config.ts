@@ -57,11 +57,15 @@ export interface ResumeConfig {
 export function loadResumeConfig(env?: Env): ResumeConfig {
   const v = defineConfig(resumeEnvSchema, env);
   // OBJECT_STORE_REGION has a default: the other keys say whether a store is configured.
-  const { OBJECT_STORE_REGION: _region, ...store } = defineConfig(
-    objectStoreEnvSchema.partial(),
-    env,
-  );
-  const configured = Object.values(store).some((value) => value !== undefined);
+  const store = defineConfig(objectStoreEnvSchema.partial(), env);
+  const configured = (
+    [
+      'OBJECT_STORE_ENDPOINT',
+      'OBJECT_STORE_BUCKET',
+      'OBJECT_STORE_ACCESS_KEY_ID',
+      'OBJECT_STORE_SECRET_ACCESS_KEY',
+    ] as const
+  ).some((key) => store[key] !== undefined);
   if (!configured && baseConfig(env).nodeEnv === 'production') {
     throw new ConfigError([
       {

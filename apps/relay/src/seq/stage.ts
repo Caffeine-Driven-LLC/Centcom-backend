@@ -20,6 +20,9 @@
  *   4400. Acks never wait behind sequenced frames: an ack within the head this node has seen is
  *   taken at once, and per connection one ack at most waits for the store's head (later ones
  *   only raise the value it waits with).
+ * - B042's readiness gate (`setReadiness`): before a session's first frame on this node is
+ *   assigned, the session is recovered from the durable log if Redis lost it; a recovery that
+ *   fails refuses the frame like a store outage (sequencing paused, never a restart at 1).
  * - Store down: the frame is refused with `sys.error service_unavailable` (`retry_after_s`) and
  *   `sys.slow_down`, the connection stays, and nothing is sequenced locally.
  * - Everything else passes on untouched (`presence`, `sys.*`).

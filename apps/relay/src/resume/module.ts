@@ -17,6 +17,7 @@
  *
  * Owns: wiring. Must not: hold state outside what `register` creates.
  */
+import type { Env } from '@centcom/core';
 import type { createDb, HistoryDatabase } from '@centcom/db';
 import { createHistoryStore, createS3BlobStore, HistoryWriter } from '@centcom/storage';
 import type { RelayModule } from '../modules.js';
@@ -28,54 +29,59 @@ import { createHydrator } from './hydrate.js';
 import { createResumer } from './resume.js';
 import { noDurableLog, noSnapshots, type DurableLogReader } from './types.js';
 
-const relayModule: RelayModule = {
-  name: 'resume',
-  order: STAGE_ORDER.resume,
-  register(ctx) {
-    const seq = ctx.seq;
-    if (seq === undefined) {
-      ctx.log.warn({}, 'relay.resume_without_seq');
-      return undefined;
-    }
-    const config = loadResumeConfig();
-    let durable: DurableLogReader = noDurableLog;
-    if (config.objectStore === null) {
-      ctx.log.warn({}, 'relay.resume_without_durable_log');
-    } else {
-      const store = createHistoryStore({
-        db: ctx.db as unknown as ReturnType<typeof createDb<HistoryDatabase>>,
-        blobs: createS3BlobStore(config.objectStore),
+/** The module, reading its settings from `env` (default: the process environment). */
+export function createResumeModule(env?: Env): RelayModule {
+  return {
+    name: 'resume',
+    order: STAGE_ORDER.resume,
+    register(ctx) {
+      const seq = ctx.seq;
+      if (seq === undefined) {
+        ctx.log.warn({}, 'relay.resume_without_seq');
+        return undefined;
+      }
+      const config = loadResumeConfig(env);
+      let durable: DurableLogReader = noDurableLog;
+      if (config.objectStore === null) {
+        ctx.log.warn({}, 'relay.resume_without_durable_log');
+      } else {
+        const store = createHistoryStore({
+          db: ctx.db as unknown as ReturnType<typeof createDb<HistoryDatabase>>,
+          blobs: createS3BlobStore(config.objectStore),
+        });
+        const writer = new HistoryWriter({ store, logger: ctx.log, metrics: ctx.metrics });
+        seq.setDurableAppend(historyDurableAppend(writer));
+        durable = historyLogReader(store);
+        ctx.onShutdown(() => writer.flushAll());
+      }
+      const hydrator = createHydrator({
+        store: seq.store,
+        durable,
+        frames: config.hydrateFrames,
+        maxBufferFrames: loadSeqConfig(env).buffer.maxFrames,
+        clock: ctx.clock,
+        logger: ctx.log,
+        metrics: ctx.metrics,
       });
-      const writer = new HistoryWriter({ store, logger: ctx.log, metrics: ctx.metrics });
-      seq.setDurableAppend(historyDurableAppend(writer));
-      durable = historyLogReader(store);
-      ctx.onShutdown(() => writer.flushAll());
-    }
-    const hydrator = createHydrator({
-      store: seq.store,
-      durable,
-      frames: config.hydrateFrames,
-      maxBufferFrames: loadSeqConfig().buffer.maxFrames,
-      clock: ctx.clock,
-      logger: ctx.log,
-      metrics: ctx.metrics,
-    });
-    seq.setReadiness(hydrator.ready);
-    const resumer = createResumer({
-      store: seq.store,
-      durable,
-      snapshots: noSnapshots,
-      hydrator,
-      fanout: () => ctx.fanout,
-      batch: config.batch,
-      maxFrames: config.maxFrames,
-      logger: ctx.log,
-      metrics: ctx.metrics,
-    });
-    ctx.pipeline.use(STAGE_ORDER.resume, resumer.stage);
-    ctx.resume = resumer;
-    return undefined;
-  },
-};
+      seq.setReadiness(hydrator.ready);
+      const resumer = createResumer({
+        store: seq.store,
+        durable,
+        snapshots: noSnapshots,
+        hydrator,
+        fanout: () => ctx.fanout,
+        batch: config.batch,
+        maxFrames: config.maxFrames,
+        logger: ctx.log,
+        metrics: ctx.metrics,
+      });
+      ctx.pipeline.use(STAGE_ORDER.resume, resumer.stage);
+      ctx.resume = resumer;
+      return undefined;
+    },
+  };
+}
+
+const relayModule: RelayModule = createResumeModule();
 
 export default relayModule;

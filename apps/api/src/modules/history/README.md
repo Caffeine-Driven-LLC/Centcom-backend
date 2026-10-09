@@ -8,6 +8,10 @@ served by `GET` and `DELETE /v1/sessions/{id}/history`
 
 ## Public interface
 
+The store, its blob stores and the writer live in [`@centcom/storage`](../../../../../packages/storage/README.md)
+since B042, because the relay writes and reads the same log; this module keeps the service
+behind the routes and re-exports the rest.
+
 | Export                                                    | What it is                                                                                                            |
 | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `HistoryWriter`                                           | `add(sid, frame)` for each sequenced frame; resolves once it is durable (the relay's ack). Batches 500 frames or 2 s. |
@@ -22,8 +26,9 @@ served by `GET` and `DELETE /v1/sessions/{id}/history`
 - **Index** (`history_index`, Postgres): `session_id, seq, msg_id, member_id, ts, kind_class, size,
 kid, blob_key`. Nothing else, ever: a test fails if a column is added.
 - **Blobs**: `history/<ses_>/<first seq>-<last seq>.bin`, newline-delimited JSON, one frame per
-  line: `seq, id, from, ts, kindClass, k, kid, ct, p, sig`. `ct` is written as received and read
-  back byte for byte.
+  line: `seq, id, from, ts, kindClass, ref, k, kid, ct, p, sig`. `ct` is written as received and
+  read back byte for byte. `ref` (an id, kept since B042) lets the relay replay a frame exactly as
+  it was delivered; the REST `HistoryFrame` does not return it.
 - **Which frames:** `event`, `queue` and `control` only. `presence`, `sys.*` and acks are never
   stored.
   - Encrypted kinds: no `p`. A frame of an encrypted kind that carries a non-empty `p` is refused

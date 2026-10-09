@@ -46,6 +46,12 @@ It is a relay module (`module.ts`, order 50) and sets `ctx.fanout` for the modul
   offers other nodes' frames to `release`.
 - **Backpressure:** `ConnectionSender` (`send(text, {droppable})`, `bufferedBytes()`) is the seam
   B046 enforces slow-consumer policy on. This lane never drops a sequenced frame.
+- **Holds (B042):** `hold(conn)` keeps what fan-out would send a replaying connection (and its
+  resends' echoes, which B041 hands to `sendTo`) in a queue of at most `MAX_HELD_FRAMES` (10 000),
+  in arrival order; the resume module takes them with `next()` after the replay and `end(sentUpTo)`
+  in the same turn as the last one. After that, a late frame at or below `sentUpTo` is skipped
+  (counted `replayed`), so nothing arrives twice. A hold that overflows closes the connection with
+  **1001** (`sys.bye resync`) so its client resumes again.
 
 ## Config
 
@@ -54,7 +60,7 @@ None of its own: 2 000 frames and 250 ms are the card's constants.
 ## Metrics
 
 - `relay_fanout_latency_seconds`: receipt (`ts`) to the last local write.
-- `relay_fanout_deliveries_total{result}`
+- `relay_fanout_deliveries_total{result}`: also `held`, `replayed` and `overflow` around a resume.
 - `relay_fanout_gaps_total{result}`: `filled` or `resync`.
 - `relay_fanout_remote_failures_total`
 
