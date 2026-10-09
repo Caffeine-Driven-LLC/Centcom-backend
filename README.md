@@ -17,7 +17,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 ![Progress](docs/progress.svg)
 
-**47% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
+**48% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
 
 ## Next steps
 
@@ -40,8 +40,8 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 | [B029](plan/backend/B029.md) | Invites: create, accept, revoke, expiry, key-bundle storage | L | M3 |
 | [B043](plan/backend/B043.md) | Session room registry and membership authorisation | M | M3 |
 | [B055](plan/backend/B055.md) | Encrypted history store (blob storage of ciphertext frames) | M | M3 |
-| [B072](plan/backend/B072.md) | Stripe webhook ingestion: verified, idempotent, replay-safe | M | M4 |
 | [B077](plan/backend/B077.md) | Invoices, receipts and tax endpoints | S | M4 |
+| [B079](plan/backend/B079.md) | Trials, coupons and promotions | S | M4 |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
 
