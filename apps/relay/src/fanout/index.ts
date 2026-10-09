@@ -6,11 +6,14 @@ export {
   connectionSender,
   createFanOut,
   LATENCY_BUCKETS_S,
+  MAX_HELD_FRAMES,
   noRemoteDispatcher,
   RESYNC_REASON,
   type ConnectionSender,
   type FanOut,
   type FanOutDeps,
+  type HeldFrame,
+  type LiveHold,
   type RemoteDispatcher,
 } from './fanout.js';
 export {

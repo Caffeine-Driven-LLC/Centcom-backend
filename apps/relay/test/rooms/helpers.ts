@@ -187,6 +187,7 @@ export function roomsHarness() {
         deviceRevoked: false,
         relayAccess: true,
       },
+      lastSeq: null,
     });
     return { conn, mid, user, decision };
   }

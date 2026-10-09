@@ -29,7 +29,7 @@ import {
   type WorkspaceSettingsDatabase,
 } from '@centcom/db';
 import type { Kysely } from 'kysely';
-import type { HistoryAccess, HistoryRead, HistoryStore, SessionStanding } from './ports.js';
+import type { HistoryAccess, HistoryRead, HistoryStore, SessionStanding } from '@centcom/storage';
 
 /** The details of refusals (GUIDELINES §3.4). */
 export const HISTORY_DETAILS = Object.freeze({

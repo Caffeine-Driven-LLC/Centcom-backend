@@ -7,6 +7,7 @@
  * Owns: these interfaces. Must not: describe anything the relay could read inside `ct`.
  */
 import type { Envelope } from '@centcom/contracts';
+import type { RelayConnection } from '../pipeline.js';
 
 /** The frame types the relay sequences; `presence`, `ack` and `sys.*` never are. */
 export type SequencedType = 'event' | 'queue' | 'control';
@@ -84,6 +85,20 @@ export interface SeqStore {
   range(sid: string, afterSeq: number, limit: number): Promise<StoredFrame[]>;
   /** The oldest buffered `seq`, or null when the buffer is empty. */
   oldest(sid: string): Promise<number | null>;
+  /**
+   * B042: recovers a session lost from the store (a Redis flush) from the durable log, atomically:
+   * when the store's head is below `head`, the counter becomes `head` and the buffer holds exactly
+   * `frames` (the contiguous run ending at `head`, received "now"), so the next `seq` is `head + 1`.
+   * A store already at `head` or beyond keeps everything. Resolves with the store's head after the
+   * call; a RangeError for frames outside `checkHydrate`'s rules; a 503 AppError when the store is
+   * down.
+   */
+  hydrate(
+    sid: string,
+    head: number,
+    frames: readonly StoredFrame[],
+    nowMs: number,
+  ): Promise<number>;
 }
 
 /** The durable log behind the hot buffer (port; B042 wires B055's store). */
@@ -111,9 +126,17 @@ export interface SeqService {
   /**
    * B044: from now on, a newly sequenced frame is not echoed to its sender by the stage; fan-out
    * delivers it to every connection of the room, the sender's included, in `seq` order. A
-   * resend (duplicate) is still echoed here with its original `seq`.
+   * resend (duplicate) is still echoed by the stage with its original `seq`, through `echo` when
+   * given (B042: fan-out's `sendTo`, which holds it while the connection replays), else directly.
    */
-  delegateEcho(): void;
+  delegateEcho(echo?: (conn: RelayConnection, frame: StoredFrame) => void): void;
+  /**
+   * B042: the gate sequencing waits on per session: `ready(sid)` is true when the session may be
+   * sequenced now, or a promise that resolves once it may (the session was recovered from the
+   * durable log) or rejects when it may not (recovery failed: the frame is refused with a 503 and
+   * nothing is sequenced). Default: always ready.
+   */
+  setReadiness(ready: (sid: string) => true | Promise<void>): void;
   /**
    * B044: sequences a frame the relay emits itself (`from` = `srv`) in the session's `seq` space:
    * assigned and buffered by the store (deduplicated by its id), then handed to the durable

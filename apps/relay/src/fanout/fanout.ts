@@ -18,6 +18,10 @@
  *   (`submitServer`: same `seq` space, buffered, durably appended) and delivers it in order.
  * - **Other nodes:** each locally sequenced frame is also handed to the `RemoteDispatcher`
  *   (default: none; B045 publishes to the other nodes).
+ * - **Holds** (B042): while a connection replays, `hold(conn)` keeps the frames fan-out would send
+ *   it (and the echoes of its resends, `sendTo`) in a bounded queue, in the order they came; the
+ *   resume module sends them after the replay. A hold past MAX_HELD_FRAMES closes the connection
+ *   with 1001 (`sys.bye` `resync`) so its client resumes again.
  *
  * Logs carry the session, counts and outcomes; never `p`, `ct`, `sig` or ids.
  *
@@ -39,8 +43,10 @@ import {
 } from '../seq/types.js';
 import { createOrderedRelease, type OrderedRelease, type ReleaseTimer } from './release.js';
 
-/** `sys.bye` reason of a resync close (an unfillable gap). */
+/** `sys.bye` reason of a resync close (an unfillable gap, or a hold that overflowed). */
 export const RESYNC_REASON = 'resync';
+/** Frames one hold keeps at most (live traffic during a replay). */
+export const MAX_HELD_FRAMES = 10_000;
 /** `relay_fanout_latency_seconds` buckets. */
 export const LATENCY_BUCKETS_S: readonly number[] = Object.freeze([
   0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1,
@@ -75,6 +81,26 @@ export function connectionSender(conn: RelayConnection): ConnectionSender {
   };
 }
 
+/** One held frame: its `seq` and the exact text fan-out would have sent. */
+export interface HeldFrame {
+  seq: number;
+  text: string;
+}
+
+/** A connection's frames held while it replays (B042). */
+export interface LiveHold {
+  /** The oldest held frame, removed from the hold; undefined when none is held. */
+  next(): HeldFrame | undefined;
+  /**
+   * Stops holding: from now on frames go to the connection again, except those at or below
+   * `sentUpTo` (the connection already has them: a late frame of the replayed range is skipped).
+   * Frames still held are dropped.
+   */
+  end(sentUpTo?: number): void;
+  /** True once the hold overflowed (the connection was closed to resync). */
+  readonly overflowed: boolean;
+}
+
 /** `ctx.fanout`: what the fan-out module offers the modules after it (B042, B047, B051, ...). */
 export interface FanOut {
   /** Delivers a locally sequenced frame of session `sid` (and hands it to other nodes). */
@@ -90,6 +116,13 @@ export interface FanOut {
   readonly release: OrderedRelease;
   /** Replaces the RemoteDispatcher (B045). */
   setRemoteDispatcher(dispatcher: RemoteDispatcher): void;
+  /**
+   * B042: holds the frames fan-out would send `conn` until the hold ends (a second hold of the same
+   * connection replaces the first, whose frames are dropped).
+   */
+  hold(conn: RelayConnection): LiveHold;
+  /** One frame to one connection (the echo of a resend), held while the connection is held. */
+  sendTo(conn: RelayConnection, frame: StoredFrame): void;
 }
 
 /** What fan-out needs. */
@@ -116,6 +149,80 @@ export function createFanOut(deps: FanOutDeps): FanOut & { stage: InboundStage; 
   const latency = metrics.histogram('relay_fanout_latency_seconds', LATENCY_BUCKETS_S);
   const deliveries = (result: string) =>
     metrics.counter('relay_fanout_deliveries_total', { result });
+  const holds = new WeakMap<RelayConnection, Hold>();
+  /** After a hold: frames at or below this were sent already; cleared by the first one above. */
+  const floors = new WeakMap<RelayConnection, number>();
+
+  interface Hold extends LiveHold {
+    push(seq: number, text: string): void;
+  }
+
+  function createHold(conn: RelayConnection): Hold {
+    let queue: HeldFrame[] = [];
+    let head = 0;
+    let overflowed = false;
+    const hold: Hold = {
+      push(seq, text) {
+        if (queue.length - head >= MAX_HELD_FRAMES) {
+          overflowed = true;
+          hold.end();
+          deliveries('overflow').inc();
+          deps.logger?.warn({ held: MAX_HELD_FRAMES }, 'relay.fanout_hold_overflow');
+          closeConnection(conn, { code: CloseCode.GoingAway, bye: RESYNC_REASON });
+          return;
+        }
+        queue.push({ seq, text });
+        deliveries('held').inc();
+      },
+      next() {
+        if (head >= queue.length) return undefined;
+        const frame = queue[head];
+        head += 1;
+        // Compact once the taken prefix is large.
+        if (head > 1_024 && head * 2 > queue.length) {
+          queue = queue.slice(head);
+          head = 0;
+        }
+        return frame;
+      },
+      end(sentUpTo) {
+        if (holds.get(conn) === hold) {
+          holds.delete(conn);
+          if (sentUpTo !== undefined) floors.set(conn, sentUpTo);
+        }
+        queue = [];
+        head = 0;
+      },
+      get overflowed() {
+        return overflowed;
+      },
+    };
+    return hold;
+  }
+
+  /** Sends `text` (frame `seq`) to `conn`, or holds it; the result counted. */
+  function sendOne(conn: RelayConnection, seq: number, text: string): void {
+    const hold = holds.get(conn);
+    if (hold !== undefined) {
+      hold.push(seq, text);
+      return;
+    }
+    const floor = floors.get(conn);
+    if (floor !== undefined) {
+      if (seq <= floor) {
+        deliveries('replayed').inc();
+        return;
+      }
+      floors.delete(conn);
+    }
+    let result: 'queued' | 'dropped' | 'closed' | 'error';
+    try {
+      result = connectionSender(conn).send(text, { droppable: false });
+    } catch {
+      result = 'error';
+    }
+    deliveries(result).inc();
+  }
 
   function releaseTo(sid: string, frame: StoredFrame): void {
     const room = deps.rooms.get(sid);
@@ -124,15 +231,7 @@ export function createFanOut(deps: FanOutDeps): FanOut & { stage: InboundStage; 
       return;
     }
     const text = JSON.stringify(frame);
-    for (const conn of room.connections()) {
-      let result: 'queued' | 'dropped' | 'closed' | 'error';
-      try {
-        result = connectionSender(conn).send(text, { droppable: false });
-      } catch {
-        result = 'error';
-      }
-      deliveries(result).inc();
-    }
+    for (const conn of [...room.connections()]) sendOne(conn, frame.seq, text);
     const received = Date.parse(frame.ts);
     if (!Number.isNaN(received)) latency.observe(Math.max(0, clock() - received) / 1000);
   }
@@ -208,6 +307,16 @@ export function createFanOut(deps: FanOutDeps): FanOut & { stage: InboundStage; 
     release,
     setRemoteDispatcher(dispatcher) {
       remote = dispatcher;
+    },
+    hold(conn) {
+      holds.get(conn)?.end();
+      floors.delete(conn);
+      const hold = createHold(conn);
+      holds.set(conn, hold);
+      return hold;
+    },
+    sendTo(conn, frame) {
+      sendOne(conn, frame.seq, JSON.stringify(frame));
     },
     stage,
     stop: () => release.stop(),

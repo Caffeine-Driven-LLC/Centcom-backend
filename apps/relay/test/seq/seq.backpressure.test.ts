@@ -116,6 +116,7 @@ describe('after the store fails', () => {
       head: (sid: string) => memory.head(sid),
       range: (sid: string, after: number, limit: number) => memory.range(sid, after, limit),
       oldest: (sid: string) => memory.oldest(sid),
+      hydrate: (...args: Parameters<SeqStore['hydrate']>) => memory.hydrate(...args),
     };
     return store;
   }

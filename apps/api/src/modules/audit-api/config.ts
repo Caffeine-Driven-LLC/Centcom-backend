@@ -13,25 +13,17 @@
  * | `OBJECT_STORE_ACCESS_KEY_ID` | | Secret. |
  * | `OBJECT_STORE_SECRET_ACCESS_KEY` | | Secret. |
  *
+ * The `OBJECT_STORE_*` keys are `@centcom/storage`'s (`objectStoreEnvShape`), shared with history.
+ *
  * Owns: reading and checking these keys. Must not: put a secret in an error.
  */
-import {
-  defineConfig,
-  envInt,
-  envUrl,
-  secretString,
-  z,
-  type Env,
-  type Secret,
-} from '@centcom/core';
+import { defineConfig, envInt, z, type Env } from '@centcom/core';
+import { objectStoreConfigOf, objectStoreEnvShape, type ObjectStoreConfig } from '@centcom/storage';
 
 /** CT-API-AUDIT's cap on one export (card B082). */
 export const MAX_EXPORT_ROWS = 1_000_000;
 /** The longest a download URL may live (B082 guardrail: at most 900 s). */
 export const MAX_URL_TTL_S = 900;
-
-/** S3 bucket names: 3 to 63 lower-case letters, digits, dots and hyphens. */
-const BUCKET = /^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/;
 
 /** The environment keys of the audit API. */
 export const auditApiEnvSchema = z.object({
@@ -44,38 +36,11 @@ export const auditApiEnvSchema = z.object({
   AUDIT_EXPORT_RETAIN_H: envInt({ min: 1, max: 168 })
     .default(24)
     .meta({ description: 'Hours an export file is kept after it is written.' }),
-  OBJECT_STORE_ENDPOINT: envUrl({ protocols: ['https:', 'http:'], plain: true }).meta({
-    description: 'Base URL of the S3-compatible object store (R2, MinIO); path-style requests.',
-    example: 'http://127.0.0.1:9000',
-  }),
-  OBJECT_STORE_REGION: z
-    .string()
-    .regex(/^[a-z0-9-]{1,32}$/, 'must be a region name')
-    .default('us-east-1')
-    .meta({ description: 'Region the requests are signed for (`auto` for R2).' }),
-  OBJECT_STORE_BUCKET: z
-    .string()
-    .regex(BUCKET, 'must be an S3 bucket name')
-    .meta({ description: 'Bucket audit exports are written to.', example: 'centcom-exports' }),
-  OBJECT_STORE_ACCESS_KEY_ID: secretString().meta({
-    description: 'Access key id of the object store.',
-    example: 'centcom',
-  }),
-  OBJECT_STORE_SECRET_ACCESS_KEY: secretString().meta({
-    description: 'Secret access key of the object store.',
-    example: 'dev-only',
-  }),
+  ...objectStoreEnvShape,
 });
 
-/** Where exports are stored. */
-export interface ObjectStoreConfig {
-  /** Without a trailing slash. */
-  endpoint: string;
-  region: string;
-  bucket: string;
-  accessKeyId: Secret<string>;
-  secretAccessKey: Secret<string>;
-}
+/** Where exports are stored (the shared object store settings). */
+export type { ObjectStoreConfig };
 
 /** The checked configuration. */
 export interface AuditApiConfig {
@@ -92,12 +57,6 @@ export function loadAuditApiConfig(env?: Env): AuditApiConfig {
     maxRows: v.AUDIT_EXPORT_MAX_ROWS,
     urlTtlS: v.AUDIT_EXPORT_URL_TTL_S,
     retainMs: v.AUDIT_EXPORT_RETAIN_H * 60 * 60 * 1000,
-    objectStore: {
-      endpoint: v.OBJECT_STORE_ENDPOINT.replace(/\/+$/, ''),
-      region: v.OBJECT_STORE_REGION,
-      bucket: v.OBJECT_STORE_BUCKET,
-      accessKeyId: v.OBJECT_STORE_ACCESS_KEY_ID,
-      secretAccessKey: v.OBJECT_STORE_SECRET_ACCESS_KEY,
-    },
+    objectStore: objectStoreConfigOf(v),
   };
 }

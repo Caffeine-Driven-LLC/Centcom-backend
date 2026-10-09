@@ -14,7 +14,7 @@
  * The counter expires COUNTER_TTL_MS (31 days) after the session's last frame, the buffer and its
  * times BUFFER_TTL_MS (48 h) after it. A counter that was lost while the buffer survived is
  * recovered from the newest buffered frame (by `assign`, `head` and `oldest` alike); a flush of
- * the whole session is B042's to recover. The client is the module's own ioredis connection:
+ * the whole session is recovered from the durable log by B042 (`hydrate`, `SEQ_HYDRATE_LUA`). The client is the module's own ioredis connection:
  * B009's `RedisBackend` is a key-value cache with an in-memory twin and exposes no generic
  * script or stream commands; this store keeps the same connection rules (prefix, timeouts,
  * reconnect backoff) and never logs keys, frames or the URL.
@@ -28,6 +28,7 @@ import { Redis, type RedisOptions } from 'ioredis';
 import { parseStoredFrame, seqParts } from './frame.js';
 import {
   BUFFER_TTL_MS,
+  checkHydrate,
   checkRange,
   COUNTER_TTL_MS,
   DEDUPE_TTL_MS,
@@ -112,6 +113,41 @@ end
 return {0, length}
 `;
 
+/**
+ * Recovers a session from the durable log (B042). KEYS: counter, buffer, times. ARGV: head, now
+ * (ms), buffer TTL (ms), counter TTL (ms), then the JSON of each frame of the contiguous run ending
+ * at `head`, oldest first. When the store's head (the counter, or the newest buffered frame) is
+ * below `head`, the buffer and its times are replaced by these frames and the counter set to
+ * `head`; otherwise nothing changes. Returns the head after the call.
+ */
+export const SEQ_HYDRATE_LUA = `
+local current = tonumber(redis.call('GET', KEYS[1]) or '0')
+if current == 0 then
+  local newest = redis.call('XREVRANGE', KEYS[2], '+', '-', 'COUNT', 1)
+  if newest[1] then
+    local id = newest[1][1]
+    current = tonumber(string.sub(id, 1, string.find(id, '-', 1, true) - 1))
+  end
+end
+local head = tonumber(ARGV[1])
+if current >= head then
+  return current
+end
+redis.call('DEL', KEYS[2], KEYS[3])
+local n = #ARGV - 4
+local first = head - n + 1
+for i = 1, n do
+  redis.call('XADD', KEYS[2], (first + i - 1) .. '-0', 'f', ARGV[4 + i])
+  redis.call('RPUSH', KEYS[3], ARGV[2])
+end
+redis.call('SET', KEYS[1], head, 'PX', ARGV[4])
+if n > 0 then
+  redis.call('PEXPIRE', KEYS[2], ARGV[3])
+  redis.call('PEXPIRE', KEYS[3], ARGV[3])
+end
+return head
+`;
+
 /** The session's keys (the braces are a Redis Cluster hash tag). */
 export const seqKeys = (
   sid: string,
@@ -149,6 +185,16 @@ interface SeqCommands {
     counterTtlMs: number,
   ): Promise<[number, number, string]>;
   relaySeqWindow(seqKey: string, bufKey: string): Promise<[number, number]>;
+  relaySeqHydrate(
+    seqKey: string,
+    bufKey: string,
+    timesKey: string,
+    head: number,
+    nowMs: number,
+    bufferTtlMs: number,
+    counterTtlMs: number,
+    ...frames: string[]
+  ): Promise<number>;
 }
 
 /** Options for createSeqRedisClient. */
@@ -211,6 +257,7 @@ export function createRedisSeqStore(client: Redis, limits: BufferLimits): SeqSto
   if (!('relaySeqAssign' in client)) {
     client.defineCommand('relaySeqAssign', { numberOfKeys: 4, lua: SEQ_ASSIGN_LUA });
     client.defineCommand('relaySeqWindow', { numberOfKeys: 2, lua: SEQ_WINDOW_LUA });
+    client.defineCommand('relaySeqHydrate', { numberOfKeys: 3, lua: SEQ_HYDRATE_LUA });
   }
   const window = async (sid: string): Promise<{ head: number; length: number }> => {
     const keys = seqKeys(sid);
@@ -256,6 +303,23 @@ export function createRedisSeqStore(client: Redis, limits: BufferLimits): SeqSto
     async oldest(sid) {
       const { head, length } = await window(sid);
       return length === 0 ? null : head - length + 1;
+    },
+    async hydrate(sid, head, frames, nowMs) {
+      checkHydrate(head, frames, limits);
+      const keys = seqKeys(sid);
+      const after = await commands
+        .relaySeqHydrate(
+          keys.seq,
+          keys.buf,
+          keys.times,
+          head,
+          nowMs,
+          BUFFER_TTL_MS,
+          COUNTER_TTL_MS,
+          ...frames.map((f) => JSON.stringify(f)),
+        )
+        .catch(down);
+      return Number(after);
     },
   };
 }

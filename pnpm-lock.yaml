@@ -245,6 +245,9 @@ importers:
       '@centcom/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@centcom/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
       '@noble/hashes':
         specifier: 2.4.0
         version: 2.4.0
@@ -282,6 +285,9 @@ importers:
       '@centcom/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@centcom/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
       '@opentelemetry/api':
         specifier: 1.9.1
         version: 1.9.1
@@ -410,6 +416,21 @@ importers:
         specifier: 8.23.1
         version: 8.23.1
 
+  packages/storage:
+    dependencies:
+      '@centcom/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@centcom/core':
+        specifier: workspace:*
+        version: link:../core
+      '@centcom/db':
+        specifier: workspace:*
+        version: link:../db
+      kysely:
+        specifier: 0.29.6
+        version: 0.29.6
+
   packages/testkit:
     devDependencies:
       '@centcom/contracts':
@@ -456,7 +477,7 @@ importers:
         version: 12.2.0
       vitest:
         specifier: 5.0.3
-        version: 5.0.3(@types/node@22.20.5)(@vitest/coverage-v8@5.0.3)(vite@8.3.3(@types/node@22.20.5)(esbuild@0.28.2)(tsx@4.23.15)(yaml@2.9.1))
+        version: 5.0.3(@opentelemetry/api@1.9.1)(@types/node@22.20.5)(@vitest/coverage-v8@5.0.3)(jsdom@30.1.2(@noble/hashes@2.4.0))(vite@8.3.3(@types/node@22.20.5)(esbuild@0.28.2)(tsx@4.23.15)(yaml@2.9.1))
       ws:
         specifier: 8.22.0
         version: 8.22.0
@@ -4654,28 +4675,6 @@ snapshots:
       '@types/node': 22.20.5
       '@vitest/coverage-v8': 5.0.3(vitest@5.0.3)
       jsdom: 30.1.2(@noble/hashes@2.4.0)
-    transitivePeerDependencies:
-      - msw
-
-  vitest@5.0.3(@types/node@22.20.5)(@vitest/coverage-v8@5.0.3)(vite@8.3.3(@types/node@22.20.5)(esbuild@0.28.2)(tsx@4.23.15)(yaml@2.9.1)):
-    dependencies:
-      '@types/chai': 5.2.3
-      '@vitest/mocker': 5.0.3(vite@8.3.3(@types/node@22.20.5)(esbuild@0.28.2)(tsx@4.23.15)(yaml@2.9.1))
-      chai: 6.3.0
-      es-module-lexer: 2.3.2
-      expect-type: 1.4.0
-      magic-string: 1.4.3
-      obug: 2.2.1
-      picomatch: 4.0.7
-      std-env: 4.3.0
-      tinybench: 6.2.0
-      tinyexec: 1.3.1
-      tinyglobby: 0.2.17
-      vite: 8.3.3(@types/node@22.20.5)(esbuild@0.28.2)(tsx@4.23.15)(yaml@2.9.1)
-      why-is-node-running: 3.2.1
-    optionalDependencies:
-      '@types/node': 22.20.5
-      '@vitest/coverage-v8': 5.0.3(vitest@5.0.3)
     transitivePeerDependencies:
       - msw
 

@@ -199,6 +199,7 @@ describe('fanout/module.ts', () => {
         delegated = true;
       },
       submitServer: () => Promise.reject(new Error('unused')),
+      setReadiness: () => undefined,
     });
     expect(fanoutModule).toMatchObject({ name: 'fanout', order: 50 });
     await fanoutModule.register(ctx);

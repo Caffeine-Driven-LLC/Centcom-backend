@@ -27,7 +27,7 @@ import {
   type SigningKeys,
 } from '@centcom/core';
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
-import type { StoredFrame } from '../../modules/history/ports.js';
+import type { StoredFrame } from '@centcom/storage';
 import { HISTORY_DETAILS, type HistoryService } from '../../modules/history/service.js';
 
 /** Options for `historyRoutes`. */

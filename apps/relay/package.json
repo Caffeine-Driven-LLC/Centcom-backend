@@ -20,6 +20,7 @@
     "@centcom/contracts": "workspace:*",
     "@centcom/core": "workspace:*",
     "@centcom/db": "workspace:*",
+    "@centcom/storage": "workspace:*",
     "@opentelemetry/api": "1.9.1",
     "ioredis": "6.0.0",
     "jose": "6.2.12",

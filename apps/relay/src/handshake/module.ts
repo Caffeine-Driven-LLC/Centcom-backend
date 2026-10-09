@@ -5,7 +5,8 @@
  * go through `SessionAccess`: B043's Postgres implementation, from the relay's rooms
  * (`roomsFor`), whose join hook also runs before each welcome. `sys.welcome` advertises the
  * heartbeat the connection module enforces (RELAY_PING_MS, RELAY_DEAD_MS, B040) and the
- * sequencing limits the sequence module enforces (RELAY_SEQ_RATE, RELAY_SEQ_BURST, B041).
+ * sequencing limits the sequence module enforces (RELAY_SEQ_RATE, RELAY_SEQ_BURST, B041). B042's
+ * resume (`ctx.resume`, registered later) is looked up for each hello.
  *
  * Owns: wiring. Must not: hold state outside what `register` creates.
  */
@@ -36,6 +37,7 @@ const relayModule: RelayModule = {
       clock: ctx.clock,
       heartbeat: welcomeHeartbeat(loadHeartbeatConfig()),
       seqLimits: welcomeSeqLimits(loadSeqConfig()),
+      resume: () => ctx.resume,
     });
     ctx.pipeline.use(STAGE_ORDER.handshake, handshake.stage);
     ctx.onConnection(handshake.onConnection);

@@ -19,7 +19,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AUDIT_API_ACTIONS, type AuditApiAction } from '../../src/modules/audit-api/actions.js';
 import { AuditExportRunner } from '../../src/modules/audit-api/exporter.js';
 import { createS3ObjectStore, type ObjectStore } from '../../src/modules/audit-api/object-store.js';
-import { amzDate, authorizationHeader, EMPTY_SHA256 } from '../../src/modules/audit-api/sigv4.js';
+import { amzDate, authorizationHeader, EMPTY_SHA256 } from '@centcom/storage';
 import {
   createAuditRepository,
   type AuditRepository,

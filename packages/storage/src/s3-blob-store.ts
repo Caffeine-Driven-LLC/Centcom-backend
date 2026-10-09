@@ -1,6 +1,6 @@
 /**
  * The S3-compatible BlobStore (B055): R2 in production, MinIO in development, path-style requests
- * signed with SigV4 by B082's signer (`audit-api/sigv4.ts`), configured like B082's object store
+ * signed with SigV4 by B082's signer (`sigv4.ts`), configured like B082's object store
  * (`OBJECT_STORE_*`).
  *
  * - `put`: one PUT signed over the body's SHA-256; S3 stores an object only once its whole body
@@ -18,7 +18,7 @@
 import { createHash } from 'node:crypto';
 import { request as httpRequest, type IncomingMessage } from 'node:http';
 import { request as httpsRequest } from 'node:https';
-import type { ObjectStoreConfig } from '../audit-api/config.js';
+import type { ObjectStoreConfig } from './object-store.js';
 import {
   amzDate,
   authorizationHeader,
@@ -26,7 +26,7 @@ import {
   canonicalQuery,
   EMPTY_SHA256,
   type SigningCredentials,
-} from '../audit-api/sigv4.js';
+} from './sigv4.js';
 import {
   BATCH_CONTENT_TYPE,
   BlobNotFoundError,
