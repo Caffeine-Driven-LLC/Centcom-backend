@@ -1,0 +1,45 @@
+{
+  "id": "in_FixtureUncollectibleUsd",
+  "object": "invoice",
+  "amount_due": 2900,
+  "amount_paid": 0,
+  "amount_remaining": 2900,
+  "attempt_count": 4,
+  "attempted": true,
+  "automatic_tax": { "enabled": false, "status": null },
+  "billing_reason": "subscription_cycle",
+  "collection_method": "charge_automatically",
+  "created": 1786924800,
+  "currency": "usd",
+  "customer": "cus_FixtureCustomerA",
+  "hosted_invoice_url": "https://invoice.stripe.com/i/acct_FixtureAccount/test_FixtureUncollectibleUsd",
+  "invoice_pdf": "https://pay.stripe.com/invoice/acct_FixtureAccount/test_FixtureUncollectibleUsd/pdf",
+  "lines": {
+    "object": "list",
+    "data": [
+      {
+        "id": "il_FixtureUncollectibleUsdPro",
+        "object": "line_item",
+        "amount": 2900,
+        "currency": "usd",
+        "period": { "start": 1786924800, "end": 1789603200 }
+      }
+    ],
+    "has_more": false,
+    "total_count": 1
+  },
+  "livemode": false,
+  "number": "FIXTURE-0004",
+  "period_end": 1786924800,
+  "period_start": 1784246400,
+  "status": "uncollectible",
+  "status_transitions": {
+    "finalized_at": 1786928400,
+    "marked_uncollectible_at": 1788134400,
+    "paid_at": null,
+    "voided_at": null
+  },
+  "subtotal": 2900,
+  "total": 2900,
+  "total_taxes": []
+}

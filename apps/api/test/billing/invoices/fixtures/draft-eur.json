@@ -1,0 +1,48 @@
+{
+  "id": "in_FixtureDraftEur",
+  "object": "invoice",
+  "amount_due": 7900,
+  "amount_paid": 0,
+  "amount_remaining": 7900,
+  "attempt_count": 0,
+  "attempted": false,
+  "auto_advance": true,
+  "automatic_tax": { "enabled": false, "status": null },
+  "billing_reason": "subscription_cycle",
+  "collection_method": "charge_automatically",
+  "created": 1792022400,
+  "currency": "eur",
+  "customer": "cus_FixtureCustomerA",
+  "customer_email": "billing@fixture.example",
+  "hosted_invoice_url": null,
+  "invoice_pdf": null,
+  "lines": {
+    "object": "list",
+    "data": [
+      {
+        "id": "il_FixtureDraftEurTeam",
+        "object": "line_item",
+        "amount": 7900,
+        "currency": "eur",
+        "period": { "start": 1792022400, "end": 1794700800 }
+      }
+    ],
+    "has_more": false,
+    "total_count": 1,
+    "url": "/v1/invoices/in_FixtureDraftEur/lines"
+  },
+  "livemode": false,
+  "number": null,
+  "period_end": 1792022400,
+  "period_start": 1789344000,
+  "status": "draft",
+  "status_transitions": {
+    "finalized_at": null,
+    "marked_uncollectible_at": null,
+    "paid_at": null,
+    "voided_at": null
+  },
+  "subtotal": 7900,
+  "total": 7900,
+  "total_taxes": []
+}

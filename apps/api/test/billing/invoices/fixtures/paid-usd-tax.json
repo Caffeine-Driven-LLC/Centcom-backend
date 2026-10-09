@@ -1,0 +1,78 @@
+{
+  "id": "in_FixturePaidUsdTax",
+  "object": "invoice",
+  "account_country": "US",
+  "account_name": "Centcom Test",
+  "amount_due": 3190,
+  "amount_paid": 3190,
+  "amount_remaining": 0,
+  "attempt_count": 1,
+  "attempted": true,
+  "auto_advance": false,
+  "automatic_tax": { "enabled": true, "status": "complete" },
+  "billing_reason": "subscription_cycle",
+  "collection_method": "charge_automatically",
+  "created": 1790812800,
+  "currency": "usd",
+  "customer": "cus_FixtureCustomerA",
+  "customer_address": {
+    "city": "Springfield",
+    "country": "US",
+    "line1": "1 Fixture Way",
+    "postal_code": "00001",
+    "state": "IL"
+  },
+  "customer_email": "billing@fixture.example",
+  "customer_name": "Fixture Corp",
+  "customer_tax_ids": [{ "type": "us_ein", "value": "00-0000000" }],
+  "default_payment_method": "pm_FixtureCardVisa",
+  "description": null,
+  "hosted_invoice_url": "https://invoice.stripe.com/i/acct_FixtureAccount/test_FixturePaidUsdTax",
+  "invoice_pdf": "https://pay.stripe.com/invoice/acct_FixtureAccount/test_FixturePaidUsdTax/pdf",
+  "lines": {
+    "object": "list",
+    "data": [
+      {
+        "id": "il_FixturePaidUsdTaxLine",
+        "object": "line_item",
+        "amount": 2900,
+        "currency": "usd",
+        "description": "1 x Centcom Pro (at $29.00 / month)",
+        "period": { "start": 1790812800, "end": 1793491200 },
+        "pricing": { "price_details": { "price": "price_FixtureProMonthUsd" } }
+      }
+    ],
+    "has_more": false,
+    "total_count": 1,
+    "url": "/v1/invoices/in_FixturePaidUsdTax/lines"
+  },
+  "livemode": false,
+  "metadata": {},
+  "number": "FIXTURE-0001",
+  "parent": {
+    "type": "subscription_details",
+    "subscription_details": { "subscription": "sub_FixtureSubscriptionA" }
+  },
+  "payment_settings": { "payment_method_types": ["card"] },
+  "period_end": 1790812800,
+  "period_start": 1788134400,
+  "status": "paid",
+  "status_transitions": {
+    "finalized_at": 1790816400,
+    "marked_uncollectible_at": null,
+    "paid_at": 1790816460,
+    "voided_at": null
+  },
+  "subtotal": 2900,
+  "total": 3190,
+  "total_taxes": [
+    {
+      "amount": 290,
+      "tax_behavior": "exclusive",
+      "tax_rate_details": { "tax_rate": "txr_FixtureIllinois" },
+      "taxability_reason": "standard_rated",
+      "taxable_amount": 2900,
+      "type": "tax_rate_details"
+    }
+  ]
+}

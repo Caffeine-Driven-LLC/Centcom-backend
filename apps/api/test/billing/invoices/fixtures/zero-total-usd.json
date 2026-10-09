@@ -1,0 +1,55 @@
+{
+  "id": "in_FixtureZeroTotalUsd",
+  "object": "invoice",
+  "amount_due": 0,
+  "amount_paid": 0,
+  "amount_remaining": 0,
+  "attempt_count": 0,
+  "attempted": true,
+  "automatic_tax": { "enabled": true, "status": "complete" },
+  "billing_reason": "subscription_create",
+  "collection_method": "charge_automatically",
+  "created": 1786320000,
+  "currency": "usd",
+  "customer": "cus_FixtureCustomerA",
+  "discounts": ["di_FixtureTrialCoupon"],
+  "hosted_invoice_url": "https://invoice.stripe.com/i/acct_FixtureAccount/test_FixtureZeroTotalUsd",
+  "invoice_pdf": "https://pay.stripe.com/invoice/acct_FixtureAccount/test_FixtureZeroTotalUsd/pdf",
+  "lines": {
+    "object": "list",
+    "data": [
+      {
+        "id": "il_FixtureZeroTotalUsdTrial",
+        "object": "line_item",
+        "amount": 0,
+        "currency": "usd",
+        "description": "Trial period for Centcom Pro",
+        "period": { "start": 1786320000, "end": 1787529600 }
+      }
+    ],
+    "has_more": false,
+    "total_count": 1
+  },
+  "livemode": false,
+  "number": "FIXTURE-0005",
+  "period_end": 1786320000,
+  "period_start": 1786320000,
+  "status": "paid",
+  "status_transitions": {
+    "finalized_at": 1786320000,
+    "marked_uncollectible_at": null,
+    "paid_at": 1786320000,
+    "voided_at": null
+  },
+  "subtotal": 0,
+  "total": 0,
+  "total_taxes": [
+    {
+      "amount": 0,
+      "tax_behavior": "exclusive",
+      "taxability_reason": "zero_rated",
+      "taxable_amount": 0,
+      "type": "tax_rate_details"
+    }
+  ]
+}

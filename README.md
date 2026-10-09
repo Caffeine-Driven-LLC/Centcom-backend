@@ -41,7 +41,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 | [B029](plan/backend/B029.md) | Invites: create, accept, revoke, expiry, key-bundle storage | L | M3 |
 | [B047](plan/backend/B047.md) | Presence service (ephemeral, TTL, coalescing) | M | M3 |
 | [B053](plan/backend/B053.md) | Session lifecycle service: create, live, paused, ended, expired, host-loss policy | M | M3 |
-| [B077](plan/backend/B077.md) | Invoices, receipts and tax endpoints | S | M4 |
+| [B079](plan/backend/B079.md) | Trials, coupons and promotions | S | M4 |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
 
