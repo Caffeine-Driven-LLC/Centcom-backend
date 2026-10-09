@@ -19,6 +19,7 @@ import type { BackpressureController } from './backpressure/controller.js';
 import type { ClusterNode } from './cluster/node.js';
 import type { FanOut } from './fanout/fanout.js';
 import type { HandshakeResume } from './handshake/handshake.js';
+import type { createEpochs } from './keys/epochs.js';
 import type { createPresence } from './presence/service.js';
 import type { FramePipeline, RelayConnection } from './pipeline.js';
 import type { SeqService } from './seq/types.js';
@@ -78,6 +79,11 @@ export interface RelayContext {
    * (`receiveRemote`, from the cluster module).
    */
   presence?: ReturnType<typeof createPresence>;
+  /**
+   * Key epochs (B049): set by the keys module when it registers (order 25): the tracker, `rotate`
+   * (B051's kick: `rotate(sid, 'member_removed', {after: kickFrame})`) and `due`.
+   */
+  epoch?: ReturnType<typeof createEpochs>;
 }
 
 /** A relay lane's plug-in: the default export of `src/<lane>/module.ts`. */

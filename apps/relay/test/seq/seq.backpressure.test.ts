@@ -117,6 +117,7 @@ describe('after the store fails', () => {
       range: (sid: string, after: number, limit: number) => memory.range(sid, after, limit),
       oldest: (sid: string) => memory.oldest(sid),
       hydrate: (...args: Parameters<SeqStore['hydrate']>) => memory.hydrate(...args),
+      assignBatch: (...args: Parameters<SeqStore['assignBatch']>) => memory.assignBatch(...args),
     };
     return store;
   }

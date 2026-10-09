@@ -333,6 +333,31 @@ export function createSequencer(deps: SequencerDeps): Sequencer {
     );
   }
 
+  /** Sequences the relay's own frames of `sid` back to back, buffered and handed to the log. */
+  async function submitBatch(
+    sid: string,
+    frames: readonly UnsequencedFrame[],
+  ): Promise<StoredFrame[]> {
+    const ready = readiness(sid);
+    if (ready !== true) await ready;
+    const results = await deps.store.assignBatch(
+      sid,
+      frames.map((frame) => ({ key: { from: frame.from, id: frame.id }, frame })),
+      clock(),
+    );
+    const session = sessions.get(sid);
+    return frames.map((frame, i) => {
+      const result = results[i] as AssignResult;
+      if (session !== undefined && result.seq > session.head) session.head = result.seq;
+      const stored = withSeq(result.duplicate ? { ...frame, ts: result.ts } : frame, result.seq);
+      if (!result.duplicate) {
+        count('assigned');
+        durable.append(sid, stored);
+      }
+      return stored;
+    });
+  }
+
   /** The session's head, one lookup at a time per session. */
   function lookupHead(sid: string, session: SessionState): Promise<number> {
     if (session.lookup === null) {
@@ -540,23 +565,11 @@ export function createSequencer(deps: SequencerDeps): Sequencer {
         readiness = ready;
       },
       async submitServer(sid: string, frame: UnsequencedFrame): Promise<StoredFrame> {
-        const ready = readiness(sid);
-        if (ready !== true) await ready;
-        const result = await deps.store.assign(
-          sid,
-          { from: frame.from, id: frame.id },
-          frame,
-          clock(),
-        );
-        const session = sessions.get(sid);
-        if (session !== undefined && result.seq > session.head) session.head = result.seq;
-        const stored = withSeq(result.duplicate ? { ...frame, ts: result.ts } : frame, result.seq);
-        if (!result.duplicate) {
-          count('assigned');
-          durable.append(sid, stored);
-        }
-        return stored;
+        const [stored] = await submitBatch(sid, [frame]);
+        return stored as StoredFrame;
       },
+      submitServerBatch: (sid: string, frames: readonly UnsequencedFrame[]) =>
+        submitBatch(sid, frames),
     }),
     stats: () => ({
       connections,

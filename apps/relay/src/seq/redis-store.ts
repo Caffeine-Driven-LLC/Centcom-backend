@@ -254,6 +254,33 @@ const down = (err: unknown): never => {
 
 /** A SeqStore on `client` (an ioredis connection whose keyPrefix namespaces the keys). */
 export function createRedisSeqStore(client: Redis, limits: BufferLimits): SeqStore {
+  /** The script's keys and arguments for one frame. */
+  const assignArgs = (
+    sid: string,
+    key: { from: string; id: string },
+    frame: Parameters<SeqStore['assign']>[2],
+    nowMs: number,
+  ): Parameters<SeqCommands['relaySeqAssign']> => {
+    const keys = seqKeys(sid);
+    const { prefix, suffix } = seqParts(frame);
+    return [
+      keys.seq,
+      keys.buf,
+      keys.times,
+      keys.dedupe(key.from, key.id),
+      prefix,
+      suffix,
+      nowMs,
+      frame.ts,
+      DEDUPE_TTL_MS,
+      limits.minFrames,
+      limits.minAgeMs,
+      limits.maxFrames,
+      BUFFER_TTL_MS,
+      TRIM_STEP,
+      COUNTER_TTL_MS,
+    ];
+  };
   if (!('relaySeqAssign' in client)) {
     client.defineCommand('relaySeqAssign', { numberOfKeys: 4, lua: SEQ_ASSIGN_LUA });
     client.defineCommand('relaySeqWindow', { numberOfKeys: 2, lua: SEQ_WINDOW_LUA });
@@ -267,28 +294,26 @@ export function createRedisSeqStore(client: Redis, limits: BufferLimits): SeqSto
   const commands = client as unknown as SeqCommands;
   return {
     async assign(sid, key, frame, nowMs): Promise<AssignResult> {
-      const keys = seqKeys(sid);
-      const { prefix, suffix } = seqParts(frame);
       const [seq, duplicate, ts] = await commands
-        .relaySeqAssign(
-          keys.seq,
-          keys.buf,
-          keys.times,
-          keys.dedupe(key.from, key.id),
-          prefix,
-          suffix,
-          nowMs,
-          frame.ts,
-          DEDUPE_TTL_MS,
-          limits.minFrames,
-          limits.minAgeMs,
-          limits.maxFrames,
-          BUFFER_TTL_MS,
-          TRIM_STEP,
-          COUNTER_TTL_MS,
-        )
+        .relaySeqAssign(...assignArgs(sid, key, frame, nowMs))
         .catch(down);
       return { seq: Number(seq), duplicate: Number(duplicate) === 1, ts: String(ts) };
+    },
+    async assignBatch(sid, items, nowMs): Promise<AssignResult[]> {
+      if (items.length === 0) return [];
+      // MULTI/EXEC: the scripts run one after the other with nothing in between.
+      const multi = client.multi() as unknown as SeqCommands & {
+        exec(): Promise<[Error | null, [number, number, string]][] | null>;
+      };
+      for (const { key, frame } of items)
+        multi.relaySeqAssign(...assignArgs(sid, key, frame, nowMs));
+      const replies = await multi.exec().catch(down);
+      if (replies === null) down(new Error('the transaction was aborted'));
+      return (replies ?? []).map(([err, reply]) => {
+        if (err !== null) down(err);
+        const [seq, duplicate, ts] = reply;
+        return { seq: Number(seq), duplicate: Number(duplicate) === 1, ts: String(ts) };
+      });
     },
     async head(sid) {
       return (await window(sid)).head;

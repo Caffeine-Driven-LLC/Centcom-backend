@@ -49,11 +49,12 @@ function recordingContext(withSeq = true) {
   let readiness: ((sid: string) => true | Promise<void>) | undefined;
   const seq: SeqService = {
     store: createMemorySeqStore(LIMITS),
-    acks: { onAck: () => undefined, lowestAcked: () => 0 },
+    acks: { onAck: () => undefined, lowestAcked: () => 0, acked: () => 0 },
     setDurableAppend: (port) => void ports.push(port),
     delegateEcho: () => undefined,
     setReadiness: (ready) => void (readiness = ready),
     submitServer: () => Promise.reject(new Error('unused')),
+    submitServerBatch: () => Promise.reject(new Error('unused')),
   };
   const ctx = {
     config: {},

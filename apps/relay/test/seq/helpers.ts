@@ -341,6 +341,7 @@ export function heldStore(inner: SeqStore): HeldStore {
     range: (...args) => inner.range(...args),
     oldest: (sid) => inner.oldest(sid),
     hydrate: (...args) => inner.hydrate(...args),
+    assignBatch: (...args) => inner.assignBatch(...args),
   };
 }
 

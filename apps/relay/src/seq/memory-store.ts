@@ -61,7 +61,7 @@ export function createMemorySeqStore(limits: BufferLimits): MemorySeqStore {
     }
   };
 
-  return {
+  const store: MemorySeqStore = {
     assign(sid, key, frame, nowMs): Promise<AssignResult> {
       sweep(nowMs);
       const dedupeKey = `${sid}\u0000${key.from}\u0000${key.id}`;
@@ -121,5 +121,12 @@ export function createMemorySeqStore(limits: BufferLimits): MemorySeqStore {
       return b === undefined ? 0 : length(b);
     },
     dedupeRecords: () => seen.size,
+    async assignBatch(sid, items, nowMs): Promise<AssignResult[]> {
+      // One turn of this process: nothing else is sequenced in between.
+      const results: Promise<AssignResult>[] = [];
+      for (const { key, frame } of items) results.push(store.assign(sid, key, frame, nowMs));
+      return Promise.all(results);
+    },
   };
+  return store;
 }

@@ -193,12 +193,13 @@ describe('fanout/module.ts', () => {
     const store = createMemorySeqStore(LIMITS);
     const { ctx, used, shutdown } = ctxWith({
       store,
-      acks: { onAck: () => undefined, lowestAcked: () => 0 },
+      acks: { onAck: () => undefined, lowestAcked: () => 0, acked: () => 0 },
       setDurableAppend: () => undefined,
       delegateEcho: () => {
         delegated = true;
       },
       submitServer: () => Promise.reject(new Error('unused')),
+      submitServerBatch: () => Promise.reject(new Error('unused')),
       setReadiness: () => undefined,
     });
     expect(fanoutModule).toMatchObject({ name: 'fanout', order: 50 });
