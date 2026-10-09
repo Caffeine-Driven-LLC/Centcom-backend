@@ -91,7 +91,7 @@ Logs carry sessions and counts, never a payload.
 - **Stored entries after an offline.** When a member goes offline here, the stored entry goes
   only if this node wrote it; another node's newer one stays. A member who left elsewhere can
   show in snapshots until its entry is 60 s old.
-- **Typing auto-clear and cursor expiry** are B048's.
+- **Typing auto-clear and cursors** are B048's (`onUpdate` lets it watch each update).
 
 ## Testing
 

@@ -113,6 +113,11 @@ export function createPresence(deps: PresenceDeps): PresenceService & {
   endSession(sid: string): Promise<void>;
   /** Members with state, over all sessions (bounds checks). */
   size(): number;
+  /**
+   * B048: told of every update taken (`update`, before limits), in order; a listener that throws is
+   * skipped. Typing auto-clear watches `activity`.
+   */
+  onUpdate(listener: (sid: string, mid: string, p: PresenceUpdate, nowMs: number) => void): void;
   stop(): void;
 } {
   const { config } = deps;
@@ -122,6 +127,7 @@ export function createPresence(deps: PresenceDeps): PresenceService & {
   const sessions = new Map<string, Map<string, MemberState>>();
   /** Connections waiting for their snapshot: the latest frame per member that came meanwhile. */
   const waiting = new WeakMap<ConnectionEntry, Map<string, string>>();
+  const listeners: ((sid: string, mid: string, p: PresenceUpdate, nowMs: number) => void)[] = [];
   let size = 0;
 
   const counted = (name: string, labels?: Record<string, string>): void =>
@@ -205,6 +211,13 @@ export function createPresence(deps: PresenceDeps): PresenceService & {
       if (state === undefined) {
         counted('relay_presence_updates_total', { result: 'over_cap' });
         return;
+      }
+      for (const listener of listeners) {
+        try {
+          listener(sid, mid, p, nowMs);
+        } catch {
+          // A listener's failure is its own.
+        }
       }
       state.pending = p;
       if (state.timer !== undefined) {
@@ -299,6 +312,9 @@ export function createPresence(deps: PresenceDeps): PresenceService & {
       await deps.store.clear(sid);
     },
     size: () => size,
+    onUpdate(listener: (sid: string, mid: string, p: PresenceUpdate, nowMs: number) => void) {
+      listeners.push(listener);
+    },
     stop() {
       for (const [sid, members] of [...sessions])
         for (const mid of [...members.keys()]) forget(sid, mid);
