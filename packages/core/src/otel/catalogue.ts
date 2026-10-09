@@ -371,6 +371,23 @@ export const METRICS = {
   invite_mail_failures_total: counter('Invite e-mails that could not be queued.'),
   invites_accepted_total: counter('Invites accepted.'),
   invites_expired_total: counter('Invites expired.', [], WORKER),
+  invoice_events_total: counter(
+    'Stripe invoices handed to the invoice mirror, by outcome (written, unchanged, unsupported_currency, unknown_customer).',
+    ['outcome'],
+    API_WORKER,
+  ),
+  invoice_sync_failed_total: counter(
+    'Invoice mirror syncs that failed, by reason (stripe_unavailable, stripe_error, error).',
+    ['reason'],
+    API,
+    { onFailure: true },
+  ),
+  invoice_syncs_total: counter('Invoice mirror syncs that read Stripe and completed.'),
+  invoices_unsupported_currency_total: counter(
+    'Stripe invoices not mirrored because their currency is not USD or EUR, by source (event, sync).',
+    ['source'],
+    API_WORKER,
+  ),
   log_dropped_total: counter('Log lines dropped.', [], ALL),
   magic_link_failures_total: counter('Sign-in link failures.', ['reason']),
   magic_link_limited_total: counter('Sign-in links refused by the rate limit.'),

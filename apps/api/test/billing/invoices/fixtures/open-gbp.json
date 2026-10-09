@@ -1,0 +1,30 @@
+{
+  "id": "in_FixtureOpenGbp",
+  "object": "invoice",
+  "amount_due": 2500,
+  "amount_paid": 0,
+  "amount_remaining": 2500,
+  "automatic_tax": { "enabled": false, "status": null },
+  "billing_reason": "manual",
+  "collection_method": "send_invoice",
+  "created": 1791504000,
+  "currency": "gbp",
+  "customer": "cus_FixtureCustomerA",
+  "hosted_invoice_url": "https://invoice.stripe.com/i/acct_FixtureAccount/test_FixtureOpenGbp",
+  "invoice_pdf": "https://pay.stripe.com/invoice/acct_FixtureAccount/test_FixtureOpenGbp/pdf",
+  "lines": { "object": "list", "data": [], "has_more": false, "total_count": 0 },
+  "livemode": false,
+  "number": "FIXTURE-0006",
+  "period_end": 1791504000,
+  "period_start": 1791504000,
+  "status": "open",
+  "status_transitions": {
+    "finalized_at": 1791507600,
+    "marked_uncollectible_at": null,
+    "paid_at": null,
+    "voided_at": null
+  },
+  "subtotal": 2500,
+  "total": 2500,
+  "total_taxes": []
+}

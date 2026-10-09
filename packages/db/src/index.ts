@@ -271,6 +271,14 @@ export type {
   BillingSubscriptionTable,
 } from './schema/billing.js';
 export type {
+  InvoiceMirrorStatus,
+  InvoicesDatabase,
+  InvoicesDb,
+  InvoicesTable,
+  InvoiceSyncsTable,
+  InvoiceTaxLine,
+} from './schema/invoices.js';
+export type {
   QuotaStateTable,
   UsageAggregateCursorTable,
   UsageAggregationDatabase,

@@ -1,0 +1,31 @@
+{
+  "id": "in_FixtureVoidUsd",
+  "object": "invoice",
+  "amount_due": 2900,
+  "amount_paid": 0,
+  "amount_remaining": 0,
+  "automatic_tax": { "enabled": false, "status": null },
+  "billing_reason": "manual",
+  "collection_method": "send_invoice",
+  "created": 1789603200,
+  "currency": "usd",
+  "customer": "cus_FixtureCustomerA",
+  "due_date": 1790208000,
+  "hosted_invoice_url": "https://invoice.stripe.com/i/acct_FixtureAccount/test_FixtureVoidUsd",
+  "invoice_pdf": "https://pay.stripe.com/invoice/acct_FixtureAccount/test_FixtureVoidUsd/pdf",
+  "lines": { "object": "list", "data": [], "has_more": false, "total_count": 0 },
+  "livemode": false,
+  "number": "FIXTURE-0003",
+  "period_end": 1789603200,
+  "period_start": 1789603200,
+  "status": "void",
+  "status_transitions": {
+    "finalized_at": 1789606800,
+    "marked_uncollectible_at": null,
+    "paid_at": null,
+    "voided_at": 1789693200
+  },
+  "subtotal": 2900,
+  "total": 2900,
+  "total_taxes": []
+}

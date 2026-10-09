@@ -410,6 +410,41 @@ export class StripeClient implements StripeGateway {
     };
   }
 
+  /**
+   * B077's invoice mirror: the customer's newest `limit` (1 to 100) invoices, after
+   * `startingAfter` if given, as Stripe sent them (B077's `parseStripeInvoice` reads them).
+   */
+  async listInvoices(
+    customerId: string,
+    page: { limit: number; startingAfter?: string },
+  ): Promise<{ data: unknown[]; hasMore: boolean }> {
+    if (!/^cus_[A-Za-z0-9]{1,250}$/.test(customerId)) {
+      throw new StripeError('request', 'not a Stripe customer id');
+    }
+    if (!Number.isSafeInteger(page.limit) || page.limit < 1 || page.limit > 100) {
+      throw new StripeError('request', 'an invoice page holds 1 to 100 invoices');
+    }
+    if (page.startingAfter !== undefined && !/^in_[A-Za-z0-9]{1,250}$/.test(page.startingAfter)) {
+      throw new StripeError('request', 'not a Stripe invoice id');
+    }
+    const json = await this.#request('GET', '/v1/invoices', {
+      customer: customerId,
+      limit: page.limit,
+      starting_after: page.startingAfter,
+    });
+    const data = json['data'];
+    if (!Array.isArray(data)) throw new StripeError('invalid_response', 'Stripe invoice list');
+    return { data, hasMore: json['has_more'] === true };
+  }
+
+  /** B077: one invoice (`in_…`), as Stripe sent it. */
+  async retrieveInvoice(id: string): Promise<unknown> {
+    if (!/^in_[A-Za-z0-9]{1,250}$/.test(id)) {
+      throw new StripeError('request', 'not a Stripe invoice id');
+    }
+    return this.#request('GET', `/v1/invoices/${id}`);
+  }
+
   constructEvent(rawBody: string | Buffer, signature: string): StripeEvent {
     const { webhookSecret, webhookSecrets } = this.options.config;
     const secrets =
