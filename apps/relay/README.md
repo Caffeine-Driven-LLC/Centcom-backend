@@ -90,7 +90,9 @@ close code requires, closes once, and cuts a socket that has not closed 1 s late
 Modules today: the codec (B039, order 10), the connection state machine and heartbeat (B040, 12),
 the handshake (B038, 15), the rooms (B043, 20), sequencing (B041, 40; it sets `ctx.seq` for the
 modules after it), resume (B042, 45; [src/resume/README.md](src/resume/README.md), it sets
-`ctx.resume` for the handshake), fan-out (B044, 50; it sets `ctx.fanout`) and the cluster (B045,
+`ctx.resume` for the handshake), fan-out (B044, 50; it sets `ctx.fanout`), backpressure (B046, 55;
+[src/backpressure/README.md](src/backpressure/README.md), it sets `ctx.backpressure` and adds the
+`buffers` readiness check) and the cluster (B045,
 60; [src/cluster/README.md](src/cluster/README.md), it sets `ctx.cluster`).
 
 ## Shutdown

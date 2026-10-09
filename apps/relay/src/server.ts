@@ -390,6 +390,7 @@ export async function startRelay(options: StartRelayOptions): Promise<RunningRel
     pipeline,
     onShutdown: (fn) => shutdownSteps.push(fn),
     onConnection: (handler) => server.onConnection(handler),
+    addReadinessCheck: (name, check) => readiness.addCheck(name, check),
   };
   await registerModules(options.modules ?? (await discoverModules()), ctx);
   await readiness.refresh();

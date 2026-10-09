@@ -32,6 +32,7 @@ import { newId } from '@centcom/contracts';
 import { noopMetrics, type Logger, type Metrics } from '@centcom/core';
 import { closeConnection } from '../connection/close.js';
 import { CloseCode } from '../close-codes.js';
+import type { ConnectionEntry } from '../connection-registry.js';
 import type { InboundStage, RelayConnection } from '../pipeline.js';
 import type { RoomRegistry } from '../rooms/registry.js';
 import {
@@ -68,11 +69,37 @@ export interface ConnectionSender {
   bufferedBytes(): number;
 }
 
-/** The sender of `conn`: its raw-text send, or (test doubles) its object send. */
+/**
+ * B046: what decides a connection's sends (set per connection by the backpressure module): a
+ * droppable frame may be refused ('drop'), a sequenced one never is.
+ */
+export interface OutboundPolicy {
+  onEnqueue(conn: RelayConnection, bytes: number, droppable: boolean): 'ok' | 'drop';
+}
+
+const policies = new WeakMap<ConnectionEntry, OutboundPolicy>();
+
+/** Sets (or, with undefined, clears) the policy `connectionSender` consults for `conn`. */
+export function setOutboundPolicy(conn: RelayConnection, policy: OutboundPolicy | undefined): void {
+  if (policy === undefined) policies.delete(conn.entry);
+  else policies.set(conn.entry, policy);
+}
+
+/**
+ * The sender of `conn`: its raw-text send, or (test doubles) its object send. A connection with
+ * an outbound policy (B046) asks it first: a dropped frame is 'dropped' and never sent.
+ */
 export function connectionSender(conn: RelayConnection): ConnectionSender {
   return {
-    send(text) {
+    send(text, opts) {
       if (conn.entry.state === 'closing') return 'closed';
+      const policy = policies.get(conn.entry);
+      if (
+        policy !== undefined &&
+        policy.onEnqueue(conn, Buffer.byteLength(text, 'utf8'), opts.droppable) === 'drop'
+      ) {
+        return 'dropped';
+      }
       const sent =
         conn.sendText === undefined ? conn.send(JSON.parse(text) as object) : conn.sendText(text);
       return sent ? 'queued' : 'closed';

@@ -15,6 +15,7 @@ import type { Logger, Metrics, RedisBackend } from '@centcom/core';
 import type { CoreDatabase, createDb } from '@centcom/db';
 import type { RelayConfig } from './config.js';
 import type { ConnectionRegistry } from './connection-registry.js';
+import type { BackpressureController } from './backpressure/controller.js';
 import type { ClusterNode } from './cluster/node.js';
 import type { FanOut } from './fanout/fanout.js';
 import type { HandshakeResume } from './handshake/handshake.js';
@@ -40,6 +41,11 @@ export interface RelayContext {
   /** Adds a handler run for every accepted connection. */
   onConnection(handler: (connection: RelayConnection) => void): void;
   /**
+   * Adds a readiness check answered at once (B046: `buffers`): `/readyz` reports it under `name`,
+   * and while it fails the relay is not ready and refuses new connections.
+   */
+  addReadinessCheck(name: string, check: () => boolean): void;
+  /**
    * Sequencing (B041): set by the sequence module when it registers (order 40), for the modules
    * after it (B042 resume, B044 fan-out); undefined before then and on relays without it.
    */
@@ -60,6 +66,11 @@ export interface RelayContext {
    * relay without it.
    */
   cluster?: ClusterNode;
+  /**
+   * Backpressure (B046): set by the backpressure module when it registers (order 55), for the
+   * modules after it and for B042's replay (`whenDrained`, looked up when a replay waits).
+   */
+  backpressure?: BackpressureController;
 }
 
 /** A relay lane's plug-in: the default export of `src/<lane>/module.ts`. */

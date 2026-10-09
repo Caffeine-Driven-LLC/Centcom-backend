@@ -70,6 +70,7 @@ export function createResumeModule(env?: Env): RelayModule {
         snapshots: noSnapshots,
         hydrator,
         fanout: () => ctx.fanout,
+        outbound: () => ctx.backpressure,
         batch: config.batch,
         maxFrames: config.maxFrames,
         logger: ctx.log,

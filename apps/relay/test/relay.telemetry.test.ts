@@ -91,12 +91,14 @@ describe('relay telemetry', () => {
         'centcom_relay_connections_total',
         'centcom_relay_fanout_latency_seconds',
         'centcom_relay_frames_total',
+        'centcom_relay_outbound_buffer_bytes',
         'centcom_relay_resume_duration_seconds',
         'centcom_relay_resume_total',
       ]);
       // Recorded by modules (none run here); their own tests cover them (fanout.isolation, resume.*).
       const byModules = new Set([
         'centcom_relay_fanout_latency_seconds',
+        'centcom_relay_outbound_buffer_bytes',
         'centcom_relay_resume_duration_seconds',
         'centcom_relay_resume_total',
       ]);

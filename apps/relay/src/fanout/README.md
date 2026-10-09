@@ -44,8 +44,9 @@ It is a relay module (`module.ts`, order 50) and sets `ctx.fanout` for the modul
 - **Other nodes:** `deliver` hands each locally sequenced frame to the `RemoteDispatcher` (B045's
   `ClusterDispatcher` publishes it; default none). Its failures are counted and never touch local
   delivery. B045 offers other nodes' frames to `release`.
-- **Backpressure:** `ConnectionSender` (`send(text, {droppable})`, `bufferedBytes()`) is the seam
-  B046 enforces slow-consumer policy on. This lane never drops a sequenced frame.
+- **Backpressure:** `ConnectionSender` (`send(text, {droppable})`, `bufferedBytes()`) asks the
+  connection's `OutboundPolicy` first (`setOutboundPolicy`; B046's controller): a droppable frame
+  may come back `dropped`, a sequenced one never does.
 - **Where a session starts:** the first frame offered sets it, unless B042 primed it
   (`release.prime(sid, head + 1)`, done for each connection's handshake). That matters with
   frames from other nodes (B045), whose first arrival need not be the lowest. A pinned session

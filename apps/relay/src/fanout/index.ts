@@ -9,11 +9,13 @@ export {
   MAX_HELD_FRAMES,
   noRemoteDispatcher,
   RESYNC_REASON,
+  setOutboundPolicy,
   type ConnectionSender,
   type FanOut,
   type FanOutDeps,
   type HeldFrame,
   type LiveHold,
+  type OutboundPolicy,
   type RemoteDispatcher,
 } from './fanout.js';
 export {

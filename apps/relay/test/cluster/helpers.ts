@@ -120,6 +120,8 @@ export async function cluster(
     rate?: number;
     /** Each node's own connection to one Redis (default: one shared in-memory backend). */
     backend?: () => RedisBackend;
+    /** More modules on every node (B046's backpressure). */
+    modules?: () => RelayModule[];
   } = {},
 ) {
   const shared = createMemoryRedis();
@@ -210,6 +212,7 @@ export async function cluster(
             snapshots: noSnapshots,
             hydrator,
             fanout: () => ctx.fanout,
+            outbound: () => ctx.backpressure,
             batch: 100,
             maxFrames: 50_000,
           });
@@ -224,7 +227,7 @@ export async function cluster(
         register(ctx) {
           const seq = ctx.seq;
           if (seq === undefined) throw new Error('no seq');
-          const fanout = createFanOut({ rooms, seq, clock: ctx.clock, metrics: ctx.metrics });
+          const fanout = createFanOut({ rooms, seq, clock: ctx.clock, metrics: metrics.metrics });
           seq.delegateEcho((conn, frame) => fanout.sendTo(conn, frame));
           ctx.pipeline.use(50, fanout.stage);
           ctx.fanout = fanout;
@@ -258,7 +261,7 @@ export async function cluster(
         },
       },
     ];
-    const relay = await testRelay({ modules, redis });
+    const relay = await testRelay({ modules: [...modules, ...(opts.modules?.() ?? [])], redis });
     const started: Node = {
       name,
       relay,
