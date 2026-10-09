@@ -49,7 +49,14 @@ export function privacyStage(deps: { logger?: Logger; metrics?: Metrics } = {}):
     const kind = frame['k'];
     if (catalogued(kind) !== undefined) {
       const clean = sanitizeClearPayload(kind, frame['p']);
-      if (clean.ok && clean.dropped > 0) {
+      if (!clean.ok) {
+        // A catalogued kind's `p` that is not an object (a string, an array, a number) holds no
+        // listed field: it is dropped, never carried on.
+        metrics.counter('relay_privacy_violations_total', { where: 'frame' }).inc();
+        deps.logger?.debug({ kind }, 'relay.privacy_fields_dropped');
+        if (catalogued(kind)?.mode === 'encrypted') delete frame['p'];
+        else frame['p'] = {};
+      } else if (clean.dropped > 0) {
         metrics.counter('relay_privacy_violations_total', { where: 'frame' }).inc(clean.dropped);
         deps.logger?.debug({ kind }, 'relay.privacy_fields_dropped');
         if (Object.keys(clean.p).length === 0 && catalogued(kind)?.mode === 'encrypted') {

@@ -124,6 +124,32 @@ describe('encrypted and unknown kinds (acceptance 2)', () => {
     expect(frame).not.toHaveProperty('p');
   });
 
+  it('drops a p that is not an object, on an encrypted and on a clear kind', async () => {
+    for (const p of ['secret text', ['secret'], 7]) {
+      const g = gate();
+      const encrypted: Record<string, unknown> = {
+        v: 1,
+        t: 'event',
+        id: newId('msg'),
+        k: 'message.user',
+        p,
+        ct: {},
+      };
+      expect(await g.pass(encrypted)).toBe(true);
+      expect(encrypted).not.toHaveProperty('p');
+      const clear: Record<string, unknown> = {
+        v: 1,
+        t: 'event',
+        id: newId('msg'),
+        k: 'reaction',
+        p,
+      };
+      expect(await g.pass(clear)).toBe(true);
+      expect(clear['p']).toEqual({});
+      expect(g.recorded.count('relay_privacy_violations_total', { where: 'frame' })).toBe(2);
+    }
+  });
+
   it('carries an unknown kind’s p as it came', async () => {
     const g = gate();
     const p = { anything: 'goes', n: 1 };
