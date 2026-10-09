@@ -52,6 +52,7 @@ export {
   ROOM_EVICT_AFTER_MS,
   type MemberView,
   type Room,
+  type RoomListener,
   type RoomRegistry,
   type RoomRegistryOptions,
   type RoomTimer,

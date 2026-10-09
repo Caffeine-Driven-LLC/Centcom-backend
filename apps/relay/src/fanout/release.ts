@@ -11,7 +11,10 @@
  *   the session is `reset`.
  * - A frame below the next expected `seq` (already released, or a duplicate) is ignored.
  * - A session idle for `idleMs` with nothing waiting is forgotten, so state stays as small as the
- *   set of active sessions.
+ *   set of active sessions; a pinned one (B045: it has local connections and gets frames from
+ *   other nodes) never is.
+ * - `prime(sid, next)` (B042) sets where a session with no state starts, instead of the first frame
+ *   offered: with frames from several nodes the first one to arrive need not be the lowest.
  *
  * Owns: per-session order and the waiting frames. Must not: deliver past a gap, or hold more
  * than `maxBuffered` frames of a session.
@@ -38,6 +41,13 @@ export interface OrderedRelease {
   reset(sid: string): void;
   /** The next `seq` the session expects, or null when it has no state. */
   expected(sid: string): number | null;
+  /** A session with no state starts at `next` (the frame after the store's head); else nothing. */
+  prime(sid: string, next: number): void;
+  /** Keeps the session's state while pinned (never forgotten as idle). */
+  pin(sid: string): void;
+  unpin(sid: string): void;
+  /** How long frames wait for a missing one from now on (B045: RELAY_CLUSTER_GAP_MS). */
+  setGapAfterMs(ms: number): void;
   /** Frames waiting, over all sessions. */
   waiting(): number;
   /** Sessions with state. */
@@ -77,12 +87,13 @@ const defaultTimer = (fn: () => void, ms: number): ReleaseTimer => {
 /** A new ordered release. */
 export function createOrderedRelease(options: OrderedReleaseOptions): OrderedRelease {
   const maxBuffered = options.maxBuffered ?? RELEASE_MAX_BUFFERED;
-  const gapAfterMs = options.gapAfterMs ?? RELEASE_GAP_AFTER_MS;
+  let gapAfterMs = options.gapAfterMs ?? RELEASE_GAP_AFTER_MS;
   const idleMs = options.idleMs ?? RELEASE_IDLE_MS;
   const clock = options.clock ?? Date.now;
   const setTimer = options.setTimer ?? defaultTimer;
   const states = new Map<string, SessionOrder>();
   const gapListeners: ((sid: string, fromSeq: number, toSeq: number) => void)[] = [];
+  const pinned = new Set<string>();
   let waiting = 0;
   let offers = 0;
 
@@ -121,7 +132,9 @@ export function createOrderedRelease(options: OrderedReleaseOptions): OrderedRel
 
   function forgetIdle(now: number): void {
     for (const [sid, state] of states) {
-      if (state.pending.size === 0 && now - state.lastOffer > idleMs) states.delete(sid);
+      if (state.pending.size === 0 && now - state.lastOffer > idleMs && !pinned.has(sid)) {
+        states.delete(sid);
+      }
     }
   }
 
@@ -158,6 +171,21 @@ export function createOrderedRelease(options: OrderedReleaseOptions): OrderedRel
       states.delete(sid);
     },
     expected: (sid) => states.get(sid)?.next ?? null,
+    prime(sid, next) {
+      if (states.has(sid) || !Number.isSafeInteger(next) || next < 1) return;
+      states.set(sid, {
+        next,
+        pending: new Map(),
+        timer: undefined,
+        gapOpen: false,
+        lastOffer: clock(),
+      });
+    },
+    pin: (sid) => void pinned.add(sid),
+    unpin: (sid) => void pinned.delete(sid),
+    setGapAfterMs(ms) {
+      if (Number.isSafeInteger(ms) && ms > 0) gapAfterMs = ms;
+    },
     waiting: () => waiting,
     sessions: () => states.size,
     stop() {

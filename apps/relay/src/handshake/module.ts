@@ -6,7 +6,8 @@
  * (`roomsFor`), whose join hook also runs before each welcome. `sys.welcome` advertises the
  * heartbeat the connection module enforces (RELAY_PING_MS, RELAY_DEAD_MS, B040) and the
  * sequencing limits the sequence module enforces (RELAY_SEQ_RATE, RELAY_SEQ_BURST, B041). B042's
- * resume (`ctx.resume`, registered later) is looked up for each hello.
+ * resume (`ctx.resume`, registered later) is looked up for each hello, and B045's cluster
+ * (`ctx.cluster`) supersedes the member's device on other nodes after each welcome.
  *
  * Owns: wiring. Must not: hold state outside what `register` creates.
  */
@@ -38,6 +39,7 @@ const relayModule: RelayModule = {
       heartbeat: welcomeHeartbeat(loadHeartbeatConfig()),
       seqLimits: welcomeSeqLimits(loadSeqConfig()),
       resume: () => ctx.resume,
+      onWelcomed: (connection, admitted) => ctx.cluster?.welcomed(connection, admitted),
     });
     ctx.pipeline.use(STAGE_ORDER.handshake, handshake.stage);
     ctx.onConnection(handshake.onConnection);

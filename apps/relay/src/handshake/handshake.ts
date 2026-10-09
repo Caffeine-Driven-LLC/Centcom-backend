@@ -158,6 +158,11 @@ export interface HandshakeDeps {
   ) => AdmissionDecision | Promise<AdmissionDecision>;
   /** B042's resume, looked up per hello (its module registers after this one); none: no replay. */
   resume?: () => HandshakeResume | undefined;
+  /**
+   * Runs right after a welcome (B045: a `(member, device)` connected here supersedes its
+   * connections on other nodes). A throw is logged, never the connection's problem.
+   */
+  onWelcomed?: (connection: RelayConnection, admitted: AdmittedHello) => void;
 }
 
 type Phase =
@@ -530,8 +535,17 @@ export function createHandshake(deps: HandshakeDeps): {
       connection.entry.state = 'authenticated';
       connection.entry.sessionId = admitted.claims.sid;
       connection.entry.memberId = access.member.id;
+      connection.entry.deviceId = admitted.claims.dev;
       activate(connection, `${access.member.id}:${admitted.claims.dev}`);
       metrics.counter('relay_handshakes_total', { outcome: 'welcome' }).inc();
+      try {
+        deps.onWelcomed?.(connection, hello);
+      } catch (err) {
+        deps.logger?.warn(
+          { error: err instanceof Error ? err.name : typeof err },
+          'relay.handshake_welcomed_hook_failed',
+        );
+      }
       resume?.start(connection);
     } catch (err) {
       resume?.abandon(connection);

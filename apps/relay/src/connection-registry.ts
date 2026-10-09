@@ -23,6 +23,8 @@ export interface ConnectionEntry {
   sessionId: string | null;
   /** The member (`mem_…`) the handshake admitted, from the live record; stamped as `from` (B041). */
   memberId: string | null;
+  /** The device (`dev_…`) of the ticket the handshake admitted (B045: cross-node supersede). */
+  deviceId: string | null;
   readonly createdAt: Date;
 }
 
@@ -72,6 +74,7 @@ export class ConnectionRegistry {
       state: 'open',
       sessionId: null,
       memberId: null,
+      deviceId: null,
       createdAt: new Date(this.#clock()),
     };
     this.#entries.set(entry.id, entry);

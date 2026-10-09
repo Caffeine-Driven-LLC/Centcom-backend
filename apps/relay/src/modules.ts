@@ -15,6 +15,7 @@ import type { Logger, Metrics, RedisBackend } from '@centcom/core';
 import type { CoreDatabase, createDb } from '@centcom/db';
 import type { RelayConfig } from './config.js';
 import type { ConnectionRegistry } from './connection-registry.js';
+import type { ClusterNode } from './cluster/node.js';
 import type { FanOut } from './fanout/fanout.js';
 import type { HandshakeResume } from './handshake/handshake.js';
 import type { FramePipeline, RelayConnection } from './pipeline.js';
@@ -53,6 +54,12 @@ export interface RelayContext {
    * looks it up for each hello. Undefined on relays without it: no replay, `welcome.resume` null.
    */
   resume?: HandshakeResume;
+  /**
+   * The cluster (B045): set by the cluster module when it registers (order 60): `memberControl`
+   * (B051), `publishEphemeral` (B047), and the handshake's cross-node supersede. Undefined on a
+   * relay without it.
+   */
+  cluster?: ClusterNode;
 }
 
 /** A relay lane's plug-in: the default export of `src/<lane>/module.ts`. */
