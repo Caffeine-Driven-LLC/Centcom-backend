@@ -47,7 +47,8 @@ recovered from the durable log before anything else is numbered. It is a relay m
      still holds the batch's first frame, else from the durable log.
    - Each frame is sent as the exact JSON first delivered.
    - Before each frame, while the outbound buffer would pass 2 MiB, the replay waits for it to
-     drain. A client that reads nothing for 30 s is closed **4429** (`slow_consumer`).
+     drain (B046's `whenDrained` when the relay has it, else polling). A client that reads nothing
+     for 30 s is closed **4429** (`slow_consumer`); with B046, its 5 s grace closes it first.
 4. **Handoff.**
    - After `sys.resumed`, the held live frames above the last replayed `seq` are sent in order.
    - The hold ends in the same turn as the last one is taken, so nothing is missed.

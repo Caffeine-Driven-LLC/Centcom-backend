@@ -152,7 +152,7 @@ export const METRICS = {
     'Outbound buffer size per connection when sampled.',
     [],
     RELAY,
-    { unit: 'By', planned: 'B046' },
+    { unit: 'By' },
   ),
 
   // Jobs and queues (worker; hooks.ts).
@@ -445,6 +445,31 @@ export const METRICS = {
   redis_reconnects_total: counter('Redis reconnects.', [], ALL),
   redis_unavailable_total: counter('Redis calls refused while it was down.', [], ALL),
   relay_acks_rejected_total: counter('Acks refused for naming a seq beyond the head.', [], RELAY),
+  relay_backpressure_closed_total: counter(
+    'Slow consumers closed 4429, by reason (grace: not drained in time; node: the node guard).',
+    ['reason'],
+    RELAY,
+  ),
+  relay_backpressure_dropped_total: counter(
+    'Droppable frames (presence, cursors) dropped for a connection over its soft mark.',
+    [],
+    RELAY,
+  ),
+  relay_backpressure_graces_total: counter(
+    'Connections that went over the outbound limit (a grace started).',
+    [],
+    RELAY,
+  ),
+  relay_backpressure_recovered_total: counter(
+    'Connections back under the soft mark within their grace.',
+    [],
+    RELAY,
+  ),
+  relay_backpressure_slow_downs_total: counter(
+    'sys.slow_down frames sent for a full outbound buffer (at most one a second per connection).',
+    [],
+    RELAY,
+  ),
   relay_cluster_control_closed_total: counter(
     'Local connections closed by member commands (supersede, removal, kick) from any node.',
     [],
