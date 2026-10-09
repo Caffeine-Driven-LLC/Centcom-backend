@@ -519,6 +519,21 @@ export const METRICS = {
     RELAY,
   ),
   relay_codec_errors_total: counter('Frames dropped because decoding threw.', [], RELAY),
+  relay_cursor_flood_closed_total: counter(
+    'Members closed 4429 for a cursor flood (over 10x the rate for 10 s).',
+    [],
+    RELAY,
+  ),
+  relay_cursors_forwarded_total: counter(
+    'Cursor frames written to local connections, by result (queued, dropped under backpressure, closed, error).',
+    ['result'],
+    RELAY,
+  ),
+  relay_cursors_total: counter(
+    'presence.cursor frames received, by result (accepted, dropped_rate, dropped_size).',
+    ['result'],
+    RELAY,
+  ),
   relay_dead_peers_total: counter(
     'Connections closed after RELAY_DEAD_MS without an inbound frame.',
     [],
@@ -619,6 +634,11 @@ export const METRICS = {
     group: 'module',
     help: 'Time to assign a seq (dedupe, counter and buffer append), milliseconds.',
   },
+  relay_typing_cleared_total: counter(
+    'Typing indicators cleared by the relay after 5 s without refresh.',
+    [],
+    RELAY,
+  ),
   relay_sequenced_total: counter(
     'Sequenced frames by outcome (assigned, duplicate, rate_limited, unavailable, backlog).',
     ['outcome'],

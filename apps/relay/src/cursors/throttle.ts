@@ -2,8 +2,8 @@
  * The cursor throttle (B048, CT-WS-PRESENCE `presence.cursor`): one slot per member holding only its
  * latest cursor, and a tick that sends what changed.
  *
- * - **In:** a member may offer RELAY_CURSOR_IN_PER_S (10) cursors per second (a one-second window);
- *   more are dropped (`dropped_rate`). A `ct` over RELAY_CURSOR_MAX_CT_BYTES (4 KiB, serialised)
+ * - **In:** a member may offer RELAY_CURSOR_IN_PER_S (10) cursors in any one second (the times of
+ *   its last 10 accepted, a ring); more are dropped (`dropped_rate`). A `ct` over RELAY_CURSOR_MAX_CT_BYTES (4 KiB, serialised)
  *   is `dropped_size`. An accepted cursor replaces the member's slot: there is no queue.
  * - **Out:** every RELAY_CURSOR_TICK_MS (100 ms) each slot that changed goes out once, to every
  *   welcomed connection of the session on this node, as a droppable frame (B046 drops it for a
@@ -58,6 +58,10 @@ export interface CursorTimer {
 interface Slot {
   /** The latest accepted cursor, serialised for sending; null once sent. */
   pending: string | null;
+  /** The times of the last `inPerSecond` accepted cursors (a ring): at most that many per second. */
+  accepted: number[];
+  next: number;
+  /** Offers in the current one-second window (flood detection). */
   windowStart: number;
   inWindow: number;
   /** Seconds in a row over the flood mark. */
@@ -113,7 +117,15 @@ export function createCursorThrottle(deps: CursorThrottleDeps): CursorThrottle &
     }
     let slot = members.get(mid);
     if (slot === undefined) {
-      slot = { pending: null, windowStart: 0, inWindow: 0, floodSeconds: 0, lastOffer: 0 };
+      slot = {
+        pending: null,
+        accepted: [],
+        next: 0,
+        windowStart: 0,
+        inWindow: 0,
+        floodSeconds: 0,
+        lastOffer: 0,
+      };
       members.set(mid, slot);
       where.set(slot, { sid, mid });
     }
@@ -198,10 +210,18 @@ export function createCursorThrottle(deps: CursorThrottleDeps): CursorThrottle &
         }
       }
       slot.inWindow += 1;
-      if (slot.inWindow > config.inPerSecond) {
+      // At most `inPerSecond` in any second: the oldest of the last that many must be a second old.
+      const oldest = slot.accepted[slot.next];
+      if (
+        slot.accepted.length >= config.inPerSecond &&
+        oldest !== undefined &&
+        nowMs - oldest < 1_000
+      ) {
         count('dropped_rate');
         return 'dropped_rate';
       }
+      slot.accepted[slot.next] = nowMs;
+      slot.next = (slot.next + 1) % config.inPerSecond;
       slot.pending =
         `{"v":1,"t":"presence","sid":${JSON.stringify(sid)},"from":${JSON.stringify(mid)},` +
         `"ts":${JSON.stringify(new Date(nowMs).toISOString())},"k":"${PRESENCE_CURSOR}","ct":${ctText}` +
