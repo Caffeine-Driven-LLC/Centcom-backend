@@ -21,8 +21,8 @@
  * - **Replay:** batches of RELAY_REPLAY_BATCH frames, each read from the hot buffer when it still
  *   holds the batch's first frame, else from the durable log. Frames are sent as the exact JSON
  *   first delivered. Before each frame, while the connection's outbound buffer would pass 2 MiB, the
- *   replay waits for it to drain; a client that reads nothing for STALL_MS is closed 4429
- *   (`slow_consumer`). Then `sys.resumed {from_seq, to_seq, count}` (and `history_gap`).
+ *   replay waits for it to drain (B046's `whenDrained` when the relay has it, else polling); a
+ *   client that reads nothing for STALL_MS is closed 4429 (`slow_consumer`). Then `sys.resumed {from_seq, to_seq, count}` (and `history_gap`).
  * - **Handoff:** from before the replay is planned, fan-out holds the connection's live frames
  *   (`FanOut.hold`); after `sys.resumed` the held frames above the last replayed `seq` are sent in
  *   order, and the hold ends in the same turn as the last one is taken, so nothing is missed. Live
@@ -41,6 +41,7 @@ import { setTimeout as sleepFor } from 'node:timers/promises';
 import { performance } from 'node:perf_hooks';
 import { newId } from '@centcom/contracts';
 import { AppError, noopMetrics, toProblem, type Logger, type Metrics } from '@centcom/core';
+import type { BackpressureController } from '../backpressure/controller.js';
 import { CloseCode } from '../close-codes.js';
 import { closeConnection } from '../connection/close.js';
 import type { ConnectionEntry } from '../connection-registry.js';
@@ -56,6 +57,8 @@ import type { DurableLogReader, ResumeResult, SnapshotLookup } from './types.js'
 export const STALL_MS = 30_000;
 /** How often a replay waiting for the outbound buffer looks again. */
 export const DRAIN_POLL_MS = 5;
+/** With B046's controller, the longest a replay waits for its drain signal before looking again. */
+export const DRAIN_WAIT_MS = 100;
 /** `relay_resume_duration_seconds` buckets. */
 export const RESUME_BUCKETS_S: readonly number[] = Object.freeze([
   0.01, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 30,
@@ -87,6 +90,13 @@ export interface ResumerDeps {
   stallMs?: number;
   /** Default a timer. */
   sleep?: (ms: number) => Promise<void>;
+  /** Milliseconds, for the stall limit; default Date.now. */
+  now?: () => number;
+  /**
+   * B046's controller (`ctx.backpressure`), looked up when a replay waits: it resolves
+   * `whenDrained` once the connection is under its soft mark. None: the replay polls.
+   */
+  outbound?: () => Pick<BackpressureController, 'whenDrained'> | undefined;
   /** Seconds for the duration metric; default performance.now / 1000. */
   monotonic?: () => number;
   logger?: Logger;
@@ -143,6 +153,7 @@ export function createResumer(deps: ResumerDeps): Resumer {
   const stallMs = deps.stallMs ?? STALL_MS;
   const sleep = deps.sleep ?? ((ms: number) => sleepFor(ms).then(() => undefined));
   const monotonic = deps.monotonic ?? (() => performance.now() / 1000);
+  const now = deps.now ?? Date.now;
   const duration = metrics.histogram('relay_resume_duration_seconds', RESUME_BUCKETS_S);
   const states = new WeakMap<ConnectionEntry, ConnState>();
 
@@ -190,10 +201,10 @@ export function createResumer(deps: ResumerDeps): Resumer {
   async function send(conn: RelayConnection, text: string): Promise<boolean> {
     const sender = connectionSender(conn);
     const bytes = Buffer.byteLength(text, 'utf8');
-    let waited = 0;
+    const started = now();
     while (sender.bufferedBytes() > 0 && sender.bufferedBytes() + bytes > limit) {
       if (!isOpen(conn)) return false;
-      if (waited >= stallMs) {
+      if (now() - started >= stallMs) {
         metrics.counter('relay_resume_stalled_total').inc();
         closeConnection(conn, {
           code: CloseCode.RateLimited,
@@ -202,8 +213,11 @@ export function createResumer(deps: ResumerDeps): Resumer {
         });
         return false;
       }
-      await sleep(DRAIN_POLL_MS);
-      waited += DRAIN_POLL_MS;
+      // B046's controller wakes the replay when the connection drains; else, poll.
+      const outbound = deps.outbound?.();
+      await (outbound === undefined
+        ? sleep(DRAIN_POLL_MS)
+        : Promise.race([outbound.whenDrained(conn), sleep(DRAIN_WAIT_MS)]));
     }
     return sender.send(text, { droppable: false }) === 'queued';
   }

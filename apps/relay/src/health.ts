@@ -88,15 +88,31 @@ export class Readiness {
   #ready = false;
   #draining = false;
   #timer: NodeJS.Timeout | undefined;
+  /** Checks modules add (B046's buffers), read at once on every `ready` and `refresh`. */
+  readonly #local = new Map<string, () => boolean>();
 
   constructor(probe: ReadinessProbe, options: { intervalMs?: number } = {}) {
     this.#probe = probe;
     this.#intervalMs = options.intervalMs ?? READINESS_INTERVAL_MS;
   }
 
-  /** True when the last probe passed and the relay is not draining. */
+  /** True when the last probe passed, every module check passes and the relay is not draining. */
   get ready(): boolean {
-    return this.#ready && !this.#draining;
+    return this.#ready && !this.#draining && [...this.#local.values()].every((check) => check());
+  }
+
+  /**
+   * Adds a check a module answers synchronously (B046: `buffers`): `/readyz` reports it, and while
+   * it fails the relay is not ready (new upgrades are refused). A check that throws fails.
+   */
+  addCheck(name: string, check: () => boolean): void {
+    this.#local.set(name, () => {
+      try {
+        return check();
+      } catch {
+        return false;
+      }
+    });
   }
 
   get draining(): boolean {
@@ -112,8 +128,9 @@ export class Readiness {
     } catch {
       checks = { probe: { ok: false } };
     }
+    this.#ready = Object.values(checks).every((c) => c.ok);
+    for (const [name, check] of this.#local) checks = { ...checks, [name]: { ok: check() } };
     const ok = Object.values(checks).every((c) => c.ok);
-    this.#ready = ok;
     if (this.#draining) return { ok: false, checks: { ...checks, draining: { ok: false } } };
     return { ok, checks };
   }
