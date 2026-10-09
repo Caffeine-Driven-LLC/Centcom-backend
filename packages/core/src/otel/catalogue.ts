@@ -302,6 +302,21 @@ export const METRICS = {
     ['type'],
     API_WORKER,
   ),
+  billing_seat_changes_total: counter(
+    'Seat changes and previews, by outcome (changed, unchanged, previewed, seats_in_use, single_seat_plan, inactive, stripe_failed).',
+    ['outcome'],
+  ),
+  billing_seat_reconcile_runs_failed_total: counter(
+    'Daily seat reconciliation runs that failed.',
+    [],
+    WORKER,
+    { onFailure: true },
+  ),
+  billing_seat_reconciles_total: counter(
+    'Workspaces whose seats were reconciled with Stripe, by outcome (in_sync, repaired, drift, failed).',
+    ['outcome'],
+    API_WORKER,
+  ),
   billing_session_failures_total: counter(
     'Checkout and portal sessions Stripe did not create, by kind and reason (stripe_unavailable, stripe_refused).',
     ['kind', 'reason'],

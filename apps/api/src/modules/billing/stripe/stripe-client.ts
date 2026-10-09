@@ -388,6 +388,7 @@ export class StripeClient implements StripeGateway {
           deleted: item.deleted === true ? true : undefined,
         })),
         proration_behavior: 'create_prorations',
+        proration_date: input.prorationDate,
       },
     });
     const lines =
@@ -401,11 +402,17 @@ export class StripeClient implements StripeGateway {
     return {
       currency: currency.toUpperCase(),
       amountDue,
-      lines: lines.filter(isRecord).map((line) => ({
-        amount: typeof line['amount'] === 'number' ? line['amount'] : 0,
-        proration:
-          line['proration'] === true || (isRecord(line['parent']) && isProration(line['parent'])),
-      })),
+      lines: lines.filter(isRecord).map((line) => {
+        const start = isRecord(line['period']) ? line['period']['start'] : undefined;
+        return {
+          amount: typeof line['amount'] === 'number' ? line['amount'] : 0,
+          proration:
+            line['proration'] === true || (isRecord(line['parent']) && isProration(line['parent'])),
+          ...(typeof start === 'number' && Number.isSafeInteger(start)
+            ? { periodStart: start }
+            : {}),
+        };
+      }),
       nextPaymentAttempt: typeof next === 'number' ? next : null,
     };
   }
