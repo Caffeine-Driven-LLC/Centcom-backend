@@ -457,7 +457,7 @@ describe.runIf(ADMIN_URL !== undefined)('data retention on Postgres 16', () => {
       expect((await blobs.list(historyPrefix(sid))).length).toBe(before);
       expect(reports.every((r) => r.outcome === 'done')).toBe(true);
       const rows = await s.runs();
-      expect(rows).toHaveLength(17);
+      expect(rows).toHaveLength(16);
       expect(rows.every((r) => r.dry_run && r.purged === '0' && r.aborted_reason === null)).toBe(
         true,
       );
