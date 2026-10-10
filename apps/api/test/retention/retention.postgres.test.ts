@@ -499,7 +499,7 @@ describe.runIf(ADMIN_URL !== undefined)('data retention on Postgres 16', () => {
     }
   }, 120_000);
 
-  it('deletes expired codes, tokens, families, finished invites and old keys only (acceptance 7)', async () => {
+  it('deletes expired codes, tokens, families and finished invites only (acceptance 7)', async () => {
     const s = await setup();
     try {
       const ws = await s.workspace(PRO);
