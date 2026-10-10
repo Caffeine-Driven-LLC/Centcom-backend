@@ -200,10 +200,20 @@ export const METRICS = {
     [],
     WORKER,
   ),
+  session_host_outbox_failed_total: counter(
+    'Host-change notifications (claim-host) the relay notifier refused and that were rescheduled.',
+    [],
+    API_WORKER,
+  ),
   session_outbox_failed_total: counter(
     'Session transition notifications (relay or domain event) that failed and were rescheduled, by target (relay, event).',
     ['target'],
     API_WORKER,
+  ),
+  session_ticket_failures_total: counter(
+    'Relay tickets not issued because signing failed or the ticket could not be recorded, by reason (signing, record).',
+    ['reason'],
+    API,
   ),
   session_transitions_total: counter(
     'Session lifecycle transitions, by the state reached (live, paused, ended, expired).',
@@ -853,6 +863,27 @@ export const METRICS = {
     { onFailure: true },
   ),
   seat_gate_rejections_total: counter('Members refused for want of a seat.', ['reason']),
+  snapshot_prune_failures_total: counter(
+    'Snapshot prunes that stopped partway (the next prune finishes them).',
+    [],
+    API_WORKER,
+    { onFailure: true },
+  ),
+  snapshot_pruned_total: counter(
+    'Snapshots deleted, by reason (beyond_newest, expired_pending, retried, purged).',
+    ['reason'],
+    API_WORKER,
+  ),
+  snapshot_requests_total: counter(
+    'Snapshot begins, commits and reads, by op (begin, commit, latest) and outcome (ok, refused, failed).',
+    ['op', 'outcome'],
+  ),
+  snapshot_verify_failures_total: counter(
+    'Snapshot commits answered 503 because the object could not be read.',
+    [],
+    API,
+    { onFailure: true },
+  ),
   status_feed_build_failures_total: counter('Status feed builds that failed.'),
   status_probes_total: counter('Status probes by component and result.', ['component', 'ok']),
   telemetry_accepted_total: counter('Product telemetry events accepted.'),
