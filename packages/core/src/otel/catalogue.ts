@@ -365,6 +365,27 @@ export const METRICS = {
     'Device revocations not announced on devices:revoked after every retry.',
   ),
   devices_revoked_total: counter('Devices revoked.'),
+  dunning_dead_letters_total: counter(
+    'Dunning jobs (remind, wind-down, expire) moved to dunning.dead after their last attempt.',
+    ['job'],
+    WORKER,
+    { onFailure: true },
+  ),
+  dunning_reminders_total: counter(
+    'Dunning grace-day reminders, by day (0, 3, 6) and outcome (sent, stale, sent_before, not_due).',
+    ['day', 'outcome'],
+    API_WORKER,
+  ),
+  dunning_transitions_total: counter(
+    'Dunning status changes, by the status left and the status reached.',
+    ['from', 'to'],
+    API_WORKER,
+  ),
+  dunning_wind_downs_total: counter(
+    'Dunning wind-downs of live hosted sessions, by outcome (ended, skipped).',
+    ['outcome'],
+    API_WORKER,
+  ),
   email_failed_total: counter('E-mails that failed for good.', ['template'], WORKER),
   email_idempotency_unrecorded_total: counter(
     'E-mail idempotency keys that could not be recorded.',

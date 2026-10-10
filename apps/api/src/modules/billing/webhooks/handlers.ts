@@ -18,6 +18,9 @@
  *   {days}`, per subscription and trial end); B079's `trialWillEnd` emails the billing contact.
  * - A reconciled subscription that Stripe reports `trialing` is handed to B079's `recordTrial`
  *   (trials are recorded only once Stripe confirms them).
+ * - `invoice.payment_failed`, `invoice.paid`, `customer.subscription.updated` and
+ *   `customer.subscription.deleted` are then handed to B078's dunning (`applyBillingEvent`), with
+ *   the event's time, the invoice's id and the payload's status, after the reconcile.
  * - Anything else is ignored.
  *
  * `reduceObject` is what ingestion keeps of an event's object: ids, status, amounts and currency.
@@ -26,6 +29,7 @@
  * Owns: the per-type rules. Must not: change entitlements other than through B070/B069, or keep
  * more of a payload than `reduceObject` does.
  */
+import type { DunningService } from '../dunning/service.js';
 import type { StripeGateway, StripeSub } from '../stripe/gateway.js';
 import type { BillingService } from '../subscriptions/service.js';
 import { BillingStateError } from '../subscriptions/service.js';
@@ -92,6 +96,10 @@ export interface HandlerDeps {
   workspaceOfCustomer(customerId: string): Promise<string | null>;
   /** B079's trials; without them no trial is recorded and no trial-ending email is sent. */
   trials?: TrialHooks;
+  /** B078's dunning; without it no grace window, reminder or drop to `none` is driven. */
+  dunning?: Pick<DunningService, 'applyBillingEvent'>;
+  /** Milliseconds; default Date.now (the time dunning applies an event at). */
+  clock?: () => number;
 }
 
 /** An event as a handler reads it. */
@@ -147,6 +155,24 @@ async function invoiceWorkspace(event: HandledEvent, deps: HandlerDeps): Promise
   return workspaceId;
 }
 
+/** Hands `event` to B078's dunning, for `workspaceId` (the reconciled subscription's). */
+async function dun(event: HandledEvent, workspaceId: string, deps: HandlerDeps): Promise<void> {
+  if (deps.dunning === undefined) return;
+  const invoice = event.type.startsWith('invoice.');
+  await deps.dunning.applyBillingEvent(
+    {
+      id: event.eventId,
+      type: event.type,
+      created: new Date(event.created * 1000),
+      workspaceId,
+      invoiceId: invoice ? str(event.object['id']) : null,
+      // The subscription's status when Stripe created the event (B072 keeps it, reduceObject).
+      objectStatus: invoice ? null : str(event.object['status']),
+    },
+    new Date((deps.clock ?? Date.now)()),
+  );
+}
+
 /** An invoice's webhook data: its id, amount and currency. */
 function invoiceData(event: HandledEvent, amountField: 'amount_paid' | 'amount_due') {
   const amount = event.object[amountField];
@@ -169,7 +195,8 @@ export async function handleEvent(
     case 'customer.subscription.deleted': {
       const subId = str(event.object['id']);
       if (subId === null || !subId.startsWith('sub_')) return 'ignored';
-      await reconcile(event, subId, deps);
+      const { workspaceId } = await reconcile(event, subId, deps);
+      if (event.type !== 'customer.subscription.created') await dun(event, workspaceId, deps);
       return 'processed';
     }
     case 'customer.subscription.trial_will_end': {
@@ -211,6 +238,7 @@ export async function handleEvent(
         payload: data,
         dedupeKey: data.invoice,
       });
+      await dun(event, workspaceId, deps);
       return 'processed';
     }
     case 'invoice.payment_failed': {
@@ -228,6 +256,7 @@ export async function handleEvent(
         payload: { kind: 'payment_failed' },
         dedupeKey: data.invoice,
       });
+      await dun(event, workspaceId, deps);
       return 'processed';
     }
     default:
