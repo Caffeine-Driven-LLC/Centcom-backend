@@ -17,7 +17,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 ![Progress](docs/progress.svg)
 
-**65% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
+**66% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
 
 ## Next steps
 
@@ -40,8 +40,8 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 | [B026](plan/backend/B026.md) | Account deletion and data export | M | M3 |
 | [B029](plan/backend/B029.md) | Invites: create, accept, revoke, expiry, key-bundle storage | L | M3 |
 | [B101](plan/backend/B101.md) | Credential-leak guard: scanners for logs, frames, telemetry, backups and CI | S | M3 |
-| [B076](plan/backend/B076.md) | Quota signalling: warnings at 80 and 100 percent to sessions and owners | M | M4 |
 | [B078](plan/backend/B078.md) | Dunning and grace-period state machine | M | M4 |
+| [B093](plan/backend/B093.md) | Observability: metrics, traces, dashboards, SLOs | M | M4 |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
 

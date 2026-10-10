@@ -480,6 +480,47 @@ export const METRICS = {
     API_WORKER,
   ),
   quota_crossings_total: counter('Usage quota thresholds crossed.', ['limit', 'pct']),
+  quota_evaluations_rerun_total: counter(
+    'Quota evaluations run again because the entitlements changed meanwhile.',
+    [],
+    API_WORKER,
+  ),
+  quota_evaluations_skipped_total: counter(
+    'Quota evaluations skipped, by reason (no_entitlements, not_hosted, usage_missing).',
+    ['reason'],
+    API_WORKER,
+  ),
+  quota_signal_deliveries_total: counter(
+    'Quota signal sends, by step (notice, notification, webhook).',
+    ['step'],
+    API_WORKER,
+  ),
+  quota_signal_delivery_failures_total: counter(
+    'Quota signal sends that failed and will be retried, by step.',
+    ['step'],
+    API_WORKER,
+  ),
+  quota_signal_jobs_failed_total: counter(
+    'Quota signal jobs dead-lettered after their last attempt, by job (evaluate, sweep).',
+    ['job'],
+    WORKER,
+    { onFailure: true },
+  ),
+  quota_signals_rearmed_total: counter(
+    'Quota signal levels re-armed (usage fell below them), by limit.',
+    ['limit'],
+    API_WORKER,
+  ),
+  quota_signals_total: counter(
+    'Quota signals claimed, by limit and level.',
+    ['limit', 'level'],
+    API_WORKER,
+  ),
+  quota_state_cache_failures_total: counter(
+    'Writes of the quota:state hash that failed.',
+    [],
+    API_WORKER,
+  ),
   ratelimit_blocks_total: counter('Abuse blocks applied.', [], ALL),
   ratelimit_denied_total: counter('Requests refused by the rate limit.', ['bucket'], ALL),
   ratelimit_store_errors_total: counter('Rate limit store errors.', [], ALL),

@@ -314,6 +314,11 @@ export type {
   PromotionsDb,
 } from './schema/promotions.js';
 export type {
+  QuotaSignalsDatabase,
+  QuotaSignalsDb,
+  QuotaSignalStateTable,
+} from './schema/quota-signals.js';
+export type {
   QuotaStateTable,
   UsageAggregateCursorTable,
   UsageAggregationDatabase,
