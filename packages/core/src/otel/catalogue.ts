@@ -135,6 +135,16 @@ export const METRICS = {
     [],
     RELAY,
   ),
+  relay_queue_items_total: counter(
+    'Queue items entering a state (queued, approved, running, held, done, failed, canceled, rejected, dropped), by state.',
+    ['state'],
+    RELAY,
+  ),
+  relay_queue_rejections_total: counter(
+    'Queue frames refused (or partly refused), by error code (queue_full, queue_item_gone, forbidden, conflict, invalid_frame, queue_not_allowed, service_unavailable).',
+    ['code'],
+    RELAY,
+  ),
   relay_resume_total: platform(
     'counter',
     'Resume attempts by result (replayed, snapshot_required, failed, busy).',
@@ -185,6 +195,21 @@ export const METRICS = {
   redis_ping_seconds: platform('histogram', 'Redis PING round trip, sampled.', [], ALL),
 
   // Billing and webhooks.
+  session_expiry_failed_total: counter(
+    'Session expiry sweep runs dead-lettered after their last attempt.',
+    [],
+    WORKER,
+  ),
+  session_outbox_failed_total: counter(
+    'Session transition notifications (relay or domain event) that failed and were rescheduled, by target (relay, event).',
+    ['target'],
+    API_WORKER,
+  ),
+  session_transitions_total: counter(
+    'Session lifecycle transitions, by the state reached (live, paused, ended, expired).',
+    ['state'],
+    API_WORKER,
+  ),
   stripe_event_dead_letters_total: counter(
     'Stripe event jobs moved to stripe.event.dlq after their last attempt.',
     [],
@@ -560,6 +585,16 @@ export const METRICS = {
     RELAY,
   ),
   relay_codec_errors_total: counter('Frames dropped because decoding threw.', [], RELAY),
+  relay_control_frames_total: counter(
+    'Client control frames (kick, mute, unmute, role, transfer_host, end, policy), by kind and outcome (accepted, denied, rejected, failed, duplicate).',
+    ['kind', 'outcome'],
+    RELAY,
+  ),
+  relay_control_mute_loads_failed_total: counter(
+    "A session's mutes could not be read; its event and queue frames get service_unavailable until they can.",
+    [],
+    RELAY,
+  ),
   relay_cursor_flood_closed_total: counter(
     'Members closed 4429 for a cursor flood (over 10x the rate for 10 s).',
     [],

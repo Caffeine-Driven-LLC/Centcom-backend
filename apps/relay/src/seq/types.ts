@@ -164,3 +164,14 @@ export interface SeqService {
 
 /** The key `fc.state` carries a frame's StoredFrame under, for the stages after this one. */
 export const SEQUENCED_STATE_KEY = 'seq.frame';
+
+/**
+ * B052: server frames (`from` = `srv`, as `UnsequencedFrame[]`) a stage before this one sets under
+ * this key to have them sequenced right after the frame, in one `assignBatch`: consecutive `seq`s,
+ * all or none (a submit and its auto-approval). Each is deduplicated like the frame, so a resend
+ * with the same ids sequences nothing new.
+ */
+export const COMPANION_FRAMES_KEY = 'seq.companions';
+
+/** B052: the companions' StoredFrames once sequenced, for fan-out (delivered after the frame). */
+export const SEQUENCED_COMPANIONS_KEY = 'seq.companions.frames';

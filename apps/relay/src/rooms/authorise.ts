@@ -11,9 +11,12 @@
  *   `event`, `queue`, `control` and `presence` frame is checked against the member's live role
  *   (at most 2 s old, CT-RBAC rule 2; never the ticket's or the frame's) with `authorizeFrame`:
  *   - allowed: on to the next stage;
- *   - muted (`event`/`queue` of a muted member): dropped silently;
- *   - forbidden: `sys.error` `forbidden` (with `ref` the frame's id) to the sender only, one
- *     `permission.denied` audit event (meta: the kind and why, never `p` or `ct`), not sequenced;
+ *   - muted (`event`/`queue` of a member B051 muted): `sys.error` `muted` to the sender only, one
+ *     `permission.denied` audit event (reason `muted`, B052), not sequenced (the session's mutes
+ *     are read first when B051's `MuteState.ready` asks to);
+ *   - forbidden: `sys.error` `forbidden` (with `ref` the frame's id) to the sender only, one audit
+ *     event, not sequenced. The event is `permission.denied` (meta: the kind and why, never `p` or
+ *     `ct`), unless `onDenied` (B051, for host-only control kinds) writes its own;
  *   - no longer a member: the member's connections close 4403 (`not_a_member`);
  *   - the records cannot be read: `sys.error` `service_unavailable` with `retry_after_s` (fail
  *     closed), the frame dropped, the connection kept.
@@ -49,11 +52,12 @@ import {
   authorizeFrame,
   MEMBER_FRAME_TYPES,
   SERVER_ONLY_KINDS,
+  MUTED_FRAME_TYPES,
   type FrameKind,
   type MuteState,
 } from './kind-policy.js';
 import type { LiveMembership } from './membership.js';
-import type { RoomRegistry, RoomTimer } from './registry.js';
+import type { MemberView, RoomRegistry, RoomTimer } from './registry.js';
 
 /** The first resubscribe waits this long; each later one twice as long, at most a minute. */
 export const RESUBSCRIBE_BASE_MS = 1_000;
@@ -66,7 +70,17 @@ export const ROOM_DETAILS = Object.freeze({
   notAMember: 'You are no longer a member of this session.',
   full: 'The session already has as many members as its plan allows.',
   unavailable: 'The relay cannot check your role right now; try again shortly.',
+  muted: 'The host has muted you in this session.',
 } as const);
+
+/** A frame the stage refused as forbidden, for `onDenied`. */
+export interface FrameDenial {
+  sid: string;
+  member: MemberView;
+  kind: string;
+  /** The frame as decoded (B051 reads a control frame's clear `p`; this stage never does). */
+  frame: unknown;
+}
 
 /** What the room side needs. */
 export interface RoomsDeps {
@@ -75,6 +89,11 @@ export interface RoomsDeps {
   mute: MuteState;
   /** B036's emitter: denied frames are audited in the background. */
   audit?: Pick<AuditEmitter, 'emitDetached'>;
+  /**
+   * B051: told of every forbidden frame first; true when it audited the frame itself (a control
+   * kind), so no `permission.denied` event is written for it.
+   */
+  onDenied?: (denial: FrameDenial) => boolean;
   logger?: Logger;
   metrics?: Metrics;
   /** Runs `fn` after `ms` (resubscribe backoff); default an unref'd setTimeout. */
@@ -187,6 +206,16 @@ export function createRooms(deps: RoomsDeps): {
       return;
     }
     if (live.role !== member.role) room.setRole(member.id, live.role);
+    const mutesLoading = MUTED_FRAME_TYPES.has(frame.t) ? deps.mute.ready?.(room.sid) : undefined;
+    if (mutesLoading !== undefined) {
+      try {
+        await mutesLoading;
+      } catch {
+        metrics.counter('relay_frames_authorised_total', { outcome: 'unavailable' }).inc();
+        sysError(connection, unavailable(1, ROOM_DETAILS.unavailable), ref);
+        return;
+      }
+    }
     const decision = authorizeFrame(
       { id: member.id, sid: room.sid, role: live.role },
       frame,
@@ -200,6 +229,15 @@ export function createRooms(deps: RoomsDeps): {
     const kind = frame.k ?? 'none';
     if (decision.error === 'muted') {
       metrics.counter('relay_frames_authorised_total', { outcome: 'muted' }).inc();
+      sysError(connection, new AppError('muted', { detail: ROOM_DETAILS.muted }), ref);
+      deps.audit?.emitDetached({
+        workspaceId: live.workspaceId,
+        actor: { type: 'user', id: live.userId },
+        action: 'permission.denied',
+        target: { type: 'session', id: room.sid },
+        outcome: 'denied',
+        meta: { attempted: kind, reason: 'muted', session_id: room.sid },
+      });
       return;
     }
     metrics.counter('relay_frames_authorised_total', { outcome: 'forbidden' }).inc();
@@ -208,6 +246,13 @@ export function createRooms(deps: RoomsDeps): {
       'relay.frame_forbidden',
     );
     sysError(connection, new AppError('forbidden', { detail: ROOM_DETAILS.forbidden }), ref);
+    let audited: boolean;
+    try {
+      audited = deps.onDenied?.({ sid: room.sid, member, kind, frame }) ?? false;
+    } catch {
+      audited = false;
+    }
+    if (audited) return;
     deps.audit?.emitDetached({
       workspaceId: live.workspaceId,
       actor: { type: 'user', id: live.userId },

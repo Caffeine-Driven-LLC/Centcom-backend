@@ -13,7 +13,7 @@
  *   the later lanes (approval delegation B060, queue rules B052, the submitter of `queue.cancel`).
  * - A kind the relay does not know (a newer client's) is forwarded for host and editor only
  *   (CT-WS-SESSION-EVENTS "Unknown kinds"), never for viewers.
- * - A muted member's `event` and `queue` frames are dropped (no error: CT-WS-CONTROL), while
+ * - A muted member's `event` and `queue` frames are refused (`sys.error muted`, B051), while
  *   `presence` and `control` still pass.
  *
  * Owns: the table and `authorizeFrame`. Must not: look at `p` or `ct`, or take the role from the
@@ -100,7 +100,7 @@ export const MEMBER_FRAME_TYPES: ReadonlySet<string> = new Set([
 ]);
 
 /** Frame types a mute silences. */
-const MUTED_TYPES: ReadonlySet<string> = new Set(['event', 'queue']);
+export const MUTED_FRAME_TYPES: ReadonlySet<string> = new Set(['event', 'queue']);
 
 /** The member as authorisation needs it: their session and live role. */
 export interface MemberRole {
@@ -114,6 +114,11 @@ export interface MemberRole {
 /** Whether a member is muted in a session (B051 keeps the state; this lane reads it). */
 export interface MuteState {
   isMuted(sid: string, memberId: string): boolean;
+  /**
+   * Undefined when `isMuted` can answer for `sid` now; else a promise that resolves once it can
+   * (B051 reads the session's mutes) or rejects when it cannot (the frame is refused, 503).
+   */
+  ready?(sid: string): Promise<void> | undefined;
 }
 
 /** What authorisation needs of a frame. */
@@ -122,7 +127,7 @@ export interface FrameKind {
   k?: string;
 }
 
-/** The outcome: pass, refuse (`sys.error forbidden`), or drop silently (muted). */
+/** The outcome: pass, refuse (`sys.error forbidden`), or refuse a muted member (`sys.error muted`). */
 export type FrameDecision = { ok: true } | { ok: false; error: 'forbidden' | 'muted' };
 
 /** True for a kind in the catalogue (the generated `EVENT_KINDS`). */
@@ -142,7 +147,8 @@ export function authorizeFrame(m: MemberRole, frame: FrameKind, mute: MuteState)
       ? SERVER
       : UNKNOWN_KIND_ROLES;
   if (roles === undefined || !roles.includes(m.role)) return { ok: false, error: 'forbidden' };
-  if (MUTED_TYPES.has(frame.t) && mute.isMuted(m.sid, m.id)) return { ok: false, error: 'muted' };
+  if (MUTED_FRAME_TYPES.has(frame.t) && mute.isMuted(m.sid, m.id))
+    return { ok: false, error: 'muted' };
   return { ok: true };
 }
 

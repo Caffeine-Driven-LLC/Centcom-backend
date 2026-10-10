@@ -36,6 +36,7 @@ import type { ConnectionEntry } from '../connection-registry.js';
 import type { InboundStage, RelayConnection } from '../pipeline.js';
 import type { RoomRegistry } from '../rooms/registry.js';
 import {
+  SEQUENCED_COMPANIONS_KEY,
   SEQUENCED_STATE_KEY,
   SERVER_FROM,
   type SeqService,
@@ -335,7 +336,12 @@ export function createFanOut(deps: FanOutDeps): FanOut & { stage: InboundStage; 
   const stage: InboundStage = async (fc, next) => {
     const frame = fc.state[SEQUENCED_STATE_KEY] as StoredFrame | undefined;
     const sid = fc.connection.entry.sessionId;
-    if (frame !== undefined && sid !== null) deliver(sid, frame);
+    if (frame !== undefined && sid !== null) {
+      deliver(sid, frame);
+      // B052: server frames sequenced with it (an auto-approval), in their seq order.
+      const companions = fc.state[SEQUENCED_COMPANIONS_KEY] as StoredFrame[] | undefined;
+      for (const companion of companions ?? []) deliver(sid, companion);
+    }
     await next();
   };
 

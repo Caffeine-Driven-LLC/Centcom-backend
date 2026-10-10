@@ -112,6 +112,26 @@ registerInvitePurgeHook(hooks, createInviteStore(db)); // before startWorkspaceP
   letter, and the purge hook; on Redis 7 (CI), one scheduler with the retry options, a run, and a
   failing run dead-lettered after 3 attempts.
 
+## `session-expiry` (B053)
+
+Every 60 s, runs `session.expiry.sweep`: the API's session lifecycle (`SessionService.sweep`)
+pauses live sessions whose host has been gone 10 minutes, expires sessions paused 24 hours, and
+retries the transition notifications that did not go out.
+
+```ts
+const queue = createSessionExpiryQueue({ connection, prefix });
+await scheduleSessionExpiry(queue); // one scheduler per queue, however often it is called
+const worker = startSessionExpiryWorker({ connection, prefix, sessions, logger, metrics });
+```
+
+- **Idempotent and safe on several workers:** the sweep holds a Postgres advisory lock and every
+  transition is a conditional UPDATE, so an overlapping or repeated run moves nothing twice.
+- **Retries:** 3 attempts from 5 s, exponential with jitter 0.5, then the dead-letter set (kept 7
+  days), counted in `session_expiry_failed_total`, logged as `session.expiry_failed`.
+- **Logs:** `session.expiry_swept` with the counts only.
+- **Tests:** `test/session-expiry.test.ts`. The sweep itself is tested on Postgres in
+  `apps/api/test/sessions/lifecycle/`.
+
 ## `workspace-settings` purge hook (B034)
 
 `registerWorkspaceSettingsPurgeHook(hooks, store)` adds the `workspace-settings` hook to B027's

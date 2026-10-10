@@ -15,7 +15,9 @@
  * `schema/releases.ts`, telemetry (B085) in `schema/telemetry.ts`, the status feed (B086) in
  * `schema/status.ts`, staff access (B087) in `schema/staff.ts`, account deletion and data
  * exports (B026) in `schema/account-lifecycle.ts`, Stripe webhook events and the billing outbox
- * (B072) in `schema/stripe-events.ts`, the durable history index (B055) in `schema/history.ts`;
+ * (B072) in `schema/stripe-events.ts`, the durable history index (B055) in `schema/history.ts`,
+ * session policy and mutes (B051) in `schema/control.ts`, the command-post queue (B052) in
+ * `schema/queue.ts`, the session lifecycle (B053) in `schema/sessions-lifecycle.ts`;
  * repositories (B013 on, devices
  * from B020, workspaces from B027, members from B028, invites from B029, settings from B034,
  * projects from B035, slots from B031, notifications from B063) in `repos/`; the entitlements
@@ -168,6 +170,24 @@ export type {
   LifecycleUsersTable,
 } from './schema/account-lifecycle.js';
 export type { AuditDatabase, AuditEventsTable } from './schema/audit-events.js';
+export type {
+  ControlDatabase,
+  ControlTables,
+  SessionMuteTable,
+  SessionPolicyTable,
+} from './schema/control.js';
+export type {
+  QueueDatabase,
+  QueueItemTable,
+  QueueSessionTable,
+  QueueTables,
+} from './schema/queue.js';
+export type {
+  LifecycleSessionsTable,
+  SessionOutboxTable,
+  SessionsLifecycleDatabase,
+  SessionsLifecycleTables,
+} from './schema/sessions-lifecycle.js';
 export type {
   HistoryDatabase,
   HistoryIndexTable,

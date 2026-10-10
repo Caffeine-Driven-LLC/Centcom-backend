@@ -120,6 +120,13 @@ new ones are given up at once. Delivery never depends on the port.
 - `submitServer(sid, frame)`: B044's `emitServer`. A frame from `srv`, assigned in the session's
   `seq` space (deduplicated by its id), buffered and handed to the durable append.
 
+**Companion frames** (B052). A stage before this one may set server frames under
+`fc.state[COMPANION_FRAMES_KEY]`. The stage then assigns the client's frame and them in one
+`assignBatch`: consecutive `seq`s, all or none. That's how a `queue.submit` and the relay's
+auto-approval go out together. Each companion is deduplicated by its id, so a resend sequences
+nothing new. The stored companions go to fan-out under `fc.state[SEQUENCED_COMPANIONS_KEY]`,
+which delivers them right after the frame.
+
 `SeqStore.hydrate(sid, head, frames, now)` (B042): when the store's head is below `head` (a Redis
 flush), the counter becomes `head` and the buffer holds exactly `frames` (the contiguous run ending
 at `head`), atomically (`SEQ_HYDRATE_LUA`); otherwise nothing changes.
