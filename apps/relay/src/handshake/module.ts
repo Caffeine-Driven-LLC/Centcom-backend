@@ -43,6 +43,9 @@ const relayModule: RelayModule = {
       onWelcomed: (connection, admitted) => {
         ctx.cluster?.welcomed(connection, admitted);
         ctx.presence?.welcomed(connection).catch(() => undefined);
+        // B052: the joiner gets the latest queue.state (its seq; a client keeps the newest).
+        const queueState = ctx.queue?.lastState(admitted.sid);
+        if (queueState !== undefined) ctx.fanout?.sendTo(connection, queueState);
       },
     });
     ctx.pipeline.use(STAGE_ORDER.handshake, handshake.stage);

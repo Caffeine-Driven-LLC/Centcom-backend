@@ -1,8 +1,8 @@
 /**
  * Audit of denied frames (B043; tests "rooms.audit.test.ts", acceptance 9; CT-RBAC rule 6): each
  * denied frame writes exactly one `permission.denied` event with outcome `denied`, the session as
- * target and only the kind and the reason in `meta`, never `p`, `ct` or any frame content. Allowed
- * and muted frames write none. The event passes B036's real emitter (its catalogue and checks).
+ * target and only the kind and the reason in `meta`, never `p`, `ct` or any frame content (a muted
+ * member's frame too, with reason `muted`). Allowed frames write none. The event passes B036's real emitter (its catalogue and checks).
  * Rejected frames are logged with kind, session, member and result only.
  */
 import { createAuditEmitter, type AuditDb } from '@centcom/core';
@@ -42,7 +42,7 @@ describe('denied frames are audited', () => {
     expect(text).not.toContain('xchacha20poly1305');
   });
 
-  it('audits nothing for a muted member’s refused frame (B051: the sender gets `muted`)', async () => {
+  it('audits a muted member’s refused frame once (B051: the sender gets `muted`; B052: audited)', async () => {
     const h = roomsHarness();
     const { conn, mid } = await h.admit('editor');
     h.mute.mute(h.sid, mid);
@@ -55,7 +55,13 @@ describe('denied frames are audited', () => {
         p: expect.objectContaining({ code: 'muted' }),
       }),
     ]);
-    expect(h.audited).toEqual([]);
+    expect(h.audited).toEqual([
+      expect.objectContaining({
+        action: 'permission.denied',
+        outcome: 'denied',
+        meta: { attempted: 'message.user', reason: 'muted', session_id: h.sid },
+      }),
+    ]);
   });
 
   it('produces events B036’s emitter accepts, and logs no payload', async () => {

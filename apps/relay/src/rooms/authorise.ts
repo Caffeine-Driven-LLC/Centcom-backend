@@ -11,8 +11,9 @@
  *   `event`, `queue`, `control` and `presence` frame is checked against the member's live role
  *   (at most 2 s old, CT-RBAC rule 2; never the ticket's or the frame's) with `authorizeFrame`:
  *   - allowed: on to the next stage;
- *   - muted (`event`/`queue` of a member B051 muted): `sys.error` `muted` to the sender only, not
- *     sequenced (the session's mutes are read first when B051's `MuteState.ready` asks to);
+ *   - muted (`event`/`queue` of a member B051 muted): `sys.error` `muted` to the sender only, one
+ *     `permission.denied` audit event (reason `muted`, B052), not sequenced (the session's mutes
+ *     are read first when B051's `MuteState.ready` asks to);
  *   - forbidden: `sys.error` `forbidden` (with `ref` the frame's id) to the sender only, one audit
  *     event, not sequenced. The event is `permission.denied` (meta: the kind and why, never `p` or
  *     `ct`), unless `onDenied` (B051, for host-only control kinds) writes its own;
@@ -229,6 +230,14 @@ export function createRooms(deps: RoomsDeps): {
     if (decision.error === 'muted') {
       metrics.counter('relay_frames_authorised_total', { outcome: 'muted' }).inc();
       sysError(connection, new AppError('muted', { detail: ROOM_DETAILS.muted }), ref);
+      deps.audit?.emitDetached({
+        workspaceId: live.workspaceId,
+        actor: { type: 'user', id: live.userId },
+        action: 'permission.denied',
+        target: { type: 'session', id: room.sid },
+        outcome: 'denied',
+        meta: { attempted: kind, reason: 'muted', session_id: room.sid },
+      });
       return;
     }
     metrics.counter('relay_frames_authorised_total', { outcome: 'forbidden' }).inc();

@@ -119,6 +119,8 @@ export interface ControlDeps {
   audit?: Pick<AuditEmitter, 'emitDetached'>;
   /** Called once a session has ended here (B047's presence, the mute cache). */
   onEnded?: (sid: string) => void;
+  /** Called once `host_changed` went out (B052: held queue items show as approved again). */
+  onHostChanged?: (sid: string) => void;
   /** Milliseconds since the epoch. */
   clock?: () => number;
   logger?: Logger;
@@ -331,6 +333,7 @@ export function createControlHandler(deps: ControlDeps): ControlHandler {
           await deps.connections.refresh(sid, host).catch(() => undefined);
           await deps.connections.refresh(sid, target).catch(() => undefined);
         }
+        deps.onHostChanged?.(sid);
         return [emitted];
       }
       case 'control.end': {
