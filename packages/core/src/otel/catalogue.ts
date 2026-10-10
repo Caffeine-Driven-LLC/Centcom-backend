@@ -200,10 +200,20 @@ export const METRICS = {
     [],
     WORKER,
   ),
+  session_host_outbox_failed_total: counter(
+    'Host-change notifications (claim-host) the relay notifier refused and that were rescheduled.',
+    [],
+    API_WORKER,
+  ),
   session_outbox_failed_total: counter(
     'Session transition notifications (relay or domain event) that failed and were rescheduled, by target (relay, event).',
     ['target'],
     API_WORKER,
+  ),
+  session_ticket_failures_total: counter(
+    'Relay tickets not issued because signing failed or the ticket could not be recorded, by reason (signing, record).',
+    ['reason'],
+    API,
   ),
   session_transitions_total: counter(
     'Session lifecycle transitions, by the state reached (live, paused, ended, expired).',
