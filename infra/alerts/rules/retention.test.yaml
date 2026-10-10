@@ -1,8 +1,8 @@
-# promtool unit tests for retention.nonprod.rules.yaml (B094); see api.test.yaml.
+# promtool unit tests for retention.rules.yaml (B094); see api.test.yaml.
 rule_files:
   - ../../observability/slo/rules.yaml
   - ../recording/slo-30m.rules.yaml
-  - retention.nonprod.rules.yaml
+  - retention.rules.yaml
 
 evaluation_interval: 1m
 
@@ -32,7 +32,6 @@ tests:
             exp_annotations:
               dashboard: '/d/centcom-workers-queues?var-env=prod'
               impact: 'Data past its retention period is kept longer than the policy allows (a privacy commitment), and the next run has more to delete.'
-              pending_metric: 'B090'
               summary: 'A data-retention run failed or was aborted in prod in the last hour.'
           - exp_labels:
               env: 'stage'
@@ -43,5 +42,4 @@ tests:
             exp_annotations:
               dashboard: '/d/centcom-workers-queues?var-env=stage'
               impact: 'Data past its retention period is kept longer than the policy allows (a privacy commitment), and the next run has more to delete.'
-              pending_metric: 'B090'
               summary: 'A data-retention run failed or was aborted in stage in the last hour.'

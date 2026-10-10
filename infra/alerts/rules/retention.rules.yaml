@@ -1,6 +1,5 @@
-# Data-retention alerts (B094), non-prod until B090 exports `centcom_retention_aborted_total` (see
-# backup.nonprod.rules.yaml for what non-prod means). When B090 lands, catalogue the metric, drop
-# `pending_metric` and rename this to retention.rules.yaml.
+# Data-retention alerts (B094): B090's retention runs (`centcom_retention_aborted_total`, catalogued
+# by B090) and B085's telemetry retention.
 groups:
   - name: alerts-retention
     interval: 1m
@@ -23,4 +22,3 @@ groups:
           summary: 'A data-retention run failed or was aborted in {{ $labels.env }} in the last hour.'
           impact: 'Data past its retention period is kept longer than the policy allows (a privacy commitment), and the next run has more to delete.'
           dashboard: '/d/centcom-workers-queues?var-env={{ $labels.env }}'
-          pending_metric: 'B090'
