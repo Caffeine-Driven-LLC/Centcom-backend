@@ -123,11 +123,15 @@ describe.runIf(ADMIN_URL !== undefined)('data retention on Postgres 16', () => {
     await minio?.stop();
   });
 
-  async function setup() {
+  /** A database and the job's parts; `store` replaces the shared blob store (MinIO when available). */
+  async function setup(store: BlobStore = blobs) {
     const t: TestDatabase = await migratedDatabase(10);
     const db = t.db as unknown as Db;
     const repo = createRetentionRepository(db);
-    const history = createHistoryStore({ db: t.db as unknown as Kysely<HistoryDatabase>, blobs });
+    const history = createHistoryStore({
+      db: t.db as unknown as Kysely<HistoryDatabase>,
+      blobs: store,
+    });
     const limits = new Map<string, Record<string, unknown>>();
     const notices: { channel: string; message: unknown }[] = [];
     const mails: { to: string; days: string; key: string }[] = [];
@@ -220,6 +224,7 @@ describe.runIf(ADMIN_URL !== undefined)('data retention on Postgres 16', () => {
     return {
       t,
       db,
+      blobs: store,
       repo,
       history,
       limits,
@@ -331,7 +336,10 @@ describe.runIf(ADMIN_URL !== undefined)('data retention on Postgres 16', () => {
   }, 120_000);
 
   it('leaves every index row with its blob when some blob deletes fail, and finishes next run', async () => {
-    const s = await setup();
+    // The failures are injected around the store, so the store itself is in memory: the test
+    // does not depend on MinIO taking 48 PUTs (other tests cover the S3 store).
+    const memory = createMemoryBlobStore();
+    const s = await setup(memory);
     try {
       const ws = await s.workspace(PRO);
       const sessions = [
@@ -343,11 +351,11 @@ describe.runIf(ADMIN_URL !== undefined)('data retention on Postgres 16', () => {
       // Every 4th delete fails, as a store failing about 10 % of the time would.
       let deletes = 0;
       const flaky: BlobStore = {
-        ...blobs,
+        ...memory,
         async delete(keys) {
           deletes += 1;
           if (deletes % 4 === 0) throw new BlobStoreError('DELETE answered 500');
-          await blobs.delete(keys);
+          await memory.delete(keys);
         },
       };
       const flakyHistory = createHistoryStore({
@@ -360,14 +368,14 @@ describe.runIf(ADMIN_URL !== undefined)('data retention on Postgres 16', () => {
       for (const sid of sessions) {
         const keys = await sql<{ blob_key: string }>`
           select distinct blob_key from history_index where session_id = ${sid}`.execute(s.db);
-        const listed = await blobs.list(historyPrefix(sid));
+        const listed = await memory.list(historyPrefix(sid));
         for (const { blob_key } of keys.rows) expect(listed).toContain(blob_key);
       }
       const [second] = await s.run({ policy: 'history' });
       expect(second).toMatchObject({ outcome: 'done', skipped: 0 });
       for (const sid of sessions) {
         expect(await s.frames(sid)).toBe(0);
-        expect(await blobs.list(historyPrefix(sid))).toEqual([]);
+        expect(await memory.list(historyPrefix(sid))).toEqual([]);
       }
     } finally {
       await s.t.drop();
