@@ -17,8 +17,9 @@
  * exports (B026) in `schema/account-lifecycle.ts`, Stripe webhook events and the billing outbox
  * (B072) in `schema/stripe-events.ts`, the durable history index (B055) in `schema/history.ts`,
  * session policy and mutes (B051) in `schema/control.ts`, the command-post queue (B052) in
- * `schema/queue.ts`, the session lifecycle (B053) in `schema/sessions-lifecycle.ts`, retention's
- * run reports and bookkeeping (B090) in `schema/retention.ts`; repositories (B013 on, devices
+ * `schema/queue.ts`, the session lifecycle (B053) in `schema/sessions-lifecycle.ts`, dunning
+ * (B078) in `schema/dunning.ts`, retention's run reports and bookkeeping (B090) in
+ * `schema/retention.ts`; repositories (B013 on, devices
  * from B020, workspaces from B027, members from B028, invites from B029, settings from B034,
  * projects from B035, slots from B031, notifications from B063, retention from B090) in
  * `repos/`; the entitlements
@@ -307,6 +308,13 @@ export type {
   BillingDb,
   BillingSubscriptionTable,
 } from './schema/billing.js';
+export type {
+  DunningDatabase,
+  DunningDb,
+  DunningNoneReason,
+  DunningStatus,
+  SubscriptionDunningTable,
+} from './schema/dunning.js';
 export type {
   InvoiceMirrorStatus,
   InvoicesDatabase,

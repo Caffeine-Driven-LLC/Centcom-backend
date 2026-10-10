@@ -3,8 +3,8 @@
  * delivery job (B032), the workspace purge (B027) with the settings (B034), entitlements (B069),
  * projects (B035) and session history (B055) purge hooks, invite expiry (B029), notification
  * dispatch and digests (B063), audit log exports (B082), telemetry retention (B085), account
- * exports and purges (B026), Stripe webhook event processing (B072), and the session expiry sweep
- * (B053). Later lanes add theirs
+ * exports and purges (B026), Stripe webhook event processing (B072), the session expiry sweep
+ * (B053), and dunning (B078). Later lanes add theirs
  * under `src/jobs/`.
  */
 export {
@@ -189,6 +189,34 @@ export {
   type StripeEventJobData,
   type StripeEventWorkerOptions,
 } from './jobs/stripe-event-process.js';
+export {
+  createDunningDlq,
+  createDunningQueue,
+  createDunningScheduler,
+  DUNNING_ATTEMPTS,
+  DUNNING_BACKOFF_MS,
+  DUNNING_COMPLETED_RETENTION_S,
+  DUNNING_DLQ,
+  DUNNING_EXPIRE_EVERY_MS,
+  DUNNING_EXPIRE_JOB,
+  DUNNING_EXPIRE_SCHEDULER_ID,
+  DUNNING_FAILED_RETENTION_S,
+  DUNNING_QUEUE,
+  DUNNING_REMIND_JOB,
+  DUNNING_WIND_DOWN_JOB,
+  dunningJobOptions,
+  onDunningJobFailed,
+  processDunningJob,
+  remindJobId,
+  scheduleDunningExpire,
+  startDunningWorker,
+  windDownJobId,
+  type DunningJob,
+  type DunningJobDeps,
+  type DunningQueueOptions,
+  type DunningRunner,
+  type DunningWorkerOptions,
+} from './jobs/dunning/index.js';
 export {
   BILLING_SEATS_RECONCILE_ATTEMPTS,
   BILLING_SEATS_RECONCILE_EVERY_MS,
