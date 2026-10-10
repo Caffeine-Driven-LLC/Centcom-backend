@@ -79,7 +79,7 @@ describe('promtool runner', () => {
       'infra/alerts/rules/postgres.rules.yaml',
       'infra/alerts/rules/redis.rules.yaml',
       'infra/alerts/rules/relay.rules.yaml',
-      'infra/alerts/rules/retention.nonprod.rules.yaml',
+      'infra/alerts/rules/retention.rules.yaml',
       'infra/alerts/rules/worker.rules.yaml',
     ]);
     expect(testFiles()).toHaveLength(8);

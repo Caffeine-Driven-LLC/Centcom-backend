@@ -46,7 +46,7 @@ infra/alerts/recording/*.yaml infra/alerts/rules/*.rules.yaml` for dev and stage
 | `ReadyzFailing`           | ticket       | platform  | platform     | more than one instance of a component fails `/readyz` for 5 m                                                           |
 | `ObservabilityDown`       | page         | platform  | platform     | a service that exported metrics an hour ago has exported nothing for 10 m                                               |
 | `BackupStale`             | ticket       | backup    | platform     | the newest base backup is over 26 h old (non-prod until B099)                                                           |
-| `RetentionJobFailed`      | ticket       | retention | platform     | a retention run aborted or failed in the last hour (non-prod until B090)                                                |
+| `RetentionJobFailed`      | ticket       | retention | platform     | a retention run aborted or failed in the last hour                                                                      |
 
 Ten alerts page, the most allowed. Every page has an SLO or a `user_impact` statement: the SLO
 burns, `DeadLetterNonEmpty` (dead letters are lost after 7 days) and `ObservabilityDown` (alerting

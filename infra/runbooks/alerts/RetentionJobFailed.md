@@ -1,9 +1,9 @@
 # RetentionJobFailed
 
 Severity: `ticket` · Service: `retention` · Owner: `platform` · Metrics:
-`centcom_retention_aborted_total` (B090; until it lands the rule is non-prod only) and
+`centcom_retention_aborted_total` (B090) and
 `centcom_telemetry_retention_failed_total` (B085) · Rules:
-[retention.nonprod.rules.yaml](../../alerts/rules/retention.nonprod.rules.yaml)
+[retention.rules.yaml](../../alerts/rules/retention.rules.yaml)
 
 ## Symptoms
 
