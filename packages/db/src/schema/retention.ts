@@ -6,7 +6,6 @@
 import type { AuditDatabase } from '@centcom/core';
 import type { ColumnType } from 'kysely';
 import type { AccountExportsTable } from './account-lifecycle.js';
-import type { ApiKeysDatabase } from './api-keys.js';
 import type { AuditExportDatabase } from './audit-exports.js';
 import type { CoreDatabase, CreatedAt, UpdatedAt } from './core.js';
 import type { DeviceGrantsDatabase } from './device-grants.js';
@@ -87,7 +86,6 @@ export type RetentionDb = CoreDatabase &
   LoginTokensDatabase &
   DeviceGrantsDatabase &
   InvitesDatabase &
-  ApiKeysDatabase &
   StripeEventsDatabase &
   PromotionsDatabase & {
     account_exports: AccountExportsTable;

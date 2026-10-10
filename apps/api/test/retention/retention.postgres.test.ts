@@ -561,16 +561,6 @@ describe.runIf(ADMIN_URL !== undefined)('data retention on Postgres 16', () => {
         await invite({ revoked: ago(29 * DAY), expires: later(DAY) }),
         await invite({ expires: later(DAY) }),
       ];
-      // API keys: revoked 31 days ago goes; revoked yesterday and active stay.
-      const key = async (revoked: Date | null) => {
-        const id = newId('key');
-        await sql`insert into api_keys (id, workspace_id, created_by, name, mode, key_hash, prefix,
-            scope, revoked_at)
-          values (${id}, ${ws}, ${s.owner}, 'ci', 'live', ${hex(32)}, 'cen_live_Ab3', 'sessions:read',
-            ${revoked})`.execute(s.db);
-        return id;
-      };
-      const keys = [await key(ago(31 * DAY)), await key(ago(DAY)), await key(null)];
 
       const first = await s.run({ config: FORCED });
       expect(first.filter((r) => r.outcome !== 'done')).toEqual([]);
@@ -593,7 +583,6 @@ describe.runIf(ADMIN_URL !== undefined)('data retention on Postgres 16', () => {
         families[1],
       ]);
       expect(await left('invites', 'id', invites)).toEqual(invites.slice(2).sort());
-      expect(await left('api_keys', 'id', keys)).toEqual(keys.slice(1).sort());
       // Again: nothing more, and no errors.
       const again = await s.run({ config: FORCED });
       expect(again.filter((r) => r.purged > 0 || r.outcome !== 'done')).toEqual([]);

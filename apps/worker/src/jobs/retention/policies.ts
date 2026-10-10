@@ -15,7 +15,6 @@
  * | `login_tokens`        | B014  | magic-link tokens past their expiry (15 minutes)               | no    |
  * | `device_codes`        | B016  | device-flow grants 10 minutes past their expiry                | no    |
  * | `invites`             | B029  | invites accepted, revoked or expired over 30 days ago          | yes   |
- * | `api_keys`            | B019  | keys revoked or expired over 30 days ago                       | yes   |
  * | `account_exports`     | B026  | export rows expired over 30 days ago (B026 deletes the files)  | yes   |
  * | `audit_exports`       | B082  | audit export rows expired over 30 days ago (B082: the files)   | yes   |
  * | `stripe_events`       | B072  | processed or ignored Stripe events received over 90 days ago   | yes   |
@@ -55,7 +54,6 @@ export const ROW_POLICIES = Object.freeze([
   { id: 'login_tokens', owner: 'B014', guard: false },
   { id: 'device_codes', owner: 'B016', guard: false },
   { id: 'invites', owner: 'B029', guard: true },
-  { id: 'api_keys', owner: 'B019', guard: true },
   { id: 'account_exports', owner: 'B026', guard: true },
   { id: 'audit_exports', owner: 'B082', guard: true },
   { id: 'stripe_events', owner: 'B072', guard: true },

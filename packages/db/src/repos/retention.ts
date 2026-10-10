@@ -48,7 +48,6 @@ export type RetentionRowPolicyId =
   | 'login_tokens'
   | 'device_codes'
   | 'invites'
-  | 'api_keys'
   | 'account_exports'
   | 'audit_exports'
   | 'stripe_events'
@@ -482,11 +481,6 @@ export function createRetentionRepository<DB extends RetentionDb>(database: Kyse
       (now) =>
         sql`coalesce(accepted_at, revoked_at, expired_at, expires_at) < ${before(now, 30 * DAY_MS)}`,
     ),
-    // API keys (B019) revoked or expired over 30 days ago.
-    api_keys: keyedRowStore(db, 'api_keys', 'id', 'created_at', (now) => {
-      const cutoff = before(now, 30 * DAY_MS);
-      return sql`(revoked_at < ${cutoff} or expires_at < ${cutoff})`;
-    }),
     // Account exports (B026) expired (B026's sweep deleted the file) or failed over 30 days ago.
     account_exports: keyedRowStore(db, 'account_exports', 'id', 'created_at', (now) => {
       const cutoff = before(now, 30 * DAY_MS);

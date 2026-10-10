@@ -26,7 +26,6 @@ Code: the worker's `apps/worker/src/jobs/retention/` (policies, runner, queue) a
 | `login_tokens`        | `login_tokens` (B014)                           | past their expiry (they live 15 minutes and are used once)                                         | no    |
 | `device_codes`        | `device_grants` (B016)                          | 10 minutes past their expiry, whatever their status                                                | no    |
 | `invites`             | `invites` (B029)                                | accepted, revoked or expired over 30 days ago (their key bundles went at once)                     | yes   |
-| `api_keys`            | `api_keys` (B019)                               | revoked or expired over 30 days ago                                                                | yes   |
 | `account_exports`     | `account_exports` (B026)                        | rows expired (B026's sweep deleted the file at 7 days) or failed, over 30 days ago                 | yes   |
 | `audit_exports`       | `audit_export_jobs` (B082)                      | rows expired (B082's sweep deleted the file) or failed, over 30 days ago                           | yes   |
 | `stripe_events`       | `stripe_event` (B072)                           | processed or ignored, received over 90 days ago                                                    | yes   |

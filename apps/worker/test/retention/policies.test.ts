@@ -439,7 +439,6 @@ describe('the registry', () => {
       'login_tokens:B014',
       'device_codes:B016',
       'invites:B029',
-      'api_keys:B019',
       'account_exports:B026',
       'audit_exports:B082',
       'stripe_events:B072',
