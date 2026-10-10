@@ -195,6 +195,21 @@ export const METRICS = {
   redis_ping_seconds: platform('histogram', 'Redis PING round trip, sampled.', [], ALL),
 
   // Billing and webhooks.
+  session_expiry_failed_total: counter(
+    'Session expiry sweep runs dead-lettered after their last attempt.',
+    [],
+    WORKER,
+  ),
+  session_outbox_failed_total: counter(
+    'Session transition notifications (relay or domain event) that failed and were rescheduled, by target (relay, event).',
+    ['target'],
+    API_WORKER,
+  ),
+  session_transitions_total: counter(
+    'Session lifecycle transitions, by the state reached (live, paused, ended, expired).',
+    ['state'],
+    API_WORKER,
+  ),
   stripe_event_dead_letters_total: counter(
     'Stripe event jobs moved to stripe.event.dlq after their last attempt.',
     [],
