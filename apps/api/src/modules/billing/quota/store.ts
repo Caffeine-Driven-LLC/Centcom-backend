@@ -1,5 +1,5 @@
 /**
- * Quota signal state (B076, migration 20260102003900_quota_signal_state.sql): which 80 % and 100 %
+ * Quota signal state (B076, migration 20260102004500_quota_signal_state.sql): which 80 % and 100 %
  * signals each workspace, limit and period has had, under which limit, and how far their delivery
  * has got.
  *

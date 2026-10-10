@@ -22,7 +22,7 @@ description (rules, failure handling, configuration, metrics) is
 The worker's `jobs/quota-signals/` holds the `quota-signals` queue (`evaluate`, `sweep`), its
 dead-letter queue `quota-signals.dead`, and the Redis implementation of the hash
 (`createRedisQuotaStateCache`). Table: `quota_signal_state` (migration
-`20260102003900_quota_signal_state.sql`, types in `@centcom/db`'s `schema/quota-signals.ts`).
+`20260102004500_quota_signal_state.sql`, types in `@centcom/db`'s `schema/quota-signals.ts`).
 
 ## Wiring
 

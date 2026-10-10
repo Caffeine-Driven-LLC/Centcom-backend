@@ -1,5 +1,5 @@
 /**
- * Table types of quota signals (B076, migration 20260102003900_quota_signal_state.sql). Written by
+ * Table types of quota signals (B076, migration 20260102004500_quota_signal_state.sql). Written by
  * the API's quota signal store (apps/api `modules/billing/quota/`): which 80 % and 100 % signals
  * each workspace, metered limit and period has had, under which limit, and how far their delivery
  * has got. Ids, enums, limits and times only.

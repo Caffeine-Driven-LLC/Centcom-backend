@@ -8,7 +8,7 @@ limit stands, so the API (B080) and the relay can refuse hosted actions at 100 %
 
 Code: `apps/api/src/modules/billing/quota/` (see its README) and the worker's
 `apps/worker/src/jobs/quota-signals/`. Table: migration
-`packages/db/migrations/20260102003900_quota_signal_state.sql`.
+`packages/db/migrations/20260102004500_quota_signal_state.sql`.
 
 ## What is measured
 
