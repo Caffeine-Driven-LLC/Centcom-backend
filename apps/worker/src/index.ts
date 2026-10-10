@@ -3,8 +3,8 @@
  * delivery job (B032), the workspace purge (B027) with the settings (B034), entitlements (B069),
  * projects (B035) and session history (B055) purge hooks, invite expiry (B029), notification
  * dispatch and digests (B063), audit log exports (B082), telemetry retention (B085), account
- * exports and purges (B026), Stripe webhook event processing (B072), and the session expiry sweep
- * (B053). Later lanes add theirs
+ * exports and purges (B026), Stripe webhook event processing (B072), the session expiry sweep
+ * (B053), and dunning (B078). Later lanes add theirs
  * under `src/jobs/`.
  */
 export {
@@ -190,6 +190,34 @@ export {
   type StripeEventWorkerOptions,
 } from './jobs/stripe-event-process.js';
 export {
+  createDunningDlq,
+  createDunningQueue,
+  createDunningScheduler,
+  DUNNING_ATTEMPTS,
+  DUNNING_BACKOFF_MS,
+  DUNNING_COMPLETED_RETENTION_S,
+  DUNNING_DLQ,
+  DUNNING_EXPIRE_EVERY_MS,
+  DUNNING_EXPIRE_JOB,
+  DUNNING_EXPIRE_SCHEDULER_ID,
+  DUNNING_FAILED_RETENTION_S,
+  DUNNING_QUEUE,
+  DUNNING_REMIND_JOB,
+  DUNNING_WIND_DOWN_JOB,
+  dunningJobOptions,
+  onDunningJobFailed,
+  processDunningJob,
+  remindJobId,
+  scheduleDunningExpire,
+  startDunningWorker,
+  windDownJobId,
+  type DunningJob,
+  type DunningJobDeps,
+  type DunningQueueOptions,
+  type DunningRunner,
+  type DunningWorkerOptions,
+} from './jobs/dunning/index.js';
+export {
   BILLING_SEATS_RECONCILE_ATTEMPTS,
   BILLING_SEATS_RECONCILE_EVERY_MS,
   BILLING_SEATS_RECONCILE_FAILED_RETENTION_S,
@@ -205,3 +233,31 @@ export {
   type BillingSeatsReconcileResult,
   type BillingSeatsReconcileWorkerOptions,
 } from './jobs/billing-seats-reconcile.js';
+export {
+  createQuotaSignalsDeadQueue,
+  createQuotaSignalsQueue,
+  createQuotaStateRedisClient,
+  createRedisQuotaStateCache,
+  enqueueQuotaEvaluate,
+  evaluateJobId,
+  onQuotaSignalsFailed,
+  processQuotaSignals,
+  QUOTA_EVAL_DEBOUNCE_MS,
+  QUOTA_SIGNALS_ATTEMPTS,
+  QUOTA_SIGNALS_BACKOFF_MS,
+  QUOTA_SIGNALS_DEAD_QUEUE,
+  QUOTA_SIGNALS_DEAD_RETENTION_S,
+  QUOTA_SIGNALS_QUEUE,
+  QUOTA_SWEEP_INTERVAL_S,
+  QUOTA_SWEEP_SCHEDULER_ID,
+  quotaSignalsJobOptions,
+  quotaStateRedisKey,
+  scheduleQuotaSweep,
+  startQuotaSignalsWorker,
+  type QuotaSignalsDeps,
+  type QuotaSignalsQueueOptions,
+  type QuotaSignalsWorkerOptions,
+  type QuotaStateFields,
+  type QuotaStateRedisClientOptions,
+  type RedisQuotaStateCache,
+} from './jobs/quota-signals/index.js';
