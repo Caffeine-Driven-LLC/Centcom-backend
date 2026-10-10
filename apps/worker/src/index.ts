@@ -3,7 +3,8 @@
  * delivery job (B032), the workspace purge (B027) with the settings (B034), entitlements (B069),
  * projects (B035) and session history (B055) purge hooks, invite expiry (B029), notification
  * dispatch and digests (B063), audit log exports (B082), telemetry retention (B085), account
- * exports and purges (B026), and Stripe webhook event processing (B072). Later lanes add theirs
+ * exports and purges (B026), Stripe webhook event processing (B072), and the session expiry sweep
+ * (B053). Later lanes add theirs
  * under `src/jobs/`.
  */
 export {
@@ -57,6 +58,24 @@ export {
   type InviteExpiryQueueOptions,
   type InviteExpiryWorkerOptions,
 } from './jobs/invite-expiry.js';
+export {
+  createSessionExpiryQueue,
+  onSessionExpiryFailed,
+  processSessionExpiry,
+  scheduleSessionExpiry,
+  SESSION_EXPIRY_ATTEMPTS,
+  SESSION_EXPIRY_BACKOFF_BASE_MS,
+  SESSION_EXPIRY_EVERY_MS,
+  SESSION_EXPIRY_FAILED_RETENTION_S,
+  SESSION_EXPIRY_JOB,
+  SESSION_EXPIRY_QUEUE,
+  SESSION_EXPIRY_SCHEDULER_ID,
+  sessionExpiryJobOptions,
+  startSessionExpiryWorker,
+  type SessionExpiryDeps,
+  type SessionExpiryQueueOptions,
+  type SessionExpiryWorkerOptions,
+} from './jobs/session-expiry.js';
 export { PROJECT_PURGE_HOOK, registerProjectPurgeHook } from './jobs/project-purge.js';
 export { HISTORY_PURGE_HOOK, registerHistoryPurgeHook } from './jobs/history-purge.js';
 export {

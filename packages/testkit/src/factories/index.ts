@@ -227,6 +227,10 @@ function sessions(ctx: Context): SessionFactory {
           .executeTakeFirstOrThrow();
         creator = row.created_by;
       }
+      const created = ctx.at().created_at;
+      // B053's lifecycle columns default to now(); with a fake clock they follow it too.
+      const lifecycle: object =
+        created === undefined ? {} : { last_host_seen_at: created, updated_at: created };
       return ctx.db
         .insertInto('sessions')
         .values({
@@ -236,6 +240,7 @@ function sessions(ctx: Context): SessionFactory {
           region: 'eu',
           created_by: creator,
           ...ctx.at(),
+          ...lifecycle,
           ...overrides,
         })
         .returningAll()
