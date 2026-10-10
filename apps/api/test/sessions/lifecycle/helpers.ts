@@ -26,7 +26,12 @@ export { ADMIN_URL, migratedDatabase } from '../../notifications/dispatcher/post
 export const KEYS: SigningKeys = [
   { id: 'k1', secret: new Secret(new Uint8Array(randomBytes(32))) },
 ];
-export const T0 = Date.parse('2026-10-10T12:00:00.000Z');
+/**
+ * The fake clock's start: the next whole hour plus a day, so it is always ahead of the database's
+ * real `now()`. Rows that default `next_attempt_at` (and other columns) to `now()` are then due at
+ * T0, as the tests expect. A fixed date here stops working once real time passes it.
+ */
+export const T0 = Math.ceil(Date.now() / 3_600_000) * 3_600_000 + 86_400_000;
 
 /** A plan's limits from the contract's fixtures. */
 export function planLimits(plan: 'free' | 'pro' | 'team'): Record<string, unknown> {
