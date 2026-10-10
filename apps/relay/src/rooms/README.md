@@ -37,7 +37,7 @@ connections.
   | ------------------------- | -------------------------------------------------------------------------------------- |
   | allowed                   | on to sequencing                                                                       |
   | forbidden                 | `sys.error forbidden` (`ref` = frame id), one `permission.denied` audit event, dropped |
-  | muted (`event` / `queue`) | dropped silently                                                                       |
+  | muted (`event` / `queue`) | `sys.error muted` (`ref` = frame id), dropped (B051's mutes)                           |
   | no longer a member        | the member's connections close **4403** `not_a_member`                                 |
   | records unreadable        | `sys.error service_unavailable` (`retry_after_s` 1), dropped, connection kept          |
 
@@ -53,7 +53,10 @@ connections.
 ## Config
 
 None of its own. The member cap comes from the plan, the 2 s cache from CT-RBAC, and the 60 s
-eviction from the card. Mutes: nobody is muted until B051 provides a `MuteState`.
+eviction from the card. Mutes are B051's: its module plugs its registry in with `setMuteState`,
+and the stage waits for a session's mutes (`MuteState.ready`) before an `event` or `queue` frame;
+mutes that cannot be read refuse the frame with 503. B051 also audits refused host-only control
+kinds itself (`setDeniedAuditor`), as `control.<kind>` instead of `permission.denied`.
 
 ## Failure modes
 

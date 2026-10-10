@@ -16,6 +16,8 @@ import type { CoreDatabase, createDb } from '@centcom/db';
 import type { RelayConfig } from './config.js';
 import type { ConnectionRegistry } from './connection-registry.js';
 import type { BackpressureController } from './backpressure/controller.js';
+import type { MuteRegistry } from './control/mute-registry.js';
+import type { PolicyStore } from './control/policy-store.js';
 import type { ClusterNode } from './cluster/node.js';
 import type { FanOut } from './fanout/fanout.js';
 import type { HandshakeResume } from './handshake/handshake.js';
@@ -84,6 +86,11 @@ export interface RelayContext {
    * (B051's kick: `rotate(sid, 'member_removed', {after: kickFrame})`) and `due`.
    */
   epoch?: ReturnType<typeof createEpochs>;
+  /**
+   * Session control (B051): set by the control module when it registers (order 38): the session
+   * policy B052's queue reads (`policies.get`) and the mutes.
+   */
+  control?: { policies: PolicyStore; mutes: MuteRegistry };
 }
 
 /** A relay lane's plug-in: the default export of `src/<lane>/module.ts`. */
