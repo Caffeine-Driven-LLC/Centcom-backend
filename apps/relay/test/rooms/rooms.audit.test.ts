@@ -42,12 +42,19 @@ describe('denied frames are audited', () => {
     expect(text).not.toContain('xchacha20poly1305');
   });
 
-  it('audits nothing for a muted member’s dropped frame', async () => {
+  it('audits nothing for a muted member’s refused frame (B051: the sender gets `muted`)', async () => {
     const h = roomsHarness();
     const { conn, mid } = await h.admit('editor');
     h.mute.mute(h.sid, mid);
-    expect(await h.send(conn, fixtureFrame('message.user', h.sid))).toBe(false);
-    expect(conn.sent).toEqual([]);
+    const frame = fixtureFrame('message.user', h.sid);
+    expect(await h.send(conn, frame)).toBe(false);
+    expect(conn.sent).toEqual([
+      expect.objectContaining({
+        t: 'sys.error',
+        ref: frame['id'],
+        p: expect.objectContaining({ code: 'muted' }),
+      }),
+    ]);
     expect(h.audited).toEqual([]);
   });
 

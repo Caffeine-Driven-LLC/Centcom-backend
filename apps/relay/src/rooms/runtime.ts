@@ -3,7 +3,8 @@
  * (order 20) share for one `RelayContext`, made on first use. The handshake takes `access` (B038's
  * `SessionAccess`, Postgres) and `onAdmitted` (the room join); the rooms module adds the authorise
  * stage and the membership listener. Keyed by the context, so two relays in one process (tests)
- * never share rooms.
+ * never share rooms. B051's control module registers later and plugs in its mutes
+ * (`setMuteState`) and its audit of refused control frames (`setDeniedAuditor`).
  *
  * Owns: assembling the parts. Must not: keep anything outside the context's lifetime.
  */
@@ -13,7 +14,7 @@ import type { SessionAccess } from '../handshake/access.js';
 import type { RelayContext } from '../modules.js';
 import { createSlotService } from '../slots/index.js';
 import { createPostgresSessionAccess, type AccessDbClient } from './access.js';
-import { createRooms } from './authorise.js';
+import { createRooms, type FrameDenial } from './authorise.js';
 import { noMutes, type MuteState } from './kind-policy.js';
 import { createPostgresMembership, LiveMembership } from './membership.js';
 import { createRoomRegistry, type RoomRegistry } from './registry.js';
@@ -28,6 +29,10 @@ export interface RoomsRuntime {
   /** Writes the `permission.denied` events of refused frames. */
   audit: AuditEmitter;
   rooms: ReturnType<typeof createRooms>;
+  /** B051: the mutes the authorise stage reads from now on (default: nobody is muted). */
+  setMuteState(state: MuteState): void;
+  /** B051: told of forbidden frames first; true when it audited the frame itself. */
+  setDeniedAuditor(auditor: (denial: FrameDenial) => boolean): void;
 }
 
 const runtimes = new WeakMap<RelayContext, RoomsRuntime>();
@@ -41,8 +46,12 @@ export function roomsFor(ctx: RelayContext): RoomsRuntime {
     source: createPostgresMembership(ctx.db),
     clock: ctx.clock,
   });
-  // B051 keeps mutes; until it does, nobody is muted.
-  const mute = noMutes;
+  // B051 keeps mutes (its module registers after this runtime is made); until then nobody is.
+  const hooks: { mute: MuteState; denied?: (denial: FrameDenial) => boolean } = { mute: noMutes };
+  const mute: MuteState = {
+    isMuted: (sid, memberId) => hooks.mute.isMuted(sid, memberId),
+    ready: (sid) => hooks.mute.ready?.(sid),
+  };
   const audit = createAuditEmitter({
     db: ctx.db,
     logger: ctx.log,
@@ -64,10 +73,24 @@ export function roomsFor(ctx: RelayContext): RoomsRuntime {
     membership,
     mute,
     audit,
+    onDenied: (denial) => hooks.denied?.(denial) ?? false,
     logger: ctx.log,
     metrics: ctx.metrics,
   });
-  const runtime: RoomsRuntime = { registry, membership, mute, access, audit, rooms };
+  const runtime: RoomsRuntime = {
+    registry,
+    membership,
+    mute,
+    access,
+    audit,
+    rooms,
+    setMuteState(state) {
+      hooks.mute = state;
+    },
+    setDeniedAuditor(auditor) {
+      hooks.denied = auditor;
+    },
+  };
   runtimes.set(ctx, runtime);
   return runtime;
 }

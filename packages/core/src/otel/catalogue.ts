@@ -519,6 +519,16 @@ export const METRICS = {
     RELAY,
   ),
   relay_codec_errors_total: counter('Frames dropped because decoding threw.', [], RELAY),
+  relay_control_frames_total: counter(
+    'Client control frames (kick, mute, unmute, role, transfer_host, end, policy), by kind and outcome (accepted, denied, rejected, failed, duplicate).',
+    ['kind', 'outcome'],
+    RELAY,
+  ),
+  relay_control_mute_loads_failed_total: counter(
+    "A session's mutes could not be read; its event and queue frames get service_unavailable until they can.",
+    [],
+    RELAY,
+  ),
   relay_cursor_flood_closed_total: counter(
     'Members closed 4429 for a cursor flood (over 10x the rate for 10 s).',
     [],

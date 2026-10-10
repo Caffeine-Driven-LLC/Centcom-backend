@@ -97,7 +97,7 @@ describe('discovery', () => {
     expect((err as ModuleError).module).toBe('broken');
   });
 
-  it('finds the relay lanes’ modules in src/, by order (B039: the codec at 10, B040: the connection at 12, B038: the handshake at 15, B043: the rooms at 20, B049: keys at 25, B050: privacy at 30, B047: presence at 35, B048: cursors at 36, B041: sequencing at 40, B042: resume at 45, B044: fan-out at 50, B046: backpressure at 55, B045: the cluster at 60)', async () => {
+  it('finds the relay lanes’ modules in src/, by order (B039: the codec at 10, B040: the connection at 12, B038: the handshake at 15, B043: the rooms at 20, B049: keys at 25, B050: privacy at 30, B047: presence at 35, B048: cursors at 36, B051: control at 38, B041: sequencing at 40, B042: resume at 45, B044: fan-out at 50, B046: backpressure at 55, B045: the cluster at 60)', async () => {
     const found = await discoverModules();
     expect(found.map((m) => [m.name, m.order])).toEqual([
       ['codec', 10],
@@ -108,6 +108,7 @@ describe('discovery', () => {
       ['privacy', 30],
       ['presence', 35],
       ['cursors', 36],
+      ['control', 38],
       ['seq', 40],
       ['resume', 45],
       ['fanout', 50],
