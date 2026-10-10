@@ -46,6 +46,8 @@ import { createDurableAppender } from './durable.js';
 import { stampFrame, withSeq, type SequencableFrame } from './frame.js';
 import { MemberRateLimiter, SLOW_DOWN_MS, type RateDecision } from './rate-limit.js';
 import {
+  COMPANION_FRAMES_KEY,
+  SEQUENCED_COMPANIONS_KEY,
   SEQUENCED_STATE_KEY,
   SEQUENCED_TYPES,
   type AssignResult,
@@ -452,9 +454,24 @@ export function createSequencer(deps: SequencerDeps): Sequencer {
       return;
     }
     const started = monotonic();
+    const companions = fc.state[COMPANION_FRAMES_KEY] as readonly UnsequencedFrame[] | undefined;
     let result: AssignResult;
+    let companionResults: AssignResult[] = [];
     try {
-      result = await deps.store.assign(state.sid, { from: state.member, id }, unsequenced, now);
+      if (companions === undefined || companions.length === 0) {
+        result = await deps.store.assign(state.sid, { from: state.member, id }, unsequenced, now);
+      } else {
+        const results = await deps.store.assignBatch(
+          state.sid,
+          [
+            { key: { from: state.member, id }, frame: unsequenced },
+            ...companions.map((frame) => ({ key: { from: frame.from, id: frame.id }, frame })),
+          ],
+          now,
+        );
+        result = results[0] as AssignResult;
+        companionResults = results.slice(1);
+      }
     } catch (err) {
       unavailableUntil = clock() + UNAVAILABLE_PAUSE_MS;
       if (!outage) {
@@ -489,6 +506,19 @@ export function createSequencer(deps: SequencerDeps): Sequencer {
     count('assigned');
     durable.append(state.sid, stored);
     fc.state[SEQUENCED_STATE_KEY] = stored;
+    if (companions !== undefined && companionResults.length > 0) {
+      const extra: StoredFrame[] = [];
+      companionResults.forEach((r, i) => {
+        const frame = companions[i];
+        if (frame === undefined || r.duplicate) return;
+        if (session !== undefined && r.seq > session.head) session.head = r.seq;
+        const companion = withSeq(frame, r.seq);
+        count('assigned');
+        durable.append(state.sid, companion);
+        extra.push(companion);
+      });
+      fc.state[SEQUENCED_COMPANIONS_KEY] = extra;
+    }
     await next();
   }
 

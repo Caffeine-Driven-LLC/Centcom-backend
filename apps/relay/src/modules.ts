@@ -18,6 +18,7 @@ import type { ConnectionRegistry } from './connection-registry.js';
 import type { BackpressureController } from './backpressure/controller.js';
 import type { MuteRegistry } from './control/mute-registry.js';
 import type { PolicyStore } from './control/policy-store.js';
+import type { QueueService } from './queue/service.js';
 import type { ClusterNode } from './cluster/node.js';
 import type { FanOut } from './fanout/fanout.js';
 import type { HandshakeResume } from './handshake/handshake.js';
@@ -91,6 +92,11 @@ export interface RelayContext {
    * policy B052's queue reads (`policies.get`) and the mutes.
    */
   control?: { policies: PolicyStore; mutes: MuteRegistry };
+  /**
+   * The command-post queue (B052): set by the queue module when it registers (order 39): the
+   * handshake's `lastState` for joiners, B051's `onHostChanged`, B076's `setApprovalsPaused`.
+   */
+  queue?: QueueService;
 }
 
 /** A relay lane's plug-in: the default export of `src/<lane>/module.ts`. */

@@ -65,6 +65,9 @@ const relayModule: RelayModule = {
       mutes,
       policies,
       audit: rooms.audit,
+      onHostChanged(sid) {
+        ctx.queue?.onHostChanged(sid).catch(() => undefined);
+      },
       onEnded(sid) {
         mutes.forget(sid);
         ctx.presence?.endSession(sid).catch(() => undefined);

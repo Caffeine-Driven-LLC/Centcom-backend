@@ -135,6 +135,16 @@ export const METRICS = {
     [],
     RELAY,
   ),
+  relay_queue_items_total: counter(
+    'Queue items entering a state (queued, approved, running, held, done, failed, canceled, rejected, dropped), by state.',
+    ['state'],
+    RELAY,
+  ),
+  relay_queue_rejections_total: counter(
+    'Queue frames refused (or partly refused), by error code (queue_full, queue_item_gone, forbidden, conflict, invalid_frame, queue_not_allowed, service_unavailable).',
+    ['code'],
+    RELAY,
+  ),
   relay_resume_total: platform(
     'counter',
     'Resume attempts by result (replayed, snapshot_required, failed, busy).',
