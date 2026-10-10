@@ -46,6 +46,8 @@ describe.runIf(ADMIN_URL !== undefined)('the session routes on Postgres 16', () 
     const env = await sessionsApp({
       reader: createMembershipRepo(test.db),
       deps: {
+        // One clock for the host row (the lifecycle's) and the joins, so join order is call order.
+        clock: () => life.clock.now,
         service: life.service,
         store: createSessionRouteStore(db()),
         slots: createSessionSlotStore(test.db as unknown as Kysely<SessionSlotDatabase>),
@@ -104,7 +106,9 @@ describe.runIf(ADMIN_URL !== undefined)('the session routes on Postgres 16', () 
 
   it('lists members in join order with exactly the stored keys', async () => {
     const env = await setup();
+    env.life.clock.now += 1000;
     await env.join(env.w.member);
+    env.life.clock.now += 1000;
     await env.join(env.w.admin);
     const res = await env.app.inject({
       method: 'GET',
