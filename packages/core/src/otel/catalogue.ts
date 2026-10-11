@@ -563,6 +563,30 @@ export const METRICS = {
     RELAY,
     { onFailure: true },
   ),
+  relay_lock_denials_total: counter(
+    'file.lock acquires denied, by reason (held, queue_full, session_cap, agent_cap).',
+    ['reason'],
+    RELAY,
+  ),
+  relay_lock_emit_failures_total: counter(
+    'File-lock server frames (deny, expire, grants) that could not be sequenced.',
+    [],
+    RELAY,
+    { onFailure: true },
+  ),
+  relay_lock_expired_total: counter('File locks freed by the expiry sweep.', [], RELAY),
+  relay_lock_wait_ms: platform(
+    'histogram',
+    'Time a file-lock waiter waited before its grant.',
+    [],
+    RELAY,
+  ),
+  relay_locks_held: platform(
+    'gauge',
+    'File locks held in the sessions this node has seen.',
+    [],
+    RELAY,
+  ),
   relay_agents_live: platform(
     'gauge',
     'Agents running, by mode (command_post, branch), on this node.',
