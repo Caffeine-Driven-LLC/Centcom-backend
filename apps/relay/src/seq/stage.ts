@@ -9,7 +9,8 @@
  *   the frame gets the server's `from` (the connection's member), `ts` and `seq`, goes back to the
  *   sender as the echo that acknowledges its send, is handed to the durable append without
  *   waiting, and passes on to fan-out (B044) as `fc.state[SEQUENCED_STATE_KEY]`. A duplicate
- *   `(sid, from, id)` is echoed with its original `seq` and `ts` and goes no further. At most
+ *   `(sid, from, id)` is echoed with its original `seq` and `ts` and goes no further (its StoredFrame
+ *   is left as `fc.state[SEQUENCED_DUPLICATE_KEY]` for the stages before this one, B060). At most
  *   `maxQueued` (RELAY_SEQ_BURST) frames of a connection wait for the store; past that, and for
  *   UNAVAILABLE_PAUSE_MS after the store failed, frames are refused at once (503) instead of
  *   queued. A connection's frames still waiting when it closes are dropped (its client resends
@@ -48,6 +49,8 @@ import { MemberRateLimiter, SLOW_DOWN_MS, type RateDecision } from './rate-limit
 import {
   COMPANION_FRAMES_KEY,
   SEQUENCED_COMPANIONS_KEY,
+  SEQUENCE_UNKNOWN_KEY,
+  SEQUENCED_DUPLICATE_KEY,
   SEQUENCED_STATE_KEY,
   SEQUENCED_TYPES,
   type AssignResult,
@@ -481,6 +484,8 @@ export function createSequencer(deps: SequencerDeps): Sequencer {
           'relay.seq_unavailable',
         );
       }
+      // The store may have run the write before failing: the outcome is unknown.
+      fc.state[SEQUENCE_UNKNOWN_KEY] = true;
       refuse(conn, state, id, now, 'unavailable');
       return;
     }
@@ -501,6 +506,7 @@ export function createSequencer(deps: SequencerDeps): Sequencer {
     else if (result.duplicate) echoDuplicate(conn, stored);
     if (result.duplicate) {
       count('duplicate');
+      fc.state[SEQUENCED_DUPLICATE_KEY] = stored;
       return;
     }
     count('assigned');

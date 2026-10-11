@@ -128,12 +128,16 @@ describe('after the store fails', () => {
     const unit = unitSequencer({ store, logger: log.logger });
     const sid = newId('ses');
     const member = unit.join(sid);
-    await unit.inbound(member, clientFrame(sid));
+    // B060: the failed assign may have written the frame, so its outcome is marked unknown.
+    expect((await unit.inbound(member, clientFrame(sid))).unknown).toBe(true);
     expect(store.assigns).toBe(1);
     for (let i = 0; i < 5; i += 1) {
       unit.clock.advance(100);
       const frame = clientFrame(sid);
-      expect((await unit.inbound(member, frame)).passed).toBe(false);
+      const refused = await unit.inbound(member, frame);
+      expect(refused.passed).toBe(false);
+      // Refused without asking the store: known not stored.
+      expect(refused.unknown).toBe(false);
       expect(sentOf(member, 'sys.error').at(-1)).toMatchObject({
         ref: frame['id'],
         p: { code: 'service_unavailable', detail: SEQ_DETAILS.unavailable },

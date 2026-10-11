@@ -22,6 +22,8 @@ import type { RelayConnection } from '../../src/pipeline.js';
 import { createMemorySeqStore, type MemorySeqStore } from '../../src/seq/memory-store.js';
 import { createSequencer, type Sequencer, type SequencerDeps } from '../../src/seq/stage.js';
 import {
+  SEQUENCE_UNKNOWN_KEY,
+  SEQUENCED_DUPLICATE_KEY,
   SEQUENCED_STATE_KEY,
   type BufferLimits,
   type SeqStore,
@@ -112,7 +114,12 @@ export interface UnitSequencer {
   inbound(
     fake: FakeConnection,
     frame: Record<string, unknown>,
-  ): Promise<{ passed: boolean; stored: StoredFrame | undefined }>;
+  ): Promise<{
+    passed: boolean;
+    stored: StoredFrame | undefined;
+    duplicate: StoredFrame | undefined;
+    unknown: boolean;
+  }>;
 }
 
 /** A stage over the in-memory store (or `store`), at T0 on a manual clock. */
@@ -161,7 +168,10 @@ export function unitSequencer(
       });
       const stored = (fc.state as Record<string, unknown>)[SEQUENCED_STATE_KEY] as
         StoredFrame | undefined;
-      return { passed, stored };
+      const duplicate = (fc.state as Record<string, unknown>)[SEQUENCED_DUPLICATE_KEY] as
+        StoredFrame | undefined;
+      const unknown = (fc.state as Record<string, unknown>)[SEQUENCE_UNKNOWN_KEY] === true;
+      return { passed, stored, duplicate, unknown };
     },
   };
 }

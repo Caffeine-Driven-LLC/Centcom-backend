@@ -563,6 +563,35 @@ export const METRICS = {
     RELAY,
     { onFailure: true },
   ),
+  relay_approvals_pending: platform(
+    'gauge',
+    'Pending approvals in the sessions this node sweeps.',
+    [],
+    RELAY,
+  ),
+  relay_approval_timeouts_total: counter(
+    'Approvals denied by the server at their expiry.',
+    [],
+    RELAY,
+  ),
+  relay_approval_decision_latency_ms: platform(
+    'histogram',
+    'Time from an approval request to its sequenced decision.',
+    [],
+    RELAY,
+  ),
+  relay_approval_notify_failures_total: counter(
+    'Approval requests whose notification could not be handed to the dispatcher.',
+    [],
+    RELAY,
+    { onFailure: true },
+  ),
+  relay_approval_emit_failures_total: counter(
+    'Timeout denies that could not be sequenced (retried by the next sweep).',
+    [],
+    RELAY,
+    { onFailure: true },
+  ),
   relay_lock_denials_total: counter(
     'file.lock acquires denied, by reason (held, queue_full, session_cap, agent_cap).',
     ['reason'],
