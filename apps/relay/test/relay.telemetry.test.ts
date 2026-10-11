@@ -87,6 +87,8 @@ describe('relay telemetry', () => {
         .map(([name]) => `${METRIC_PREFIX}${name}`);
       expect(owned.sort()).toEqual([
         'centcom_relay_agents_live',
+        'centcom_relay_approval_decision_latency_ms',
+        'centcom_relay_approvals_pending',
         'centcom_relay_close_total',
         'centcom_relay_connections',
         'centcom_relay_connections_total',
@@ -101,6 +103,8 @@ describe('relay telemetry', () => {
       // Recorded by modules (none run here); their own tests cover them (fanout.isolation, resume.*, agents.stage).
       const byModules = new Set([
         'centcom_relay_agents_live',
+        'centcom_relay_approval_decision_latency_ms',
+        'centcom_relay_approvals_pending',
         'centcom_relay_lock_wait_ms',
         'centcom_relay_locks_held',
         'centcom_relay_fanout_latency_seconds',

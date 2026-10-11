@@ -166,6 +166,19 @@ export interface SeqService {
 export const SEQUENCED_STATE_KEY = 'seq.frame';
 
 /**
+ * B060: a resend's StoredFrame (its original `seq` and `ts`), set instead of SEQUENCED_STATE_KEY
+ * when the frame was already sequenced, so a stage before this one can tell "already stored" from
+ * "refused" (nothing set). Nothing after this stage reads it: a duplicate is not fanned out again.
+ */
+export const SEQUENCED_DUPLICATE_KEY = 'seq.duplicate';
+
+/**
+ * B060: set (true) when the store failed while assigning the frame, so it may have been stored
+ * although the frame was refused (`unavailable`); a refusal without it never reached the store.
+ */
+export const SEQUENCE_UNKNOWN_KEY = 'seq.unknown';
+
+/**
  * B052: server frames (`from` = `srv`, as `UnsequencedFrame[]`) a stage before this one sets under
  * this key to have them sequenced right after the frame, in one `assignBatch`: consecutive `seq`s,
  * all or none (a submit and its auto-approval). Each is deduplicated like the frame, so a resend

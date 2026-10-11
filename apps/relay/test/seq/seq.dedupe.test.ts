@@ -2,7 +2,8 @@
  * Dedupe by `(sid, from, id)` for 24 h (B041 acceptance 2 and 3): a resend gets its original
  * `seq` (and `ts`) echoed, nothing is broadcast twice and the buffer holds the frame once, also
  * after a reconnect on a running relay; the record expires at exactly 24 h (fake clock); the same
- * id from another member is another frame.
+ * id from another member is another frame. A resend leaves its original StoredFrame under
+ * `SEQUENCED_DUPLICATE_KEY` for the stages before this one (B060).
  */
 import { newId } from '@centcom/contracts';
 import type { Fault } from '@centcom/testkit/sim';
@@ -49,6 +50,9 @@ describe('dedupe (unit)', () => {
     expect(first.passed).toBe(true);
     expect(again.passed).toBe(false);
     expect(again.stored).toBeUndefined();
+    // B060: the stages before this one learn it was stored already (its original place).
+    expect(first.duplicate).toBeUndefined();
+    expect(again.duplicate).toMatchObject({ id: frame['id'], seq: 1 });
     const [original, , resent] = echoes(member);
     expect(resent).toEqual(original);
     expect(resent?.seq).toBe(1);
