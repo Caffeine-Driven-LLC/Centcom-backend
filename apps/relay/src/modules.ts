@@ -19,6 +19,7 @@ import type { BackpressureController } from './backpressure/controller.js';
 import type { MuteRegistry } from './control/mute-registry.js';
 import type { PolicyStore } from './control/policy-store.js';
 import type { QueueService } from './queue/service.js';
+import type { ConflictSignal } from './branches/conflict-signal.js';
 import type { AgentRegistry } from './agents/registry.js';
 import type { ClusterNode } from './cluster/node.js';
 import type { FanOut } from './fanout/fanout.js';
@@ -103,6 +104,11 @@ export interface RelayContext {
    * for roster and join flows, `setStateValidator` for B058's state map.
    */
   agents?: AgentRegistry;
+  /**
+   * Conflict signals (B061): set by the branches module when it registers (order 39, before the
+   * locks module): B059's lock denials become server `conflict.detected` frames.
+   */
+  conflicts?: Pick<ConflictSignal, 'onLockDenied'>;
 }
 
 /** A relay lane's plug-in: the default export of `src/<lane>/module.ts`. */

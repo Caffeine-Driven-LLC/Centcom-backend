@@ -563,6 +563,21 @@ export const METRICS = {
     RELAY,
     { onFailure: true },
   ),
+  relay_branch_updates_total: counter(
+    'branch.update frames sequenced (passed through).',
+    [],
+    RELAY,
+  ),
+  relay_conflicts_signalled_total: counter(
+    'conflict.detected signals sequenced, by source (client, server).',
+    ['source'],
+    RELAY,
+  ),
+  relay_conflict_signals_dropped_total: counter(
+    'Conflict signals not sent, by reason (duplicate, rate, ineligible, unavailable).',
+    ['reason'],
+    RELAY,
+  ),
   relay_approvals_pending: platform(
     'gauge',
     'Pending approvals in the sessions this node sweeps.',

@@ -9,7 +9,7 @@
  * - **Store:** Redis (`ctx.redis.kv`).
  * - **Server frames:** B044's `emitServerBatch` (deny, expire, grants outside a client's batch);
  *   looked up when needed (the fan-out module registers later).
- * - **Conflict hints:** none until B061 provides its port.
+ * - **Conflict hints:** B061's `ctx.conflicts.onLockDenied`, told of every contested acquire.
  *
  * Owns: wiring. Must not: hold state outside what `register` creates.
  */
@@ -45,6 +45,16 @@ const relayModule: RelayModule = {
             sid,
             frames.map((p) => ({ kind: 'file.lock', t: 'event' as const, p: { ...p } })),
           );
+        },
+      },
+      // B061: a denial becomes a server conflict signal (looked up per denial, never awaited).
+      hints: {
+        denied(sid, hint) {
+          void ctx.conflicts?.onLockDenied(sid, {
+            requesterAgent: hint.requester,
+            holderAgent: hint.holder,
+            pathHmac: hint.pathHmac,
+          });
         },
       },
       clock: ctx.clock,
