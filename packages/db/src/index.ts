@@ -17,7 +17,8 @@
  * exports (B026) in `schema/account-lifecycle.ts`, Stripe webhook events and the billing outbox
  * (B072) in `schema/stripe-events.ts`, the durable history index (B055) in `schema/history.ts`,
  * session policy and mutes (B051) in `schema/control.ts`, the command-post queue (B052) in
- * `schema/queue.ts`, the session lifecycle (B053) in `schema/sessions-lifecycle.ts`, dunning
+ * `schema/queue.ts`, the session lifecycle (B053) in `schema/sessions-lifecycle.ts`, share links (B068) in
+ * `schema/share-links.ts`, dunning
  * (B078) in `schema/dunning.ts`, retention's run reports and bookkeeping (B090) in
  * `schema/retention.ts`; repositories (B013 on, devices
  * from B020, workspaces from B027, members from B028, invites from B029, settings from B034,
@@ -204,6 +205,7 @@ export type {
   SessionsLifecycleDatabase,
   SessionsLifecycleTables,
 } from './schema/sessions-lifecycle.js';
+export type { GuestMemberTable, ShareLinkTable, ShareLinkTables } from './schema/share-links.js';
 export type {
   RetentionAbortReason,
   RetentionBaselineTable,

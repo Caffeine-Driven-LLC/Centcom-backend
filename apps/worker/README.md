@@ -116,7 +116,8 @@ registerInvitePurgeHook(hooks, createInviteStore(db)); // before startWorkspaceP
 
 Every 60 s, runs `session.expiry.sweep`: the API's session lifecycle (`SessionService.sweep`)
 pauses live sessions whose host has been gone 10 minutes, expires sessions paused 24 hours, and
-retries the transition notifications that did not go out.
+retries the transition notifications that did not go out. Given B068's `shareLinks`
+(`ShareLinkService`), it then deletes the guests of expired links and of sessions that are over.
 
 ```ts
 const queue = createSessionExpiryQueue({ connection, prefix });

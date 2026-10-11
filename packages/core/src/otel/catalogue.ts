@@ -220,6 +220,22 @@ export const METRICS = {
     ['state'],
     API_WORKER,
   ),
+  share_link_close_failed_total: counter(
+    'Revoked or expired share-link guests whose relay close could not be sent (their membership is gone all the same).',
+    [],
+    API,
+  ),
+  share_link_joins_total: counter(
+    'Joins through share links, by result (joined, not_found, rate_limited, locked, member_limit, full, unavailable).',
+    ['result'],
+    API,
+  ),
+  share_link_ticket_failures_total: counter(
+    'Guest tickets that could not be signed or recorded, by reason (signing, record); no use was spent.',
+    ['reason'],
+    API,
+  ),
+  share_links_created_total: counter('Share links created.', [], API),
   stripe_event_dead_letters_total: counter(
     'Stripe event jobs moved to stripe.event.dlq after their last attempt.',
     [],
