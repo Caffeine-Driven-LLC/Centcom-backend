@@ -3,11 +3,13 @@
  * relay metric (`allowlists.ts`) and its value must not look like an id (`ses_…`, `mem_…`, …) or
  * carry content (longer than 64 characters). `assertMetricLabels` throws on anything else (tests,
  * tools); `guardMetrics` wraps the relay's metrics so a bad label is dropped in production,
- * never written, and counted (`relay_privacy_violations_total{where="metric"}`).
+ * never written, and counted (`relay_privacy_violations_total{where="metric"}`). Gauges (B057:
+ * `relay_agents_live`) pass through when the wrapped metrics take them, each reading's labels
+ * checked the same way.
  *
  * Owns: the label check. Must not: let an id or content become a label.
  */
-import type { Histogram, MetricLabels, Metrics } from '@centcom/core';
+import type { GaugeValue, Histogram, MetricLabels, Metrics, TelemetryMetrics } from '@centcom/core';
 import { METRIC_LABELS } from './allowlists.js';
 
 /** A value like a Centcom id. */
@@ -52,11 +54,12 @@ function allowedLabels(
 }
 
 /** `base` with every label checked: bad ones dropped and counted, never written. */
-export function guardMetrics(base: Metrics): Metrics {
+export function guardMetrics(base: Metrics): Metrics & Partial<Pick<TelemetryMetrics, 'gauge'>> {
   const violation = (count: number): void => {
     if (count > 0) base.counter('relay_privacy_violations_total', { where: 'metric' }).inc(count);
   };
-  return {
+  const gauge = (base as Partial<TelemetryMetrics>).gauge;
+  const guarded: Metrics & Partial<Pick<TelemetryMetrics, 'gauge'>> = {
     counter(name, labels) {
       const [kept, dropped] = allowedLabels(name, labels);
       violation(dropped);
@@ -73,4 +76,17 @@ export function guardMetrics(base: Metrics): Metrics {
       };
     },
   };
+  if (typeof gauge === 'function') {
+    guarded.gauge = (name, read) =>
+      gauge.call(base, name, async (): Promise<GaugeValue> => {
+        const value = await read();
+        if (typeof value === 'number') return value;
+        return value.map((v) => {
+          const [kept, dropped] = allowedLabels(name, v.labels);
+          violation(dropped);
+          return kept === undefined ? { value: v.value } : { value: v.value, labels: kept };
+        });
+      });
+  }
+  return guarded;
 }

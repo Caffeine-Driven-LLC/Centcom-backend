@@ -185,6 +185,7 @@ export type {
   SessionMuteTable,
   SessionPolicyTable,
 } from './schema/control.js';
+export type { AgentsDatabase, AgentTable, AgentTables } from './schema/agents.js';
 export type {
   QueueDatabase,
   QueueItemTable,

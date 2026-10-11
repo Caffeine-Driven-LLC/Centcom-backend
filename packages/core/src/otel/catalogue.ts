@@ -542,6 +542,28 @@ export const METRICS = {
   redis_reconnects_total: counter('Redis reconnects.', [], ALL),
   redis_unavailable_total: counter('Redis calls refused while it was down.', [], ALL),
   relay_acks_rejected_total: counter('Acks refused for naming a seq beyond the head.', [], RELAY),
+  relay_agent_spawns_refused_total: counter(
+    'agent.spawn frames refused for the plan limit (max_parallel_agents), by reason.',
+    ['reason'],
+    RELAY,
+  ),
+  relay_agent_state_dropped_total: counter(
+    'agent.* frames dropped before sequencing, by reason (rate, identical, exited).',
+    ['reason'],
+    RELAY,
+  ),
+  relay_agent_store_failures_total: counter(
+    'Agent registry saves that failed after the frame was sequenced.',
+    [],
+    RELAY,
+    { onFailure: true },
+  ),
+  relay_agents_live: platform(
+    'gauge',
+    'Agents running, by mode (command_post, branch), on this node.',
+    ['mode'],
+    RELAY,
+  ),
   relay_backpressure_closed_total: counter(
     'Slow consumers closed 4429, by reason (grace: not drained in time; node: the node guard).',
     ['reason'],
