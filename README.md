@@ -40,8 +40,8 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 | [B029](plan/backend/B029.md) | Invites: create, accept, revoke, expiry, key-bundle storage | L | M3 |
 | [B101](plan/backend/B101.md) | Credential-leak guard: scanners for logs, frames, telemetry, backups and CI | S | M3 |
 | [B093](plan/backend/B093.md) | Observability: metrics, traces, dashboards, SLOs | M | M4 |
-| [B058](plan/backend/B058.md) | Agent state validation against the state-map contract | S | M5 |
 | [B061](plan/backend/B061.md) | Branch and conflict signalling | S | M5 |
+| [B067](plan/backend/B067.md) | Presence history and last-seen API | S | M5 |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
 
