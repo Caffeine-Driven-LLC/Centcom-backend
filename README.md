@@ -17,7 +17,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 ![Progress](docs/progress.svg)
 
-**87% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
+**85% built** (weighted by lane size across 102 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
 
 ## Next steps
 
@@ -34,6 +34,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 |---|---|---|---|
 | [B091](plan/backend/B091.md) | Infrastructure as code: environments dev, stage, prod | L | M3 |
 | [B101](plan/backend/B101.md) | Credential-leak guard: scanners for logs, frames, telemetry, backups and CI | S | M3 |
+| [B102](plan/backend/B102.md) | API service entrypoint and the browser login pages | L | M3 |
 | [B068](plan/backend/B068.md) | Share links and viewer-only guest tokens | M | M4 |
 | [B062](plan/backend/B062.md) | Reactions and comments persistence | S | M5 |
 | [B097](plan/backend/B097.md) | Security hardening: headers, WAF rules, secret scanning, dependency policy | M | M6 |
