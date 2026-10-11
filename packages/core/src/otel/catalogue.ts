@@ -563,6 +563,12 @@ export const METRICS = {
     RELAY,
     { onFailure: true },
   ),
+  relay_reaction_writes_failed_total: counter(
+    'Reaction or comment-pointer writes that failed after sequencing, by kind (reaction, comment).',
+    ['kind'],
+    RELAY,
+    { onFailure: true },
+  ),
   relay_branch_updates_total: counter(
     'branch.update frames sequenced (passed through).',
     [],
