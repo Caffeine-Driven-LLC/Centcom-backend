@@ -22,7 +22,12 @@ import {
   type Plan,
 } from './jwt.js';
 import { RefreshTokenStore, type RefreshGrant, type RefreshStore } from './refresh.js';
-import { mintRelayTicket, type RelayTicketClaims } from './relay-ticket.js';
+import {
+  mintGuestRelayTicket,
+  mintRelayTicket,
+  type GuestTicketClaims,
+  type RelayTicketClaims,
+} from './relay-ticket.js';
 import { RevocationList } from './revocation.js';
 
 /** CT-AUTH scopes. */
@@ -317,6 +322,11 @@ export class TokenService {
   /** A relay ticket (60 s, single use at the relay). */
   async mintRelayTicket(claims: RelayTicketClaims): Promise<string> {
     return mintRelayTicket(this.keys, claims, this.now());
+  }
+
+  /** A share-link guest's relay ticket (B068): `viewer`, no `dev` (60 s, single use). */
+  async mintGuestRelayTicket(claims: GuestTicketClaims): Promise<string> {
+    return mintGuestRelayTicket(this.keys, claims, this.now());
   }
 
   /** The public JWKS. */

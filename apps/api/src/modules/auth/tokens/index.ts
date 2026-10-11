@@ -45,10 +45,12 @@ export {
   type RotationDecision,
 } from './refresh.js';
 export {
+  mintGuestRelayTicket,
   mintRelayTicket,
   RELAY_AUDIENCE,
   RELAY_TICKET_TTL_S,
   RELAY_TICKET_TYPE,
+  type GuestTicketClaims,
   type RelayTicketClaims,
   type SessionRole,
 } from './relay-ticket.js';

@@ -74,11 +74,32 @@ describe('processSessionExpiry', () => {
       clock: () => NOW,
       logger: log.logger,
     });
-    expect(result).toEqual({ paused: 2, expired: 1 });
+    expect(result).toEqual({ paused: 2, expired: 1, guests: 0 });
     expect(swept).toEqual([new Date(NOW)]);
     expect(log.lines()).toEqual([
       expect.objectContaining({ msg: 'session.expiry_swept', paused: 2, expired: 1 }),
     ]);
+  });
+
+  it('then sweeps share-link guests (B068) when given', async () => {
+    const order: string[] = [];
+    const result = await processSessionExpiry({
+      sessions: {
+        sweep: () => {
+          order.push('sessions');
+          return Promise.resolve({ paused: 0, expired: 1 });
+        },
+      },
+      shareLinks: {
+        sweep: (now) => {
+          order.push(`guests@${now.getTime()}`);
+          return Promise.resolve(3);
+        },
+      },
+      clock: () => NOW,
+    });
+    expect(result).toEqual({ paused: 0, expired: 1, guests: 3 });
+    expect(order).toEqual(['sessions', `guests@${NOW}`]);
   });
 });
 
