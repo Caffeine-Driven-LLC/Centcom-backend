@@ -17,7 +17,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 ![Progress](docs/progress.svg)
 
-**75% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
+**87% built** (weighted by lane size across 101 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
 
 ## Next steps
 
@@ -32,16 +32,13 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 | Lane | What | Size | Milestone |
 |---|---|---|---|
-| [B010](plan/backend/B010.md) | Test harness: containers, factories, contract test runner | M | M0 |
-| [B041](plan/backend/B041.md) | Sequencing, acks and at-least-once delivery per session | L | M3 |
 | [B091](plan/backend/B091.md) | Infrastructure as code: environments dev, stage, prod | L | M3 |
-| [B017](plan/backend/B017.md) | Token service: JWT issue, refresh rotation with reuse detection, JWKS, revocation | L | M3 |
-| [B026](plan/backend/B026.md) | Account deletion and data export | M | M3 |
-| [B029](plan/backend/B029.md) | Invites: create, accept, revoke, expiry, key-bundle storage | L | M3 |
 | [B101](plan/backend/B101.md) | Credential-leak guard: scanners for logs, frames, telemetry, backups and CI | S | M3 |
-| [B093](plan/backend/B093.md) | Observability: metrics, traces, dashboards, SLOs | M | M4 |
+| [B068](plan/backend/B068.md) | Share links and viewer-only guest tokens | M | M4 |
 | [B062](plan/backend/B062.md) | Reactions and comments persistence | S | M5 |
-| [B081](plan/backend/B081.md) | Outgoing webhooks: endpoints, delivery, retries, signing | L | M5 |
+| [B097](plan/backend/B097.md) | Security hardening: headers, WAF rules, secret scanning, dependency policy | M | M6 |
+| [B095](plan/backend/B095.md) | Load testing and capacity model | L | M6 |
+| [B089](plan/backend/B089.md) | Metadata search across sessions and members | S | Later |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
 
