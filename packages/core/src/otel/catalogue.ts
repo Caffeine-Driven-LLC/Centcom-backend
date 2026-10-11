@@ -563,6 +563,23 @@ export const METRICS = {
     RELAY,
     { onFailure: true },
   ),
+  relay_presence_history_events_total: counter(
+    'Members coming online and going offline recorded, by event (connected, disconnected).',
+    ['event'],
+    RELAY,
+  ),
+  relay_presence_history_flush_failures_total: counter(
+    'Presence history batches that could not be written (kept for the next flush).',
+    [],
+    RELAY,
+    { onFailure: true },
+  ),
+  relay_presence_history_dropped_total: counter(
+    'Presence history events dropped while the database was down (past 10 000 buffered).',
+    [],
+    RELAY,
+    { onFailure: true },
+  ),
   relay_branch_updates_total: counter(
     'branch.update frames sequenced (passed through).',
     [],
