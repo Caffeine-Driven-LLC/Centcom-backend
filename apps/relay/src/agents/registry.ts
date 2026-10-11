@@ -87,6 +87,9 @@ const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
 const shortText = (v: unknown): v is string =>
   typeof v === 'string' && v.length > 0 && v.length <= MAX_TEXT;
+/** A product state name's shape (CT-STATE-MAP: kebab-case), known or not. */
+const isStateName = (v: unknown): v is string =>
+  typeof v === 'string' && v.length <= MAX_TEXT && /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(v);
 const isTime = (v: unknown): v is string =>
   typeof v === 'string' && v.length <= 40 && !Number.isNaN(Date.parse(v));
 
@@ -100,9 +103,18 @@ export const recordOf = (a: StoredAgent): AgentRecord => ({
   ...(a.exited === undefined ? {} : { exited: { ...a.exited } }),
 });
 
-/** The frame's cleartext against its CT-WS-SESSION-EVENTS schema (unknown fields tolerated). */
-const fitsContract = (frame: AgentFrame): boolean =>
-  validateEvent(frame.k, frame.p, { mode: 'tolerant' }).ok;
+/**
+ * The frame's cleartext against its CT-WS-SESSION-EVENTS schema (unknown fields tolerated). The
+ * state name of `agent.state` is the state validator's (B058): an unknown name is tolerated input
+ * (CT-STATE-MAP rule 1), so the schema check sees a known one in its place.
+ */
+const fitsContract = (frame: AgentFrame): boolean => {
+  const p =
+    frame.k === 'agent.state' && isRecord(frame.p) && isStateName(frame.p['state'])
+      ? { ...frame.p, state: 'idle' }
+      : frame.p;
+  return validateEvent(frame.k, p, { mode: 'tolerant' }).ok;
+};
 
 const refuse = (
   code: 'forbidden' | 'invalid_frame' | 'service_unavailable',
@@ -237,7 +249,7 @@ export class AgentRegistry {
       !fitsContract(frame) ||
       !isRecord(p) ||
       !isId('agt', p['agent_id']) ||
-      !shortText(p['state']) ||
+      !isStateName(p['state']) ||
       !isTime(p['since'])
     ) {
       return Promise.resolve(refuse('invalid_frame', AGENT_DETAILS.malformed));
