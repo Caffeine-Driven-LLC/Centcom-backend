@@ -7,6 +7,9 @@
  * - **Limit:** `max_parallel_agents` of the session's plan, cached 30 s.
  * - **Rate limit:** 2 `agent.state` per agent per second (sliding), B009's Redis rate limiter.
  * - **Gauge:** `relay_agents_live{mode}` from the registry, when the relay's metrics take gauges.
+ * - **State names** (B058): every well-formed name is forwarded (CT-STATE-MAP: the relay
+ *   validates against all keys, tolerant); unknown ones are logged at debug and counted
+ *   (`relay_agent_state_unknown_total`).
  * - A session's view on this node is forgotten when its last member here leaves.
  *
  * Owns: wiring. Must not: hold state outside what `register` creates.
@@ -19,6 +22,7 @@ import type { AccessDbClient } from '../rooms/access.js';
 import { createPostgresAgentEntitlements } from './entitlements.js';
 import { agentStage } from './handler.js';
 import { AgentRegistry } from './registry.js';
+import { agentStateCheck } from './state/validator.js';
 import { createStateRateLimiter } from './state-rate-limit.js';
 import { createRedisAgentStore, type AgentsDb } from './store.js';
 
@@ -59,6 +63,7 @@ const relayModule: RelayModule = {
       STAGE_ORDER.queue,
       agentStage({ registry, rooms: rooms.registry, logger: ctx.log }),
     );
+    registry.setStateValidator(agentStateCheck({ metrics: ctx.metrics, logger: ctx.log }));
     ctx.agents = registry;
     return undefined;
   },

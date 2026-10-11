@@ -9,17 +9,17 @@ beside B052's queue stage: after the control stage's mutes, before sequencing) a
 
 ## Public interface
 
-| Export                                            | What it is                                                                                  |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `AgentRegistry.onSpawn/onState/onExit`            | `(sid, frame, sender, sequence)`: check, sequence (the rest of the pipeline), then record.  |
-| `AgentRegistry.list(sid)`, `get`, `countLive`     | This node's view of the session's agents (`AgentRecord`), spawn order.                      |
-| `AgentRegistry.snapshot(sid)`                     | The session's agents from the shared store, for roster and join flows (refreshes the view). |
-| `AgentRegistry.setStateValidator(fn)`             | B058 injects the state map's check; until then any non-empty name of at most 64 characters. |
-| `AgentRegistry.liveByMode()`                      | Live agents by mode on this node, for the `relay_agents_live{mode}` gauge.                  |
-| `createRedisAgentStore`, `createMemoryAgentStore` | The store: Redis with a Postgres write-through, and memory (tests).                         |
-| `createPostgresAgentEntitlements`                 | `max_parallel_agents` of the session's plan, cached 30 s.                                   |
-| `createStateRateLimiter`                          | 2 `agent.state` per agent per second, counted in Redis.                                     |
-| `agentStage`                                      | The pipeline stage.                                                                         |
+| Export                                            | What it is                                                                                                                                                                         |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AgentRegistry.onSpawn/onState/onExit`            | `(sid, frame, sender, sequence)`: check, sequence (the rest of the pipeline), then record.                                                                                         |
+| `AgentRegistry.list(sid)`, `get`, `countLive`     | This node's view of the session's agents (`AgentRecord`), spawn order.                                                                                                             |
+| `AgentRegistry.snapshot(sid)`                     | The session's agents from the shared store, for roster and join flows (refreshes the view).                                                                                        |
+| `AgentRegistry.setStateValidator(fn)`             | Decides whether a well-formed name (kebab-case, at most 64 characters) is forwarded; the module installs B058's check (`state/`), which forwards every one and counts the unknown. |
+| `AgentRegistry.liveByMode()`                      | Live agents by mode on this node, for the `relay_agents_live{mode}` gauge.                                                                                                         |
+| `createRedisAgentStore`, `createMemoryAgentStore` | The store: Redis with a Postgres write-through, and memory (tests).                                                                                                                |
+| `createPostgresAgentEntitlements`                 | `max_parallel_agents` of the session's plan, cached 30 s.                                                                                                                          |
+| `createStateRateLimiter`                          | 2 `agent.state` per agent per second, counted in Redis.                                                                                                                            |
+| `agentStage`                                      | The pipeline stage.                                                                                                                                                                |
 
 `AgentRecord = {agentId, owner, mode: 'command_post' | 'branch', state, since, exited?: {outcome,
 errorCode?}}`. `state` is `''` until the first `agent.state` (a spawn carries none).
@@ -73,6 +73,7 @@ document, the 30 s lock waited for 2 s. The Redis and Postgres connections are t
 ## Metrics
 
 `relay_agent_state_dropped_total{reason}` (`rate`, `identical`, `exited`),
+`relay_agent_state_unknown_total` (B058),
 `relay_agent_spawns_refused_total{reason}`, `relay_agent_store_failures_total`, and the gauge
 `relay_agents_live{mode}` (this node's live agents, read at each export).
 

@@ -552,6 +552,11 @@ export const METRICS = {
     ['reason'],
     RELAY,
   ),
+  relay_agent_state_unknown_total: counter(
+    'agent.state frames received with a state name the contract state map does not classify.',
+    [],
+    RELAY,
+  ),
   relay_agent_store_failures_total: counter(
     'Agent registry saves that failed after the frame was sequenced.',
     [],
