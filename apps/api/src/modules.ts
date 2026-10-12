@@ -18,6 +18,7 @@ import { tokenRoutes } from './routes/auth/token.js';
 import { deviceRoutes } from './routes/devices.js';
 import { emailLoginRoutes } from './routes/login-email.js';
 import { meRoutes } from './routes/me.js';
+import { registerSessionRoutes } from './routes/sessions/index.js';
 import { statusRoutes } from './routes/status.js';
 import { wellKnownRoutes } from './routes/well-known.js';
 
@@ -118,6 +119,14 @@ export const API_MODULES: readonly ApiModule[] = [
       };
       await app.register(deviceRoutes, options);
       await app.register(authDeviceRoutes, options);
+    },
+  },
+  {
+    name: 'sessions',
+    skip: (ctx) =>
+      ctx.sessionRoutes === null ? 'no relay address is configured (RELAY_PUBLIC_URL)' : null,
+    register: async (app, ctx) => {
+      if (ctx.sessionRoutes !== null) registerSessionRoutes(app, ctx.sessionRoutes);
     },
   },
 ];

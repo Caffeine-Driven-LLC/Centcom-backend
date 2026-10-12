@@ -74,8 +74,9 @@ transaction, so a failed run leaves nothing behind and can simply be run again.
 | Device       | `dev_01KDVDNA00DEVSEED000000002`             | `member-desktop` (macos), the member's                           |
 | Session      | `ses_01KDVDNA00DEVSEED000000001`             | "Paused demo session" in `acme-dev`, state `paused`, region `eu` |
 
-Every row is dated 2026-01-01T00:00Z, the time in its ULID. The seed has no billing or entitlement
-data (billing lanes) and no session members.
+Every row is dated 2026-01-01T00:00Z, the time in its ULID. The seed has no billing data and no
+session members. It puts `acme-dev` on the Team plan (a `workspace_entitlements` row, written only
+while the row is still on the free defaults), so sessions can use the relay locally.
 
 ### Device keys are test-only
 
@@ -100,6 +101,10 @@ Ed25519 key)).
 - **The API**: `pnpm dev:api` runs the service against this stack (B102; see `docs/api-service.md`):
   it adds a local signing key to `.env.local` on its first run, sends sign-in mail to Mailpit and
   listens on `http://localhost:3000`.
+- **The relay and two sessions**: `pnpm dev:relay` runs the relay on `ws://localhost:8088/v1/ws`,
+  `pnpm dev:token owner|member` prints an access token for a seeded person, and
+  `pnpm dev:two-clients` runs two clients of `../Centcom` through the whole session flow (see
+  "Two sessions on your machine" in `docs/api-service.md`).
 - **The integration tests**: point the test harness at the stack and it creates (and drops) its own
   `test_*` databases on it, leaving `centcom_dev` alone:
   `DATABASE_URL=postgres://centcom:dev-only@127.0.0.1:5432/centcom_dev REDIS_URL=redis://127.0.0.1:6379/0 pnpm test`.

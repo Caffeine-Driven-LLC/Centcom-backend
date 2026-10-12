@@ -15,8 +15,12 @@ import { fastify, type FastifyInstance } from 'fastify';
 import { createContext, type AppDeps } from './context.js';
 import { API_MODULES, type ApiModule } from './modules.js';
 import { webTokenCookiePlugin } from './modules/auth/web-session/cookies.js';
+import { principalActor } from './modules/apikeys/authenticator.js';
+import { auditPlugin } from './plugins/audit.js';
 import { authPlugin } from './plugins/auth.js';
 import { errorHandlerPlugin, frameworkErrorHandler } from './plugins/error-handler.js';
+import { idempotencyPlugin } from './plugins/idempotency.js';
+import { rbacPlugin } from './plugins/rbac.js';
 import { rateLimitPlugin } from './plugins/rate-limit.js';
 import { requestContextPlugin } from './plugins/request-context.js';
 
@@ -51,6 +55,18 @@ export async function buildApp(
   });
   await app.register(webTokenCookiePlugin, { allowedOrigins: config.pkce.allowedOrigins });
   await app.register(authPlugin, { tokens: ctx.tokens });
+  await app.register(idempotencyPlugin, {
+    kv: ctx.redis.kv,
+    principal: (request) => request.principal?.userId ?? request.principal?.keyId ?? null,
+    ...(deps.clock === undefined ? {} : { clock: deps.clock }),
+    logger,
+    metrics,
+  });
+  await app.register(rbacPlugin, {
+    authorizer: ctx.rbac,
+    actor: (request) => principalActor(request.principal),
+  });
+  await app.register(auditPlugin, { emitter: ctx.audit });
 
   for (const module of options.modules ?? API_MODULES) {
     const reason = module.skip?.(ctx) ?? null;

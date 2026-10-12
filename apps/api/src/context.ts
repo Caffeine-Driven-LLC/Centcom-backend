@@ -8,8 +8,22 @@
  * `app.ts` and `modules.ts`).
  */
 import { createIdGenerator } from '@centcom/contracts';
-import { type Logger, type Metrics, type RedisBackend, noopMetrics } from '@centcom/core';
 import {
+  type AuditDb,
+  type Authorizer as RbacAuthorizer,
+  type Logger,
+  type Metrics,
+  type RedisBackend,
+  cachedMembershipReader,
+  createAuditEmitter,
+  createAuthorizer,
+  noopMetrics,
+  rbacAuditSink,
+} from '@centcom/core';
+import {
+  createMembershipRepo,
+  createSessionSlotStore,
+  type SessionSlotDatabase,
   type CoreDatabase,
   type DeviceGrantDatabase,
   type MagicLinkDatabase,
@@ -32,6 +46,13 @@ import { TokenService } from './modules/auth/tokens/index.js';
 import { createLoginSessions, type LoginSessions } from './modules/auth/web-session/store.js';
 import { deviceStoreFromDb } from './modules/devices/repo.js';
 import { DeviceService } from './modules/devices/service.js';
+import { CachedEntitlements } from './modules/entitlements/enforcement.js';
+import { createEntitlementRepository } from './modules/entitlements/repository.js';
+import { EntitlementService } from './modules/entitlements/service.js';
+import { SessionService, createSessionRepository } from './modules/sessions/index.js';
+import type { SessionsDb } from './modules/sessions/index.js';
+import { createSessionRouteStore } from './routes/sessions/index.js';
+import type { SessionRouteDeps, SessionRoutesDb } from './routes/sessions/index.js';
 import { createAccountStore, MeService } from './modules/me/service.js';
 import { Readiness } from './modules/status/readiness.js';
 import { ComponentProber } from './modules/status/prober.js';
@@ -71,6 +92,12 @@ export interface AppContext extends AppDeps {
   devices: DeviceService;
   readiness: Readiness<ApiDatabase>;
   statusFeed: StatusFeed;
+  /** Role checks for the routes that guard by workspace or session role. */
+  rbac: RbacAuthorizer;
+  /** Writes audit events; flush it on shutdown. */
+  audit: ReturnType<typeof createAuditEmitter>;
+  /** The session routes' dependencies; null when no relay address is configured. */
+  sessionRoutes: SessionRouteDeps | null;
 }
 
 const newId = createIdGenerator();
@@ -176,9 +203,80 @@ export function createContext(deps: AppDeps): AppContext {
     metrics,
   });
 
+  const audit = createAuditEmitter({
+    db: view<CoreDatabase>() as unknown as AuditDb,
+    logger,
+    metrics,
+  });
+  const rbac = createAuthorizer({
+    memberships: cachedMembershipReader(createMembershipRepo(view<CoreDatabase>()), {
+      now: clock,
+    }),
+    audit: rbacAuditSink(audit),
+    logger,
+    metrics,
+    now: clock,
+  });
+
+  let sessionRoutes: SessionRouteDeps | null = null;
+  if (config.relay !== null) {
+    const entitlements = new CachedEntitlements({
+      source: new EntitlementService({
+        repository: createEntitlementRepository(view()),
+        events: redis.pubsub,
+        clock,
+        logger,
+        metrics,
+      }),
+      // The monthly quota counters are not served yet (usage module); nothing is metered locally.
+      quota: { check: () => Promise.resolve({ allowed: true, retryAfterS: null }) },
+      pubsub: redis.pubsub,
+      clock,
+      logger,
+      metrics,
+    });
+    const regions = {
+      defaultRegion: config.relay.region,
+      urls: { [config.relay.region]: config.relay.url },
+    };
+    sessionRoutes = {
+      service: new SessionService({
+        repository: createSessionRepository(db as unknown as SessionsDb),
+        entitlements,
+        // The relay learns of state changes from the database for now; web hooks and the worker's
+        // outbox delivery are later lanes.
+        relay: { notify: () => Promise.resolve() },
+        events: { publish: () => Promise.resolve() },
+        cursorKeys: config.pagination.signingKeys,
+        clock,
+        logger,
+        metrics,
+      }),
+      store: createSessionRouteStore(db as unknown as SessionRoutesDb),
+      slots: createSessionSlotStore(view<SessionSlotDatabase>()),
+      entitlements,
+      tickets: tokens,
+      issued: kv,
+      hostNotifier: {
+        hostChanged: (sid, host, code) => {
+          logger.info({ session: sid, host, code }, 'sessions.host_changed_not_delivered');
+          return Promise.resolve();
+        },
+      },
+      relays: regions,
+      cursorKeys: config.pagination.signingKeys,
+      clock,
+      logger,
+      metrics,
+    };
+  }
+
   return {
     ...deps,
     metrics,
+    rbac,
+    audit,
+    sessionRoutes,
     tokens,
     sessions,
     deviceGrants,

@@ -42,6 +42,21 @@ export const apiEnvSchema = z.object({
         'The address the terminal tells people to open to approve a sign-in; default https://centcom.dev/device. Set it to <PUBLIC_API_URL>/device for local development.',
       example: 'http://localhost:3000/device',
     }),
+  RELAY_PUBLIC_URL: envUrl({ protocols: ['wss:', 'ws:'], plain: true })
+    .optional()
+    .meta({
+      description:
+        "The WebSocket address clients are told to connect to for sessions (the relay's /v1/ws). Setting it turns the session routes on; without it they are left out.",
+      example: 'ws://localhost:8080/v1/ws',
+    }),
+  RELAY_REGION: z
+    .string()
+    .regex(/^[a-z][a-z0-9-]{1,31}$/, 'must be 2-32 characters of a-z, 0-9 and -')
+    .default('local')
+    .meta({
+      description: 'The region name sessions get and the relay at RELAY_PUBLIC_URL serves.',
+      example: 'local',
+    }),
 });
 
 /** Everything the service reads from its environment. */
@@ -58,6 +73,8 @@ export interface ApiConfig {
   mailpitUrl: string | null;
   /** Overrides the default verification address (development). */
   verificationUri: string | null;
+  /** Where the relay is and the region it serves; null: the session routes are off. */
+  relay: { url: string; region: string } | null;
   /** Cookies are `Secure` only when the public URL is https. */
   secureCookies: boolean;
 }
@@ -77,6 +94,10 @@ export function loadApiConfig(env?: Env): ApiConfig {
     magicLink: mailpitUrl === null ? null : loadMagicLinkConfig(env),
     mailpitUrl,
     verificationUri: own.DEVICE_VERIFICATION_URI ?? null,
+    relay:
+      own.RELAY_PUBLIC_URL === undefined
+        ? null
+        : { url: own.RELAY_PUBLIC_URL, region: own.RELAY_REGION },
     secureCookies: base.publicApiUrl.startsWith('https:'),
   };
 }

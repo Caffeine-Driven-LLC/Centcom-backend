@@ -34,12 +34,50 @@ Open the printed link, give an e-mail address (any: the seeded `dev@example.test
 mail in Mailpit, follow its link, check the device name and fingerprint against the terminal, and
 press Allow.
 
+## Two sessions on your machine
+
+Sessions need the relay next to the API. With `pnpm dev:up` done, in three more terminals:
+
+```
+pnpm dev:api     # http://localhost:3000, and tells clients to use the relay below
+pnpm dev:relay   # the relay on ws://localhost:8088/v1/ws (RELAY_PORT; 8080 is often taken)
+pnpm dev:two-clients
+```
+
+`dev:two-clients` (`tools/dev/two-clients.ts`) uses the client's libraries from `../Centcom` (or
+`CENTCOM_CLIENT_DIR`). The seeded owner hosts a session on `acme-dev`, the seeded member joins it
+through the relay, the host grants the session keys, and each sends an encrypted message that the
+other reads. It prints the steps and ends with `OK: both clients read both messages`.
+
+For your own clients, `pnpm dev:token owner` (or `member`) prints JSON with an access token for a
+seeded person on their seeded device; the device keys are in `tools/dev/seed.ts`
+(`seedDevicePrivateKey`). Or sign in for real as in the section above and point the client at
+`CENTCOM_API_URL=http://localhost:3000` (the API hands the relay address to the client: the
+`relay_url` of a created session and of a join token). The client allows `ws://` to a loopback
+relay only when it is told to (`allowPlainWs`).
+
+Why it works on a laptop:
+
+- The dev workspace `acme-dev` is on the Team plan (the seed writes it), because the Free plan has
+  no `relay_access`, and the relay and API both check it. A workspace row someone changed is left
+  alone.
+- The relay verifies tickets with `RELAY_JWKS_URL` (the API's keys, which `dev:relay` sets) and
+  reads sessions, members, devices and plans from the same Postgres.
+- The relay announces a member's first connection as `control.member_joined`; the host's client
+  answers it with the keys (`key.grant`). Without it the newcomer waits for keys forever.
+
+Not done locally: the monthly quota counters (nothing is metered), delivery of host changes to the
+relay and of session state changes (`control.session_state` on pause or end by the API), and the
+history and snapshot routes. The relay logs `relay.resume_without_durable_log`: a client that
+reconnects after a long gap gets no replay.
+
 ## What it serves
 
 The login slice: `/healthz`, `/readyz`, `/v1/status`, `/.well-known/jwks.json`,
 `/v1/auth/token`, `/v1/auth/revoke`, `/v1/auth/device/code`, `/v1/auth/authorize`,
 `/login/email` and its verify routes, `/device` (the pages), `/v1/me`, `/v1/devices` and
-`/v1/auth/devices`. The other modules (billing, sessions, webhooks, usage, admin, ...) are built
+`/v1/auth/devices`; and, when `RELAY_PUBLIC_URL` is set, the session routes (`/v1/sessions`: list,
+create, get, patch, end, join-token, claim-host, members). The other modules (billing, sessions, webhooks, usage, admin, ...) are built
 and tested but not yet on the list in `modules.ts`; each lane adds its entry there.
 
 A module whose settings are missing is left out with one `api.module_skipped` log line and the
@@ -71,10 +109,12 @@ wrong code.
 
 ## Settings the service adds
 
-| Key                       | Meaning                                                                          |
-| ------------------------- | -------------------------------------------------------------------------------- |
-| `DEV_MAILPIT_URL`         | Development only: Mailpit's HTTP address. Setting it turns e-mail sign-in on.    |
-| `DEVICE_VERIFICATION_URI` | The address terminals tell people to open; default `https://centcom.dev/device`. |
+| Key                       | Meaning                                                                                  |
+| ------------------------- | ---------------------------------------------------------------------------------------- |
+| `DEV_MAILPIT_URL`         | Development only: Mailpit's HTTP address. Setting it turns e-mail sign-in on.            |
+| `DEVICE_VERIFICATION_URI` | The address terminals tell people to open; default `https://centcom.dev/device`.         |
+| `RELAY_PUBLIC_URL`        | The relay's WebSocket address clients are given. Setting it turns the session routes on. |
+| `RELAY_REGION`            | The region name sessions get (default `local`).                                          |
 
 Everything else is the lanes' own settings (`docs/config.md`): the base, token keys, pagination,
 rate limits, status, PKCE and sign-in links.

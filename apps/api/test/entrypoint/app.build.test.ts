@@ -67,10 +67,15 @@ const ROUTES: [string, string][] = [
   ['GET', '/v1/devices'],
   ['GET', '/v1/auth/devices'],
   ['DELETE', '/v1/auth/devices/:id'],
+  ['GET', '/v1/sessions'],
+  ['POST', '/v1/sessions'],
+  ['GET', '/v1/sessions/:id'],
+  ['POST', '/v1/sessions/:id/join-token'],
+  ['GET', '/v1/sessions/:id/members'],
 ];
 
 describe('buildApp (B102)', () => {
-  it('serves every route of the login slice', async () => {
+  it('serves every route of the login and session slices', async () => {
     const { app, close } = await build();
     for (const [method, url] of ROUTES) {
       expect(app.hasRoute({ method: method as 'GET', url }), `${method} ${url}`).toBe(true);
@@ -104,6 +109,27 @@ describe('buildApp (B102)', () => {
     const page = await app.inject({ method: 'GET', url: '/device?user_code=ABCD-EFGH' });
     expect(page.statusCode).toBe(503);
     expect((await app.inject({ method: 'GET', url: '/healthz' })).statusCode).toBe(200);
+    await close();
+  });
+
+  it('leaves the session routes out, with one log line, when no relay address is configured', async () => {
+    const { app, captured, close } = await build({ RELAY_PUBLIC_URL: undefined });
+    expect(app.hasRoute({ method: 'POST', url: '/v1/sessions' })).toBe(false);
+    expect(app.hasRoute({ method: 'GET', url: '/v1/me' })).toBe(true);
+    const skipped = captured.lines().filter((l) => l['msg'] === 'api.module_skipped');
+    expect(skipped).toHaveLength(1);
+    expect(skipped[0]).toMatchObject({ module: 'sessions' });
+    await close();
+  });
+
+  it('answers the session routes 401 without a token and puts the relay in the configuration', async () => {
+    const { app, close } = await build({ RELAY_REGION: 'eu' });
+    const res = await app.inject({ method: 'POST', url: '/v1/sessions', payload: {} });
+    expect(res.statusCode).toBe(401);
+    expect(loadApiConfig(testEnv({ RELAY_REGION: 'eu' })).relay).toEqual({
+      url: 'ws://localhost:8088/v1/ws',
+      region: 'eu',
+    });
     await close();
   });
 

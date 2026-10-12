@@ -5,6 +5,7 @@
  * - a signing key, generated on the first run and appended to `.env.local` (that file is ignored
  *   by git; no key is ever committed), so tokens survive a restart;
  * - e-mail sign-in through Mailpit (http://127.0.0.1:8025), links in the web UI;
+ * - the relay address for sessions (ws://localhost:8088/v1/ws, see `pnpm dev:relay`);
  * - the device verification address and the sign-in return address on this server.
  *
  * Values already in the environment or in `.env.local` win over these defaults.
@@ -52,6 +53,8 @@ set('DEV_MAILPIT_URL', 'http://127.0.0.1:8025');
 set('MAGIC_LINK_BASE_URL', base);
 set('LOGIN_RETURN_TO_ALLOWLIST', `${base}/device`);
 set('DEVICE_VERIFICATION_URI', `${base}/device`);
+// Sessions: clients are told to connect to the relay `pnpm dev:relay` starts.
+set('RELAY_PUBLIC_URL', 'ws://localhost:8088/v1/ws');
 
 // Run the service in a child so Ctrl-C and SIGTERM reach it and its exit code is ours.
 const child = spawn(process.execPath, ['--import', 'tsx', resolve(root, 'apps/api/src/main.ts')], {
