@@ -5,12 +5,13 @@
  * - a signing key, generated on the first run and appended to `.env.local` (that file is ignored
  *   by git; no key is ever committed), so tokens survive a restart;
  * - e-mail sign-in through Mailpit (http://127.0.0.1:8025), links in the web UI;
+ * - the relay address for sessions (ws://localhost:8088/v1/ws, see `pnpm dev:relay`);
  * - the device verification address and the sign-in return address on this server.
  *
  * Values already in the environment or in `.env.local` win over these defaults.
  */
 import { spawn } from 'node:child_process';
-import { generateKeyPairSync } from 'node:crypto';
+import { generateKeyPairSync, randomBytes } from 'node:crypto';
 import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -47,11 +48,32 @@ if ((process.env['AUTH_SIGNING_KEYS'] ?? '') === '') {
   process.stdout.write('dev:api: generated a signing key in .env.local\n');
 }
 
+if ((process.env['IDEMPOTENCY_ENCRYPTION_KEY'] ?? '') === '') {
+  const key = randomBytes(32).toString('base64');
+  appendFileSync(
+    envFile,
+    `\n# Added by pnpm dev:api: encrypts stored invite replies. Never commit this file.\nIDEMPOTENCY_ENCRYPTION_KEY=${key}\n`,
+  );
+  process.env['IDEMPOTENCY_ENCRYPTION_KEY'] = key;
+}
+
 const base = process.env['PUBLIC_API_URL'] ?? 'http://localhost:3000';
 set('DEV_MAILPIT_URL', 'http://127.0.0.1:8025');
 set('MAGIC_LINK_BASE_URL', base);
 set('LOGIN_RETURN_TO_ALLOWLIST', `${base}/device`);
+// A laptop is one address: the sign-in and anonymous buckets would count every check against it.
+// (`.env.local` carries the production defaults, so only your own environment overrides these.)
+for (const key of ['RATELIMIT_AUTH_LIMIT', 'RATELIMIT_ANONYMOUS_LIMIT']) {
+  const own = process.env[key] ?? '';
+  process.env[key] = own === '' || own === fromFile.get(key) ? '1000' : own;
+}
+// Invite links point at this server in development.
+set('WEB_BASE_URL', base);
 set('DEVICE_VERIFICATION_URI', `${base}/device`);
+// Sessions: clients are told to connect to the relay `pnpm dev:relay` starts.
+// A new account's personal workspace starts on the Team plan, so it can use the relay.
+set('DEV_DEFAULT_PLAN', 'team');
+set('RELAY_PUBLIC_URL', 'ws://localhost:8088/v1/ws');
 
 // Run the service in a child so Ctrl-C and SIGTERM reach it and its exit code is ours.
 const child = spawn(process.execPath, ['--import', 'tsx', resolve(root, 'apps/api/src/main.ts')], {

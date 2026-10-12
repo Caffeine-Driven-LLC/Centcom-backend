@@ -25,7 +25,7 @@ import { AppError } from '@centcom/core';
 import type { CoreDatabase, createDb, EntitlementsDatabase } from '@centcom/db';
 import type { SessionAccess, SessionAccessResult } from '../handshake/access.js';
 import { MAX_SESSION_MEMBERS, type SlotService } from '../slots/index.js';
-import type { LiveMembership } from './membership.js';
+import { liveGuest, type LiveMembership } from './membership.js';
 import type { RoomRegistry } from './registry.js';
 
 /** The tables these reads use. */
@@ -116,11 +116,46 @@ export interface PostgresSessionAccessDeps {
   clock?: () => number;
 }
 
+/** A share-link guest (no device): a live viewer whose link stands, in the room's member cap. */
+async function resolveGuest(
+  deps: PostgresSessionAccessDeps,
+  clock: () => number,
+  sid: string,
+  mid: string,
+): Promise<SessionAccessResult | null> {
+  const session = await deps.db
+    .selectFrom('sessions')
+    .select(['state', 'workspace_id'])
+    .where('id', '=', sid)
+    .executeTakeFirst();
+  if (session === undefined) return null;
+  const now = new Date(clock());
+  const [entitlements, guest] = await Promise.all([
+    loadSessionEntitlements(deps.db, session.workspace_id, now),
+    liveGuest(deps.db, sid, mid, now),
+  ]);
+  const result: SessionAccessResult = {
+    session: { state: session.state, maxMembers: entitlements.maxSessionMembers },
+    member: null,
+    deviceRevoked: false,
+    relayAccess: entitlements.relayAccess,
+  };
+  if (guest === null) return result;
+  if (result.relayAccess && session.state !== 'ended' && session.state !== 'expired') {
+    const room = deps.rooms.get(sid);
+    if (room !== undefined && !roomHasSpace(room, mid, entitlements.maxSessionMembers)) {
+      throw sessionFull();
+    }
+  }
+  return { ...result, member: { id: mid, name: guest.name, slot: guest.slot, role: 'viewer' } };
+}
+
 /** B038's `SessionAccess` over Postgres. */
 export function createPostgresSessionAccess(deps: PostgresSessionAccessDeps): SessionAccess {
   const clock = deps.clock ?? Date.now;
   return {
     async resolve(sid, mid, dev) {
+      if (dev === null) return resolveGuest(deps, clock, sid, mid);
       const session = await deps.db
         .selectFrom('sessions')
         .select(['state', 'workspace_id'])

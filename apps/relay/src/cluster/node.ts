@@ -426,7 +426,8 @@ export function createClusterNode(deps: ClusterNodeDeps): ClusterNode {
         .closeMember(admitted.access.member.id, {
           code: CloseCode.Superseded,
           bye: 'superseded',
-          device: admitted.dev,
+          // A guest has no device: its older connections go whatever they are.
+          ...(admitted.dev === null ? {} : { device: admitted.dev }),
           before: connection.entry.createdAt.getTime(),
         })
         .catch(() => undefined);

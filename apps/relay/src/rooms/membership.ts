@@ -15,6 +15,7 @@
  * Owns: reading and caching live roles. Must not: trust a ticket's or a frame's role, or cache a
  * failure.
  */
+import type { createDb } from '@centcom/db';
 import type { RelayDb } from '../modules.js';
 import type { SessionRole } from './kind-policy.js';
 
@@ -47,6 +48,73 @@ export function capRole(
   return sessionRole;
 }
 
+/** A share-link guest as the records have them (B068's `guest_member`, `share_link`). */
+export interface GuestRow {
+  name: string;
+  slot: number;
+}
+
+/** The relay's client reaches every table; the guest tables are typed here, where they are read. */
+type GuestKysely = ReturnType<
+  typeof createDb<{
+    guest_member: {
+      member_id: string;
+      session_id: string;
+      share_link_id: string;
+      name: string;
+      slot: number;
+    };
+    share_link: { id: string; expires_at: Date; revoked_at: Date | null };
+    sessions: { id: string; workspace_id: string | null };
+    workspaces: { id: string; deleted_at: Date | null };
+  }>
+>;
+
+/**
+ * The live guest `memberId` of session `sid` (CT-RBAC "Share-link guests"): a viewer with no user
+ * and no device, whose link is neither revoked nor expired and whose session has a live workspace.
+ * Null when there is none. The guest's `userId` is its member id (it has no user).
+ */
+export async function liveGuest(
+  db: object,
+  sid: string,
+  memberId: string,
+  now: Date = new Date(),
+): Promise<(LiveMember & GuestRow) | null> {
+  const row = await (db as GuestKysely)
+    .selectFrom('guest_member as g')
+    .innerJoin('share_link as l', 'l.id', 'g.share_link_id')
+    .innerJoin('sessions as s', 's.id', 'g.session_id')
+    .leftJoin('workspaces as w', 'w.id', 's.workspace_id')
+    .select(['g.name', 'g.slot', 's.workspace_id', 'l.expires_at', 'l.revoked_at'])
+    .select('w.deleted_at as workspace_deleted_at')
+    .where('g.member_id', '=', memberId)
+    .where('g.session_id', '=', sid)
+    .executeTakeFirst();
+  if (row === undefined || row.revoked_at !== null || row.expires_at.getTime() <= now.getTime()) {
+    return null;
+  }
+  if (row.workspace_deleted_at !== null) return null;
+  return {
+    role: 'viewer',
+    userId: memberId,
+    workspaceId: row.workspace_id,
+    name: row.name,
+    slot: row.slot,
+  };
+}
+
+const guestLookup = async (
+  db: RelayDb,
+  sid: string,
+  memberId: string,
+): Promise<LiveMember | null> => {
+  const guest = await liveGuest(db, sid, memberId);
+  return guest === null
+    ? null
+    : { role: guest.role, userId: guest.userId, workspaceId: guest.workspaceId };
+};
+
 /** Live membership in Postgres. */
 export function createPostgresMembership(db: RelayDb): MembershipSource {
   return {
@@ -69,7 +137,8 @@ export function createPostgresMembership(db: RelayDb): MembershipSource {
         .where('sm.id', '=', memberId)
         .where('sm.session_id', '=', sid)
         .executeTakeFirst();
-      if (row === undefined || row.left_at !== null) return null;
+      if (row === undefined) return guestLookup(db, sid, memberId);
+      if (row.left_at !== null) return null;
       if (row.workspace_id !== null) {
         // The user must still be a member of a live workspace.
         if (row.workspace_role === null || row.workspace_deleted_at !== null) return null;

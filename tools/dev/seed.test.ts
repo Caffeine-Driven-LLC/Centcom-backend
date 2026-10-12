@@ -10,7 +10,12 @@ import { spawnSync } from 'node:child_process';
 import { createPublicKey } from 'node:crypto';
 import { isId, newId } from '@centcom/contracts';
 import { defineConfig, z } from '@centcom/core';
-import { currentMigrationVersion, expectedMigrationVersion } from '@centcom/db';
+import {
+  currentMigrationVersion,
+  expectedMigrationVersion,
+  type createDb,
+  type EntitlementsDatabase,
+} from '@centcom/db';
 import { startTestStack, testcontainersRuntime, type TestStack } from '@centcom/testkit';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
@@ -205,6 +210,22 @@ describe.runIf(STACK)('seeding a real database', () => {
     });
     expect(await counts()).toEqual(first);
     expect(first).toEqual({ users: 3, workspaces: 1, memberships: 3, devices: 2, sessions: 1 });
+
+    // The dev workspace is on the Team plan (relay_access); a plan someone changed stays.
+    const plan = () =>
+      (stack.db as unknown as ReturnType<typeof createDb<EntitlementsDatabase>>)
+        .selectFrom('workspace_entitlements')
+        .select(['plan_id', 'status'])
+        .where('workspace_id', '=', SEED.workspace.id)
+        .executeTakeFirstOrThrow();
+    expect(await plan()).toEqual({ plan_id: 'team', status: 'active' });
+    await (stack.db as unknown as ReturnType<typeof createDb<EntitlementsDatabase>>)
+      .updateTable('workspace_entitlements')
+      .set({ plan_id: 'pro' })
+      .where('workspace_id', '=', SEED.workspace.id)
+      .execute();
+    await seed(stack.db);
+    expect(await plan()).toEqual({ plan_id: 'pro', status: 'active' });
 
     const roles = await stack.db
       .selectFrom('memberships')

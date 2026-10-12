@@ -56,6 +56,41 @@ describe.runIf(ADMIN_URL !== undefined)('the personal workspace on Postgres 16',
     ]);
   });
 
+  it('hands the new user and workspace to onCreated, in the same transaction (a throw undoes the sign-up)', async () => {
+    const seen: { userId: string; workspaceId: string }[] = [];
+    const service = new UserService({
+      db: t.db,
+      newId,
+      now: () => NOW,
+      onCreated: (trx, created) => {
+        seen.push(created);
+        return trx
+          .selectFrom('memberships')
+          .select('id')
+          .where('workspace_id', '=', created.workspaceId)
+          .where('user_id', '=', created.userId)
+          .executeTakeFirstOrThrow()
+          .then(() => undefined);
+      },
+    });
+    const { user } = await service.getOrCreateByEmail('hook@example.test');
+    expect(seen).toHaveLength(1);
+    expect(seen[0]?.userId).toBe(user.id);
+    // A second sign-in creates nothing, so the hook does not run again.
+    await service.getOrCreateByEmail('hook@example.test');
+    expect(seen).toHaveLength(1);
+
+    const before = await counts(t.db);
+    const failing = new UserService({
+      db: t.db,
+      newId,
+      now: () => NOW,
+      onCreated: () => Promise.reject(new Error('no plan')),
+    });
+    await expect(failing.getOrCreateByEmail('late@example.test')).rejects.toThrow('no plan');
+    expect(await counts(t.db)).toEqual(before);
+  });
+
   it.each([
     ['the workspace', 'wsp'],
     ['the membership', 'mem'],

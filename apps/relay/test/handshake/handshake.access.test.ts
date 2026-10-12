@@ -35,6 +35,47 @@ const fixture = (name: string): Record<string, unknown> =>
     }
   ).data;
 
+describe('a share-link guest (no device)', () => {
+  it('is welcomed as a viewer with the name and slot the records give, and passes frames after', async () => {
+    const h = await handshakeRelay();
+    try {
+      const claims = ticketFor({ role: 'viewer', caps: [], dev: undefined });
+      h.access.allow(claims, {
+        member: { id: claims.mid, name: 'Visitor', slot: 4, role: 'viewer' },
+      });
+      const c = h.open();
+      await send(c, hello(await mintTicket(h.key, claims)));
+      const welcome = await first(c, 'sys.welcome');
+      expect(welcome['p']).toMatchObject({
+        member: { id: claims.mid, name: 'Visitor', slot: 4, role: 'viewer' },
+      });
+      await send(c, {
+        v: 1,
+        t: 'presence',
+        k: 'presence.update',
+        p: { status: 'online', activity: 'idle' },
+      });
+      await until(() => h.passed.length === 1);
+    } finally {
+      await h.stop();
+    }
+  });
+
+  it('is refused like any member once its link is gone (not_a_member, 4403)', async () => {
+    const h = await handshakeRelay();
+    try {
+      const claims = ticketFor({ role: 'viewer', caps: [], dev: undefined });
+      h.access.allow(claims, { member: null });
+      const c = h.open();
+      await send(c, hello(await mintTicket(h.key, claims)));
+      expect((await first(c, 'sys.error'))['p']).toMatchObject({ code: 'not_a_member' });
+      expect((await c.closed).code).toBe(4403);
+    } finally {
+      await h.stop();
+    }
+  });
+});
+
 describe('the live checks', () => {
   it.each<[string, Partial<SessionAccessResult> | 'unknown', number, string]>([
     ['an unknown session', 'unknown', 4404, 'session_not_found'],
