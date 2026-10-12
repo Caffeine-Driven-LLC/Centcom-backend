@@ -1,6 +1,8 @@
 /**
  * `pnpm dev:token <owner|member>` (B103): prints an access token for a seeded user on that user's
- * seeded device (tools/dev/seed.ts), as JSON. For scripts that act as a person without the e-mail
+ * seeded device (tools/dev/seed.ts), as JSON. `pnpm dev:token <usr_ id> <dev_ id>` does the same
+ * for any user and one of their devices, with every scope but `admin` (what the web app holds:
+ * a terminal's token cannot invite people, which needs `workspaces:write`). For scripts that act as a person without the e-mail
  * sign-in: pair it with `seedDevicePrivateKey` for the device's keys. The token is signed with the
  * key `pnpm dev:api` keeps in `.env.local`, so the API accepts it while that key is unchanged.
  *
@@ -19,9 +21,16 @@ const WHO: Record<string, { user: SeedUser; device: SeedDevice }> = {
 };
 
 const root = resolve(import.meta.dirname, '../..');
-const who = WHO[process.argv[2] ?? ''];
-if (who === undefined) {
-  process.stderr.write('usage: pnpm dev:token <owner|member>\n');
+const [first, second] = process.argv.slice(2);
+const who = WHO[first ?? ''];
+const ids =
+  who !== undefined
+    ? [SEED.users[who.user].id, SEED.devices[who.device].id]
+    : first?.startsWith('usr_') === true && second?.startsWith('dev_') === true
+      ? [first, second]
+      : undefined;
+if (ids === undefined) {
+  process.stderr.write('usage: pnpm dev:token <owner|member> | <usr_ id> <dev_ id>\n');
   process.exit(1);
 }
 const envFile = resolve(root, '.env.local');
@@ -40,13 +49,7 @@ try {
 }
 const run = spawnSync(
   process.execPath,
-  [
-    '--import',
-    'tsx',
-    resolve(root, 'apps/api/src/dev-token.ts'),
-    SEED.users[who.user].id,
-    SEED.devices[who.device].id,
-  ],
+  ['--import', 'tsx', resolve(root, 'apps/api/src/dev-token.ts'), ...ids],
   {
     cwd: root,
     stdio: 'inherit',

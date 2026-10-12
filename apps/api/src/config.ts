@@ -11,9 +11,14 @@
  */
 import {
   baseConfig,
+  ConfigError,
+  deeplinkConfig,
+  idempotencyConfig,
+  type IdempotencyConfig,
   defineConfig,
   envUrl,
   paginationConfig,
+  type DeeplinkConfig,
   rateLimitConfig,
   z,
   type BaseConfig,
@@ -21,6 +26,7 @@ import {
   type PaginationConfig,
   type RateLimitConfig,
 } from '@centcom/core';
+import { loadWorkspacesConfig, type WorkspacesConfig } from './modules/workspaces/config.js';
 import { loadMagicLinkConfig, type MagicLinkConfig } from './modules/auth/magic-link/config.js';
 import { loadPkceConfig, type PkceConfig } from './modules/auth/pkce/config.js';
 import { loadTokenKeys, type TokenKeys } from './modules/auth/tokens/index.js';
@@ -49,6 +55,11 @@ export const apiEnvSchema = z.object({
         "The WebSocket address clients are told to connect to for sessions (the relay's /v1/ws). Setting it turns the session routes on; without it they are left out.",
       example: 'ws://localhost:8080/v1/ws',
     }),
+  DEV_DEFAULT_PLAN: z.enum(['free', 'pro', 'team']).optional().meta({
+    description:
+      'Development only: the plan every new personal workspace starts on (an active subscription written at sign-up), so a new account can use the relay without billing. Refused with NODE_ENV=production.',
+    example: 'team',
+  }),
   RELAY_REGION: z
     .string()
     .regex(/^[a-z][a-z0-9-]{1,31}$/, 'must be 2-32 characters of a-z, 0-9 and -')
@@ -73,6 +84,13 @@ export interface ApiConfig {
   mailpitUrl: string | null;
   /** Overrides the default verification address (development). */
   verificationUri: string | null;
+  /** The key that encrypts stored replies of routes with secrets (invites); absent: those routes are off. */
+  idempotency: IdempotencyConfig;
+  /** Links to the web app (invites). */
+  deeplinks: DeeplinkConfig;
+  workspaces: WorkspacesConfig;
+  /** Development only: the plan new personal workspaces start on; null: Free, as in production. */
+  devDefaultPlan: 'free' | 'pro' | 'team' | null;
   /** Where the relay is and the region it serves; null: the session routes are off. */
   relay: { url: string; region: string } | null;
   /** Cookies are `Secure` only when the public URL is https. */
@@ -84,6 +102,11 @@ export function loadApiConfig(env?: Env): ApiConfig {
   const base = baseConfig(env);
   const own = defineConfig(apiEnvSchema, env);
   const mailpitUrl = own.DEV_MAILPIT_URL ?? null;
+  if (own.DEV_DEFAULT_PLAN !== undefined && base.nodeEnv === 'production') {
+    throw new ConfigError([
+      { key: 'DEV_DEFAULT_PLAN', problem: 'must not be set with NODE_ENV=production' },
+    ]);
+  }
   return {
     base,
     keys: loadTokenKeys(env),
@@ -94,6 +117,10 @@ export function loadApiConfig(env?: Env): ApiConfig {
     magicLink: mailpitUrl === null ? null : loadMagicLinkConfig(env),
     mailpitUrl,
     verificationUri: own.DEVICE_VERIFICATION_URI ?? null,
+    idempotency: idempotencyConfig(env),
+    deeplinks: deeplinkConfig(env),
+    workspaces: loadWorkspacesConfig(env),
+    devDefaultPlan: own.DEV_DEFAULT_PLAN ?? null,
     relay:
       own.RELAY_PUBLIC_URL === undefined
         ? null

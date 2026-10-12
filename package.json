@@ -23,6 +23,7 @@
     "dev:api": "tsx --tsconfig tsconfig.test.json tools/dev/api.ts",
     "dev:token": "tsx --tsconfig tsconfig.test.json tools/dev/token.ts",
     "dev:two-clients": "tsx --tsconfig tsconfig.test.json tools/dev/two-clients.ts",
+    "dev:two-accounts": "tsx --tsconfig tsconfig.test.json tools/dev/two-accounts.ts",
     "dev:relay": "tsx --tsconfig tsconfig.test.json tools/dev/relay.ts",
     "release:publish": "tsx --tsconfig tsconfig.test.json apps/api/scripts/publish-release.ts",
     "alerts:lint": "tsx --tsconfig tsconfig.test.json infra/alerts/lint.mjs",

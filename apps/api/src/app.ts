@@ -57,6 +57,9 @@ export async function buildApp(
   await app.register(authPlugin, { tokens: ctx.tokens });
   await app.register(idempotencyPlugin, {
     kv: ctx.redis.kv,
+    ...(config.idempotency.encryptionKey === undefined
+      ? {}
+      : { encryptionKey: config.idempotency.encryptionKey }),
     principal: (request) => request.principal?.userId ?? request.principal?.keyId ?? null,
     ...(deps.clock === undefined ? {} : { clock: deps.clock }),
     logger,

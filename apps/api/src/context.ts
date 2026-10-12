@@ -23,6 +23,7 @@ import {
 import {
   createMembershipRepo,
   createSessionSlotStore,
+  type EntitlementsDatabase,
   type SessionSlotDatabase,
   type CoreDatabase,
   type DeviceGrantDatabase,
@@ -46,6 +47,7 @@ import { TokenService } from './modules/auth/tokens/index.js';
 import { createLoginSessions, type LoginSessions } from './modules/auth/web-session/store.js';
 import { deviceStoreFromDb } from './modules/devices/repo.js';
 import { DeviceService } from './modules/devices/service.js';
+import { createCollab, type Collab } from './collab.js';
 import { CachedEntitlements } from './modules/entitlements/enforcement.js';
 import { createEntitlementRepository } from './modules/entitlements/repository.js';
 import { EntitlementService } from './modules/entitlements/service.js';
@@ -98,6 +100,10 @@ export interface AppContext extends AppDeps {
   audit: ReturnType<typeof createAuditEmitter>;
   /** The session routes' dependencies; null when no relay address is configured. */
   sessionRoutes: SessionRouteDeps | null;
+  /** Workspaces, members, invites, share links and seats. */
+  collab: Collab;
+  /** What each workspace's plan allows, cached. */
+  entitlements: CachedEntitlements;
 }
 
 const newId = createIdGenerator();
@@ -143,7 +149,26 @@ export function createContext(deps: AppDeps): AppContext {
     keys: config.keys,
     now: clock,
   });
-  const users = new UserService({ db: view<CoreDatabase>(), newId, now: () => new Date(clock()) });
+  const devPlan = config.devDefaultPlan;
+  const users = new UserService({
+    db: view<CoreDatabase>(),
+    newId,
+    now: () => new Date(clock()),
+    // Development: a new personal workspace starts on a paid plan (see DEV_DEFAULT_PLAN).
+    ...(devPlan === null || devPlan === 'free'
+      ? {}
+      : {
+          onCreated: async (trx, { workspaceId }) => {
+            await (trx as unknown as Kysely<EntitlementsDatabase>)
+              .insertInto('workspace_entitlements')
+              .values({ workspace_id: workspaceId, plan_id: devPlan, status: 'active' })
+              .onConflict((oc) =>
+                oc.column('workspace_id').doUpdateSet({ plan_id: devPlan, status: 'active' }),
+              )
+              .execute();
+          },
+        }),
+  });
 
   const login = config.magicLink;
   const deviceReturnTo =
@@ -218,23 +243,25 @@ export function createContext(deps: AppDeps): AppContext {
     now: clock,
   });
 
+  const entitlementService = new EntitlementService({
+    repository: createEntitlementRepository(view()),
+    events: redis.pubsub,
+    clock,
+    logger,
+    metrics,
+  });
+  const entitlements = new CachedEntitlements({
+    source: entitlementService,
+    // The monthly quota counters are not served yet (usage module); nothing is metered locally.
+    quota: { check: () => Promise.resolve({ allowed: true, retryAfterS: null }) },
+    pubsub: redis.pubsub,
+    clock,
+    logger,
+    metrics,
+  });
+
   let sessionRoutes: SessionRouteDeps | null = null;
   if (config.relay !== null) {
-    const entitlements = new CachedEntitlements({
-      source: new EntitlementService({
-        repository: createEntitlementRepository(view()),
-        events: redis.pubsub,
-        clock,
-        logger,
-        metrics,
-      }),
-      // The monthly quota counters are not served yet (usage module); nothing is metered locally.
-      quota: { check: () => Promise.resolve({ allowed: true, retryAfterS: null }) },
-      pubsub: redis.pubsub,
-      clock,
-      logger,
-      metrics,
-    });
     const regions = {
       defaultRegion: config.relay.region,
       urls: { [config.relay.region]: config.relay.url },
@@ -271,12 +298,29 @@ export function createContext(deps: AppDeps): AppContext {
     };
   }
 
+  const collab = createCollab({
+    config,
+    db,
+    redis,
+    logger,
+    metrics,
+    clock,
+    audit,
+    tokens,
+    entitlementService,
+    entitlements,
+    sessionRoutes,
+    mailer: deps.mailer,
+  });
+
   return {
     ...deps,
     metrics,
     rbac,
     audit,
     sessionRoutes,
+    collab,
+    entitlements,
     tokens,
     sessions,
     deviceGrants,

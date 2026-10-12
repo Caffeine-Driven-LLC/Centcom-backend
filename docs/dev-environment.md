@@ -103,8 +103,10 @@ Ed25519 key)).
   listens on `http://localhost:3000`.
 - **The relay and two sessions**: `pnpm dev:relay` runs the relay on `ws://localhost:8088/v1/ws`,
   `pnpm dev:token owner|member` prints an access token for a seeded person, and
-  `pnpm dev:two-clients` runs two clients of `../Centcom` through the whole session flow (see
-  "Two sessions on your machine" in `docs/api-service.md`).
+  `pnpm dev:two-clients` runs two seeded clients of `../Centcom` through a session, and
+  `pnpm dev:two-accounts` does it with two brand-new accounts: sign-up by e-mail (Mailpit), a
+  personal workspace and plan, an invite, a join through the relay (see "Two sessions on your
+  machine" in `docs/api-service.md`).
 - **The integration tests**: point the test harness at the stack and it creates (and drops) its own
   `test_*` databases on it, leaving `centcom_dev` alone:
   `DATABASE_URL=postgres://centcom:dev-only@127.0.0.1:5432/centcom_dev REDIS_URL=redis://127.0.0.1:6379/0 pnpm test`.

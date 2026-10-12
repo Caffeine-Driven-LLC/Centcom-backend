@@ -41,43 +41,81 @@ Sessions need the relay next to the API. With `pnpm dev:up` done, in three more 
 ```
 pnpm dev:api     # http://localhost:3000, and tells clients to use the relay below
 pnpm dev:relay   # the relay on ws://localhost:8088/v1/ws (RELAY_PORT; 8080 is often taken)
-pnpm dev:two-clients
 ```
 
-`dev:two-clients` (`tools/dev/two-clients.ts`) uses the client's libraries from `../Centcom` (or
-`CENTCOM_CLIENT_DIR`). The seeded owner hosts a session on `acme-dev`, the seeded member joins it
-through the relay, the host grants the session keys, and each sends an encrypted message that the
-other reads. It prints the steps and ends with `OK: both clients read both messages`.
+Then check it with the client's own libraries (`../Centcom`, or `CENTCOM_CLIENT_DIR`):
 
-For your own clients, `pnpm dev:token owner` (or `member`) prints JSON with an access token for a
-seeded person on their seeded device; the device keys are in `tools/dev/seed.ts`
-(`seedDevicePrivateKey`). Or sign in for real as in the section above and point the client at
-`CENTCOM_API_URL=http://localhost:3000` (the API hands the relay address to the client: the
-`relay_url` of a created session and of a join token). The client allows `ws://` to a loopback
-relay only when it is told to (`allowPlainWs`).
+```
+pnpm dev:two-clients    # the seeded owner and member share a session; no sign-in
+pnpm dev:two-accounts   # two brand-new accounts, from nothing (below)
+```
+
+`dev:two-clients` (`tools/dev/two-clients.ts`): the seeded owner hosts a session on `acme-dev`, the
+seeded member joins it through the relay, the host grants the session keys, and each sends an
+encrypted message that the other reads. It ends with `OK: both clients read both messages`.
+
+### Two new accounts, from nothing
+
+`dev:two-accounts` (`tools/dev/two-accounts.ts`, helpers in `tools/dev/client-kit.ts`) uses no seed
+data. It ends with `OK: two new accounts shared a session`:
+
+1. **Sign up.** Alice and Bob each use a new address (`alice-<hex>@dev.test`). Each signs in the
+   way a terminal does: the client asks for a device code, the page `/device` signs the person in
+   with the link mailed to Mailpit (http://127.0.0.1:8025), and Allow approves the device. The
+   first sign-in creates the **user**, a **personal workspace** named after them with their
+   `owner` membership (B013), and, in development, a **Team plan** for it: `dev:api` sets
+   `DEV_DEFAULT_PLAN=team`, which writes an active `workspace_entitlements` row in the same
+   transaction (the Free plan has no `relay_access`, so a new account on it could not host).
+   The script checks `GET /v1/workspaces` and `GET /v1/workspaces/{id}/entitlements`.
+2. **Create and invite.** Alice creates a session in her workspace (`POST /v1/sessions`) and
+   invites Bob's address (`POST /v1/workspaces/{id}/invites`, which mails a link to Mailpit and
+   returns the token once). Inviting needs `workspaces:write`, which a terminal's token does not
+   hold, so the script mints Alice's web-app token with `pnpm dev:token <usr_ id> <dev_ id>`.
+   Bob accepts (`POST /v1/invites/{token}/accept`) and is a member of Alice's workspace.
+3. **Join and talk.** Bob joins the session through the relay (`POST /v1/sessions/{id}/join-token`,
+   then `ws://localhost:8088/v1/ws`); the relay announces him (`control.member_joined`), Alice's
+   client grants the session keys, and each reads the other's encrypted message.
+4. **Share link.** Alice makes a link (`POST /v1/sessions/{id}/share-links`, the key stays in the
+   fragment) and a visitor without an account exchanges it for a viewer ticket
+   (`POST /v1/share-links/{token}/join`). **Not done:** the relay does not admit guest tickets
+   yet (they carry no device, which its handshake requires, and guests are not in
+   `session_members`), so a guest cannot connect locally.
+
+To use your own clients instead of these scripts: sign in for real with
+`CENTCOM_API_URL=http://localhost:3000 centcom login --no-browser`, or mint a token for a seeded
+person with `pnpm dev:token owner|member` (their device keys are in `tools/dev/seed.ts`,
+`seedDevicePrivateKey`). The API hands the relay address to the client (the `relay_url` of a
+created session and of a join token); a client allows `ws://` to a loopback relay only when it is
+told to (`allowPlainWs`).
 
 Why it works on a laptop:
 
-- The dev workspace `acme-dev` is on the Team plan (the seed writes it), because the Free plan has
-  no `relay_access`, and the relay and API both check it. A workspace row someone changed is left
-  alone.
+- The Free plan has no `relay_access`, and the API and the relay both check it. The seed puts
+  `acme-dev` on the Team plan (a row someone changed is left alone), and `DEV_DEFAULT_PLAN` does
+  the same for new accounts.
 - The relay verifies tickets with `RELAY_JWKS_URL` (the API's keys, which `dev:relay` sets) and
   reads sessions, members, devices and plans from the same Postgres.
 - The relay announces a member's first connection as `control.member_joined`; the host's client
   answers it with the keys (`key.grant`). Without it the newcomer waits for keys forever.
+- `dev:api` raises the sign-in and anonymous rate limits (a laptop is one address) and generates
+  an `IDEMPOTENCY_ENCRYPTION_KEY` in `.env.local` (invite replies carry a token, so they are kept
+  encrypted).
 
 Not done locally: the monthly quota counters (nothing is metered), delivery of host changes to the
-relay and of session state changes (`control.session_state` on pause or end by the API), and the
-history and snapshot routes. The relay logs `relay.resume_without_durable_log`: a client that
-reconnects after a long gap gets no replay.
+relay and of session state changes (`control.session_state` on pause or end by the API), the
+purge of deleted workspaces, real mail (invites and sign-in go to Mailpit through a development
+queue until the worker's mail queue is on the list), and the history and snapshot routes. The relay
+logs `relay.resume_without_durable_log`: a client that reconnects after a long gap gets no replay.
 
 ## What it serves
 
 The login slice: `/healthz`, `/readyz`, `/v1/status`, `/.well-known/jwks.json`,
 `/v1/auth/token`, `/v1/auth/revoke`, `/v1/auth/device/code`, `/v1/auth/authorize`,
 `/login/email` and its verify routes, `/device` (the pages), `/v1/me`, `/v1/devices` and
-`/v1/auth/devices`; and, when `RELAY_PUBLIC_URL` is set, the session routes (`/v1/sessions`: list,
-create, get, patch, end, join-token, claim-host, members). The other modules (billing, sessions, webhooks, usage, admin, ...) are built
+`/v1/auth/devices`; the workspaces, their members and entitlements (`/v1/workspaces`, `/members`,
+`/entitlements`); invites (`/v1/workspaces/{id}/invites`, `/v1/invites/...`, which need mail and the
+idempotency key); and, when `RELAY_PUBLIC_URL` is set, the session routes (`/v1/sessions`: list,
+create, get, patch, end, join-token, claim-host, members) and share links. The other modules (billing, sessions, webhooks, usage, admin, ...) are built
 and tested but not yet on the list in `modules.ts`; each lane adds its entry there.
 
 A module whose settings are missing is left out with one `api.module_skipped` log line and the
