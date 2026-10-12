@@ -107,6 +107,22 @@ export {
   type NewInvite,
 } from './repos/invites.js';
 export {
+  createSessionInviteStore,
+  sessionInviteStatus,
+  SESSION_INVITE_LIST_SORTS,
+  type NewSessionInvite,
+  type SessionInvitePreviewRow,
+  type SessionInviteRecord,
+  type SessionInviteRole,
+  type SessionInviteStatus,
+  type SessionInviteStore,
+} from './repos/session-invites.js';
+export type {
+  SessionInviteDatabase,
+  SessionInvitesDatabase,
+  SessionInvitesTable,
+} from './schema/session-invites.js';
+export {
   createProjectStore,
   PROJECT_LIST_SORTS,
   projectOperations,

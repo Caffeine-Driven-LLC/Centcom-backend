@@ -17,6 +17,8 @@ import {
 import {
   type CoreDatabase,
   type InviteDatabase,
+  type SessionInviteDatabase,
+  createSessionInviteStore,
   createInviteStore,
   createMemberStore,
   createWorkspaceStore,
@@ -27,7 +29,7 @@ import type { ApiDatabase } from './context.js';
 import { createInviteUrlBuilder } from './modules/deeplinks/invite-urls.js';
 import type { CachedEntitlements } from './modules/entitlements/enforcement.js';
 import type { EntitlementService } from './modules/entitlements/service.js';
-import { InviteService, type SeatGate } from './modules/invites/index.js';
+import { InviteService, SessionInviteService, type SeatGate } from './modules/invites/index.js';
 import { MembershipService } from './modules/members/index.js';
 import { SeatService, createSeatGate, seatLimitsFrom } from './modules/seats/index.js';
 import { createPostgresShareLinkStore, ShareLinkService } from './modules/share-links/index.js';
@@ -48,6 +50,8 @@ export interface Collab {
   inviteUrls: ReturnType<typeof createInviteUrlBuilder>;
   /** Null when the session routes are off (no relay address). */
   shareLinks: ShareLinkService | null;
+  /** B105: null without a mail transport or without the session routes. */
+  sessionInvites: SessionInviteService | null;
 }
 
 /** What the services are built from. */
@@ -173,5 +177,27 @@ export function createCollab(deps: CollabDeps): Collab {
           metrics,
         });
 
-  return { workspaceStore, workspaces, members, seatGate, invites, inviteUrls, shareLinks };
+  const sessionInvites =
+    email === null || routes === null
+      ? null
+      : new SessionInviteService({
+          store: createSessionInviteStore(view<SessionInviteDatabase>()),
+          urls: inviteUrls,
+          email,
+          entitlements: deps.entitlements,
+          clock,
+          logger,
+          metrics,
+        });
+
+  return {
+    workspaceStore,
+    workspaces,
+    members,
+    seatGate,
+    invites,
+    inviteUrls,
+    shareLinks,
+    sessionInvites,
+  };
 }

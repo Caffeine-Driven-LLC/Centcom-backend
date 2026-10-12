@@ -93,8 +93,13 @@ export function capRole(
   role: 'host' | 'editor' | 'viewer',
   workspaceRole: string | null,
   inWorkspace: boolean,
+  grantRole: 'editor' | 'viewer' | null = null,
 ): 'host' | 'editor' | 'viewer' | null {
   if (!inWorkspace) return role;
+  // B105: outside the workspace, a live session invite is the whole right to be here: at most its role.
+  if (workspaceRole === null && grantRole !== null) {
+    return grantRole === 'viewer' ? 'viewer' : role === 'host' ? 'editor' : role;
+  }
   if (workspaceRole === null || workspaceRole === 'billing') return null;
   if (workspaceRole === 'guest') return 'viewer';
   return role;
@@ -107,6 +112,7 @@ export function liveRole(standing: Standing): 'host' | 'editor' | 'viewer' | nul
     standing.member.role,
     standing.workspaceRole,
     standing.session.workspaceId !== null,
+    standing.grantRole ?? null,
   );
 }
 
@@ -121,6 +127,8 @@ export async function maySee(
   standing: Standing,
 ): Promise<boolean> {
   if (liveRole(standing) !== null) return true;
+  // B105: an accepted session invite lets its holder read the session they are about to join.
+  if (standing.workspaceRole === null && standing.grantRole != null) return true;
   const workspaceId = standing.session.workspaceId;
   if (workspaceId === null) return false;
   const decision = await request.server.rbac.authorizer.decide(
@@ -185,7 +193,7 @@ export function memberBody(m: MemberView, inWorkspace: boolean): Api.SessionMemb
     user: m.userId as NonNullable<Api.SessionMember['user']>,
     display_name: m.displayName,
     device: m.device.id as NonNullable<Api.SessionMember['device']>,
-    role: capRole(m.role, m.workspaceRole, inWorkspace) ?? 'viewer',
+    role: capRole(m.role, m.workspaceRole, inWorkspace, m.grantRole ?? null) ?? 'viewer',
     slot: m.slot,
     join_order: m.joinOrder,
     device_keys: {
