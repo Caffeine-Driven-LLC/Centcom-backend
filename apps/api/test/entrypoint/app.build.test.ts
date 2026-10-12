@@ -111,7 +111,7 @@ describe('buildApp (B102)', () => {
     expect(app.hasRoute({ method: 'POST', url: '/login/email' })).toBe(false);
     expect(app.hasRoute({ method: 'GET', url: '/device' })).toBe(true);
     const skipped = captured.lines().filter((l) => l['msg'] === 'api.module_skipped');
-    expect(skipped.map((l) => l['module'])).toEqual(['email-login', 'invites']);
+    expect(skipped.map((l) => l['module'])).toEqual(['email-login', 'invites', 'session-invites']);
     expect(app.hasRoute({ method: 'POST', url: '/v1/workspaces' })).toBe(true);
     const page = await app.inject({ method: 'GET', url: '/device?user_code=ABCD-EFGH' });
     expect(page.statusCode).toBe(503);
@@ -124,7 +124,7 @@ describe('buildApp (B102)', () => {
     expect(app.hasRoute({ method: 'POST', url: '/v1/sessions' })).toBe(false);
     expect(app.hasRoute({ method: 'GET', url: '/v1/me' })).toBe(true);
     const skipped = captured.lines().filter((l) => l['msg'] === 'api.module_skipped');
-    expect(skipped.map((l) => l['module'])).toEqual(['sessions', 'share-links']);
+    expect(skipped.map((l) => l['module'])).toEqual(['sessions', 'session-invites', 'share-links']);
     await close();
   });
 
@@ -143,8 +143,7 @@ describe('buildApp (B102)', () => {
     const { app, captured, close } = await build({ IDEMPOTENCY_ENCRYPTION_KEY: undefined });
     expect(app.hasRoute({ method: 'POST', url: '/v1/workspaces/:id/invites' })).toBe(false);
     const skipped = captured.lines().filter((l) => l['msg'] === 'api.module_skipped');
-    expect(skipped).toHaveLength(1);
-    expect(skipped[0]).toMatchObject({ module: 'invites' });
+    expect(skipped.map((l) => l['module'])).toEqual(['invites', 'session-invites']);
     await close();
   });
 
