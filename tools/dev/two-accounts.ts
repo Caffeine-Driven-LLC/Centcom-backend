@@ -8,13 +8,23 @@
  * 2. Alice creates a session in her workspace and invites Bob's address; Bob accepts the invite
  *    with the token from the mail and joins the session through the relay.
  * 3. The host grants the keys; each sends an encrypted message the other reads.
- * 4. Alice also makes a share link, and a visitor without an account turns it into a viewer
- *    ticket (the API side; the relay does not admit guest tickets yet, so there is no more).
+ * 4. Alice also makes a share link; a visitor with no account and no device joins by it as a
+ *    viewer (a ticket without a `dev` claim, a `guest_member` row) and reads what Alice sends.
  *
  * Needs `pnpm dev:up`, `pnpm dev:api` and `pnpm dev:relay` running, and the client checked out
  * next to this repo (or CENTCOM_CLIENT_DIR). Exits 1 when a step failed.
  */
-import { api, appToken, listen, signUp, until, type Person } from './client-kit.js';
+import {
+  api,
+  appToken,
+  clientInfo,
+  listen,
+  net,
+  relay,
+  signUp,
+  until,
+  type Person,
+} from './client-kit.js';
 
 const step = (text: string): void => console.log(`\n== ${text}`);
 const check = (ok: boolean, text: string): void => {
@@ -96,23 +106,46 @@ await guest.sendEvent('message.user', { secret: { text: 'thanks, Alice' } });
 check(await until(() => log.length === 4, 5_000), 'both read both messages');
 log.forEach((line) => console.log(`     ${line}`));
 
-step('A share link for a visitor without an account (the API side)');
+step('A visitor without an account joins by the share link');
 const link = await host.createShareLink();
 check(link.fragment.startsWith('#k='), `Alice made a link (${link.url}, key in the fragment)`);
+// The visitor has no account: no token, no device. The link's token buys a viewer ticket (no `dev`
+// claim) and the relay admits it. (The client's own `joinViaShareLink` still fetches a member join
+// token for its relay ticket, so this connects at the protocol level.)
 const joined = await fetch(`${api}/v1/share-links/${link.token}/join`, {
   method: 'POST',
   headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ display_name: 'Visitor' }),
 });
-const ticket = (await joined.json()) as { role?: string; ticket?: string; relay_url?: string };
+const grant = (await joined.json()) as { ticket: string; relay_url: string; role: string };
+check(joined.status === 200 && grant.role === 'viewer', 'the link gives a viewer ticket');
+const visitor = new net.RelayClient({
+  url: relay,
+  sessionId: host.id,
+  clientInfo,
+  allowPlainWs: true,
+  getTicket: () => Promise.resolve({ ticket: grant.ticket, url: grant.relay_url }),
+});
+const seen: string[] = [];
+visitor.on('frame', (f: { k?: string; ct?: unknown }) => {
+  if (f.k === 'message.user' && f.ct !== undefined) seen.push(f.k);
+});
+const welcome = await visitor.connect();
 check(
-  joined.status === 200 && ticket.role === 'viewer' && typeof ticket.ticket === 'string',
-  `the visitor gets a viewer ticket for ${ticket.relay_url ?? '?'}`,
+  welcome.role === 'viewer' && welcome.member.name === 'Visitor',
+  `the relay welcomed "${welcome.member.name}" as a ${welcome.role} (slot ${welcome.slot}), no device`,
 );
-console.log(
-  '     (the relay does not admit guest tickets yet: they carry no device, which its handshake requires)',
-);
+await host.sendEvent('message.user', { secret: { text: 'hello visitor' } });
+check(await until(() => seen.length === 1, 5_000), 'the visitor receives the encrypted message');
+const refused = await visitor
+  .send({ t: 'event', id: net.newMsgId?.() ?? 'msg_01M4QHTAGZVY7KN32ADY0ABQ39', k: 'message.user' })
+  .then(
+    () => 'sent',
+    () => 'refused',
+  );
+console.log(`     a viewer sending a message: ${refused}`);
 
+await visitor.close(1000);
 await guest.leave();
 await host.end();
 console.log(process.exitCode === 1 ? '\nFAILED' : '\nOK: two new accounts shared a session');

@@ -94,7 +94,8 @@ export type HandshakeRefusal =
 /** A hello that passed every live check, about to be welcomed. */
 export interface AdmittedHello {
   sid: string;
-  dev: string;
+  /** The device; null for a share-link guest. */
+  dev: string | null;
   access: SessionAccessResult & { member: NonNullable<SessionAccessResult['member']> };
   /** The hello's `last_seq`: null for a fresh join. */
   lastSeq: number | null;
@@ -536,7 +537,7 @@ export function createHandshake(deps: HandshakeDeps): {
       connection.entry.sessionId = admitted.claims.sid;
       connection.entry.memberId = access.member.id;
       connection.entry.deviceId = admitted.claims.dev;
-      activate(connection, `${access.member.id}:${admitted.claims.dev}`);
+      activate(connection, `${access.member.id}:${admitted.claims.dev ?? 'guest'}`);
       metrics.counter('relay_handshakes_total', { outcome: 'welcome' }).inc();
       try {
         deps.onWelcomed?.(connection, hello);

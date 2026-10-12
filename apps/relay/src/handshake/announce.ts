@@ -41,7 +41,8 @@ export async function announceJoin(deps: AnnounceDeps, admitted: AdmittedHello):
         name: member.name,
         slot: member.slot,
         role: member.role,
-        device: dev,
+        // A share-link guest has no device.
+        ...(dev === null ? {} : { device: dev }),
       });
     } catch (err) {
       // Not announced: the next connection tries again.

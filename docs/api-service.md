@@ -76,10 +76,15 @@ data. It ends with `OK: two new accounts shared a session`:
    then `ws://localhost:8088/v1/ws`); the relay announces him (`control.member_joined`), Alice's
    client grants the session keys, and each reads the other's encrypted message.
 4. **Share link.** Alice makes a link (`POST /v1/sessions/{id}/share-links`, the key stays in the
-   fragment) and a visitor without an account exchanges it for a viewer ticket
-   (`POST /v1/share-links/{token}/join`). **Not done:** the relay does not admit guest tickets
-   yet (they carry no device, which its handshake requires, and guests are not in
-   `session_members`), so a guest cannot connect locally.
+   fragment). A visitor with no account and no device turns it into a viewer ticket
+   (`POST /v1/share-links/{token}/join`: a ticket with no `dev` claim, and a `guest_member` row),
+   connects to the relay with it, is welcomed as a `viewer` under the name they gave, and receives
+   the session's encrypted frames. The relay admits a ticket without `dev` only for a viewer with
+   no capabilities, and reads the guest from `guest_member` (not `session_members`); the guest is
+   refused (`not_a_member`, 4403) once its link is revoked or has expired, and counts toward the
+   member cap. The script connects at the protocol level: the client's `joinViaShareLink` still
+   fetches a member join token for its relay ticket instead of using the one the link gave it
+   (a client fix, in the client repo).
 
 To use your own clients instead of these scripts: sign in for real with
 `CENTCOM_API_URL=http://localhost:3000 centcom login --no-browser`, or mint a token for a seeded
