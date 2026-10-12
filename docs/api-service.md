@@ -132,7 +132,7 @@ The login slice: `/healthz`, `/readyz`, `/v1/status`, `/.well-known/jwks.json`,
 `/v1/auth/devices`; the workspaces, their members and entitlements (`/v1/workspaces`, `/members`,
 `/entitlements`); invites (`/v1/workspaces/{id}/invites`, `/v1/invites/...`, which need mail and the
 idempotency key); and, when `RELAY_PUBLIC_URL` is set, the session routes (`/v1/sessions`: list,
-create, get, patch, end, join-token, claim-host, members) and share links. The other modules (billing, sessions, webhooks, usage, admin, ...) are built
+create, get, patch, end, join-token, claim-host, members) and share links. The other modules (billing, webhooks, usage, admin, history, snapshots, ...) are built
 and tested but not yet on the list in `modules.ts`; each lane adds its entry there.
 
 A module whose settings are missing is left out with one `api.module_skipped` log line and the
@@ -182,3 +182,20 @@ rate limits, status, PKCE and sign-in links.
   token belongs to, because the auth plugin runs after the limiter. Authenticated callers share
   the anonymous budget until the two are ordered so bad credentials still count.
 - The other modules, and the relay and worker entrypoints.
+
+## Plans, the inbox and the relay's control channel (B106)
+
+- `GET /v1/plans` (public) and the notification inbox routes (`/v1/notifications`, scope `profile`)
+  are served. Billing, usage, webhooks, history, snapshots and admin are still not on the list: they
+  need a payment provider, the usage counters' feed, object storage or staff credentials that the
+  dev stack does not have.
+- **API to relay.** A host change made through the API (`claim-host`) and a state change made through
+  the API (`POST /v1/sessions/{id}/end`, pause, resume) are published on the Redis channel
+  `centcom:relay-control` (`RELAY_CONTROL_CHANNEL`); the relay's control module checks every field
+  and emits `control.host_changed` or `control.session_state` to the people in the session. `pnpm
+dev:two-accounts` ends with that: Alice ends the session over REST and Bob's client sees it end.
+  A message published while no relay listens is lost (the relay re-reads the records on the next
+  hello).
+- **Production sign-ups are on the free plan**: nothing writes a plan for a new workspace, and
+  `DEV_DEFAULT_PLAN` is refused under `NODE_ENV=production` (tests in `app.build.test.ts` and
+  `personal-workspace.test.ts`).

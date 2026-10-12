@@ -207,7 +207,14 @@ const refused = await visitor
 console.log(`     a viewer sending a message: ${refused}`);
 
 await visitor.close(1000);
-await guest.leave();
-await host.end();
+
+step('Alice ends the session through the REST API; the relay tells the people in it');
+await rest(alice, 'POST', `/v1/sessions/${host.id}/end`, {});
+check(
+  await until(() => guest.state === 'ended', 8_000),
+  `the API's end reached Bob through the relay (control.session_state): Bob's state is ${guest.state}`,
+);
+await guest.leave().catch(() => undefined);
+await host.leave().catch(() => undefined);
 console.log(process.exitCode === 1 ? '\nFAILED' : '\nOK: two new accounts shared a session');
 process.exit(process.exitCode ?? 0);
