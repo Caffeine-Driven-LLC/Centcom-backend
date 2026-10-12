@@ -37,7 +37,6 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 | [B062](plan/backend/B062.md) | Reactions and comments persistence | S | M5 |
 | [B097](plan/backend/B097.md) | Security hardening: headers, WAF rules, secret scanning, dependency policy | M | M6 |
 | [B095](plan/backend/B095.md) | Load testing and capacity model | L | M6 |
-| [B089](plan/backend/B089.md) | Metadata search across sessions and members | S | Later |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
 
