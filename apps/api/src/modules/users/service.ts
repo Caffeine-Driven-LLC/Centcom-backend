@@ -33,6 +33,14 @@ export interface UserServiceDeps {
   newId: (prefix: IdPrefix) => string;
   /** The time, for rows the service stamps itself. */
   now: () => Date;
+  /**
+   * Runs in the transaction that creates a user, after their personal workspace and `owner`
+   * membership exist (a plan for the new workspace, in development). A throw undoes the sign-up.
+   */
+  onCreated?: (
+    trx: Kysely<CoreDatabase>,
+    created: { userId: string; workspaceId: string },
+  ) => Promise<void>;
 }
 
 /** The outcome of a sign-in. */
@@ -63,12 +71,14 @@ export class UserService {
   private readonly repo: UserRepo;
   private readonly newId: (prefix: IdPrefix) => string;
   private readonly now: () => Date;
+  private readonly onCreated: UserServiceDeps['onCreated'];
 
   constructor(deps: UserServiceDeps) {
     this.db = deps.db;
     this.repo = deps.repo ?? createUserRepo(deps.db);
     this.newId = deps.newId;
     this.now = deps.now;
+    this.onCreated = deps.onCreated;
   }
 
   /**
@@ -139,6 +149,7 @@ export class UserService {
         created_at: now,
       })
       .execute();
+    await this.onCreated?.(trx, { userId: user.id, workspaceId });
     return user;
   }
 }

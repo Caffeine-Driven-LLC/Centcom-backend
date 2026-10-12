@@ -18,6 +18,13 @@ import { tokenRoutes } from './routes/auth/token.js';
 import { deviceRoutes } from './routes/devices.js';
 import { emailLoginRoutes } from './routes/login-email.js';
 import { meRoutes } from './routes/me.js';
+import { inviteRoutes } from './modules/invites/index.js';
+import { memberRoutes } from './modules/members/index.js';
+import { seatGatePlugin } from './modules/seats/index.js';
+import { workspaceRoutes } from './modules/workspaces/index.js';
+import { entitlementRoutes } from './routes/entitlements/index.js';
+import { registerShareLinkRoutes } from './routes/share-links/index.js';
+import { registerSessionRoutes } from './routes/sessions/index.js';
 import { statusRoutes } from './routes/status.js';
 import { wellKnownRoutes } from './routes/well-known.js';
 
@@ -118,6 +125,60 @@ export const API_MODULES: readonly ApiModule[] = [
       };
       await app.register(deviceRoutes, options);
       await app.register(authDeviceRoutes, options);
+    },
+  },
+  {
+    name: 'sessions',
+    skip: (ctx) =>
+      ctx.sessionRoutes === null ? 'no relay address is configured (RELAY_PUBLIC_URL)' : null,
+    register: async (app, ctx) => {
+      if (ctx.sessionRoutes !== null) registerSessionRoutes(app, ctx.sessionRoutes);
+    },
+  },
+  {
+    name: 'workspaces',
+    register: async (app, ctx) => {
+      await app.register(workspaceRoutes, {
+        service: ctx.collab.workspaces,
+        cursorKeys: ctx.config.pagination.signingKeys,
+        clock: ctx.clock ?? Date.now,
+      });
+      await app.register(memberRoutes, {
+        members: ctx.collab.members,
+        workspaces: ctx.collab.workspaceStore,
+        cursorKeys: ctx.config.pagination.signingKeys,
+        clock: ctx.clock ?? Date.now,
+      });
+      await app.register(entitlementRoutes, { service: ctx.entitlements });
+    },
+  },
+  {
+    name: 'invites',
+    skip: (ctx) =>
+      ctx.collab.invites === null
+        ? 'no mail transport is configured (DEV_MAILPIT_URL)'
+        : ctx.config.idempotency.encryptionKey === undefined
+          ? 'IDEMPOTENCY_ENCRYPTION_KEY is not set'
+          : null,
+    register: async (app, ctx) => {
+      if (ctx.collab.invites === null) return;
+      await app.register(seatGatePlugin, { gate: ctx.collab.seatGate });
+      await app.register(inviteRoutes, {
+        service: ctx.collab.invites,
+        workspaces: ctx.collab.workspaceStore,
+        cursorKeys: ctx.config.pagination.signingKeys,
+        clock: ctx.clock ?? Date.now,
+      });
+    },
+  },
+  {
+    name: 'share-links',
+    skip: (ctx) =>
+      ctx.collab.shareLinks === null ? 'the session routes are off (RELAY_PUBLIC_URL)' : null,
+    register: async (app, ctx) => {
+      if (ctx.collab.shareLinks !== null) {
+        registerShareLinkRoutes(app, { service: ctx.collab.shareLinks });
+      }
     },
   },
 ];

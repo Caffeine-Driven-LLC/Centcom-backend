@@ -8,7 +8,8 @@
  * sequencing limits the sequence module enforces (RELAY_SEQ_RATE, RELAY_SEQ_BURST, B041). B042's
  * resume (`ctx.resume`, registered later) is looked up for each hello, and B045's cluster
  * (`ctx.cluster`) supersedes the member's device on other nodes after each welcome, and B047's
- * presence (`ctx.presence`) sends the joiner its snapshot.
+ * presence (`ctx.presence`) sends the joiner its snapshot. A member's first connection is announced
+ * to the session as `control.member_joined` (`announce.ts`).
  *
  * Owns: wiring. Must not: hold state outside what `register` creates.
  */
@@ -18,6 +19,7 @@ import { STAGE_ORDER } from '../pipeline.js';
 import { roomsFor } from '../rooms/runtime.js';
 import { loadSeqConfig, welcomeSeqLimits } from '../seq/config.js';
 import { loadHandshakeConfig } from './config.js';
+import { announceJoin } from './announce.js';
 import { createHandshake } from './handshake.js';
 import { JwksCache } from './jwks.js';
 
@@ -43,6 +45,11 @@ const relayModule: RelayModule = {
       onWelcomed: (connection, admitted) => {
         ctx.cluster?.welcomed(connection, admitted);
         ctx.presence?.welcomed(connection).catch(() => undefined);
+        // The first connection of a member is announced to the session (the host grants keys).
+        void announceJoin(
+          { kv: ctx.redis.kv, emitServer: ctx.fanout?.emitServer, logger: ctx.log },
+          admitted,
+        );
         // B052: the joiner gets the latest queue.state (its seq; a client keeps the newest).
         const queueState = ctx.queue?.lastState(admitted.sid);
         if (queueState !== undefined) ctx.fanout?.sendTo(connection, queueState);

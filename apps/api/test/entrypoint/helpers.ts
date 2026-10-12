@@ -24,6 +24,8 @@ export function testEnv(overrides: Record<string, string | undefined> = {}): Env
     MAGIC_LINK_BASE_URL: BASE,
     LOGIN_RETURN_TO_ALLOWLIST: `${BASE}/`,
     DEVICE_VERIFICATION_URI: `${BASE}/device`,
+    IDEMPOTENCY_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
+    RELAY_PUBLIC_URL: 'ws://localhost:8088/v1/ws',
     EXPECTED_MIGRATION_VERSION: '',
     ...overrides,
   };
