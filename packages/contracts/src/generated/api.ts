@@ -254,12 +254,15 @@ export type Invite = {
   id: InviteId;
   workspace: WorkspaceId;
   email?: string | null;
-  role: "admin" | "member" | "billing" | "guest";
+  /** editor and viewer are the roles of a session invite; workspace invites never carry them */
+  role: "admin" | "member" | "billing" | "guest" | "editor" | "viewer";
   status: "pending" | "accepted" | "revoked" | "expired";
   share_history?: boolean;
   created_by?: UserId;
   created_at: string;
   expires_at: string;
+  /** Set for a session invite */
+  session?: SessionId;
 };
 
 export type InviteCreate = {
@@ -279,9 +282,11 @@ export type InviteCreated = Invite & {
 export type InvitePreview = {
   workspace_name: string;
   inviter_name: string;
-  role: "admin" | "member" | "billing" | "guest";
+  role: "admin" | "member" | "billing" | "guest" | "editor" | "viewer";
   expires_at: string;
   has_key_bundle?: boolean;
+  /** Set for a session invite */
+  session_name?: string;
 };
 
 export type InviteAcceptance = {
@@ -1081,4 +1086,19 @@ export type WebhookDeliveryPage = {
   /** Opaque cursor, null on the last page */
   next_cursor: string | null;
   has_more: boolean;
+};
+
+export type SessionInviteCreate = {
+  /** Omit to create a link-only invite */
+  email?: string;
+  role?: "editor" | "viewer";
+  expires_in_s?: number;
+  share_history?: boolean;
+};
+
+/** Accepting a session invite creates no membership and uses no seat: it records the right to join that one session. */
+export type SessionInviteAcceptance = {
+  session: SessionId;
+  role: "editor" | "viewer";
+  workspace: WorkspaceId;
 };

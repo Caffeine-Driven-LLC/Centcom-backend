@@ -21327,7 +21327,7 @@ return errors === 0;
 validate134.evaluated = {"props":{"to_member":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v111 = validate135;
-const schema209 = {"type":"object","properties":{"id":{"$ref":"#/$defs/InviteId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"email":{"type":["string","null"],"format":"email"},"role":{"type":"string","enum":["admin","member","billing","guest"]},"status":{"type":"string","enum":["pending","accepted","revoked","expired"]},"share_history":{"type":"boolean"},"created_by":{"$ref":"#/$defs/UserId"},"created_at":{"type":"string","format":"date-time"},"expires_at":{"type":"string","format":"date-time"}},"required":["id","workspace","role","status","created_at","expires_at"]};
+const schema209 = {"type":"object","properties":{"id":{"$ref":"#/$defs/InviteId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"email":{"type":["string","null"],"format":"email"},"role":{"type":"string","enum":["admin","member","billing","guest","editor","viewer"],"description":"editor and viewer are the roles of a session invite; workspace invites never carry them"},"status":{"type":"string","enum":["pending","accepted","revoked","expired"]},"share_history":{"type":"boolean"},"created_by":{"$ref":"#/$defs/UserId"},"created_at":{"type":"string","format":"date-time"},"expires_at":{"type":"string","format":"date-time"},"session":{"$ref":"#/$defs/SessionId","description":"Set for a session invite"}},"required":["id","workspace","role","status","created_at","expires_at"]};
 
 function validate135(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -21433,7 +21433,7 @@ if(typeof data3 !== "string"){
 validate135.errors = [{instancePath:instancePath+"/role",schemaPath:"#/properties/role/type",keyword:"type",params:{type: "string"},message:"must be string"}];
 return false;
 }
-if(!((((data3 === "admin") || (data3 === "member")) || (data3 === "billing")) || (data3 === "guest"))){
+if(!((((((data3 === "admin") || (data3 === "member")) || (data3 === "billing")) || (data3 === "guest")) || (data3 === "editor")) || (data3 === "viewer"))){
 validate135.errors = [{instancePath:instancePath+"/role",schemaPath:"#/properties/role/enum",keyword:"enum",params:{allowedValues: schema209.properties.role.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
@@ -21545,6 +21545,35 @@ var valid0 = _errs20 === errors;
 else {
 var valid0 = true;
 }
+if(valid0){
+if(data.session !== undefined){
+let data9 = data.session;
+const _errs22 = errors;
+const _errs23 = errors;
+if(errors === _errs23){
+if(typeof data9 === "string"){
+if(func1(data9) > 40){
+validate135.errors = [{instancePath:instancePath+"/session",schemaPath:"#/$defs/SessionId/maxLength",keyword:"maxLength",params:{limit: 40},message:"must NOT have more than 40 characters"}];
+return false;
+}
+else {
+if(!pattern9.test(data9)){
+validate135.errors = [{instancePath:instancePath+"/session",schemaPath:"#/$defs/SessionId/pattern",keyword:"pattern",params:{pattern: "^ses_[0-9A-HJKMNP-TV-Z]{26}$"},message:"must match pattern \""+"^ses_[0-9A-HJKMNP-TV-Z]{26}$"+"\""}];
+return false;
+}
+}
+}
+else {
+validate135.errors = [{instancePath:instancePath+"/session",schemaPath:"#/$defs/SessionId/type",keyword:"type",params:{type: "string"},message:"must be string"}];
+return false;
+}
+}
+var valid0 = _errs22 === errors;
+}
+else {
+var valid0 = true;
+}
+}
 }
 }
 }
@@ -21563,10 +21592,10 @@ return false;
 validate135.errors = vErrors;
 return errors === 0;
 }
-validate135.evaluated = {"props":{"id":true,"workspace":true,"email":true,"role":true,"status":true,"share_history":true,"created_by":true,"created_at":true,"expires_at":true},"dynamicProps":false,"dynamicItems":false};
+validate135.evaluated = {"props":{"id":true,"workspace":true,"email":true,"role":true,"status":true,"share_history":true,"created_by":true,"created_at":true,"expires_at":true,"session":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v112 = validate136;
-const schema213 = {"type":"object","properties":{"email":{"type":"string","format":"email","maxLength":254,"description":"Omit to create a link-only invite"},"role":{"type":"string","enum":["admin","member","billing","guest"],"default":"member"},"share_history":{"type":"boolean"}}};
+const schema214 = {"type":"object","properties":{"email":{"type":"string","format":"email","maxLength":254,"description":"Omit to create a link-only invite"},"role":{"type":"string","enum":["admin","member","billing","guest"],"default":"member"},"share_history":{"type":"boolean"}}};
 
 function validate136(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -21617,7 +21646,7 @@ validate136.errors = [{instancePath:instancePath+"/role",schemaPath:"#/propertie
 return false;
 }
 if(!((((data1 === "admin") || (data1 === "member")) || (data1 === "billing")) || (data1 === "guest"))){
-validate136.errors = [{instancePath:instancePath+"/role",schemaPath:"#/properties/role/enum",keyword:"enum",params:{allowedValues: schema213.properties.role.enum},message:"must be equal to one of the allowed values"}];
+validate136.errors = [{instancePath:instancePath+"/role",schemaPath:"#/properties/role/enum",keyword:"enum",params:{allowedValues: schema214.properties.role.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs3 === errors;
@@ -21651,7 +21680,7 @@ return errors === 0;
 validate136.evaluated = {"props":{"email":true,"role":true,"share_history":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v113 = validate137;
-const schema214 = {"allOf":[{"$ref":"#/$defs/Invite"},{"type":"object","properties":{"token":{"type":"string","description":"160-bit URL-safe single-purpose token"},"url":{"type":"string","format":"uri","description":"https://centcom.dev/i/<token>"}},"required":["token","url"]}]};
+const schema215 = {"allOf":[{"$ref":"#/$defs/Invite"},{"type":"object","properties":{"token":{"type":"string","description":"160-bit URL-safe single-purpose token"},"url":{"type":"string","format":"uri","description":"https://centcom.dev/i/<token>"}},"required":["token","url"]}]};
 
 function validate137(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -21726,10 +21755,10 @@ var valid0 = _errs1 === errors;
 validate137.errors = vErrors;
 return errors === 0;
 }
-validate137.evaluated = {"props":{"token":true,"url":true,"id":true,"workspace":true,"email":true,"role":true,"status":true,"share_history":true,"created_by":true,"created_at":true,"expires_at":true},"dynamicProps":false,"dynamicItems":false};
+validate137.evaluated = {"props":{"token":true,"url":true,"id":true,"workspace":true,"email":true,"role":true,"status":true,"share_history":true,"created_by":true,"created_at":true,"expires_at":true,"session":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v114 = validate139;
-const schema215 = {"type":"object","properties":{"workspace_name":{"type":"string"},"inviter_name":{"type":"string"},"role":{"type":"string","enum":["admin","member","billing","guest"]},"expires_at":{"type":"string","format":"date-time"},"has_key_bundle":{"type":"boolean"}},"required":["workspace_name","inviter_name","role","expires_at"]};
+const schema216 = {"type":"object","properties":{"workspace_name":{"type":"string"},"inviter_name":{"type":"string"},"role":{"type":"string","enum":["admin","member","billing","guest","editor","viewer"]},"expires_at":{"type":"string","format":"date-time"},"has_key_bundle":{"type":"boolean"},"session_name":{"type":"string","description":"Set for a session invite"}},"required":["workspace_name","inviter_name","role","expires_at"]};
 
 function validate139(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -21780,8 +21809,8 @@ if(typeof data2 !== "string"){
 validate139.errors = [{instancePath:instancePath+"/role",schemaPath:"#/properties/role/type",keyword:"type",params:{type: "string"},message:"must be string"}];
 return false;
 }
-if(!((((data2 === "admin") || (data2 === "member")) || (data2 === "billing")) || (data2 === "guest"))){
-validate139.errors = [{instancePath:instancePath+"/role",schemaPath:"#/properties/role/enum",keyword:"enum",params:{allowedValues: schema215.properties.role.enum},message:"must be equal to one of the allowed values"}];
+if(!((((((data2 === "admin") || (data2 === "member")) || (data2 === "billing")) || (data2 === "guest")) || (data2 === "editor")) || (data2 === "viewer"))){
+validate139.errors = [{instancePath:instancePath+"/role",schemaPath:"#/properties/role/enum",keyword:"enum",params:{allowedValues: schema216.properties.role.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs5 === errors;
@@ -21824,6 +21853,19 @@ var valid0 = _errs9 === errors;
 else {
 var valid0 = true;
 }
+if(valid0){
+if(data.session_name !== undefined){
+const _errs11 = errors;
+if(typeof data.session_name !== "string"){
+validate139.errors = [{instancePath:instancePath+"/session_name",schemaPath:"#/properties/session_name/type",keyword:"type",params:{type: "string"},message:"must be string"}];
+return false;
+}
+var valid0 = _errs11 === errors;
+}
+else {
+var valid0 = true;
+}
+}
 }
 }
 }
@@ -21838,10 +21880,10 @@ return false;
 validate139.errors = vErrors;
 return errors === 0;
 }
-validate139.evaluated = {"props":{"workspace_name":true,"inviter_name":true,"role":true,"expires_at":true,"has_key_bundle":true},"dynamicProps":false,"dynamicItems":false};
+validate139.evaluated = {"props":{"workspace_name":true,"inviter_name":true,"role":true,"expires_at":true,"has_key_bundle":true,"session_name":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v115 = validate140;
-const schema216 = {"type":"object","properties":{"workspace":{"$ref":"#/$defs/Workspace"},"member":{"$ref":"#/$defs/Member"}},"required":["workspace","member"]};
+const schema217 = {"type":"object","properties":{"workspace":{"$ref":"#/$defs/Workspace"},"member":{"$ref":"#/$defs/Member"}},"required":["workspace","member"]};
 
 function validate140(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -21898,7 +21940,7 @@ return errors === 0;
 validate140.evaluated = {"props":{"workspace":true,"member":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v116 = validate143;
-const schema217 = {"type":"object","properties":{"workspace":{"$ref":"#/$defs/Workspace"},"member":{"$ref":"#/$defs/Member"}},"required":["workspace","member"]};
+const schema218 = {"type":"object","properties":{"workspace":{"$ref":"#/$defs/Workspace"},"member":{"$ref":"#/$defs/Member"}},"required":["workspace","member"]};
 
 function validate143(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -21955,7 +21997,7 @@ return errors === 0;
 validate143.evaluated = {"props":{"workspace":true,"member":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v117 = validate146;
-const schema218 = {"type":"object","properties":{"bundle":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"crypto_box_seal of the epoch keys to the one-time invite public key (CT-CRYPTO section 4), base64url"}},"required":["bundle"]};
+const schema219 = {"type":"object","properties":{"bundle":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"crypto_box_seal of the epoch keys to the one-time invite public key (CT-CRYPTO section 4), base64url"}},"required":["bundle"]};
 
 function validate146(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -22004,7 +22046,7 @@ return errors === 0;
 validate146.evaluated = {"props":{"bundle":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v118 = validate147;
-const schema219 = {"type":"object","properties":{"id":{"$ref":"#/$defs/ProjectId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"name":{"type":"string","minLength":1,"maxLength":80},"repo":{"type":["string","null"],"maxLength":200,"description":"Named repo reference (e.g. owner/name); never a local path"},"created_at":{"type":"string","format":"date-time"}},"required":["id","workspace","name","created_at"]};
+const schema220 = {"type":"object","properties":{"id":{"$ref":"#/$defs/ProjectId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"name":{"type":"string","minLength":1,"maxLength":80},"repo":{"type":["string","null"],"maxLength":200,"description":"Named repo reference (e.g. owner/name); never a local path"},"created_at":{"type":"string","format":"date-time"}},"required":["id","workspace","name","created_at"]};
 
 function validate147(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -22111,7 +22153,7 @@ if(data.repo !== undefined){
 let data3 = data.repo;
 const _errs9 = errors;
 if((typeof data3 !== "string") && (data3 !== null)){
-validate147.errors = [{instancePath:instancePath+"/repo",schemaPath:"#/properties/repo/type",keyword:"type",params:{type: schema219.properties.repo.type},message:"must be string,null"}];
+validate147.errors = [{instancePath:instancePath+"/repo",schemaPath:"#/properties/repo/type",keyword:"type",params:{type: schema220.properties.repo.type},message:"must be string,null"}];
 return false;
 }
 if(errors === _errs9){
@@ -22167,7 +22209,7 @@ return errors === 0;
 validate147.evaluated = {"props":{"id":true,"workspace":true,"name":true,"repo":true,"created_at":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v119 = validate148;
-const schema222 = {"type":"object","properties":{"name":{"type":"string","minLength":1,"maxLength":80},"repo":{"type":"string","maxLength":200}},"required":["name"]};
+const schema223 = {"type":"object","properties":{"name":{"type":"string","minLength":1,"maxLength":80},"repo":{"type":"string","maxLength":200}},"required":["name"]};
 
 function validate148(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -22248,7 +22290,7 @@ return errors === 0;
 validate148.evaluated = {"props":{"name":true,"repo":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v120 = validate149;
-const schema223 = {"type":"object","properties":{"name":{"type":"string","minLength":1,"maxLength":80},"repo":{"type":["string","null"],"maxLength":200}},"minProperties":1};
+const schema224 = {"type":"object","properties":{"name":{"type":"string","minLength":1,"maxLength":80},"repo":{"type":["string","null"],"maxLength":200}},"minProperties":1};
 
 function validate149(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -22298,7 +22340,7 @@ if(data.repo !== undefined){
 let data1 = data.repo;
 const _errs3 = errors;
 if((typeof data1 !== "string") && (data1 !== null)){
-validate149.errors = [{instancePath:instancePath+"/repo",schemaPath:"#/properties/repo/type",keyword:"type",params:{type: schema223.properties.repo.type},message:"must be string,null"}];
+validate149.errors = [{instancePath:instancePath+"/repo",schemaPath:"#/properties/repo/type",keyword:"type",params:{type: schema224.properties.repo.type},message:"must be string,null"}];
 return false;
 }
 if(errors === _errs3){
@@ -22328,7 +22370,7 @@ return errors === 0;
 validate149.evaluated = {"props":{"name":true,"repo":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v121 = validate150;
-const schema224 = {"type":"object","properties":{"auto_approve":{"type":"string","enum":["ask","trusted","everyone"]},"share_history":{"type":"boolean"},"queue_limit":{"type":"integer","minimum":1,"default":20},"locked":{"type":"boolean"},"auto_failover":{"type":"boolean"}}};
+const schema225 = {"type":"object","properties":{"auto_approve":{"type":"string","enum":["ask","trusted","everyone"]},"share_history":{"type":"boolean"},"queue_limit":{"type":"integer","minimum":1,"default":20},"locked":{"type":"boolean"},"auto_failover":{"type":"boolean"}}};
 
 function validate150(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -22350,7 +22392,7 @@ validate150.errors = [{instancePath:instancePath+"/auto_approve",schemaPath:"#/p
 return false;
 }
 if(!(((data0 === "ask") || (data0 === "trusted")) || (data0 === "everyone"))){
-validate150.errors = [{instancePath:instancePath+"/auto_approve",schemaPath:"#/properties/auto_approve/enum",keyword:"enum",params:{allowedValues: schema224.properties.auto_approve.enum},message:"must be equal to one of the allowed values"}];
+validate150.errors = [{instancePath:instancePath+"/auto_approve",schemaPath:"#/properties/auto_approve/enum",keyword:"enum",params:{allowedValues: schema225.properties.auto_approve.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs1 === errors;
@@ -22431,7 +22473,7 @@ return errors === 0;
 validate150.evaluated = {"props":{"auto_approve":true,"share_history":true,"queue_limit":true,"locked":true,"auto_failover":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v122 = validate151;
-const schema225 = {"type":"object","properties":{"id":{"$ref":"#/$defs/MemberId"},"user":{"$ref":"#/$defs/UserId"},"display_name":{"type":"string"},"device":{"$ref":"#/$defs/DeviceId"},"role":{"$ref":"#/$defs/SessionRole"},"slot":{"type":"integer"},"join_order":{"type":"integer"},"device_keys":{"$ref":"#/$defs/DeviceKeys"},"joined_at":{"type":"string","format":"date-time"}},"required":["id","role","slot","join_order","device_keys"]};
+const schema226 = {"type":"object","properties":{"id":{"$ref":"#/$defs/MemberId"},"user":{"$ref":"#/$defs/UserId"},"display_name":{"type":"string"},"device":{"$ref":"#/$defs/DeviceId"},"role":{"$ref":"#/$defs/SessionRole"},"slot":{"type":"integer"},"join_order":{"type":"integer"},"device_keys":{"$ref":"#/$defs/DeviceKeys"},"joined_at":{"type":"string","format":"date-time"}},"required":["id","role","slot","join_order","device_keys"]};
 
 function validate151(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -22645,7 +22687,7 @@ return errors === 0;
 validate151.evaluated = {"props":{"id":true,"user":true,"display_name":true,"device":true,"role":true,"slot":true,"join_order":true,"device_keys":true,"joined_at":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v123 = validate153;
-const schema230 = {"type":"object","properties":{"id":{"$ref":"#/$defs/SessionId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"name":{"type":"string","minLength":1,"maxLength":80},"state":{"type":"string","enum":["pending","live","paused","ended","expired"]},"host":{"$ref":"#/$defs/MemberId"},"policy":{"$ref":"#/$defs/SessionPolicy"},"region":{"type":"string","description":"Relay region, e.g. eu, us"},"created_at":{"type":"string","format":"date-time"},"ended_at":{"type":["string","null"],"format":"date-time"},"member_count":{"type":"integer"}},"required":["id","workspace","name","state","host","policy","region","created_at"]};
+const schema231 = {"type":"object","properties":{"id":{"$ref":"#/$defs/SessionId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"name":{"type":"string","minLength":1,"maxLength":80},"state":{"type":"string","enum":["pending","live","paused","ended","expired"]},"host":{"$ref":"#/$defs/MemberId"},"policy":{"$ref":"#/$defs/SessionPolicy"},"region":{"type":"string","description":"Relay region, e.g. eu, us"},"created_at":{"type":"string","format":"date-time"},"ended_at":{"type":["string","null"],"format":"date-time"},"member_count":{"type":"integer"}},"required":["id","workspace","name","state","host","policy","region","created_at"]};
 
 function validate153(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -22756,7 +22798,7 @@ validate153.errors = [{instancePath:instancePath+"/state",schemaPath:"#/properti
 return false;
 }
 if(!(((((data3 === "pending") || (data3 === "live")) || (data3 === "paused")) || (data3 === "ended")) || (data3 === "expired"))){
-validate153.errors = [{instancePath:instancePath+"/state",schemaPath:"#/properties/state/enum",keyword:"enum",params:{allowedValues: schema230.properties.state.enum},message:"must be equal to one of the allowed values"}];
+validate153.errors = [{instancePath:instancePath+"/state",schemaPath:"#/properties/state/enum",keyword:"enum",params:{allowedValues: schema231.properties.state.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs9 === errors;
@@ -22807,7 +22849,7 @@ validate153.errors = [{instancePath:instancePath+"/policy/auto_approve",schemaPa
 return false;
 }
 if(!(((data6 === "ask") || (data6 === "trusted")) || (data6 === "everyone"))){
-validate153.errors = [{instancePath:instancePath+"/policy/auto_approve",schemaPath:"#/$defs/SessionPolicy/properties/auto_approve/enum",keyword:"enum",params:{allowedValues: schema224.properties.auto_approve.enum},message:"must be equal to one of the allowed values"}];
+validate153.errors = [{instancePath:instancePath+"/policy/auto_approve",schemaPath:"#/$defs/SessionPolicy/properties/auto_approve/enum",keyword:"enum",params:{allowedValues: schema225.properties.auto_approve.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid5 = _errs17 === errors;
@@ -22927,7 +22969,7 @@ if(data.ended_at !== undefined){
 let data13 = data.ended_at;
 const _errs31 = errors;
 if((typeof data13 !== "string") && (data13 !== null)){
-validate153.errors = [{instancePath:instancePath+"/ended_at",schemaPath:"#/properties/ended_at/type",keyword:"type",params:{type: schema230.properties.ended_at.type},message:"must be string,null"}];
+validate153.errors = [{instancePath:instancePath+"/ended_at",schemaPath:"#/properties/ended_at/type",keyword:"type",params:{type: schema231.properties.ended_at.type},message:"must be string,null"}];
 return false;
 }
 if(errors === _errs31){
@@ -22980,7 +23022,7 @@ return errors === 0;
 validate153.evaluated = {"props":{"id":true,"workspace":true,"name":true,"state":true,"host":true,"policy":true,"region":true,"created_at":true,"ended_at":true,"member_count":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v124 = validate154;
-const schema235 = {"type":"object","properties":{"workspace":{"$ref":"#/$defs/WorkspaceId"},"name":{"type":"string","minLength":1,"maxLength":80},"project":{"$ref":"#/$defs/ProjectId"},"policy":{"$ref":"#/$defs/SessionPolicy"},"region_preference":{"type":"string"}},"required":["workspace","name"]};
+const schema236 = {"type":"object","properties":{"workspace":{"$ref":"#/$defs/WorkspaceId"},"name":{"type":"string","minLength":1,"maxLength":80},"project":{"$ref":"#/$defs/ProjectId"},"policy":{"$ref":"#/$defs/SessionPolicy"},"region_preference":{"type":"string"}},"required":["workspace","name"]};
 
 function validate154(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -23097,7 +23139,7 @@ validate154.errors = [{instancePath:instancePath+"/policy/auto_approve",schemaPa
 return false;
 }
 if(!(((data4 === "ask") || (data4 === "trusted")) || (data4 === "everyone"))){
-validate154.errors = [{instancePath:instancePath+"/policy/auto_approve",schemaPath:"#/$defs/SessionPolicy/properties/auto_approve/enum",keyword:"enum",params:{allowedValues: schema224.properties.auto_approve.enum},message:"must be equal to one of the allowed values"}];
+validate154.errors = [{instancePath:instancePath+"/policy/auto_approve",schemaPath:"#/$defs/SessionPolicy/properties/auto_approve/enum",keyword:"enum",params:{allowedValues: schema225.properties.auto_approve.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid4 = _errs12 === errors;
@@ -23206,7 +23248,7 @@ return errors === 0;
 validate154.evaluated = {"props":{"workspace":true,"name":true,"project":true,"policy":true,"region_preference":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v125 = validate155;
-const schema239 = {"allOf":[{"$ref":"#/$defs/Session"},{"type":"object","properties":{"region_hint":{"type":"string","description":"Region the client should connect to"},"relay_url":{"type":"string","format":"uri"},"host_member":{"$ref":"#/$defs/SessionMember"}},"required":["region_hint","host_member"]}]};
+const schema240 = {"allOf":[{"$ref":"#/$defs/Session"},{"type":"object","properties":{"region_hint":{"type":"string","description":"Region the client should connect to"},"relay_url":{"type":"string","format":"uri"},"host_member":{"$ref":"#/$defs/SessionMember"}},"required":["region_hint","host_member"]}]};
 
 function validate155(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -23297,7 +23339,7 @@ return errors === 0;
 validate155.evaluated = {"props":{"region_hint":true,"relay_url":true,"host_member":true,"id":true,"workspace":true,"name":true,"state":true,"host":true,"policy":true,"region":true,"created_at":true,"ended_at":true,"member_count":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v126 = validate158;
-const schema240 = {"type":"object","properties":{"name":{"type":"string","minLength":1,"maxLength":80},"policy":{"$ref":"#/$defs/SessionPolicy"}},"minProperties":1};
+const schema241 = {"type":"object","properties":{"name":{"type":"string","minLength":1,"maxLength":80},"policy":{"$ref":"#/$defs/SessionPolicy"}},"minProperties":1};
 
 function validate158(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -23357,7 +23399,7 @@ validate158.errors = [{instancePath:instancePath+"/policy/auto_approve",schemaPa
 return false;
 }
 if(!(((data2 === "ask") || (data2 === "trusted")) || (data2 === "everyone"))){
-validate158.errors = [{instancePath:instancePath+"/policy/auto_approve",schemaPath:"#/$defs/SessionPolicy/properties/auto_approve/enum",keyword:"enum",params:{allowedValues: schema224.properties.auto_approve.enum},message:"must be equal to one of the allowed values"}];
+validate158.errors = [{instancePath:instancePath+"/policy/auto_approve",schemaPath:"#/$defs/SessionPolicy/properties/auto_approve/enum",keyword:"enum",params:{allowedValues: schema225.properties.auto_approve.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid2 = _errs6 === errors;
@@ -23451,7 +23493,7 @@ return errors === 0;
 validate158.evaluated = {"props":{"name":true,"policy":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v127 = validate159;
-const schema242 = {"type":"object","properties":{"caps":{"type":"array","items":{"type":"string"},"description":"Optional capabilities requested (e.g. resume)"}}};
+const schema243 = {"type":"object","properties":{"caps":{"type":"array","items":{"type":"string"},"description":"Optional capabilities requested (e.g. resume)"}}};
 
 function validate159(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -23502,7 +23544,7 @@ return errors === 0;
 validate159.evaluated = {"props":{"caps":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v128 = validate160;
-const schema243 = {"type":"object","properties":{"ticket":{"type":"string","description":"Relay ticket JWT, aud centcom-relay, 60 s, single use"},"expires_in":{"type":"integer"},"relay_url":{"type":"string","format":"uri"},"region":{"type":"string"},"member":{"$ref":"#/$defs/MemberId"},"role":{"$ref":"#/$defs/SessionRole"},"caps":{"type":"array","items":{"type":"string"}}},"required":["ticket","expires_in","relay_url","member","role"]};
+const schema244 = {"type":"object","properties":{"ticket":{"type":"string","description":"Relay ticket JWT, aud centcom-relay, 60 s, single use"},"expires_in":{"type":"integer"},"relay_url":{"type":"string","format":"uri"},"region":{"type":"string"},"member":{"$ref":"#/$defs/MemberId"},"role":{"$ref":"#/$defs/SessionRole"},"caps":{"type":"array","items":{"type":"string"}}},"required":["ticket","expires_in","relay_url","member","role"]};
 
 function validate160(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -23675,7 +23717,7 @@ return errors === 0;
 validate160.evaluated = {"props":{"ticket":true,"expires_in":true,"relay_url":true,"region":true,"member":true,"role":true,"caps":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v129 = validate161;
-const schema246 = {"type":"object","properties":{"alg":{"type":"string","enum":["xchacha20poly1305"]},"kid":{"type":"string","pattern":"^k[0-9]+$"},"n":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"base64url without padding"},"c":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"base64url without padding"}},"required":["alg","kid","n","c"]};
+const schema247 = {"type":"object","properties":{"alg":{"type":"string","enum":["xchacha20poly1305"]},"kid":{"type":"string","pattern":"^k[0-9]+$"},"n":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"base64url without padding"},"c":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"base64url without padding"}},"required":["alg","kid","n","c"]};
 
 function validate161(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -23703,7 +23745,7 @@ validate161.errors = [{instancePath:instancePath+"/alg",schemaPath:"#/properties
 return false;
 }
 if(!(data0 === "xchacha20poly1305")){
-validate161.errors = [{instancePath:instancePath+"/alg",schemaPath:"#/properties/alg/enum",keyword:"enum",params:{allowedValues: schema246.properties.alg.enum},message:"must be equal to one of the allowed values"}];
+validate161.errors = [{instancePath:instancePath+"/alg",schemaPath:"#/properties/alg/enum",keyword:"enum",params:{allowedValues: schema247.properties.alg.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs1 === errors;
@@ -23790,7 +23832,7 @@ return errors === 0;
 validate161.evaluated = {"props":{"alg":true,"kid":true,"n":true,"c":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v130 = validate162;
-const schema247 = {"type":"object","properties":{"v":{"type":"integer"},"t":{"type":"string"},"id":{"type":"string","description":"msg_ ULID"},"sid":{"$ref":"#/$defs/SessionId"},"from":{"$ref":"#/$defs/MemberId"},"ts":{"type":"string","format":"date-time"},"seq":{"type":"integer"},"k":{"type":"string"},"p":{"type":"object"},"ct":{"$ref":"#/$defs/CtEnvelope"},"sig":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"base64url without padding"}},"required":["v","t","id","sid","seq","ts"],"description":"Stored ciphertext frame (CT-WS-ENVELOPE shape). Never plaintext."};
+const schema248 = {"type":"object","properties":{"v":{"type":"integer"},"t":{"type":"string"},"id":{"type":"string","description":"msg_ ULID"},"sid":{"$ref":"#/$defs/SessionId"},"from":{"$ref":"#/$defs/MemberId"},"ts":{"type":"string","format":"date-time"},"seq":{"type":"integer"},"k":{"type":"string"},"p":{"type":"object"},"ct":{"$ref":"#/$defs/CtEnvelope"},"sig":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"base64url without padding"}},"required":["v","t","id","sid","seq","ts"],"description":"Stored ciphertext frame (CT-WS-ENVELOPE shape). Never plaintext."};
 
 function validate162(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -23984,7 +24026,7 @@ validate162.errors = [{instancePath:instancePath+"/ct/alg",schemaPath:"#/$defs/C
 return false;
 }
 if(!(data10 === "xchacha20poly1305")){
-validate162.errors = [{instancePath:instancePath+"/ct/alg",schemaPath:"#/$defs/CtEnvelope/properties/alg/enum",keyword:"enum",params:{allowedValues: schema246.properties.alg.enum},message:"must be equal to one of the allowed values"}];
+validate162.errors = [{instancePath:instancePath+"/ct/alg",schemaPath:"#/$defs/CtEnvelope/properties/alg/enum",keyword:"enum",params:{allowedValues: schema247.properties.alg.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid4 = _errs24 === errors;
@@ -24114,7 +24156,7 @@ return errors === 0;
 validate162.evaluated = {"props":{"v":true,"t":true,"id":true,"sid":true,"from":true,"ts":true,"seq":true,"k":true,"p":true,"ct":true,"sig":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v131 = validate163;
-const schema251 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/HistoryFrame"}},"next_cursor":{"type":["string","null"]},"has_more":{"type":"boolean"},"head_seq":{"type":"integer"},"earliest_seq":{"type":"integer"}},"required":["data","next_cursor","has_more"]};
+const schema252 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/HistoryFrame"}},"next_cursor":{"type":["string","null"]},"has_more":{"type":"boolean"},"head_seq":{"type":"integer"},"earliest_seq":{"type":"integer"}},"required":["data","next_cursor","has_more"]};
 
 function validate163(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -24168,7 +24210,7 @@ if(data.next_cursor !== undefined){
 let data2 = data.next_cursor;
 const _errs4 = errors;
 if((typeof data2 !== "string") && (data2 !== null)){
-validate163.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema251.properties.next_cursor.type},message:"must be string,null"}];
+validate163.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema252.properties.next_cursor.type},message:"must be string,null"}];
 return false;
 }
 var valid0 = _errs4 === errors;
@@ -24231,8 +24273,8 @@ return errors === 0;
 validate163.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true,"head_seq":true,"earliest_seq":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v132 = validate165;
-const schema252 = {"type":"object","properties":{"snp":{"$ref":"#/$defs/SnapshotId"},"seq":{"type":"integer"},"size":{"type":"integer"},"sha256":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$","description":"Hash in <alg>:<hex> form"},"kid":{"type":"string"},"created_at":{"type":"string","format":"date-time"},"download_url":{"type":"string","format":"uri","description":"Pre-signed GET"},"expires_in":{"type":"integer"}},"required":["snp","seq","size","sha256","kid"]};
-const pattern189 = new RegExp("^sha256:[0-9a-f]{64}$", "u");
+const schema253 = {"type":"object","properties":{"snp":{"$ref":"#/$defs/SnapshotId"},"seq":{"type":"integer"},"size":{"type":"integer"},"sha256":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$","description":"Hash in <alg>:<hex> form"},"kid":{"type":"string"},"created_at":{"type":"string","format":"date-time"},"download_url":{"type":"string","format":"uri","description":"Pre-signed GET"},"expires_in":{"type":"integer"}},"required":["snp","seq","size","sha256","kid"]};
+const pattern190 = new RegExp("^sha256:[0-9a-f]{64}$", "u");
 
 function validate165(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -24311,7 +24353,7 @@ let data3 = data.sha256;
 const _errs8 = errors;
 if(errors === _errs8){
 if(typeof data3 === "string"){
-if(!pattern189.test(data3)){
+if(!pattern190.test(data3)){
 validate165.errors = [{instancePath:instancePath+"/sha256",schemaPath:"#/properties/sha256/pattern",keyword:"pattern",params:{pattern: "^sha256:[0-9a-f]{64}$"},message:"must match pattern \""+"^sha256:[0-9a-f]{64}$"+"\""}];
 return false;
 }
@@ -24417,7 +24459,7 @@ return errors === 0;
 validate165.evaluated = {"props":{"snp":true,"seq":true,"size":true,"sha256":true,"kid":true,"created_at":true,"download_url":true,"expires_in":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v133 = validate166;
-const schema254 = {"type":"object","properties":{"size":{"type":"integer","maximum":33554432,"description":"Expected size in bytes, <= 32 MiB"},"kid":{"type":"string"}}};
+const schema255 = {"type":"object","properties":{"size":{"type":"integer","maximum":33554432,"description":"Expected size in bytes, <= 32 MiB"},"kid":{"type":"string"}}};
 
 function validate166(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -24476,7 +24518,7 @@ return errors === 0;
 validate166.evaluated = {"props":{"size":true,"kid":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v134 = validate167;
-const schema255 = {"type":"object","properties":{"snp":{"$ref":"#/$defs/SnapshotId"},"upload_url":{"type":"string","format":"uri","description":"Pre-signed PUT"},"expires_in":{"type":"integer"}},"required":["snp","upload_url","expires_in"]};
+const schema256 = {"type":"object","properties":{"snp":{"$ref":"#/$defs/SnapshotId"},"upload_url":{"type":"string","format":"uri","description":"Pre-signed PUT"},"expires_in":{"type":"integer"}},"required":["snp","upload_url","expires_in"]};
 
 function validate167(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -24574,7 +24616,7 @@ return errors === 0;
 validate167.evaluated = {"props":{"snp":true,"upload_url":true,"expires_in":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v135 = validate168;
-const schema257 = {"type":"object","properties":{"seq":{"type":"integer"},"sha256":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$","description":"Hash in <alg>:<hex> form"},"size":{"type":"integer"},"kid":{"type":"string"}},"required":["seq","sha256","size","kid"]};
+const schema258 = {"type":"object","properties":{"seq":{"type":"integer"},"sha256":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$","description":"Hash in <alg>:<hex> form"},"size":{"type":"integer"},"kid":{"type":"string"}},"required":["seq","sha256","size","kid"]};
 
 function validate168(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -24612,7 +24654,7 @@ let data1 = data.sha256;
 const _errs3 = errors;
 if(errors === _errs3){
 if(typeof data1 === "string"){
-if(!pattern189.test(data1)){
+if(!pattern190.test(data1)){
 validate168.errors = [{instancePath:instancePath+"/sha256",schemaPath:"#/properties/sha256/pattern",keyword:"pattern",params:{pattern: "^sha256:[0-9a-f]{64}$"},message:"must match pattern \""+"^sha256:[0-9a-f]{64}$"+"\""}];
 return false;
 }
@@ -24668,7 +24710,7 @@ return errors === 0;
 validate168.evaluated = {"props":{"seq":true,"sha256":true,"size":true,"kid":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v136 = validate169;
-const schema258 = {"type":"object","properties":{"expires_in_s":{"type":"integer","minimum":60,"maximum":86400,"default":86400}}};
+const schema259 = {"type":"object","properties":{"expires_in_s":{"type":"integer","minimum":60,"maximum":86400,"default":86400}}};
 
 function validate169(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -24716,7 +24758,7 @@ return errors === 0;
 validate169.evaluated = {"props":{"expires_in_s":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v137 = validate170;
-const schema259 = {"type":"object","properties":{"token":{"type":"string"},"url":{"type":"string","format":"uri"},"session":{"$ref":"#/$defs/SessionId"},"created_at":{"type":"string","format":"date-time"},"expires_at":{"type":"string","format":"date-time"},"revoked_at":{"type":["string","null"],"format":"date-time"}},"required":["token","url","session","created_at","expires_at"]};
+const schema260 = {"type":"object","properties":{"token":{"type":"string"},"url":{"type":"string","format":"uri"},"session":{"$ref":"#/$defs/SessionId"},"created_at":{"type":"string","format":"date-time"},"expires_at":{"type":"string","format":"date-time"},"revoked_at":{"type":["string","null"],"format":"date-time"}},"required":["token","url","session","created_at","expires_at"]};
 
 function validate170(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -24849,7 +24891,7 @@ if(data.revoked_at !== undefined){
 let data5 = data.revoked_at;
 const _errs12 = errors;
 if((typeof data5 !== "string") && (data5 !== null)){
-validate170.errors = [{instancePath:instancePath+"/revoked_at",schemaPath:"#/properties/revoked_at/type",keyword:"type",params:{type: schema259.properties.revoked_at.type},message:"must be string,null"}];
+validate170.errors = [{instancePath:instancePath+"/revoked_at",schemaPath:"#/properties/revoked_at/type",keyword:"type",params:{type: schema260.properties.revoked_at.type},message:"must be string,null"}];
 return false;
 }
 if(errors === _errs12){
@@ -24885,7 +24927,7 @@ return errors === 0;
 validate170.evaluated = {"props":{"token":true,"url":true,"session":true,"created_at":true,"expires_at":true,"revoked_at":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v138 = validate171;
-const schema261 = {"type":"object","properties":{"display_name":{"type":"string","minLength":1,"maxLength":40}},"required":["display_name"]};
+const schema262 = {"type":"object","properties":{"display_name":{"type":"string","minLength":1,"maxLength":40}},"required":["display_name"]};
 
 function validate171(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -24940,7 +24982,7 @@ return errors === 0;
 validate171.evaluated = {"props":{"display_name":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v139 = validate172;
-const schema262 = {"type":"object","properties":{"relay_access":{"type":"boolean"},"lan_multiplayer":{"type":"boolean"},"max_seats":{"type":["integer","null"]},"max_session_members":{"type":"integer"},"max_concurrent_sessions":{"type":"integer"},"max_parallel_agents":{"type":"integer"},"history_days":{"type":"integer"},"queue_items_month":{"type":["integer","null"]},"audit_log_days":{"type":"integer"},"webhooks_max":{"type":"integer"},"api_keys_max":{"type":"integer"},"hosted_minutes_month":{"type":["integer","null"]}},"required":["relay_access","lan_multiplayer","max_seats","max_session_members","max_concurrent_sessions","max_parallel_agents","history_days","hosted_minutes_month","queue_items_month","audit_log_days","webhooks_max","api_keys_max"],"description":"null = unlimited; unknown keys must be tolerated."};
+const schema263 = {"type":"object","properties":{"relay_access":{"type":"boolean"},"lan_multiplayer":{"type":"boolean"},"max_seats":{"type":["integer","null"]},"max_session_members":{"type":"integer"},"max_concurrent_sessions":{"type":"integer"},"max_parallel_agents":{"type":"integer"},"history_days":{"type":"integer"},"queue_items_month":{"type":["integer","null"]},"audit_log_days":{"type":"integer"},"webhooks_max":{"type":"integer"},"api_keys_max":{"type":"integer"},"hosted_minutes_month":{"type":["integer","null"]}},"required":["relay_access","lan_multiplayer","max_seats","max_session_members","max_concurrent_sessions","max_parallel_agents","history_days","hosted_minutes_month","queue_items_month","audit_log_days","webhooks_max","api_keys_max"],"description":"null = unlimited; unknown keys must be tolerated."};
 
 function validate172(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -24988,7 +25030,7 @@ if(data.max_seats !== undefined){
 let data2 = data.max_seats;
 const _errs5 = errors;
 if((!(((typeof data2 == "number") && (!(data2 % 1) && !isNaN(data2))) && (isFinite(data2)))) && (data2 !== null)){
-validate172.errors = [{instancePath:instancePath+"/max_seats",schemaPath:"#/properties/max_seats/type",keyword:"type",params:{type: schema262.properties.max_seats.type},message:"must be integer,null"}];
+validate172.errors = [{instancePath:instancePath+"/max_seats",schemaPath:"#/properties/max_seats/type",keyword:"type",params:{type: schema263.properties.max_seats.type},message:"must be integer,null"}];
 return false;
 }
 var valid0 = _errs5 === errors;
@@ -25053,7 +25095,7 @@ if(data.queue_items_month !== undefined){
 let data7 = data.queue_items_month;
 const _errs15 = errors;
 if((!(((typeof data7 == "number") && (!(data7 % 1) && !isNaN(data7))) && (isFinite(data7)))) && (data7 !== null)){
-validate172.errors = [{instancePath:instancePath+"/queue_items_month",schemaPath:"#/properties/queue_items_month/type",keyword:"type",params:{type: schema262.properties.queue_items_month.type},message:"must be integer,null"}];
+validate172.errors = [{instancePath:instancePath+"/queue_items_month",schemaPath:"#/properties/queue_items_month/type",keyword:"type",params:{type: schema263.properties.queue_items_month.type},message:"must be integer,null"}];
 return false;
 }
 var valid0 = _errs15 === errors;
@@ -25105,7 +25147,7 @@ if(data.hosted_minutes_month !== undefined){
 let data11 = data.hosted_minutes_month;
 const _errs23 = errors;
 if((!(((typeof data11 == "number") && (!(data11 % 1) && !isNaN(data11))) && (isFinite(data11)))) && (data11 !== null)){
-validate172.errors = [{instancePath:instancePath+"/hosted_minutes_month",schemaPath:"#/properties/hosted_minutes_month/type",keyword:"type",params:{type: schema262.properties.hosted_minutes_month.type},message:"must be integer,null"}];
+validate172.errors = [{instancePath:instancePath+"/hosted_minutes_month",schemaPath:"#/properties/hosted_minutes_month/type",keyword:"type",params:{type: schema263.properties.hosted_minutes_month.type},message:"must be integer,null"}];
 return false;
 }
 var valid0 = _errs23 === errors;
@@ -25137,7 +25179,7 @@ return errors === 0;
 validate172.evaluated = {"props":{"relay_access":true,"lan_multiplayer":true,"max_seats":true,"max_session_members":true,"max_concurrent_sessions":true,"max_parallel_agents":true,"history_days":true,"queue_items_month":true,"audit_log_days":true,"webhooks_max":true,"api_keys_max":true,"hosted_minutes_month":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v140 = validate173;
-const schema263 = {"type":"object","properties":{"workspace":{"$ref":"#/$defs/WorkspaceId"},"rev":{"type":"integer"},"plan":{"type":"string","enum":["free","pro","team"]},"status":{"type":"string","enum":["active","trialing","past_due","canceled","none"]},"period":{"type":"object","properties":{"start":{"type":"string","format":"date-time"},"end":{"type":"string","format":"date-time"}},"required":["start","end"]},"limits":{"$ref":"#/$defs/EntLimits"},"usage":{"type":"object","properties":{"queue_items_month":{"type":"integer"},"seats":{"type":"integer"},"hosted_minutes_month":{"type":"integer"}}},"warnings":{"type":"array","items":{"type":"object","properties":{"limit":{"type":"string"},"pct":{"type":"integer"}},"required":["limit","pct"]}},"grace_until":{"type":["string","null"],"format":"date-time"}},"required":["workspace","rev","plan","status","limits"],"description":"CT-ENTITLEMENTS. Defined inline; no contracts/schemas/entitlements.schema.json existed when written."};
+const schema264 = {"type":"object","properties":{"workspace":{"$ref":"#/$defs/WorkspaceId"},"rev":{"type":"integer"},"plan":{"type":"string","enum":["free","pro","team"]},"status":{"type":"string","enum":["active","trialing","past_due","canceled","none"]},"period":{"type":"object","properties":{"start":{"type":"string","format":"date-time"},"end":{"type":"string","format":"date-time"}},"required":["start","end"]},"limits":{"$ref":"#/$defs/EntLimits"},"usage":{"type":"object","properties":{"queue_items_month":{"type":"integer"},"seats":{"type":"integer"},"hosted_minutes_month":{"type":"integer"}}},"warnings":{"type":"array","items":{"type":"object","properties":{"limit":{"type":"string"},"pct":{"type":"integer"}},"required":["limit","pct"]}},"grace_until":{"type":["string","null"],"format":"date-time"}},"required":["workspace","rev","plan","status","limits"],"description":"CT-ENTITLEMENTS. Defined inline; no contracts/schemas/entitlements.schema.json existed when written."};
 
 function validate173(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -25206,7 +25248,7 @@ validate173.errors = [{instancePath:instancePath+"/plan",schemaPath:"#/propertie
 return false;
 }
 if(!(((data2 === "free") || (data2 === "pro")) || (data2 === "team"))){
-validate173.errors = [{instancePath:instancePath+"/plan",schemaPath:"#/properties/plan/enum",keyword:"enum",params:{allowedValues: schema263.properties.plan.enum},message:"must be equal to one of the allowed values"}];
+validate173.errors = [{instancePath:instancePath+"/plan",schemaPath:"#/properties/plan/enum",keyword:"enum",params:{allowedValues: schema264.properties.plan.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs6 === errors;
@@ -25223,7 +25265,7 @@ validate173.errors = [{instancePath:instancePath+"/status",schemaPath:"#/propert
 return false;
 }
 if(!(((((data3 === "active") || (data3 === "trialing")) || (data3 === "past_due")) || (data3 === "canceled")) || (data3 === "none"))){
-validate173.errors = [{instancePath:instancePath+"/status",schemaPath:"#/properties/status/enum",keyword:"enum",params:{allowedValues: schema263.properties.status.enum},message:"must be equal to one of the allowed values"}];
+validate173.errors = [{instancePath:instancePath+"/status",schemaPath:"#/properties/status/enum",keyword:"enum",params:{allowedValues: schema264.properties.status.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs8 === errors;
@@ -25342,7 +25384,7 @@ if(data7.max_seats !== undefined){
 let data10 = data7.max_seats;
 const _errs23 = errors;
 if((!(((typeof data10 == "number") && (!(data10 % 1) && !isNaN(data10))) && (isFinite(data10)))) && (data10 !== null)){
-validate173.errors = [{instancePath:instancePath+"/limits/max_seats",schemaPath:"#/$defs/EntLimits/properties/max_seats/type",keyword:"type",params:{type: schema262.properties.max_seats.type},message:"must be integer,null"}];
+validate173.errors = [{instancePath:instancePath+"/limits/max_seats",schemaPath:"#/$defs/EntLimits/properties/max_seats/type",keyword:"type",params:{type: schema263.properties.max_seats.type},message:"must be integer,null"}];
 return false;
 }
 var valid4 = _errs23 === errors;
@@ -25407,7 +25449,7 @@ if(data7.queue_items_month !== undefined){
 let data15 = data7.queue_items_month;
 const _errs33 = errors;
 if((!(((typeof data15 == "number") && (!(data15 % 1) && !isNaN(data15))) && (isFinite(data15)))) && (data15 !== null)){
-validate173.errors = [{instancePath:instancePath+"/limits/queue_items_month",schemaPath:"#/$defs/EntLimits/properties/queue_items_month/type",keyword:"type",params:{type: schema262.properties.queue_items_month.type},message:"must be integer,null"}];
+validate173.errors = [{instancePath:instancePath+"/limits/queue_items_month",schemaPath:"#/$defs/EntLimits/properties/queue_items_month/type",keyword:"type",params:{type: schema263.properties.queue_items_month.type},message:"must be integer,null"}];
 return false;
 }
 var valid4 = _errs33 === errors;
@@ -25459,7 +25501,7 @@ if(data7.hosted_minutes_month !== undefined){
 let data19 = data7.hosted_minutes_month;
 const _errs41 = errors;
 if((!(((typeof data19 == "number") && (!(data19 % 1) && !isNaN(data19))) && (isFinite(data19)))) && (data19 !== null)){
-validate173.errors = [{instancePath:instancePath+"/limits/hosted_minutes_month",schemaPath:"#/$defs/EntLimits/properties/hosted_minutes_month/type",keyword:"type",params:{type: schema262.properties.hosted_minutes_month.type},message:"must be integer,null"}];
+validate173.errors = [{instancePath:instancePath+"/limits/hosted_minutes_month",schemaPath:"#/$defs/EntLimits/properties/hosted_minutes_month/type",keyword:"type",params:{type: schema263.properties.hosted_minutes_month.type},message:"must be integer,null"}];
 return false;
 }
 var valid4 = _errs41 === errors;
@@ -25619,7 +25661,7 @@ if(data.grace_until !== undefined){
 let data28 = data.grace_until;
 const _errs59 = errors;
 if((typeof data28 !== "string") && (data28 !== null)){
-validate173.errors = [{instancePath:instancePath+"/grace_until",schemaPath:"#/properties/grace_until/type",keyword:"type",params:{type: schema263.properties.grace_until.type},message:"must be string,null"}];
+validate173.errors = [{instancePath:instancePath+"/grace_until",schemaPath:"#/properties/grace_until/type",keyword:"type",params:{type: schema264.properties.grace_until.type},message:"must be string,null"}];
 return false;
 }
 if(errors === _errs59){
@@ -25658,7 +25700,7 @@ return errors === 0;
 validate173.evaluated = {"props":{"workspace":true,"rev":true,"plan":true,"status":true,"period":true,"limits":true,"usage":true,"warnings":true,"grace_until":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v141 = validate174;
-const schema266 = {"type":"object","properties":{"id":{"type":"string","enum":["free","pro","team"]},"name":{"type":"string"},"prices":{"type":"array","items":{"type":"object","properties":{"interval":{"type":"string","enum":["month","year"]},"unit":{"type":"string","enum":["seat","workspace"]},"price":{"$ref":"#/$defs/Money"}},"required":["interval","price"]}},"limits":{"$ref":"#/$defs/EntLimits"}},"required":["id","name","prices","limits"]};
+const schema267 = {"type":"object","properties":{"id":{"type":"string","enum":["free","pro","team"]},"name":{"type":"string"},"prices":{"type":"array","items":{"type":"object","properties":{"interval":{"type":"string","enum":["month","year"]},"unit":{"type":"string","enum":["seat","workspace"]},"price":{"$ref":"#/$defs/Money"}},"required":["interval","price"]}},"limits":{"$ref":"#/$defs/EntLimits"}},"required":["id","name","prices","limits"]};
 
 function validate174(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -25686,7 +25728,7 @@ validate174.errors = [{instancePath:instancePath+"/id",schemaPath:"#/properties/
 return false;
 }
 if(!(((data0 === "free") || (data0 === "pro")) || (data0 === "team"))){
-validate174.errors = [{instancePath:instancePath+"/id",schemaPath:"#/properties/id/enum",keyword:"enum",params:{allowedValues: schema266.properties.id.enum},message:"must be equal to one of the allowed values"}];
+validate174.errors = [{instancePath:instancePath+"/id",schemaPath:"#/properties/id/enum",keyword:"enum",params:{allowedValues: schema267.properties.id.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs1 === errors;
@@ -25733,7 +25775,7 @@ validate174.errors = [{instancePath:instancePath+"/prices/" + i0+"/interval",sch
 return false;
 }
 if(!((data4 === "month") || (data4 === "year"))){
-validate174.errors = [{instancePath:instancePath+"/prices/" + i0+"/interval",schemaPath:"#/properties/prices/items/properties/interval/enum",keyword:"enum",params:{allowedValues: schema266.properties.prices.items.properties.interval.enum},message:"must be equal to one of the allowed values"}];
+validate174.errors = [{instancePath:instancePath+"/prices/" + i0+"/interval",schemaPath:"#/properties/prices/items/properties/interval/enum",keyword:"enum",params:{allowedValues: schema267.properties.prices.items.properties.interval.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid2 = _errs9 === errors;
@@ -25750,7 +25792,7 @@ validate174.errors = [{instancePath:instancePath+"/prices/" + i0+"/unit",schemaP
 return false;
 }
 if(!((data5 === "seat") || (data5 === "workspace"))){
-validate174.errors = [{instancePath:instancePath+"/prices/" + i0+"/unit",schemaPath:"#/properties/prices/items/properties/unit/enum",keyword:"enum",params:{allowedValues: schema266.properties.prices.items.properties.unit.enum},message:"must be equal to one of the allowed values"}];
+validate174.errors = [{instancePath:instancePath+"/prices/" + i0+"/unit",schemaPath:"#/properties/prices/items/properties/unit/enum",keyword:"enum",params:{allowedValues: schema267.properties.prices.items.properties.unit.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid2 = _errs11 === errors;
@@ -25879,7 +25921,7 @@ if(data9.max_seats !== undefined){
 let data12 = data9.max_seats;
 const _errs27 = errors;
 if((!(((typeof data12 == "number") && (!(data12 % 1) && !isNaN(data12))) && (isFinite(data12)))) && (data12 !== null)){
-validate174.errors = [{instancePath:instancePath+"/limits/max_seats",schemaPath:"#/$defs/EntLimits/properties/max_seats/type",keyword:"type",params:{type: schema262.properties.max_seats.type},message:"must be integer,null"}];
+validate174.errors = [{instancePath:instancePath+"/limits/max_seats",schemaPath:"#/$defs/EntLimits/properties/max_seats/type",keyword:"type",params:{type: schema263.properties.max_seats.type},message:"must be integer,null"}];
 return false;
 }
 var valid6 = _errs27 === errors;
@@ -25944,7 +25986,7 @@ if(data9.queue_items_month !== undefined){
 let data17 = data9.queue_items_month;
 const _errs37 = errors;
 if((!(((typeof data17 == "number") && (!(data17 % 1) && !isNaN(data17))) && (isFinite(data17)))) && (data17 !== null)){
-validate174.errors = [{instancePath:instancePath+"/limits/queue_items_month",schemaPath:"#/$defs/EntLimits/properties/queue_items_month/type",keyword:"type",params:{type: schema262.properties.queue_items_month.type},message:"must be integer,null"}];
+validate174.errors = [{instancePath:instancePath+"/limits/queue_items_month",schemaPath:"#/$defs/EntLimits/properties/queue_items_month/type",keyword:"type",params:{type: schema263.properties.queue_items_month.type},message:"must be integer,null"}];
 return false;
 }
 var valid6 = _errs37 === errors;
@@ -25996,7 +26038,7 @@ if(data9.hosted_minutes_month !== undefined){
 let data21 = data9.hosted_minutes_month;
 const _errs45 = errors;
 if((!(((typeof data21 == "number") && (!(data21 % 1) && !isNaN(data21))) && (isFinite(data21)))) && (data21 !== null)){
-validate174.errors = [{instancePath:instancePath+"/limits/hosted_minutes_month",schemaPath:"#/$defs/EntLimits/properties/hosted_minutes_month/type",keyword:"type",params:{type: schema262.properties.hosted_minutes_month.type},message:"must be integer,null"}];
+validate174.errors = [{instancePath:instancePath+"/limits/hosted_minutes_month",schemaPath:"#/$defs/EntLimits/properties/hosted_minutes_month/type",keyword:"type",params:{type: schema263.properties.hosted_minutes_month.type},message:"must be integer,null"}];
 return false;
 }
 var valid6 = _errs45 === errors;
@@ -26043,7 +26085,7 @@ return errors === 0;
 validate174.evaluated = {"props":{"id":true,"name":true,"prices":true,"limits":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v142 = validate175;
-const schema269 = {"type":"object","properties":{"id":{"$ref":"#/$defs/SubscriptionId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"plan":{"type":"string","enum":["free","pro","team"]},"status":{"type":"string","enum":["active","trialing","past_due","canceled"]},"seats":{"type":"integer"},"interval":{"type":"string","enum":["month","year"]},"currency":{"type":"string","enum":["USD","EUR"]},"current_period_start":{"type":"string","format":"date-time"},"current_period_end":{"type":"string","format":"date-time"},"cancel_at_period_end":{"type":"boolean"},"trial_end":{"type":["string","null"],"format":"date-time"},"grace_until":{"type":["string","null"],"format":"date-time"}},"required":["id","workspace","plan","status","seats","current_period_end"]};
+const schema270 = {"type":"object","properties":{"id":{"$ref":"#/$defs/SubscriptionId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"plan":{"type":"string","enum":["free","pro","team"]},"status":{"type":"string","enum":["active","trialing","past_due","canceled"]},"seats":{"type":"integer"},"interval":{"type":"string","enum":["month","year"]},"currency":{"type":"string","enum":["USD","EUR"]},"current_period_start":{"type":"string","format":"date-time"},"current_period_end":{"type":"string","format":"date-time"},"cancel_at_period_end":{"type":"boolean"},"trial_end":{"type":["string","null"],"format":"date-time"},"grace_until":{"type":["string","null"],"format":"date-time"}},"required":["id","workspace","plan","status","seats","current_period_end"]};
 
 function validate175(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -26127,7 +26169,7 @@ validate175.errors = [{instancePath:instancePath+"/plan",schemaPath:"#/propertie
 return false;
 }
 if(!(((data2 === "free") || (data2 === "pro")) || (data2 === "team"))){
-validate175.errors = [{instancePath:instancePath+"/plan",schemaPath:"#/properties/plan/enum",keyword:"enum",params:{allowedValues: schema269.properties.plan.enum},message:"must be equal to one of the allowed values"}];
+validate175.errors = [{instancePath:instancePath+"/plan",schemaPath:"#/properties/plan/enum",keyword:"enum",params:{allowedValues: schema270.properties.plan.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs7 === errors;
@@ -26144,7 +26186,7 @@ validate175.errors = [{instancePath:instancePath+"/status",schemaPath:"#/propert
 return false;
 }
 if(!((((data3 === "active") || (data3 === "trialing")) || (data3 === "past_due")) || (data3 === "canceled"))){
-validate175.errors = [{instancePath:instancePath+"/status",schemaPath:"#/properties/status/enum",keyword:"enum",params:{allowedValues: schema269.properties.status.enum},message:"must be equal to one of the allowed values"}];
+validate175.errors = [{instancePath:instancePath+"/status",schemaPath:"#/properties/status/enum",keyword:"enum",params:{allowedValues: schema270.properties.status.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs9 === errors;
@@ -26174,7 +26216,7 @@ validate175.errors = [{instancePath:instancePath+"/interval",schemaPath:"#/prope
 return false;
 }
 if(!((data5 === "month") || (data5 === "year"))){
-validate175.errors = [{instancePath:instancePath+"/interval",schemaPath:"#/properties/interval/enum",keyword:"enum",params:{allowedValues: schema269.properties.interval.enum},message:"must be equal to one of the allowed values"}];
+validate175.errors = [{instancePath:instancePath+"/interval",schemaPath:"#/properties/interval/enum",keyword:"enum",params:{allowedValues: schema270.properties.interval.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs13 === errors;
@@ -26191,7 +26233,7 @@ validate175.errors = [{instancePath:instancePath+"/currency",schemaPath:"#/prope
 return false;
 }
 if(!((data6 === "USD") || (data6 === "EUR"))){
-validate175.errors = [{instancePath:instancePath+"/currency",schemaPath:"#/properties/currency/enum",keyword:"enum",params:{allowedValues: schema269.properties.currency.enum},message:"must be equal to one of the allowed values"}];
+validate175.errors = [{instancePath:instancePath+"/currency",schemaPath:"#/properties/currency/enum",keyword:"enum",params:{allowedValues: schema270.properties.currency.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs15 === errors;
@@ -26262,7 +26304,7 @@ if(data.trial_end !== undefined){
 let data10 = data.trial_end;
 const _errs23 = errors;
 if((typeof data10 !== "string") && (data10 !== null)){
-validate175.errors = [{instancePath:instancePath+"/trial_end",schemaPath:"#/properties/trial_end/type",keyword:"type",params:{type: schema269.properties.trial_end.type},message:"must be string,null"}];
+validate175.errors = [{instancePath:instancePath+"/trial_end",schemaPath:"#/properties/trial_end/type",keyword:"type",params:{type: schema270.properties.trial_end.type},message:"must be string,null"}];
 return false;
 }
 if(errors === _errs23){
@@ -26285,7 +26327,7 @@ if(data.grace_until !== undefined){
 let data11 = data.grace_until;
 const _errs25 = errors;
 if((typeof data11 !== "string") && (data11 !== null)){
-validate175.errors = [{instancePath:instancePath+"/grace_until",schemaPath:"#/properties/grace_until/type",keyword:"type",params:{type: schema269.properties.grace_until.type},message:"must be string,null"}];
+validate175.errors = [{instancePath:instancePath+"/grace_until",schemaPath:"#/properties/grace_until/type",keyword:"type",params:{type: schema270.properties.grace_until.type},message:"must be string,null"}];
 return false;
 }
 if(errors === _errs25){
@@ -26327,7 +26369,7 @@ return errors === 0;
 validate175.evaluated = {"props":{"id":true,"workspace":true,"plan":true,"status":true,"seats":true,"interval":true,"currency":true,"current_period_start":true,"current_period_end":true,"cancel_at_period_end":true,"trial_end":true,"grace_until":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v143 = validate176;
-const schema272 = {"type":"object","properties":{"plan":{"type":"string","enum":["pro","team"]},"seats":{"type":"integer","minimum":1},"interval":{"type":"string","enum":["month","year"]},"currency":{"type":"string","enum":["USD","EUR"]},"success_url":{"type":"string","format":"uri"},"cancel_url":{"type":"string","format":"uri"}},"required":["plan","interval"]};
+const schema273 = {"type":"object","properties":{"plan":{"type":"string","enum":["pro","team"]},"seats":{"type":"integer","minimum":1},"interval":{"type":"string","enum":["month","year"]},"currency":{"type":"string","enum":["USD","EUR"]},"success_url":{"type":"string","format":"uri"},"cancel_url":{"type":"string","format":"uri"}},"required":["plan","interval"]};
 
 function validate176(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -26355,7 +26397,7 @@ validate176.errors = [{instancePath:instancePath+"/plan",schemaPath:"#/propertie
 return false;
 }
 if(!((data0 === "pro") || (data0 === "team"))){
-validate176.errors = [{instancePath:instancePath+"/plan",schemaPath:"#/properties/plan/enum",keyword:"enum",params:{allowedValues: schema272.properties.plan.enum},message:"must be equal to one of the allowed values"}];
+validate176.errors = [{instancePath:instancePath+"/plan",schemaPath:"#/properties/plan/enum",keyword:"enum",params:{allowedValues: schema273.properties.plan.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs1 === errors;
@@ -26393,7 +26435,7 @@ validate176.errors = [{instancePath:instancePath+"/interval",schemaPath:"#/prope
 return false;
 }
 if(!((data2 === "month") || (data2 === "year"))){
-validate176.errors = [{instancePath:instancePath+"/interval",schemaPath:"#/properties/interval/enum",keyword:"enum",params:{allowedValues: schema272.properties.interval.enum},message:"must be equal to one of the allowed values"}];
+validate176.errors = [{instancePath:instancePath+"/interval",schemaPath:"#/properties/interval/enum",keyword:"enum",params:{allowedValues: schema273.properties.interval.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs5 === errors;
@@ -26410,7 +26452,7 @@ validate176.errors = [{instancePath:instancePath+"/currency",schemaPath:"#/prope
 return false;
 }
 if(!((data3 === "USD") || (data3 === "EUR"))){
-validate176.errors = [{instancePath:instancePath+"/currency",schemaPath:"#/properties/currency/enum",keyword:"enum",params:{allowedValues: schema272.properties.currency.enum},message:"must be equal to one of the allowed values"}];
+validate176.errors = [{instancePath:instancePath+"/currency",schemaPath:"#/properties/currency/enum",keyword:"enum",params:{allowedValues: schema273.properties.currency.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs7 === errors;
@@ -26482,7 +26524,7 @@ return errors === 0;
 validate176.evaluated = {"props":{"plan":true,"seats":true,"interval":true,"currency":true,"success_url":true,"cancel_url":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v144 = validate177;
-const schema273 = {"type":"object","properties":{"url":{"type":"string","format":"uri"},"expires_at":{"type":"string","format":"date-time"}},"required":["url"]};
+const schema274 = {"type":"object","properties":{"url":{"type":"string","format":"uri"},"expires_at":{"type":"string","format":"date-time"}},"required":["url"]};
 
 function validate177(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -26561,7 +26603,7 @@ return errors === 0;
 validate177.evaluated = {"props":{"url":true,"expires_at":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v145 = validate178;
-const schema274 = {"type":"object","properties":{"return_url":{"type":"string","format":"uri"}}};
+const schema275 = {"type":"object","properties":{"return_url":{"type":"string","format":"uri"}}};
 
 function validate178(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -26605,7 +26647,7 @@ return errors === 0;
 validate178.evaluated = {"props":{"return_url":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v146 = validate179;
-const schema275 = {"type":"object","properties":{"seats":{"type":"integer","minimum":1}},"required":["seats"]};
+const schema276 = {"type":"object","properties":{"seats":{"type":"integer","minimum":1}},"required":["seats"]};
 
 function validate179(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -26654,7 +26696,7 @@ return errors === 0;
 validate179.evaluated = {"props":{"seats":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v147 = validate180;
-const schema276 = {"type":"object","properties":{"seats":{"type":"integer"},"preview":{"type":"boolean"},"proration":{"type":["object","null"],"properties":{"amount":{"$ref":"#/$defs/Money"},"effective_at":{"type":"string","format":"date-time"}},"required":["amount"]}},"required":["seats","preview"]};
+const schema277 = {"type":"object","properties":{"seats":{"type":"integer"},"preview":{"type":"boolean"},"proration":{"type":["object","null"],"properties":{"amount":{"$ref":"#/$defs/Money"},"effective_at":{"type":"string","format":"date-time"}},"required":["amount"]}},"required":["seats","preview"]};
 
 function validate180(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -26703,7 +26745,7 @@ if(data.proration !== undefined){
 let data2 = data.proration;
 const _errs5 = errors;
 if((!(data2 && typeof data2 == "object" && !Array.isArray(data2))) && (data2 !== null)){
-validate180.errors = [{instancePath:instancePath+"/proration",schemaPath:"#/properties/proration/type",keyword:"type",params:{type: schema276.properties.proration.type},message:"must be object,null"}];
+validate180.errors = [{instancePath:instancePath+"/proration",schemaPath:"#/properties/proration/type",keyword:"type",params:{type: schema277.properties.proration.type},message:"must be object,null"}];
 return false;
 }
 if(errors === _errs5){
@@ -26815,7 +26857,7 @@ return errors === 0;
 validate180.evaluated = {"props":{"seats":true,"preview":true,"proration":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v148 = validate181;
-const schema278 = {"type":"object","properties":{"id":{"type":"string","description":"Opaque invoice id (no CT-IDS prefix defined)"},"number":{"type":"string"},"status":{"type":"string","enum":["draft","open","paid","void","uncollectible"]},"amount_due":{"$ref":"#/$defs/Money"},"amount_paid":{"$ref":"#/$defs/Money"},"period_start":{"type":"string","format":"date-time"},"period_end":{"type":"string","format":"date-time"},"created_at":{"type":"string","format":"date-time"},"hosted_invoice_url":{"type":"string","format":"uri"},"pdf_url":{"type":"string","format":"uri"}},"required":["id","status","amount_due","amount_paid","created_at"]};
+const schema279 = {"type":"object","properties":{"id":{"type":"string","description":"Opaque invoice id (no CT-IDS prefix defined)"},"number":{"type":"string"},"status":{"type":"string","enum":["draft","open","paid","void","uncollectible"]},"amount_due":{"$ref":"#/$defs/Money"},"amount_paid":{"$ref":"#/$defs/Money"},"period_start":{"type":"string","format":"date-time"},"period_end":{"type":"string","format":"date-time"},"created_at":{"type":"string","format":"date-time"},"hosted_invoice_url":{"type":"string","format":"uri"},"pdf_url":{"type":"string","format":"uri"}},"required":["id","status","amount_due","amount_paid","created_at"]};
 
 function validate181(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -26867,7 +26909,7 @@ validate181.errors = [{instancePath:instancePath+"/status",schemaPath:"#/propert
 return false;
 }
 if(!(((((data2 === "draft") || (data2 === "open")) || (data2 === "paid")) || (data2 === "void")) || (data2 === "uncollectible"))){
-validate181.errors = [{instancePath:instancePath+"/status",schemaPath:"#/properties/status/enum",keyword:"enum",params:{allowedValues: schema278.properties.status.enum},message:"must be equal to one of the allowed values"}];
+validate181.errors = [{instancePath:instancePath+"/status",schemaPath:"#/properties/status/enum",keyword:"enum",params:{allowedValues: schema279.properties.status.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs5 === errors;
@@ -27122,7 +27164,7 @@ return errors === 0;
 validate181.evaluated = {"props":{"id":true,"number":true,"status":true,"amount_due":true,"amount_paid":true,"period_start":true,"period_end":true,"created_at":true,"hosted_invoice_url":true,"pdf_url":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v149 = validate182;
-const schema281 = {"type":"object","properties":{"code":{"type":"string","minLength":1,"maxLength":64}},"required":["code"]};
+const schema282 = {"type":"object","properties":{"code":{"type":"string","minLength":1,"maxLength":64}},"required":["code"]};
 
 function validate182(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -27177,7 +27219,7 @@ return errors === 0;
 validate182.evaluated = {"props":{"code":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v150 = validate183;
-const schema282 = {"type":"object","properties":{"workspace":{"$ref":"#/$defs/WorkspaceId"},"period":{"type":"object","properties":{"start":{"type":"string","format":"date-time"},"end":{"type":"string","format":"date-time"}},"required":["start","end"]},"items":{"type":"array","items":{"type":"object","properties":{"metric":{"type":"string","enum":["agent_minutes","tokens","queue_items","relay_bytes","seats"]},"used":{"type":"integer"},"limit":{"type":["integer","null"]},"pct":{"type":["integer","null"]}},"required":["metric","used","limit"]}}},"required":["workspace","period","items"]};
+const schema283 = {"type":"object","properties":{"workspace":{"$ref":"#/$defs/WorkspaceId"},"period":{"type":"object","properties":{"start":{"type":"string","format":"date-time"},"end":{"type":"string","format":"date-time"}},"required":["start","end"]},"items":{"type":"array","items":{"type":"object","properties":{"metric":{"type":"string","enum":["agent_minutes","tokens","queue_items","relay_bytes","seats"]},"used":{"type":"integer"},"limit":{"type":["integer","null"]},"pct":{"type":["integer","null"]}},"required":["metric","used","limit"]}}},"required":["workspace","period","items"]};
 
 function validate183(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -27321,7 +27363,7 @@ validate183.errors = [{instancePath:instancePath+"/items/" + i0+"/metric",schema
 return false;
 }
 if(!(((((data6 === "agent_minutes") || (data6 === "tokens")) || (data6 === "queue_items")) || (data6 === "relay_bytes")) || (data6 === "seats"))){
-validate183.errors = [{instancePath:instancePath+"/items/" + i0+"/metric",schemaPath:"#/properties/items/items/properties/metric/enum",keyword:"enum",params:{allowedValues: schema282.properties.items.items.properties.metric.enum},message:"must be equal to one of the allowed values"}];
+validate183.errors = [{instancePath:instancePath+"/items/" + i0+"/metric",schemaPath:"#/properties/items/items/properties/metric/enum",keyword:"enum",params:{allowedValues: schema283.properties.items.items.properties.metric.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid4 = _errs14 === errors;
@@ -27347,7 +27389,7 @@ if(data5.limit !== undefined){
 let data8 = data5.limit;
 const _errs18 = errors;
 if((!(((typeof data8 == "number") && (!(data8 % 1) && !isNaN(data8))) && (isFinite(data8)))) && (data8 !== null)){
-validate183.errors = [{instancePath:instancePath+"/items/" + i0+"/limit",schemaPath:"#/properties/items/items/properties/limit/type",keyword:"type",params:{type: schema282.properties.items.items.properties.limit.type},message:"must be integer,null"}];
+validate183.errors = [{instancePath:instancePath+"/items/" + i0+"/limit",schemaPath:"#/properties/items/items/properties/limit/type",keyword:"type",params:{type: schema283.properties.items.items.properties.limit.type},message:"must be integer,null"}];
 return false;
 }
 var valid4 = _errs18 === errors;
@@ -27360,7 +27402,7 @@ if(data5.pct !== undefined){
 let data9 = data5.pct;
 const _errs20 = errors;
 if((!(((typeof data9 == "number") && (!(data9 % 1) && !isNaN(data9))) && (isFinite(data9)))) && (data9 !== null)){
-validate183.errors = [{instancePath:instancePath+"/items/" + i0+"/pct",schemaPath:"#/properties/items/items/properties/pct/type",keyword:"type",params:{type: schema282.properties.items.items.properties.pct.type},message:"must be integer,null"}];
+validate183.errors = [{instancePath:instancePath+"/items/" + i0+"/pct",schemaPath:"#/properties/items/items/properties/pct/type",keyword:"type",params:{type: schema283.properties.items.items.properties.pct.type},message:"must be integer,null"}];
 return false;
 }
 var valid4 = _errs20 === errors;
@@ -27409,8 +27451,8 @@ return errors === 0;
 validate183.evaluated = {"props":{"workspace":true,"period":true,"items":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v151 = validate184;
-const schema284 = {"type":"object","properties":{"id":{"type":"string","pattern":"^use_[0-9A-HJKMNP-TV-Z]{26}$","description":"Client-generated ULID with prefix use_ (CT-IDS)"},"type":{"type":"string","enum":["agent_minutes","tokens_in","tokens_out","queue_items","relay_bytes"]},"qty":{"type":"integer","minimum":0},"at":{"type":"string","format":"date-time"},"session_id":{"$ref":"#/$defs/SessionId"},"agent_id":{"$ref":"#/$defs/AgentId"}},"required":["id","type","qty","at"]};
-const pattern197 = new RegExp("^use_[0-9A-HJKMNP-TV-Z]{26}$", "u");
+const schema285 = {"type":"object","properties":{"id":{"type":"string","pattern":"^use_[0-9A-HJKMNP-TV-Z]{26}$","description":"Client-generated ULID with prefix use_ (CT-IDS)"},"type":{"type":"string","enum":["agent_minutes","tokens_in","tokens_out","queue_items","relay_bytes"]},"qty":{"type":"integer","minimum":0},"at":{"type":"string","format":"date-time"},"session_id":{"$ref":"#/$defs/SessionId"},"agent_id":{"$ref":"#/$defs/AgentId"}},"required":["id","type","qty","at"]};
+const pattern198 = new RegExp("^use_[0-9A-HJKMNP-TV-Z]{26}$", "u");
 
 function validate184(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -27435,7 +27477,7 @@ let data0 = data.id;
 const _errs1 = errors;
 if(errors === _errs1){
 if(typeof data0 === "string"){
-if(!pattern197.test(data0)){
+if(!pattern198.test(data0)){
 validate184.errors = [{instancePath:instancePath+"/id",schemaPath:"#/properties/id/pattern",keyword:"pattern",params:{pattern: "^use_[0-9A-HJKMNP-TV-Z]{26}$"},message:"must match pattern \""+"^use_[0-9A-HJKMNP-TV-Z]{26}$"+"\""}];
 return false;
 }
@@ -27459,7 +27501,7 @@ validate184.errors = [{instancePath:instancePath+"/type",schemaPath:"#/propertie
 return false;
 }
 if(!(((((data1 === "agent_minutes") || (data1 === "tokens_in")) || (data1 === "tokens_out")) || (data1 === "queue_items")) || (data1 === "relay_bytes"))){
-validate184.errors = [{instancePath:instancePath+"/type",schemaPath:"#/properties/type/enum",keyword:"enum",params:{allowedValues: schema284.properties.type.enum},message:"must be equal to one of the allowed values"}];
+validate184.errors = [{instancePath:instancePath+"/type",schemaPath:"#/properties/type/enum",keyword:"enum",params:{allowedValues: schema285.properties.type.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs3 === errors;
@@ -27585,7 +27627,7 @@ return errors === 0;
 validate184.evaluated = {"props":{"id":true,"type":true,"qty":true,"at":true,"session_id":true,"agent_id":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v152 = validate185;
-const schema287 = {"type":"object","properties":{"events":{"type":"array","items":{"$ref":"#/$defs/UsageEvent"},"minItems":1,"maxItems":500}},"required":["events"]};
+const schema288 = {"type":"object","properties":{"events":{"type":"array","items":{"$ref":"#/$defs/UsageEvent"},"minItems":1,"maxItems":500}},"required":["events"]};
 
 function validate185(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -27655,7 +27697,7 @@ return errors === 0;
 validate185.evaluated = {"props":{"events":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v153 = validate187;
-const schema288 = {"type":"object","properties":{"accepted":{"type":"integer"},"duplicates":{"type":"integer"},"rejected":{"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"code":{"type":"string"}},"required":["id","code"]}}},"required":["accepted","duplicates"]};
+const schema289 = {"type":"object","properties":{"accepted":{"type":"integer"},"duplicates":{"type":"integer"},"rejected":{"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"code":{"type":"string"}},"required":["id","code"]}}},"required":["accepted","duplicates"]};
 
 function validate187(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -27781,7 +27823,7 @@ return errors === 0;
 validate187.evaluated = {"props":{"accepted":true,"duplicates":true,"rejected":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v154 = validate188;
-const schema289 = {"type":"object","properties":{"id":{"$ref":"#/$defs/AuditEventId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"at":{"type":"string","format":"date-time"},"actor":{"type":"object","properties":{"type":{"type":"string","enum":["user","api_key","system"]},"id":{"type":"string"}},"required":["type"]},"action":{"type":"string","description":"e.g. member.removed"},"target":{"type":"object","properties":{"type":{"type":"string"},"id":{"type":"string"}}},"result":{"type":"string","enum":["allowed","denied"]},"metadata":{"type":"object"}},"required":["id","workspace","at","actor","action"]};
+const schema290 = {"type":"object","properties":{"id":{"$ref":"#/$defs/AuditEventId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"at":{"type":"string","format":"date-time"},"actor":{"type":"object","properties":{"type":{"type":"string","enum":["user","api_key","system"]},"id":{"type":"string"}},"required":["type"]},"action":{"type":"string","description":"e.g. member.removed"},"target":{"type":"object","properties":{"type":{"type":"string"},"id":{"type":"string"}}},"result":{"type":"string","enum":["allowed","denied"]},"metadata":{"type":"object"}},"required":["id","workspace","at","actor","action"]};
 
 function validate188(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -27899,7 +27941,7 @@ validate188.errors = [{instancePath:instancePath+"/actor/type",schemaPath:"#/pro
 return false;
 }
 if(!(((data4 === "user") || (data4 === "api_key")) || (data4 === "system"))){
-validate188.errors = [{instancePath:instancePath+"/actor/type",schemaPath:"#/properties/actor/properties/type/enum",keyword:"enum",params:{allowedValues: schema289.properties.actor.properties.type.enum},message:"must be equal to one of the allowed values"}];
+validate188.errors = [{instancePath:instancePath+"/actor/type",schemaPath:"#/properties/actor/properties/type/enum",keyword:"enum",params:{allowedValues: schema290.properties.actor.properties.type.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid3 = _errs11 === errors;
@@ -27994,7 +28036,7 @@ validate188.errors = [{instancePath:instancePath+"/result",schemaPath:"#/propert
 return false;
 }
 if(!((data10 === "allowed") || (data10 === "denied"))){
-validate188.errors = [{instancePath:instancePath+"/result",schemaPath:"#/properties/result/enum",keyword:"enum",params:{allowedValues: schema289.properties.result.enum},message:"must be equal to one of the allowed values"}];
+validate188.errors = [{instancePath:instancePath+"/result",schemaPath:"#/properties/result/enum",keyword:"enum",params:{allowedValues: schema290.properties.result.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs23 === errors;
@@ -28035,7 +28077,7 @@ return errors === 0;
 validate188.evaluated = {"props":{"id":true,"workspace":true,"at":true,"actor":true,"action":true,"target":true,"result":true,"metadata":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v155 = validate189;
-const schema292 = {"type":"object","properties":{"format":{"type":"string","enum":["csv","json"]},"from":{"type":"string","format":"date-time"},"to":{"type":"string","format":"date-time"},"actor":{"type":"string"},"action":{"type":"string"}},"required":["format"]};
+const schema293 = {"type":"object","properties":{"format":{"type":"string","enum":["csv","json"]},"from":{"type":"string","format":"date-time"},"to":{"type":"string","format":"date-time"},"actor":{"type":"string"},"action":{"type":"string"}},"required":["format"]};
 
 function validate189(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -28063,7 +28105,7 @@ validate189.errors = [{instancePath:instancePath+"/format",schemaPath:"#/propert
 return false;
 }
 if(!((data0 === "csv") || (data0 === "json"))){
-validate189.errors = [{instancePath:instancePath+"/format",schemaPath:"#/properties/format/enum",keyword:"enum",params:{allowedValues: schema292.properties.format.enum},message:"must be equal to one of the allowed values"}];
+validate189.errors = [{instancePath:instancePath+"/format",schemaPath:"#/properties/format/enum",keyword:"enum",params:{allowedValues: schema293.properties.format.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs1 === errors;
@@ -28158,7 +28200,7 @@ return errors === 0;
 validate189.evaluated = {"props":{"format":true,"from":true,"to":true,"actor":true,"action":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v156 = validate190;
-const schema293 = {"type":"object","properties":{"id":{"$ref":"#/$defs/ExportId"},"status":{"type":"string","enum":["pending","ready","failed","expired"]},"format":{"type":"string","enum":["csv","json"]},"created_at":{"type":"string","format":"date-time"},"expires_at":{"type":["string","null"],"format":"date-time"},"download_url":{"type":["string","null"],"format":"uri"}},"required":["id","status","format","created_at"]};
+const schema294 = {"type":"object","properties":{"id":{"$ref":"#/$defs/ExportId"},"status":{"type":"string","enum":["pending","ready","failed","expired"]},"format":{"type":"string","enum":["csv","json"]},"created_at":{"type":"string","format":"date-time"},"expires_at":{"type":["string","null"],"format":"date-time"},"download_url":{"type":["string","null"],"format":"uri"}},"required":["id","status","format","created_at"]};
 
 function validate190(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -28214,7 +28256,7 @@ validate190.errors = [{instancePath:instancePath+"/status",schemaPath:"#/propert
 return false;
 }
 if(!((((data1 === "pending") || (data1 === "ready")) || (data1 === "failed")) || (data1 === "expired"))){
-validate190.errors = [{instancePath:instancePath+"/status",schemaPath:"#/properties/status/enum",keyword:"enum",params:{allowedValues: schema293.properties.status.enum},message:"must be equal to one of the allowed values"}];
+validate190.errors = [{instancePath:instancePath+"/status",schemaPath:"#/properties/status/enum",keyword:"enum",params:{allowedValues: schema294.properties.status.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs4 === errors;
@@ -28231,7 +28273,7 @@ validate190.errors = [{instancePath:instancePath+"/format",schemaPath:"#/propert
 return false;
 }
 if(!((data2 === "csv") || (data2 === "json"))){
-validate190.errors = [{instancePath:instancePath+"/format",schemaPath:"#/properties/format/enum",keyword:"enum",params:{allowedValues: schema293.properties.format.enum},message:"must be equal to one of the allowed values"}];
+validate190.errors = [{instancePath:instancePath+"/format",schemaPath:"#/properties/format/enum",keyword:"enum",params:{allowedValues: schema294.properties.format.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs6 === errors;
@@ -28267,7 +28309,7 @@ if(data.expires_at !== undefined){
 let data4 = data.expires_at;
 const _errs10 = errors;
 if((typeof data4 !== "string") && (data4 !== null)){
-validate190.errors = [{instancePath:instancePath+"/expires_at",schemaPath:"#/properties/expires_at/type",keyword:"type",params:{type: schema293.properties.expires_at.type},message:"must be string,null"}];
+validate190.errors = [{instancePath:instancePath+"/expires_at",schemaPath:"#/properties/expires_at/type",keyword:"type",params:{type: schema294.properties.expires_at.type},message:"must be string,null"}];
 return false;
 }
 if(errors === _errs10){
@@ -28290,7 +28332,7 @@ if(data.download_url !== undefined){
 let data5 = data.download_url;
 const _errs12 = errors;
 if((typeof data5 !== "string") && (data5 !== null)){
-validate190.errors = [{instancePath:instancePath+"/download_url",schemaPath:"#/properties/download_url/type",keyword:"type",params:{type: schema293.properties.download_url.type},message:"must be string,null"}];
+validate190.errors = [{instancePath:instancePath+"/download_url",schemaPath:"#/properties/download_url/type",keyword:"type",params:{type: schema294.properties.download_url.type},message:"must be string,null"}];
 return false;
 }
 if(errors === _errs12){
@@ -28326,7 +28368,7 @@ return errors === 0;
 validate190.evaluated = {"props":{"id":true,"status":true,"format":true,"created_at":true,"expires_at":true,"download_url":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v157 = validate191;
-const schema295 = {"type":"object","properties":{"id":{"$ref":"#/$defs/NotificationId"},"created_at":{"type":"string","format":"date-time"},"read_at":{"type":["string","null"],"format":"date-time"},"category":{"type":"string","enum":["approval_needed","queue_turn","mention","member_joined","member_left","agent_done","ci_failed","pr_merged","usage_warning","quota_reached","billing_issue","invite_received","update_available","security_alert"]},"title_key":{"type":"string"},"body_key":{"type":"string"},"params":{"type":"object","description":"Ids and enums only"},"action":{"type":"object","properties":{"type":{"type":"string"},"deeplink":{"type":"string"}},"required":["type"]},"priority":{"type":"string","enum":["low","normal","high"]}},"required":["id","created_at","read_at","category","title_key","body_key","priority"],"description":"CT-NOTIF-PAYLOAD. Defined inline; no contracts/schemas/notification.schema.json existed when written."};
+const schema296 = {"type":"object","properties":{"id":{"$ref":"#/$defs/NotificationId"},"created_at":{"type":"string","format":"date-time"},"read_at":{"type":["string","null"],"format":"date-time"},"category":{"type":"string","enum":["approval_needed","queue_turn","mention","member_joined","member_left","agent_done","ci_failed","pr_merged","usage_warning","quota_reached","billing_issue","invite_received","update_available","security_alert"]},"title_key":{"type":"string"},"body_key":{"type":"string"},"params":{"type":"object","description":"Ids and enums only"},"action":{"type":"object","properties":{"type":{"type":"string"},"deeplink":{"type":"string"}},"required":["type"]},"priority":{"type":"string","enum":["low","normal","high"]}},"required":["id","created_at","read_at","category","title_key","body_key","priority"],"description":"CT-NOTIF-PAYLOAD. Defined inline; no contracts/schemas/notification.schema.json existed when written."};
 
 function validate191(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -28401,7 +28443,7 @@ if(data.read_at !== undefined){
 let data2 = data.read_at;
 const _errs6 = errors;
 if((typeof data2 !== "string") && (data2 !== null)){
-validate191.errors = [{instancePath:instancePath+"/read_at",schemaPath:"#/properties/read_at/type",keyword:"type",params:{type: schema295.properties.read_at.type},message:"must be string,null"}];
+validate191.errors = [{instancePath:instancePath+"/read_at",schemaPath:"#/properties/read_at/type",keyword:"type",params:{type: schema296.properties.read_at.type},message:"must be string,null"}];
 return false;
 }
 if(errors === _errs6){
@@ -28428,7 +28470,7 @@ validate191.errors = [{instancePath:instancePath+"/category",schemaPath:"#/prope
 return false;
 }
 if(!((((((((((((((data3 === "approval_needed") || (data3 === "queue_turn")) || (data3 === "mention")) || (data3 === "member_joined")) || (data3 === "member_left")) || (data3 === "agent_done")) || (data3 === "ci_failed")) || (data3 === "pr_merged")) || (data3 === "usage_warning")) || (data3 === "quota_reached")) || (data3 === "billing_issue")) || (data3 === "invite_received")) || (data3 === "update_available")) || (data3 === "security_alert"))){
-validate191.errors = [{instancePath:instancePath+"/category",schemaPath:"#/properties/category/enum",keyword:"enum",params:{allowedValues: schema295.properties.category.enum},message:"must be equal to one of the allowed values"}];
+validate191.errors = [{instancePath:instancePath+"/category",schemaPath:"#/properties/category/enum",keyword:"enum",params:{allowedValues: schema296.properties.category.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs8 === errors;
@@ -28530,7 +28572,7 @@ validate191.errors = [{instancePath:instancePath+"/priority",schemaPath:"#/prope
 return false;
 }
 if(!(((data10 === "low") || (data10 === "normal")) || (data10 === "high"))){
-validate191.errors = [{instancePath:instancePath+"/priority",schemaPath:"#/properties/priority/enum",keyword:"enum",params:{allowedValues: schema295.properties.priority.enum},message:"must be equal to one of the allowed values"}];
+validate191.errors = [{instancePath:instancePath+"/priority",schemaPath:"#/properties/priority/enum",keyword:"enum",params:{allowedValues: schema296.properties.priority.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs22 === errors;
@@ -28559,7 +28601,7 @@ return errors === 0;
 validate191.evaluated = {"props":{"id":true,"created_at":true,"read_at":true,"category":true,"title_key":true,"body_key":true,"params":true,"action":true,"priority":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v158 = validate192;
-const schema297 = {"type":"object","properties":{"updated":{"type":"integer"}},"required":["updated"]};
+const schema298 = {"type":"object","properties":{"updated":{"type":"integer"}},"required":["updated"]};
 
 function validate192(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -28599,8 +28641,8 @@ return errors === 0;
 validate192.evaluated = {"props":{"updated":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v159 = validate193;
-const schema298 = {"type":"object","properties":{"channels":{"type":"object","properties":{"approval_needed":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"queue_turn":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"mention":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"member_joined":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"member_left":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"agent_done":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"ci_failed":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"pr_merged":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"usage_warning":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"quota_reached":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"billing_issue":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"invite_received":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"update_available":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"security_alert":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}}},"description":"Per category channel switches; os is client-local"},"quiet_hours":{"type":"object","properties":{"enabled":{"type":"boolean"},"start":{"type":"string","pattern":"^([01][0-9]|2[0-3]):[0-5][0-9]$"},"end":{"type":"string","pattern":"^([01][0-9]|2[0-3]):[0-5][0-9]$"},"timezone":{"type":"string","description":"IANA tz"},"allow_approval_needed":{"type":"boolean"}},"required":["enabled"]}},"required":["channels","quiet_hours"]};
-const pattern204 = new RegExp("^([01][0-9]|2[0-3]):[0-5][0-9]$", "u");
+const schema299 = {"type":"object","properties":{"channels":{"type":"object","properties":{"approval_needed":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"queue_turn":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"mention":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"member_joined":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"member_left":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"agent_done":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"ci_failed":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"pr_merged":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"usage_warning":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"quota_reached":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"billing_issue":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"invite_received":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"update_available":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}},"security_alert":{"type":"object","properties":{"inbox":{"type":"boolean"},"push":{"type":"boolean"},"email":{"type":"boolean"},"os":{"type":"boolean"}}}},"description":"Per category channel switches; os is client-local"},"quiet_hours":{"type":"object","properties":{"enabled":{"type":"boolean"},"start":{"type":"string","pattern":"^([01][0-9]|2[0-3]):[0-5][0-9]$"},"end":{"type":"string","pattern":"^([01][0-9]|2[0-3]):[0-5][0-9]$"},"timezone":{"type":"string","description":"IANA tz"},"allow_approval_needed":{"type":"boolean"}},"required":["enabled"]}},"required":["channels","quiet_hours"]};
+const pattern205 = new RegExp("^([01][0-9]|2[0-3]):[0-5][0-9]$", "u");
 
 function validate193(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -29615,7 +29657,7 @@ let data73 = data71.start;
 const _errs147 = errors;
 if(errors === _errs147){
 if(typeof data73 === "string"){
-if(!pattern204.test(data73)){
+if(!pattern205.test(data73)){
 validate193.errors = [{instancePath:instancePath+"/quiet_hours/start",schemaPath:"#/properties/quiet_hours/properties/start/pattern",keyword:"pattern",params:{pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"},message:"must match pattern \""+"^([01][0-9]|2[0-3]):[0-5][0-9]$"+"\""}];
 return false;
 }
@@ -29636,7 +29678,7 @@ let data74 = data71.end;
 const _errs149 = errors;
 if(errors === _errs149){
 if(typeof data74 === "string"){
-if(!pattern204.test(data74)){
+if(!pattern205.test(data74)){
 validate193.errors = [{instancePath:instancePath+"/quiet_hours/end",schemaPath:"#/properties/quiet_hours/properties/end/pattern",keyword:"pattern",params:{pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"},message:"must match pattern \""+"^([01][0-9]|2[0-3]):[0-5][0-9]$"+"\""}];
 return false;
 }
@@ -29705,7 +29747,7 @@ return errors === 0;
 validate193.evaluated = {"props":{"channels":true,"quiet_hours":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v160 = validate194;
-const schema299 = {"type":"object","properties":{"id":{"$ref":"#/$defs/PushSubscriptionId"},"kind":{"type":"string","enum":["web_push","apns","fcm"]},"device":{"$ref":"#/$defs/DeviceId"},"created_at":{"type":"string","format":"date-time"}},"required":["id","kind","created_at"]};
+const schema300 = {"type":"object","properties":{"id":{"$ref":"#/$defs/PushSubscriptionId"},"kind":{"type":"string","enum":["web_push","apns","fcm"]},"device":{"$ref":"#/$defs/DeviceId"},"created_at":{"type":"string","format":"date-time"}},"required":["id","kind","created_at"]};
 
 function validate194(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -29761,7 +29803,7 @@ validate194.errors = [{instancePath:instancePath+"/kind",schemaPath:"#/propertie
 return false;
 }
 if(!(((data1 === "web_push") || (data1 === "apns")) || (data1 === "fcm"))){
-validate194.errors = [{instancePath:instancePath+"/kind",schemaPath:"#/properties/kind/enum",keyword:"enum",params:{allowedValues: schema299.properties.kind.enum},message:"must be equal to one of the allowed values"}];
+validate194.errors = [{instancePath:instancePath+"/kind",schemaPath:"#/properties/kind/enum",keyword:"enum",params:{allowedValues: schema300.properties.kind.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs4 === errors;
@@ -29836,7 +29878,7 @@ return errors === 0;
 validate194.evaluated = {"props":{"id":true,"kind":true,"device":true,"created_at":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v161 = validate195;
-const schema302 = {"type":"object","properties":{"kind":{"type":"string","enum":["web_push","apns","fcm"]},"token":{"type":"string","description":"APNs/FCM token, or web-push endpoint URL"},"keys":{"type":"object","properties":{"p256dh":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"base64url without padding"},"auth":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"base64url without padding"}},"required":["p256dh","auth"]},"device":{"$ref":"#/$defs/DeviceId"}},"required":["kind","token"]};
+const schema303 = {"type":"object","properties":{"kind":{"type":"string","enum":["web_push","apns","fcm"]},"token":{"type":"string","description":"APNs/FCM token, or web-push endpoint URL"},"keys":{"type":"object","properties":{"p256dh":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"base64url without padding"},"auth":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"base64url without padding"}},"required":["p256dh","auth"]},"device":{"$ref":"#/$defs/DeviceId"}},"required":["kind","token"]};
 
 function validate195(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -29864,7 +29906,7 @@ validate195.errors = [{instancePath:instancePath+"/kind",schemaPath:"#/propertie
 return false;
 }
 if(!(((data0 === "web_push") || (data0 === "apns")) || (data0 === "fcm"))){
-validate195.errors = [{instancePath:instancePath+"/kind",schemaPath:"#/properties/kind/enum",keyword:"enum",params:{allowedValues: schema302.properties.kind.enum},message:"must be equal to one of the allowed values"}];
+validate195.errors = [{instancePath:instancePath+"/kind",schemaPath:"#/properties/kind/enum",keyword:"enum",params:{allowedValues: schema303.properties.kind.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs1 === errors;
@@ -29994,7 +30036,7 @@ return errors === 0;
 validate195.evaluated = {"props":{"kind":true,"token":true,"keys":true,"device":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v162 = validate196;
-const schema304 = {"type":"string","enum":["workspace.member.joined","workspace.member.left","workspace.member.role_changed","workspace.invite.created","workspace.invite.accepted","workspace.invite.revoked","session.created","session.started","session.ended","session.member.joined","session.member.left","agent.completed","billing.subscription.updated","billing.invoice.paid","billing.invoice.payment_failed","usage.threshold","api_key.created","api_key.revoked"],"description":"Consumers must tolerate unknown values."};
+const schema305 = {"type":"string","enum":["workspace.member.joined","workspace.member.left","workspace.member.role_changed","workspace.invite.created","workspace.invite.accepted","workspace.invite.revoked","session.created","session.started","session.ended","session.member.joined","session.member.left","agent.completed","billing.subscription.updated","billing.invoice.paid","billing.invoice.payment_failed","usage.threshold","api_key.created","api_key.revoked"],"description":"Consumers must tolerate unknown values."};
 
 function validate196(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -30011,7 +30053,7 @@ validate196.errors = [{instancePath,schemaPath:"#/type",keyword:"type",params:{t
 return false;
 }
 if(!((((((((((((((((((data === "workspace.member.joined") || (data === "workspace.member.left")) || (data === "workspace.member.role_changed")) || (data === "workspace.invite.created")) || (data === "workspace.invite.accepted")) || (data === "workspace.invite.revoked")) || (data === "session.created")) || (data === "session.started")) || (data === "session.ended")) || (data === "session.member.joined")) || (data === "session.member.left")) || (data === "agent.completed")) || (data === "billing.subscription.updated")) || (data === "billing.invoice.paid")) || (data === "billing.invoice.payment_failed")) || (data === "usage.threshold")) || (data === "api_key.created")) || (data === "api_key.revoked"))){
-validate196.errors = [{instancePath,schemaPath:"#/enum",keyword:"enum",params:{allowedValues: schema304.enum},message:"must be equal to one of the allowed values"}];
+validate196.errors = [{instancePath,schemaPath:"#/enum",keyword:"enum",params:{allowedValues: schema305.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 validate196.errors = vErrors;
@@ -30020,7 +30062,7 @@ return errors === 0;
 validate196.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
 export const v163 = validate197;
-const schema305 = {"type":"string","description":"Consumers must tolerate unknown values."};
+const schema306 = {"type":"string","description":"Consumers must tolerate unknown values."};
 
 function validate197(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -30042,8 +30084,8 @@ return errors === 0;
 validate197.evaluated = {"dynamicProps":false,"dynamicItems":false};
 
 export const v164 = validate198;
-const schema306 = {"type":"object","properties":{"id":{"$ref":"#/$defs/WebhookId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"url":{"type":"string","format":"uri","pattern":"^https://"},"events":{"type":"array","items":{"$ref":"#/$defs/WebhookEventType"}},"enabled":{"type":"boolean"},"status":{"type":"string","enum":["active","failing","disabled"]},"created_at":{"type":"string","format":"date-time"},"secret_rotated_at":{"type":["string","null"],"format":"date-time"},"secret_overlap_until":{"type":["string","null"],"format":"date-time"}},"required":["id","workspace","url","events","enabled","status","created_at"],"description":"Defined inline; no contracts/schemas/webhook.schema.json existed when written."};
-const pattern213 = new RegExp("^https://", "u");
+const schema307 = {"type":"object","properties":{"id":{"$ref":"#/$defs/WebhookId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"url":{"type":"string","format":"uri","pattern":"^https://"},"events":{"type":"array","items":{"$ref":"#/$defs/WebhookEventType"}},"enabled":{"type":"boolean"},"status":{"type":"string","enum":["active","failing","disabled"]},"created_at":{"type":"string","format":"date-time"},"secret_rotated_at":{"type":["string","null"],"format":"date-time"},"secret_overlap_until":{"type":["string","null"],"format":"date-time"}},"required":["id","workspace","url","events","enabled","status","created_at"],"description":"Defined inline; no contracts/schemas/webhook.schema.json existed when written."};
+const pattern214 = new RegExp("^https://", "u");
 
 function validate198(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -30125,7 +30167,7 @@ const _errs7 = errors;
 if(errors === _errs7){
 if(errors === _errs7){
 if(typeof data2 === "string"){
-if(!pattern213.test(data2)){
+if(!pattern214.test(data2)){
 validate198.errors = [{instancePath:instancePath+"/url",schemaPath:"#/properties/url/pattern",keyword:"pattern",params:{pattern: "^https://"},message:"must match pattern \""+"^https://"+"\""}];
 return false;
 }
@@ -30163,7 +30205,7 @@ validate198.errors = [{instancePath:instancePath+"/events/" + i0,schemaPath:"#/$
 return false;
 }
 if(!((((((((((((((((((data4 === "workspace.member.joined") || (data4 === "workspace.member.left")) || (data4 === "workspace.member.role_changed")) || (data4 === "workspace.invite.created")) || (data4 === "workspace.invite.accepted")) || (data4 === "workspace.invite.revoked")) || (data4 === "session.created")) || (data4 === "session.started")) || (data4 === "session.ended")) || (data4 === "session.member.joined")) || (data4 === "session.member.left")) || (data4 === "agent.completed")) || (data4 === "billing.subscription.updated")) || (data4 === "billing.invoice.paid")) || (data4 === "billing.invoice.payment_failed")) || (data4 === "usage.threshold")) || (data4 === "api_key.created")) || (data4 === "api_key.revoked"))){
-validate198.errors = [{instancePath:instancePath+"/events/" + i0,schemaPath:"#/$defs/WebhookEventType/enum",keyword:"enum",params:{allowedValues: schema304.enum},message:"must be equal to one of the allowed values"}];
+validate198.errors = [{instancePath:instancePath+"/events/" + i0,schemaPath:"#/$defs/WebhookEventType/enum",keyword:"enum",params:{allowedValues: schema305.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid3 = _errs11 === errors;
@@ -30203,7 +30245,7 @@ validate198.errors = [{instancePath:instancePath+"/status",schemaPath:"#/propert
 return false;
 }
 if(!(((data6 === "active") || (data6 === "failing")) || (data6 === "disabled"))){
-validate198.errors = [{instancePath:instancePath+"/status",schemaPath:"#/properties/status/enum",keyword:"enum",params:{allowedValues: schema306.properties.status.enum},message:"must be equal to one of the allowed values"}];
+validate198.errors = [{instancePath:instancePath+"/status",schemaPath:"#/properties/status/enum",keyword:"enum",params:{allowedValues: schema307.properties.status.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs16 === errors;
@@ -30239,7 +30281,7 @@ if(data.secret_rotated_at !== undefined){
 let data8 = data.secret_rotated_at;
 const _errs20 = errors;
 if((typeof data8 !== "string") && (data8 !== null)){
-validate198.errors = [{instancePath:instancePath+"/secret_rotated_at",schemaPath:"#/properties/secret_rotated_at/type",keyword:"type",params:{type: schema306.properties.secret_rotated_at.type},message:"must be string,null"}];
+validate198.errors = [{instancePath:instancePath+"/secret_rotated_at",schemaPath:"#/properties/secret_rotated_at/type",keyword:"type",params:{type: schema307.properties.secret_rotated_at.type},message:"must be string,null"}];
 return false;
 }
 if(errors === _errs20){
@@ -30262,7 +30304,7 @@ if(data.secret_overlap_until !== undefined){
 let data9 = data.secret_overlap_until;
 const _errs22 = errors;
 if((typeof data9 !== "string") && (data9 !== null)){
-validate198.errors = [{instancePath:instancePath+"/secret_overlap_until",schemaPath:"#/properties/secret_overlap_until/type",keyword:"type",params:{type: schema306.properties.secret_overlap_until.type},message:"must be string,null"}];
+validate198.errors = [{instancePath:instancePath+"/secret_overlap_until",schemaPath:"#/properties/secret_overlap_until/type",keyword:"type",params:{type: schema307.properties.secret_overlap_until.type},message:"must be string,null"}];
 return false;
 }
 if(errors === _errs22){
@@ -30301,8 +30343,8 @@ return errors === 0;
 validate198.evaluated = {"props":{"id":true,"workspace":true,"url":true,"events":true,"enabled":true,"status":true,"created_at":true,"secret_rotated_at":true,"secret_overlap_until":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v165 = validate199;
-const schema310 = {"type":"object","properties":{"id":{"$ref":"#/$defs/WebhookId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"url":{"type":"string","format":"uri","pattern":"^https://"},"events":{"type":"array","items":{"$ref":"#/$defs/WebhookEventType"}},"enabled":{"type":"boolean"},"status":{"type":"string","enum":["active","failing","disabled"]},"created_at":{"type":"string","format":"date-time"},"secret_rotated_at":{"type":["string","null"],"format":"date-time"},"secret_overlap_until":{"type":["string","null"],"format":"date-time"}},"required":["id","workspace","url","events","enabled","status","created_at"],"description":"Defined inline; no contracts/schemas/webhook.schema.json existed when written."};
-const schema311 = {"type":"string","pattern":"^whk_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a webhook endpoint.","examples":["whk_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
+const schema311 = {"type":"object","properties":{"id":{"$ref":"#/$defs/WebhookId"},"workspace":{"$ref":"#/$defs/WorkspaceId"},"url":{"type":"string","format":"uri","pattern":"^https://"},"events":{"type":"array","items":{"$ref":"#/$defs/WebhookEventType"}},"enabled":{"type":"boolean"},"status":{"type":"string","enum":["active","failing","disabled"]},"created_at":{"type":"string","format":"date-time"},"secret_rotated_at":{"type":["string","null"],"format":"date-time"},"secret_overlap_until":{"type":["string","null"],"format":"date-time"}},"required":["id","workspace","url","events","enabled","status","created_at"],"description":"Defined inline; no contracts/schemas/webhook.schema.json existed when written."};
+const schema312 = {"type":"string","pattern":"^whk_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a webhook endpoint.","examples":["whk_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 
 function validate199(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -30384,7 +30426,7 @@ const _errs7 = errors;
 if(errors === _errs7){
 if(errors === _errs7){
 if(typeof data2 === "string"){
-if(!pattern213.test(data2)){
+if(!pattern214.test(data2)){
 validate199.errors = [{instancePath:instancePath+"/url",schemaPath:"#/properties/url/pattern",keyword:"pattern",params:{pattern: "^https://"},message:"must match pattern \""+"^https://"+"\""}];
 return false;
 }
@@ -30457,7 +30499,7 @@ validate199.errors = [{instancePath:instancePath+"/status",schemaPath:"#/propert
 return false;
 }
 if(!(((data6 === "active") || (data6 === "failing")) || (data6 === "disabled"))){
-validate199.errors = [{instancePath:instancePath+"/status",schemaPath:"#/properties/status/enum",keyword:"enum",params:{allowedValues: schema310.properties.status.enum},message:"must be equal to one of the allowed values"}];
+validate199.errors = [{instancePath:instancePath+"/status",schemaPath:"#/properties/status/enum",keyword:"enum",params:{allowedValues: schema311.properties.status.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs16 === errors;
@@ -30493,7 +30535,7 @@ if(data.secret_rotated_at !== undefined){
 let data8 = data.secret_rotated_at;
 const _errs20 = errors;
 if((typeof data8 !== "string") && (data8 !== null)){
-validate199.errors = [{instancePath:instancePath+"/secret_rotated_at",schemaPath:"#/properties/secret_rotated_at/type",keyword:"type",params:{type: schema310.properties.secret_rotated_at.type},message:"must be string,null"}];
+validate199.errors = [{instancePath:instancePath+"/secret_rotated_at",schemaPath:"#/properties/secret_rotated_at/type",keyword:"type",params:{type: schema311.properties.secret_rotated_at.type},message:"must be string,null"}];
 return false;
 }
 if(errors === _errs20){
@@ -30516,7 +30558,7 @@ if(data.secret_overlap_until !== undefined){
 let data9 = data.secret_overlap_until;
 const _errs22 = errors;
 if((typeof data9 !== "string") && (data9 !== null)){
-validate199.errors = [{instancePath:instancePath+"/secret_overlap_until",schemaPath:"#/properties/secret_overlap_until/type",keyword:"type",params:{type: schema310.properties.secret_overlap_until.type},message:"must be string,null"}];
+validate199.errors = [{instancePath:instancePath+"/secret_overlap_until",schemaPath:"#/properties/secret_overlap_until/type",keyword:"type",params:{type: schema311.properties.secret_overlap_until.type},message:"must be string,null"}];
 return false;
 }
 if(errors === _errs22){
@@ -30555,7 +30597,7 @@ return errors === 0;
 validate199.evaluated = {"props":{"id":true,"workspace":true,"url":true,"events":true,"enabled":true,"status":true,"created_at":true,"secret_rotated_at":true,"secret_overlap_until":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v166 = validate200;
-const schema314 = {"type":"object","properties":{"url":{"type":"string","format":"uri","description":"HTTPS only (localhost allowed in test mode)"},"events":{"type":"array","items":{"$ref":"#/$defs/WebhookEventType"},"minItems":1}},"required":["url","events"]};
+const schema315 = {"type":"object","properties":{"url":{"type":"string","format":"uri","description":"HTTPS only (localhost allowed in test mode)"},"events":{"type":"array","items":{"$ref":"#/$defs/WebhookEventType"},"minItems":1}},"required":["url","events"]};
 
 function validate200(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -30618,7 +30660,7 @@ validate200.errors = [{instancePath:instancePath+"/events/" + i0,schemaPath:"#/$
 return false;
 }
 if(!((((((((((((((((((data2 === "workspace.member.joined") || (data2 === "workspace.member.left")) || (data2 === "workspace.member.role_changed")) || (data2 === "workspace.invite.created")) || (data2 === "workspace.invite.accepted")) || (data2 === "workspace.invite.revoked")) || (data2 === "session.created")) || (data2 === "session.started")) || (data2 === "session.ended")) || (data2 === "session.member.joined")) || (data2 === "session.member.left")) || (data2 === "agent.completed")) || (data2 === "billing.subscription.updated")) || (data2 === "billing.invoice.paid")) || (data2 === "billing.invoice.payment_failed")) || (data2 === "usage.threshold")) || (data2 === "api_key.created")) || (data2 === "api_key.revoked"))){
-validate200.errors = [{instancePath:instancePath+"/events/" + i0,schemaPath:"#/$defs/WebhookEventType/enum",keyword:"enum",params:{allowedValues: schema304.enum},message:"must be equal to one of the allowed values"}];
+validate200.errors = [{instancePath:instancePath+"/events/" + i0,schemaPath:"#/$defs/WebhookEventType/enum",keyword:"enum",params:{allowedValues: schema305.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid1 = _errs5 === errors;
@@ -30652,7 +30694,7 @@ return errors === 0;
 validate200.evaluated = {"props":{"url":true,"events":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v167 = validate201;
-const schema316 = {"type":"object","properties":{"url":{"type":"string","format":"uri","description":"HTTPS only (localhost allowed in test mode)"},"events":{"type":"array","items":{"$ref":"#/$defs/WebhookEventType"},"minItems":1}},"required":["url","events"]};
+const schema317 = {"type":"object","properties":{"url":{"type":"string","format":"uri","description":"HTTPS only (localhost allowed in test mode)"},"events":{"type":"array","items":{"$ref":"#/$defs/WebhookEventType"},"minItems":1}},"required":["url","events"]};
 
 function validate201(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -30744,7 +30786,7 @@ return errors === 0;
 validate201.evaluated = {"props":{"url":true,"events":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v168 = validate202;
-const schema318 = {"allOf":[{"$ref":"#/$defs/Webhook"},{"type":"object","properties":{"secret":{"type":"string","description":"Signing secret, shown once"}},"required":["secret"]}]};
+const schema319 = {"allOf":[{"$ref":"#/$defs/Webhook"},{"type":"object","properties":{"secret":{"type":"string","description":"Signing secret, shown once"}},"required":["secret"]}]};
 
 function validate202(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -30793,7 +30835,7 @@ return errors === 0;
 validate202.evaluated = {"props":{"secret":true,"id":true,"workspace":true,"url":true,"events":true,"enabled":true,"status":true,"created_at":true,"secret_rotated_at":true,"secret_overlap_until":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v169 = validate204;
-const schema319 = {"allOf":[{"$ref":"#/$defs/Webhook"},{"type":"object","properties":{"secret":{"type":"string","description":"Signing secret, shown once"}},"required":["secret"]}]};
+const schema320 = {"allOf":[{"$ref":"#/$defs/Webhook"},{"type":"object","properties":{"secret":{"type":"string","description":"Signing secret, shown once"}},"required":["secret"]}]};
 
 function validate204(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -30842,7 +30884,7 @@ return errors === 0;
 validate204.evaluated = {"props":{"secret":true,"id":true,"workspace":true,"url":true,"events":true,"enabled":true,"status":true,"created_at":true,"secret_rotated_at":true,"secret_overlap_until":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v170 = validate206;
-const schema320 = {"type":"object","properties":{"url":{"type":"string","format":"uri"},"events":{"type":"array","items":{"$ref":"#/$defs/WebhookEventType"},"minItems":1},"enabled":{"type":"boolean"},"rotate_secret":{"type":"boolean"}},"minProperties":1};
+const schema321 = {"type":"object","properties":{"url":{"type":"string","format":"uri"},"events":{"type":"array","items":{"$ref":"#/$defs/WebhookEventType"},"minItems":1},"enabled":{"type":"boolean"},"rotate_secret":{"type":"boolean"}},"minProperties":1};
 
 function validate206(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -30904,7 +30946,7 @@ validate206.errors = [{instancePath:instancePath+"/events/" + i0,schemaPath:"#/$
 return false;
 }
 if(!((((((((((((((((((data2 === "workspace.member.joined") || (data2 === "workspace.member.left")) || (data2 === "workspace.member.role_changed")) || (data2 === "workspace.invite.created")) || (data2 === "workspace.invite.accepted")) || (data2 === "workspace.invite.revoked")) || (data2 === "session.created")) || (data2 === "session.started")) || (data2 === "session.ended")) || (data2 === "session.member.joined")) || (data2 === "session.member.left")) || (data2 === "agent.completed")) || (data2 === "billing.subscription.updated")) || (data2 === "billing.invoice.paid")) || (data2 === "billing.invoice.payment_failed")) || (data2 === "usage.threshold")) || (data2 === "api_key.created")) || (data2 === "api_key.revoked"))){
-validate206.errors = [{instancePath:instancePath+"/events/" + i0,schemaPath:"#/$defs/WebhookEventType/enum",keyword:"enum",params:{allowedValues: schema304.enum},message:"must be equal to one of the allowed values"}];
+validate206.errors = [{instancePath:instancePath+"/events/" + i0,schemaPath:"#/$defs/WebhookEventType/enum",keyword:"enum",params:{allowedValues: schema305.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid1 = _errs5 === errors;
@@ -30964,7 +31006,7 @@ return errors === 0;
 validate206.evaluated = {"props":{"url":true,"events":true,"enabled":true,"rotate_secret":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v171 = validate207;
-const schema322 = {"type":"object","properties":{"url":{"type":"string","format":"uri"},"events":{"type":"array","items":{"$ref":"#/$defs/WebhookEventType"},"minItems":1},"enabled":{"type":"boolean"},"rotate_secret":{"type":"boolean"}},"minProperties":1};
+const schema323 = {"type":"object","properties":{"url":{"type":"string","format":"uri"},"events":{"type":"array","items":{"$ref":"#/$defs/WebhookEventType"},"minItems":1},"enabled":{"type":"boolean"},"rotate_secret":{"type":"boolean"}},"minProperties":1};
 
 function validate207(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -31081,7 +31123,7 @@ return errors === 0;
 validate207.evaluated = {"props":{"url":true,"events":true,"enabled":true,"rotate_secret":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v172 = validate208;
-const schema324 = {"allOf":[{"$ref":"#/$defs/Webhook"},{"type":"object","properties":{"secret":{"type":"string","description":"Present only when rotate_secret was true; old secret stays valid 24 h"}}}]};
+const schema325 = {"allOf":[{"$ref":"#/$defs/Webhook"},{"type":"object","properties":{"secret":{"type":"string","description":"Present only when rotate_secret was true; old secret stays valid 24 h"}}}]};
 
 function validate208(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -31123,7 +31165,7 @@ return errors === 0;
 validate208.evaluated = {"props":{"secret":true,"id":true,"workspace":true,"url":true,"events":true,"enabled":true,"status":true,"created_at":true,"secret_rotated_at":true,"secret_overlap_until":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v173 = validate210;
-const schema325 = {"allOf":[{"$ref":"#/$defs/Webhook"},{"type":"object","properties":{"secret":{"type":"string","description":"Present only when rotate_secret was true; old secret stays valid 24 h"}}}]};
+const schema326 = {"allOf":[{"$ref":"#/$defs/Webhook"},{"type":"object","properties":{"secret":{"type":"string","description":"Present only when rotate_secret was true; old secret stays valid 24 h"}}}]};
 
 function validate210(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -31165,7 +31207,7 @@ return errors === 0;
 validate210.evaluated = {"props":{"secret":true,"id":true,"workspace":true,"url":true,"events":true,"enabled":true,"status":true,"created_at":true,"secret_rotated_at":true,"secret_overlap_until":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v174 = validate212;
-const schema326 = {"type":"object","properties":{"id":{"$ref":"#/$defs/DeliveryId"},"webhook":{"$ref":"#/$defs/WebhookId"},"event_type":{"$ref":"#/$defs/WebhookEventType"},"attempt":{"type":"integer"},"status":{"type":"string","enum":["pending","succeeded","failed"]},"response_status":{"type":["integer","null"]},"duration_ms":{"type":["integer","null"]},"created_at":{"type":"string","format":"date-time"},"next_attempt_at":{"type":["string","null"],"format":"date-time"}},"required":["id","webhook","event_type","attempt","status","created_at"]};
+const schema327 = {"type":"object","properties":{"id":{"$ref":"#/$defs/DeliveryId"},"webhook":{"$ref":"#/$defs/WebhookId"},"event_type":{"$ref":"#/$defs/WebhookEventType"},"attempt":{"type":"integer"},"status":{"type":"string","enum":["pending","succeeded","failed"]},"response_status":{"type":["integer","null"]},"duration_ms":{"type":["integer","null"]},"created_at":{"type":"string","format":"date-time"},"next_attempt_at":{"type":["string","null"],"format":"date-time"}},"required":["id","webhook","event_type","attempt","status","created_at"]};
 
 function validate212(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -31249,7 +31291,7 @@ validate212.errors = [{instancePath:instancePath+"/event_type",schemaPath:"#/$de
 return false;
 }
 if(!((((((((((((((((((data2 === "workspace.member.joined") || (data2 === "workspace.member.left")) || (data2 === "workspace.member.role_changed")) || (data2 === "workspace.invite.created")) || (data2 === "workspace.invite.accepted")) || (data2 === "workspace.invite.revoked")) || (data2 === "session.created")) || (data2 === "session.started")) || (data2 === "session.ended")) || (data2 === "session.member.joined")) || (data2 === "session.member.left")) || (data2 === "agent.completed")) || (data2 === "billing.subscription.updated")) || (data2 === "billing.invoice.paid")) || (data2 === "billing.invoice.payment_failed")) || (data2 === "usage.threshold")) || (data2 === "api_key.created")) || (data2 === "api_key.revoked"))){
-validate212.errors = [{instancePath:instancePath+"/event_type",schemaPath:"#/$defs/WebhookEventType/enum",keyword:"enum",params:{allowedValues: schema304.enum},message:"must be equal to one of the allowed values"}];
+validate212.errors = [{instancePath:instancePath+"/event_type",schemaPath:"#/$defs/WebhookEventType/enum",keyword:"enum",params:{allowedValues: schema305.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs7 === errors;
@@ -31279,7 +31321,7 @@ validate212.errors = [{instancePath:instancePath+"/status",schemaPath:"#/propert
 return false;
 }
 if(!(((data4 === "pending") || (data4 === "succeeded")) || (data4 === "failed"))){
-validate212.errors = [{instancePath:instancePath+"/status",schemaPath:"#/properties/status/enum",keyword:"enum",params:{allowedValues: schema326.properties.status.enum},message:"must be equal to one of the allowed values"}];
+validate212.errors = [{instancePath:instancePath+"/status",schemaPath:"#/properties/status/enum",keyword:"enum",params:{allowedValues: schema327.properties.status.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs12 === errors;
@@ -31292,7 +31334,7 @@ if(data.response_status !== undefined){
 let data5 = data.response_status;
 const _errs14 = errors;
 if((!(((typeof data5 == "number") && (!(data5 % 1) && !isNaN(data5))) && (isFinite(data5)))) && (data5 !== null)){
-validate212.errors = [{instancePath:instancePath+"/response_status",schemaPath:"#/properties/response_status/type",keyword:"type",params:{type: schema326.properties.response_status.type},message:"must be integer,null"}];
+validate212.errors = [{instancePath:instancePath+"/response_status",schemaPath:"#/properties/response_status/type",keyword:"type",params:{type: schema327.properties.response_status.type},message:"must be integer,null"}];
 return false;
 }
 var valid0 = _errs14 === errors;
@@ -31305,7 +31347,7 @@ if(data.duration_ms !== undefined){
 let data6 = data.duration_ms;
 const _errs16 = errors;
 if((!(((typeof data6 == "number") && (!(data6 % 1) && !isNaN(data6))) && (isFinite(data6)))) && (data6 !== null)){
-validate212.errors = [{instancePath:instancePath+"/duration_ms",schemaPath:"#/properties/duration_ms/type",keyword:"type",params:{type: schema326.properties.duration_ms.type},message:"must be integer,null"}];
+validate212.errors = [{instancePath:instancePath+"/duration_ms",schemaPath:"#/properties/duration_ms/type",keyword:"type",params:{type: schema327.properties.duration_ms.type},message:"must be integer,null"}];
 return false;
 }
 var valid0 = _errs16 === errors;
@@ -31341,7 +31383,7 @@ if(data.next_attempt_at !== undefined){
 let data8 = data.next_attempt_at;
 const _errs20 = errors;
 if((typeof data8 !== "string") && (data8 !== null)){
-validate212.errors = [{instancePath:instancePath+"/next_attempt_at",schemaPath:"#/properties/next_attempt_at/type",keyword:"type",params:{type: schema326.properties.next_attempt_at.type},message:"must be string,null"}];
+validate212.errors = [{instancePath:instancePath+"/next_attempt_at",schemaPath:"#/properties/next_attempt_at/type",keyword:"type",params:{type: schema327.properties.next_attempt_at.type},message:"must be string,null"}];
 return false;
 }
 if(errors === _errs20){
@@ -31380,8 +31422,8 @@ return errors === 0;
 validate212.evaluated = {"props":{"id":true,"webhook":true,"event_type":true,"attempt":true,"status":true,"response_status":true,"duration_ms":true,"created_at":true,"next_attempt_at":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v175 = validate213;
-const schema330 = {"type":"object","properties":{"id":{"$ref":"#/$defs/DeliveryId"},"webhook":{"$ref":"#/$defs/WebhookId"},"event_type":{"$ref":"#/$defs/WebhookEventType"},"attempt":{"type":"integer"},"status":{"type":"string","enum":["pending","succeeded","failed"]},"response_status":{"type":["integer","null"]},"duration_ms":{"type":["integer","null"]},"created_at":{"type":"string","format":"date-time"},"next_attempt_at":{"type":["string","null"],"format":"date-time"}},"required":["id","webhook","event_type","attempt","status","created_at"]};
-const schema331 = {"type":"string","pattern":"^dlv_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a webhook delivery.","examples":["dlv_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
+const schema331 = {"type":"object","properties":{"id":{"$ref":"#/$defs/DeliveryId"},"webhook":{"$ref":"#/$defs/WebhookId"},"event_type":{"$ref":"#/$defs/WebhookEventType"},"attempt":{"type":"integer"},"status":{"type":"string","enum":["pending","succeeded","failed"]},"response_status":{"type":["integer","null"]},"duration_ms":{"type":["integer","null"]},"created_at":{"type":"string","format":"date-time"},"next_attempt_at":{"type":["string","null"],"format":"date-time"}},"required":["id","webhook","event_type","attempt","status","created_at"]};
+const schema332 = {"type":"string","pattern":"^dlv_[0-9A-HJKMNP-TV-Z]{26}$","maxLength":40,"description":"Prefixed ULID of a webhook delivery.","examples":["dlv_01JA3Z8K2M5N7P9Q0R1S2T3V4W"]};
 
 function validate213(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -31490,7 +31532,7 @@ validate213.errors = [{instancePath:instancePath+"/status",schemaPath:"#/propert
 return false;
 }
 if(!(((data4 === "pending") || (data4 === "succeeded")) || (data4 === "failed"))){
-validate213.errors = [{instancePath:instancePath+"/status",schemaPath:"#/properties/status/enum",keyword:"enum",params:{allowedValues: schema330.properties.status.enum},message:"must be equal to one of the allowed values"}];
+validate213.errors = [{instancePath:instancePath+"/status",schemaPath:"#/properties/status/enum",keyword:"enum",params:{allowedValues: schema331.properties.status.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs12 === errors;
@@ -31503,7 +31545,7 @@ if(data.response_status !== undefined){
 let data5 = data.response_status;
 const _errs14 = errors;
 if((!(((typeof data5 == "number") && (!(data5 % 1) && !isNaN(data5))) && (isFinite(data5)))) && (data5 !== null)){
-validate213.errors = [{instancePath:instancePath+"/response_status",schemaPath:"#/properties/response_status/type",keyword:"type",params:{type: schema330.properties.response_status.type},message:"must be integer,null"}];
+validate213.errors = [{instancePath:instancePath+"/response_status",schemaPath:"#/properties/response_status/type",keyword:"type",params:{type: schema331.properties.response_status.type},message:"must be integer,null"}];
 return false;
 }
 var valid0 = _errs14 === errors;
@@ -31516,7 +31558,7 @@ if(data.duration_ms !== undefined){
 let data6 = data.duration_ms;
 const _errs16 = errors;
 if((!(((typeof data6 == "number") && (!(data6 % 1) && !isNaN(data6))) && (isFinite(data6)))) && (data6 !== null)){
-validate213.errors = [{instancePath:instancePath+"/duration_ms",schemaPath:"#/properties/duration_ms/type",keyword:"type",params:{type: schema330.properties.duration_ms.type},message:"must be integer,null"}];
+validate213.errors = [{instancePath:instancePath+"/duration_ms",schemaPath:"#/properties/duration_ms/type",keyword:"type",params:{type: schema331.properties.duration_ms.type},message:"must be integer,null"}];
 return false;
 }
 var valid0 = _errs16 === errors;
@@ -31552,7 +31594,7 @@ if(data.next_attempt_at !== undefined){
 let data8 = data.next_attempt_at;
 const _errs20 = errors;
 if((typeof data8 !== "string") && (data8 !== null)){
-validate213.errors = [{instancePath:instancePath+"/next_attempt_at",schemaPath:"#/properties/next_attempt_at/type",keyword:"type",params:{type: schema330.properties.next_attempt_at.type},message:"must be string,null"}];
+validate213.errors = [{instancePath:instancePath+"/next_attempt_at",schemaPath:"#/properties/next_attempt_at/type",keyword:"type",params:{type: schema331.properties.next_attempt_at.type},message:"must be string,null"}];
 return false;
 }
 if(errors === _errs20){
@@ -31591,7 +31633,7 @@ return errors === 0;
 validate213.evaluated = {"props":{"id":true,"webhook":true,"event_type":true,"attempt":true,"status":true,"response_status":true,"duration_ms":true,"created_at":true,"next_attempt_at":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v176 = validate214;
-const schema334 = {"type":"object","properties":{"channel":{"type":"string","enum":["stable","beta","nightly"]},"version":{"type":"string"},"released_at":{"type":"string","format":"date-time"},"min_supported_version":{"type":"string"},"notes_url":{"type":"string","format":"uri"},"artifacts":{"type":"array","items":{"type":"object","properties":{"platform":{"type":"string","enum":["linux","macos","windows"]},"arch":{"type":"string","enum":["x64","arm64"]},"kind":{"type":"string"},"url":{"type":"string","format":"uri"},"sha256":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$","description":"Hash in <alg>:<hex> form"},"size":{"type":"integer"},"signature":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"Ed25519 signature (64 bytes), base64url"}},"required":["platform","arch","url","sha256","signature"]}}},"required":["channel","version","released_at","artifacts"],"description":"Defined inline; no contracts/schemas/release-manifest.schema.json existed when written."};
+const schema335 = {"type":"object","properties":{"channel":{"type":"string","enum":["stable","beta","nightly"]},"version":{"type":"string"},"released_at":{"type":"string","format":"date-time"},"min_supported_version":{"type":"string"},"notes_url":{"type":"string","format":"uri"},"artifacts":{"type":"array","items":{"type":"object","properties":{"platform":{"type":"string","enum":["linux","macos","windows"]},"arch":{"type":"string","enum":["x64","arm64"]},"kind":{"type":"string"},"url":{"type":"string","format":"uri"},"sha256":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$","description":"Hash in <alg>:<hex> form"},"size":{"type":"integer"},"signature":{"type":"string","pattern":"^[A-Za-z0-9_-]+$","description":"Ed25519 signature (64 bytes), base64url"}},"required":["platform","arch","url","sha256","signature"]}}},"required":["channel","version","released_at","artifacts"],"description":"Defined inline; no contracts/schemas/release-manifest.schema.json existed when written."};
 
 function validate214(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -31619,7 +31661,7 @@ validate214.errors = [{instancePath:instancePath+"/channel",schemaPath:"#/proper
 return false;
 }
 if(!(((data0 === "stable") || (data0 === "beta")) || (data0 === "nightly"))){
-validate214.errors = [{instancePath:instancePath+"/channel",schemaPath:"#/properties/channel/enum",keyword:"enum",params:{allowedValues: schema334.properties.channel.enum},message:"must be equal to one of the allowed values"}];
+validate214.errors = [{instancePath:instancePath+"/channel",schemaPath:"#/properties/channel/enum",keyword:"enum",params:{allowedValues: schema335.properties.channel.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs1 === errors;
@@ -31724,7 +31766,7 @@ validate214.errors = [{instancePath:instancePath+"/artifacts/" + i0+"/platform",
 return false;
 }
 if(!(((data7 === "linux") || (data7 === "macos")) || (data7 === "windows"))){
-validate214.errors = [{instancePath:instancePath+"/artifacts/" + i0+"/platform",schemaPath:"#/properties/artifacts/items/properties/platform/enum",keyword:"enum",params:{allowedValues: schema334.properties.artifacts.items.properties.platform.enum},message:"must be equal to one of the allowed values"}];
+validate214.errors = [{instancePath:instancePath+"/artifacts/" + i0+"/platform",schemaPath:"#/properties/artifacts/items/properties/platform/enum",keyword:"enum",params:{allowedValues: schema335.properties.artifacts.items.properties.platform.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid2 = _errs15 === errors;
@@ -31741,7 +31783,7 @@ validate214.errors = [{instancePath:instancePath+"/artifacts/" + i0+"/arch",sche
 return false;
 }
 if(!((data8 === "x64") || (data8 === "arm64"))){
-validate214.errors = [{instancePath:instancePath+"/artifacts/" + i0+"/arch",schemaPath:"#/properties/artifacts/items/properties/arch/enum",keyword:"enum",params:{allowedValues: schema334.properties.artifacts.items.properties.arch.enum},message:"must be equal to one of the allowed values"}];
+validate214.errors = [{instancePath:instancePath+"/artifacts/" + i0+"/arch",schemaPath:"#/properties/artifacts/items/properties/arch/enum",keyword:"enum",params:{allowedValues: schema335.properties.artifacts.items.properties.arch.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid2 = _errs17 === errors;
@@ -31790,7 +31832,7 @@ let data11 = data6.sha256;
 const _errs23 = errors;
 if(errors === _errs23){
 if(typeof data11 === "string"){
-if(!pattern189.test(data11)){
+if(!pattern190.test(data11)){
 validate214.errors = [{instancePath:instancePath+"/artifacts/" + i0+"/sha256",schemaPath:"#/properties/artifacts/items/properties/sha256/pattern",keyword:"pattern",params:{pattern: "^sha256:[0-9a-f]{64}$"},message:"must match pattern \""+"^sha256:[0-9a-f]{64}$"+"\""}];
 return false;
 }
@@ -31886,7 +31928,7 @@ return errors === 0;
 validate214.evaluated = {"props":{"channel":true,"version":true,"released_at":true,"min_supported_version":true,"notes_url":true,"artifacts":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v177 = validate215;
-const schema335 = {"type":"object","properties":{"flags":{"type":"object","additionalProperties":{"type":["boolean","string","number","object","null"]}},"rev":{"type":"integer"},"ttl_s":{"type":"integer"}},"required":["flags","rev","ttl_s"]};
+const schema336 = {"type":"object","properties":{"flags":{"type":"object","additionalProperties":{"type":["boolean","string","number","object","null"]}},"rev":{"type":"integer"},"ttl_s":{"type":"integer"}},"required":["flags","rev","ttl_s"]};
 
 function validate215(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -31915,7 +31957,7 @@ for(const key0 in data0){
 let data1 = data0[key0];
 const _errs4 = errors;
 if(((((typeof data1 !== "boolean") && (typeof data1 !== "string")) && (!((typeof data1 == "number") && (isFinite(data1))))) && (!(data1 && typeof data1 == "object" && !Array.isArray(data1)))) && (data1 !== null)){
-validate215.errors = [{instancePath:instancePath+"/flags/" + key0.replace(/~/g, "~0").replace(/\//g, "~1"),schemaPath:"#/properties/flags/additionalProperties/type",keyword:"type",params:{type: schema335.properties.flags.additionalProperties.type},message:"must be boolean,string,number,object,null"}];
+validate215.errors = [{instancePath:instancePath+"/flags/" + key0.replace(/~/g, "~0").replace(/\//g, "~1"),schemaPath:"#/properties/flags/additionalProperties/type",keyword:"type",params:{type: schema336.properties.flags.additionalProperties.type},message:"must be boolean,string,number,object,null"}];
 return false;
 }
 var valid1 = _errs4 === errors;
@@ -31975,7 +32017,7 @@ return errors === 0;
 validate215.evaluated = {"props":{"flags":true,"rev":true,"ttl_s":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v178 = validate216;
-const schema336 = {"type":"object","properties":{"status":{"type":"string","enum":["operational","degraded","partial_outage","major_outage"]},"updated_at":{"type":"string","format":"date-time"},"components":{"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"name":{"type":"string"},"status":{"type":"string","enum":["operational","degraded","partial_outage","major_outage"]}},"required":["id","name","status"]}},"incidents":{"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"title":{"type":"string"},"status":{"type":"string"},"started_at":{"type":"string","format":"date-time"},"updates":{"type":"array","items":{"type":"object","properties":{"at":{"type":"string","format":"date-time"},"text":{"type":"string"}},"required":["at","text"]}}},"required":["id","title","status","started_at"]}},"min_client_version":{"type":"string"},"contract_version":{"type":"string"},"deprecations":{"type":"array","items":{"type":"object","properties":{"what":{"type":"string"},"sunset":{"type":"string","format":"date"}},"required":["what"]}}},"required":["status","updated_at","components","incidents","min_client_version","contract_version"]};
+const schema337 = {"type":"object","properties":{"status":{"type":"string","enum":["operational","degraded","partial_outage","major_outage"]},"updated_at":{"type":"string","format":"date-time"},"components":{"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"name":{"type":"string"},"status":{"type":"string","enum":["operational","degraded","partial_outage","major_outage"]}},"required":["id","name","status"]}},"incidents":{"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"title":{"type":"string"},"status":{"type":"string"},"started_at":{"type":"string","format":"date-time"},"updates":{"type":"array","items":{"type":"object","properties":{"at":{"type":"string","format":"date-time"},"text":{"type":"string"}},"required":["at","text"]}}},"required":["id","title","status","started_at"]}},"min_client_version":{"type":"string"},"contract_version":{"type":"string"},"deprecations":{"type":"array","items":{"type":"object","properties":{"what":{"type":"string"},"sunset":{"type":"string","format":"date"}},"required":["what"]}}},"required":["status","updated_at","components","incidents","min_client_version","contract_version"]};
 const formats232 = require("ajv-formats/dist/formats").fullFormats.date;
 
 function validate216(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
@@ -32004,7 +32046,7 @@ validate216.errors = [{instancePath:instancePath+"/status",schemaPath:"#/propert
 return false;
 }
 if(!((((data0 === "operational") || (data0 === "degraded")) || (data0 === "partial_outage")) || (data0 === "major_outage"))){
-validate216.errors = [{instancePath:instancePath+"/status",schemaPath:"#/properties/status/enum",keyword:"enum",params:{allowedValues: schema336.properties.status.enum},message:"must be equal to one of the allowed values"}];
+validate216.errors = [{instancePath:instancePath+"/status",schemaPath:"#/properties/status/enum",keyword:"enum",params:{allowedValues: schema337.properties.status.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs1 === errors;
@@ -32086,7 +32128,7 @@ validate216.errors = [{instancePath:instancePath+"/components/" + i0+"/status",s
 return false;
 }
 if(!((((data6 === "operational") || (data6 === "degraded")) || (data6 === "partial_outage")) || (data6 === "major_outage"))){
-validate216.errors = [{instancePath:instancePath+"/components/" + i0+"/status",schemaPath:"#/properties/components/items/properties/status/enum",keyword:"enum",params:{allowedValues: schema336.properties.components.items.properties.status.enum},message:"must be equal to one of the allowed values"}];
+validate216.errors = [{instancePath:instancePath+"/components/" + i0+"/status",schemaPath:"#/properties/components/items/properties/status/enum",keyword:"enum",params:{allowedValues: schema337.properties.components.items.properties.status.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid2 = _errs13 === errors;
@@ -32420,7 +32462,7 @@ return errors === 0;
 validate216.evaluated = {"props":{"status":true,"updated_at":true,"components":true,"incidents":true,"min_client_version":true,"contract_version":true,"deprecations":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v179 = validate217;
-const schema337 = {"type":"object","properties":{"status":{"type":"string","enum":["ok","degraded"]},"checks":{"type":"object","additionalProperties":{"type":"string"}}},"required":["status"]};
+const schema338 = {"type":"object","properties":{"status":{"type":"string","enum":["ok","degraded"]},"checks":{"type":"object","additionalProperties":{"type":"string"}}},"required":["status"]};
 
 function validate217(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -32448,7 +32490,7 @@ validate217.errors = [{instancePath:instancePath+"/status",schemaPath:"#/propert
 return false;
 }
 if(!((data0 === "ok") || (data0 === "degraded"))){
-validate217.errors = [{instancePath:instancePath+"/status",schemaPath:"#/properties/status/enum",keyword:"enum",params:{allowedValues: schema337.properties.status.enum},message:"must be equal to one of the allowed values"}];
+validate217.errors = [{instancePath:instancePath+"/status",schemaPath:"#/properties/status/enum",keyword:"enum",params:{allowedValues: schema338.properties.status.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs1 === errors;
@@ -32498,7 +32540,7 @@ return errors === 0;
 validate217.evaluated = {"props":{"status":true,"checks":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v180 = validate218;
-const schema338 = {"type":"object","properties":{"keys":{"type":"array","items":{"type":"object","properties":{"kty":{"type":"string","enum":["OKP"]},"crv":{"type":"string","enum":["Ed25519"]},"kid":{"type":"string"},"use":{"type":"string","enum":["sig"]},"alg":{"type":"string","enum":["EdDSA"]},"x":{"type":"string","pattern":"^[A-Za-z0-9_-]{43}$","description":"32-byte raw key, base64url without padding"}},"required":["kty","crv","kid","x"]}}},"required":["keys"]};
+const schema339 = {"type":"object","properties":{"keys":{"type":"array","items":{"type":"object","properties":{"kty":{"type":"string","enum":["OKP"]},"crv":{"type":"string","enum":["Ed25519"]},"kid":{"type":"string"},"use":{"type":"string","enum":["sig"]},"alg":{"type":"string","enum":["EdDSA"]},"x":{"type":"string","pattern":"^[A-Za-z0-9_-]{43}$","description":"32-byte raw key, base64url without padding"}},"required":["kty","crv","kid","x"]}}},"required":["keys"]};
 
 function validate218(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -32544,7 +32586,7 @@ validate218.errors = [{instancePath:instancePath+"/keys/" + i0+"/kty",schemaPath
 return false;
 }
 if(!(data2 === "OKP")){
-validate218.errors = [{instancePath:instancePath+"/keys/" + i0+"/kty",schemaPath:"#/properties/keys/items/properties/kty/enum",keyword:"enum",params:{allowedValues: schema338.properties.keys.items.properties.kty.enum},message:"must be equal to one of the allowed values"}];
+validate218.errors = [{instancePath:instancePath+"/keys/" + i0+"/kty",schemaPath:"#/properties/keys/items/properties/kty/enum",keyword:"enum",params:{allowedValues: schema339.properties.keys.items.properties.kty.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid2 = _errs5 === errors;
@@ -32561,7 +32603,7 @@ validate218.errors = [{instancePath:instancePath+"/keys/" + i0+"/crv",schemaPath
 return false;
 }
 if(!(data3 === "Ed25519")){
-validate218.errors = [{instancePath:instancePath+"/keys/" + i0+"/crv",schemaPath:"#/properties/keys/items/properties/crv/enum",keyword:"enum",params:{allowedValues: schema338.properties.keys.items.properties.crv.enum},message:"must be equal to one of the allowed values"}];
+validate218.errors = [{instancePath:instancePath+"/keys/" + i0+"/crv",schemaPath:"#/properties/keys/items/properties/crv/enum",keyword:"enum",params:{allowedValues: schema339.properties.keys.items.properties.crv.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid2 = _errs7 === errors;
@@ -32590,7 +32632,7 @@ validate218.errors = [{instancePath:instancePath+"/keys/" + i0+"/use",schemaPath
 return false;
 }
 if(!(data5 === "sig")){
-validate218.errors = [{instancePath:instancePath+"/keys/" + i0+"/use",schemaPath:"#/properties/keys/items/properties/use/enum",keyword:"enum",params:{allowedValues: schema338.properties.keys.items.properties.use.enum},message:"must be equal to one of the allowed values"}];
+validate218.errors = [{instancePath:instancePath+"/keys/" + i0+"/use",schemaPath:"#/properties/keys/items/properties/use/enum",keyword:"enum",params:{allowedValues: schema339.properties.keys.items.properties.use.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid2 = _errs11 === errors;
@@ -32607,7 +32649,7 @@ validate218.errors = [{instancePath:instancePath+"/keys/" + i0+"/alg",schemaPath
 return false;
 }
 if(!(data6 === "EdDSA")){
-validate218.errors = [{instancePath:instancePath+"/keys/" + i0+"/alg",schemaPath:"#/properties/keys/items/properties/alg/enum",keyword:"enum",params:{allowedValues: schema338.properties.keys.items.properties.alg.enum},message:"must be equal to one of the allowed values"}];
+validate218.errors = [{instancePath:instancePath+"/keys/" + i0+"/alg",schemaPath:"#/properties/keys/items/properties/alg/enum",keyword:"enum",params:{allowedValues: schema339.properties.keys.items.properties.alg.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid2 = _errs13 === errors;
@@ -32673,7 +32715,7 @@ return errors === 0;
 validate218.evaluated = {"props":{"keys":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v181 = validate219;
-const schema339 = {"type":"object","properties":{"type":{"type":"string","enum":["app.start","app.exit","command.run","session.created","session.joined","agent.state_change","feature.used","error.shown","perf.startup","perf.frame","update.result"]},"at":{"type":"string","format":"date-time"},"props":{"type":"object","description":"Allowed props only: enums, counts, durations; never content, paths, names"}},"required":["type","at"]};
+const schema340 = {"type":"object","properties":{"type":{"type":"string","enum":["app.start","app.exit","command.run","session.created","session.joined","agent.state_change","feature.used","error.shown","perf.startup","perf.frame","update.result"]},"at":{"type":"string","format":"date-time"},"props":{"type":"object","description":"Allowed props only: enums, counts, durations; never content, paths, names"}},"required":["type","at"]};
 
 function validate219(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -32701,7 +32743,7 @@ validate219.errors = [{instancePath:instancePath+"/type",schemaPath:"#/propertie
 return false;
 }
 if(!(((((((((((data0 === "app.start") || (data0 === "app.exit")) || (data0 === "command.run")) || (data0 === "session.created")) || (data0 === "session.joined")) || (data0 === "agent.state_change")) || (data0 === "feature.used")) || (data0 === "error.shown")) || (data0 === "perf.startup")) || (data0 === "perf.frame")) || (data0 === "update.result"))){
-validate219.errors = [{instancePath:instancePath+"/type",schemaPath:"#/properties/type/enum",keyword:"enum",params:{allowedValues: schema339.properties.type.enum},message:"must be equal to one of the allowed values"}];
+validate219.errors = [{instancePath:instancePath+"/type",schemaPath:"#/properties/type/enum",keyword:"enum",params:{allowedValues: schema340.properties.type.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs1 === errors;
@@ -32760,7 +32802,7 @@ return errors === 0;
 validate219.evaluated = {"props":{"type":true,"at":true,"props":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v182 = validate220;
-const schema340 = {"type":"object","properties":{"install_id":{"type":"string","pattern":"^[0-9A-HJKMNP-TV-Z]{26}$"},"app_version":{"type":"string"},"platform":{"type":"string"},"events":{"type":"array","items":{"$ref":"#/$defs/TelemetryEvent"},"minItems":1,"maxItems":100}},"required":["install_id","events"],"description":"<= 64 KiB. Defined inline; no contracts/schemas/telemetry.schema.json existed when written."};
+const schema341 = {"type":"object","properties":{"install_id":{"type":"string","pattern":"^[0-9A-HJKMNP-TV-Z]{26}$"},"app_version":{"type":"string"},"platform":{"type":"string"},"events":{"type":"array","items":{"$ref":"#/$defs/TelemetryEvent"},"minItems":1,"maxItems":100}},"required":["install_id","events"],"description":"<= 64 KiB. Defined inline; no contracts/schemas/telemetry.schema.json existed when written."};
 
 function validate220(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -32862,7 +32904,7 @@ validate220.errors = [{instancePath:instancePath+"/events/" + i0+"/type",schemaP
 return false;
 }
 if(!(((((((((((data5 === "app.start") || (data5 === "app.exit")) || (data5 === "command.run")) || (data5 === "session.created")) || (data5 === "session.joined")) || (data5 === "agent.state_change")) || (data5 === "feature.used")) || (data5 === "error.shown")) || (data5 === "perf.startup")) || (data5 === "perf.frame")) || (data5 === "update.result"))){
-validate220.errors = [{instancePath:instancePath+"/events/" + i0+"/type",schemaPath:"#/$defs/TelemetryEvent/properties/type/enum",keyword:"enum",params:{allowedValues: schema339.properties.type.enum},message:"must be equal to one of the allowed values"}];
+validate220.errors = [{instancePath:instancePath+"/events/" + i0+"/type",schemaPath:"#/$defs/TelemetryEvent/properties/type/enum",keyword:"enum",params:{allowedValues: schema340.properties.type.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid3 = _errs12 === errors;
@@ -32949,7 +32991,7 @@ return errors === 0;
 validate220.evaluated = {"props":{"install_id":true,"app_version":true,"platform":true,"events":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v183 = validate221;
-const schema342 = {"type":"object","properties":{"client_id":{"type":"string","enum":["centcom-cli","centcom-web","centcom-tui"]},"scope":{"type":"string","description":"Space-separated scopes"},"device_name":{"type":"string","minLength":1,"maxLength":80},"device_pubkeys":{"type":"object","properties":{"x25519":{"type":"string","pattern":"^[A-Za-z0-9_-]{43}$","description":"32-byte raw key, base64url without padding"},"ed25519":{"type":"string","pattern":"^[A-Za-z0-9_-]{43}$","description":"32-byte raw key, base64url without padding"}},"required":["x25519","ed25519"]}},"required":["client_id","device_name","device_pubkeys"]};
+const schema343 = {"type":"object","properties":{"client_id":{"type":"string","enum":["centcom-cli","centcom-web","centcom-tui"]},"scope":{"type":"string","description":"Space-separated scopes"},"device_name":{"type":"string","minLength":1,"maxLength":80},"device_pubkeys":{"type":"object","properties":{"x25519":{"type":"string","pattern":"^[A-Za-z0-9_-]{43}$","description":"32-byte raw key, base64url without padding"},"ed25519":{"type":"string","pattern":"^[A-Za-z0-9_-]{43}$","description":"32-byte raw key, base64url without padding"}},"required":["x25519","ed25519"]}},"required":["client_id","device_name","device_pubkeys"]};
 
 function validate221(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -32977,7 +33019,7 @@ validate221.errors = [{instancePath:instancePath+"/client_id",schemaPath:"#/prop
 return false;
 }
 if(!(((data0 === "centcom-cli") || (data0 === "centcom-web")) || (data0 === "centcom-tui"))){
-validate221.errors = [{instancePath:instancePath+"/client_id",schemaPath:"#/properties/client_id/enum",keyword:"enum",params:{allowedValues: schema342.properties.client_id.enum},message:"must be equal to one of the allowed values"}];
+validate221.errors = [{instancePath:instancePath+"/client_id",schemaPath:"#/properties/client_id/enum",keyword:"enum",params:{allowedValues: schema343.properties.client_id.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs1 === errors;
@@ -33106,8 +33148,8 @@ return errors === 0;
 validate221.evaluated = {"props":{"client_id":true,"scope":true,"device_name":true,"device_pubkeys":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v184 = validate222;
-const schema343 = {"type":"object","properties":{"device_code":{"type":"string"},"user_code":{"type":"string","pattern":"^[A-Z2-9]{4}-[A-Z2-9]{4}$"},"verification_uri":{"type":"string","format":"uri"},"verification_uri_complete":{"type":"string","format":"uri"},"expires_in":{"type":"integer"},"interval":{"type":"integer"}},"required":["device_code","user_code","verification_uri","verification_uri_complete","expires_in","interval"]};
-const pattern227 = new RegExp("^[A-Z2-9]{4}-[A-Z2-9]{4}$", "u");
+const schema344 = {"type":"object","properties":{"device_code":{"type":"string"},"user_code":{"type":"string","pattern":"^[A-Z2-9]{4}-[A-Z2-9]{4}$"},"verification_uri":{"type":"string","format":"uri"},"verification_uri_complete":{"type":"string","format":"uri"},"expires_in":{"type":"integer"},"interval":{"type":"integer"}},"required":["device_code","user_code","verification_uri","verification_uri_complete","expires_in","interval"]};
+const pattern228 = new RegExp("^[A-Z2-9]{4}-[A-Z2-9]{4}$", "u");
 
 function validate222(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -33144,7 +33186,7 @@ let data1 = data.user_code;
 const _errs3 = errors;
 if(errors === _errs3){
 if(typeof data1 === "string"){
-if(!pattern227.test(data1)){
+if(!pattern228.test(data1)){
 validate222.errors = [{instancePath:instancePath+"/user_code",schemaPath:"#/properties/user_code/pattern",keyword:"pattern",params:{pattern: "^[A-Z2-9]{4}-[A-Z2-9]{4}$"},message:"must match pattern \""+"^[A-Z2-9]{4}-[A-Z2-9]{4}$"+"\""}];
 return false;
 }
@@ -33249,7 +33291,7 @@ return errors === 0;
 validate222.evaluated = {"props":{"device_code":true,"user_code":true,"verification_uri":true,"verification_uri_complete":true,"expires_in":true,"interval":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v185 = validate223;
-const schema344 = {"oneOf":[{"type":"object","properties":{"grant_type":{"const":"urn:ietf:params:oauth:grant-type:device_code"},"device_code":{"type":"string"},"client_id":{"type":"string"}},"required":["grant_type","device_code","client_id"]},{"type":"object","properties":{"grant_type":{"const":"authorization_code"},"code":{"type":"string"},"code_verifier":{"type":"string","minLength":43,"maxLength":128},"redirect_uri":{"type":"string"},"client_id":{"type":"string"}},"required":["grant_type","code","code_verifier","redirect_uri","client_id"]},{"type":"object","properties":{"grant_type":{"const":"refresh_token"},"refresh_token":{"type":"string"},"client_id":{"type":"string"},"scope":{"type":"string"}},"required":["grant_type","refresh_token","client_id"]}],"discriminator":{"propertyName":"grant_type"},"description":"Sent as application/json or application/x-www-form-urlencoded. Web clients must send X-Centcom-Client: web."};
+const schema345 = {"oneOf":[{"type":"object","properties":{"grant_type":{"const":"urn:ietf:params:oauth:grant-type:device_code"},"device_code":{"type":"string"},"client_id":{"type":"string"}},"required":["grant_type","device_code","client_id"]},{"type":"object","properties":{"grant_type":{"const":"authorization_code"},"code":{"type":"string"},"code_verifier":{"type":"string","minLength":43,"maxLength":128},"redirect_uri":{"type":"string"},"client_id":{"type":"string"}},"required":["grant_type","code","code_verifier","redirect_uri","client_id"]},{"type":"object","properties":{"grant_type":{"const":"refresh_token"},"refresh_token":{"type":"string"},"client_id":{"type":"string"},"scope":{"type":"string"}},"required":["grant_type","refresh_token","client_id"]}],"discriminator":{"propertyName":"grant_type"},"description":"Sent as application/json or application/x-www-form-urlencoded. Web clients must send X-Centcom-Client: web."};
 
 function validate223(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -33521,7 +33563,7 @@ return errors === 0;
 validate223.evaluated = {"dynamicProps":true,"dynamicItems":false};
 
 export const v186 = validate224;
-const schema345 = {"type":"object","properties":{"access_token":{"type":"string","description":"EdDSA JWT, 15 min"},"token_type":{"type":"string","enum":["Bearer"]},"expires_in":{"type":"integer"},"refresh_token":{"type":"string","description":"Opaque rotating token"},"scope":{"type":"string"},"device":{"$ref":"#/$defs/DeviceId"},"user":{"$ref":"#/$defs/UserId"}},"required":["access_token","token_type","expires_in","refresh_token","scope"]};
+const schema346 = {"type":"object","properties":{"access_token":{"type":"string","description":"EdDSA JWT, 15 min"},"token_type":{"type":"string","enum":["Bearer"]},"expires_in":{"type":"integer"},"refresh_token":{"type":"string","description":"Opaque rotating token"},"scope":{"type":"string"},"device":{"$ref":"#/$defs/DeviceId"},"user":{"$ref":"#/$defs/UserId"}},"required":["access_token","token_type","expires_in","refresh_token","scope"]};
 
 function validate224(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -33561,7 +33603,7 @@ validate224.errors = [{instancePath:instancePath+"/token_type",schemaPath:"#/pro
 return false;
 }
 if(!(data1 === "Bearer")){
-validate224.errors = [{instancePath:instancePath+"/token_type",schemaPath:"#/properties/token_type/enum",keyword:"enum",params:{allowedValues: schema345.properties.token_type.enum},message:"must be equal to one of the allowed values"}];
+validate224.errors = [{instancePath:instancePath+"/token_type",schemaPath:"#/properties/token_type/enum",keyword:"enum",params:{allowedValues: schema346.properties.token_type.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs3 === errors;
@@ -33681,7 +33723,7 @@ return errors === 0;
 validate224.evaluated = {"props":{"access_token":true,"token_type":true,"expires_in":true,"refresh_token":true,"scope":true,"device":true,"user":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v187 = validate225;
-const schema348 = {"type":"object","properties":{"token":{"type":"string","description":"Refresh token to revoke"},"token_type_hint":{"type":"string","enum":["refresh_token"]},"device":{"$ref":"#/$defs/DeviceId"}},"description":"Provide token or device."};
+const schema349 = {"type":"object","properties":{"token":{"type":"string","description":"Refresh token to revoke"},"token_type_hint":{"type":"string","enum":["refresh_token"]},"device":{"$ref":"#/$defs/DeviceId"}},"description":"Provide token or device."};
 
 function validate225(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -33715,7 +33757,7 @@ validate225.errors = [{instancePath:instancePath+"/token_type_hint",schemaPath:"
 return false;
 }
 if(!(data1 === "refresh_token")){
-validate225.errors = [{instancePath:instancePath+"/token_type_hint",schemaPath:"#/properties/token_type_hint/enum",keyword:"enum",params:{allowedValues: schema348.properties.token_type_hint.enum},message:"must be equal to one of the allowed values"}];
+validate225.errors = [{instancePath:instancePath+"/token_type_hint",schemaPath:"#/properties/token_type_hint/enum",keyword:"enum",params:{allowedValues: schema349.properties.token_type_hint.enum},message:"must be equal to one of the allowed values"}];
 return false;
 }
 var valid0 = _errs3 === errors;
@@ -33765,7 +33807,7 @@ return errors === 0;
 validate225.evaluated = {"props":{"token":true,"token_type_hint":true,"device":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v188 = validate226;
-const schema350 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Workspace"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
+const schema351 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Workspace"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate226(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -33819,7 +33861,7 @@ if(data.next_cursor !== undefined){
 let data2 = data.next_cursor;
 const _errs4 = errors;
 if((typeof data2 !== "string") && (data2 !== null)){
-validate226.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema350.properties.next_cursor.type},message:"must be string,null"}];
+validate226.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema351.properties.next_cursor.type},message:"must be string,null"}];
 return false;
 }
 var valid0 = _errs4 === errors;
@@ -33854,7 +33896,7 @@ return errors === 0;
 validate226.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v189 = validate228;
-const schema351 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Workspace"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
+const schema352 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Workspace"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate228(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -33908,7 +33950,7 @@ if(data.next_cursor !== undefined){
 let data2 = data.next_cursor;
 const _errs4 = errors;
 if((typeof data2 !== "string") && (data2 !== null)){
-validate228.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema351.properties.next_cursor.type},message:"must be string,null"}];
+validate228.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema352.properties.next_cursor.type},message:"must be string,null"}];
 return false;
 }
 var valid0 = _errs4 === errors;
@@ -33943,7 +33985,7 @@ return errors === 0;
 validate228.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v190 = validate230;
-const schema352 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Member"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
+const schema353 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Member"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate230(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -33997,7 +34039,7 @@ if(data.next_cursor !== undefined){
 let data2 = data.next_cursor;
 const _errs4 = errors;
 if((typeof data2 !== "string") && (data2 !== null)){
-validate230.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema352.properties.next_cursor.type},message:"must be string,null"}];
+validate230.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema353.properties.next_cursor.type},message:"must be string,null"}];
 return false;
 }
 var valid0 = _errs4 === errors;
@@ -34032,7 +34074,7 @@ return errors === 0;
 validate230.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v191 = validate232;
-const schema353 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Member"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
+const schema354 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Member"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate232(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -34086,7 +34128,7 @@ if(data.next_cursor !== undefined){
 let data2 = data.next_cursor;
 const _errs4 = errors;
 if((typeof data2 !== "string") && (data2 !== null)){
-validate232.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema353.properties.next_cursor.type},message:"must be string,null"}];
+validate232.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema354.properties.next_cursor.type},message:"must be string,null"}];
 return false;
 }
 var valid0 = _errs4 === errors;
@@ -34121,7 +34163,7 @@ return errors === 0;
 validate232.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v192 = validate234;
-const schema354 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Invite"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
+const schema355 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Invite"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate234(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -34175,7 +34217,7 @@ if(data.next_cursor !== undefined){
 let data2 = data.next_cursor;
 const _errs4 = errors;
 if((typeof data2 !== "string") && (data2 !== null)){
-validate234.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema354.properties.next_cursor.type},message:"must be string,null"}];
+validate234.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema355.properties.next_cursor.type},message:"must be string,null"}];
 return false;
 }
 var valid0 = _errs4 === errors;
@@ -34210,7 +34252,7 @@ return errors === 0;
 validate234.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v193 = validate236;
-const schema355 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Project"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
+const schema356 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Project"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate236(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -34264,7 +34306,7 @@ if(data.next_cursor !== undefined){
 let data2 = data.next_cursor;
 const _errs4 = errors;
 if((typeof data2 !== "string") && (data2 !== null)){
-validate236.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema355.properties.next_cursor.type},message:"must be string,null"}];
+validate236.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema356.properties.next_cursor.type},message:"must be string,null"}];
 return false;
 }
 var valid0 = _errs4 === errors;
@@ -34299,7 +34341,7 @@ return errors === 0;
 validate236.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v194 = validate238;
-const schema356 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Session"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
+const schema357 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Session"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate238(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -34353,7 +34395,7 @@ if(data.next_cursor !== undefined){
 let data2 = data.next_cursor;
 const _errs4 = errors;
 if((typeof data2 !== "string") && (data2 !== null)){
-validate238.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema356.properties.next_cursor.type},message:"must be string,null"}];
+validate238.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema357.properties.next_cursor.type},message:"must be string,null"}];
 return false;
 }
 var valid0 = _errs4 === errors;
@@ -34388,7 +34430,7 @@ return errors === 0;
 validate238.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v195 = validate240;
-const schema357 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/SessionMember"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
+const schema358 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/SessionMember"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate240(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -34442,7 +34484,7 @@ if(data.next_cursor !== undefined){
 let data2 = data.next_cursor;
 const _errs4 = errors;
 if((typeof data2 !== "string") && (data2 !== null)){
-validate240.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema357.properties.next_cursor.type},message:"must be string,null"}];
+validate240.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema358.properties.next_cursor.type},message:"must be string,null"}];
 return false;
 }
 var valid0 = _errs4 === errors;
@@ -34477,7 +34519,7 @@ return errors === 0;
 validate240.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v196 = validate242;
-const schema358 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Device"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
+const schema359 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Device"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate242(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -34531,7 +34573,7 @@ if(data.next_cursor !== undefined){
 let data2 = data.next_cursor;
 const _errs4 = errors;
 if((typeof data2 !== "string") && (data2 !== null)){
-validate242.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema358.properties.next_cursor.type},message:"must be string,null"}];
+validate242.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema359.properties.next_cursor.type},message:"must be string,null"}];
 return false;
 }
 var valid0 = _errs4 === errors;
@@ -34566,7 +34608,7 @@ return errors === 0;
 validate242.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v197 = validate244;
-const schema359 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/ApiKey"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
+const schema360 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/ApiKey"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate244(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -34620,7 +34662,7 @@ if(data.next_cursor !== undefined){
 let data2 = data.next_cursor;
 const _errs4 = errors;
 if((typeof data2 !== "string") && (data2 !== null)){
-validate244.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema359.properties.next_cursor.type},message:"must be string,null"}];
+validate244.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema360.properties.next_cursor.type},message:"must be string,null"}];
 return false;
 }
 var valid0 = _errs4 === errors;
@@ -34655,7 +34697,7 @@ return errors === 0;
 validate244.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v198 = validate246;
-const schema360 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Invoice"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
+const schema361 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Invoice"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate246(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -34709,7 +34751,7 @@ if(data.next_cursor !== undefined){
 let data2 = data.next_cursor;
 const _errs4 = errors;
 if((typeof data2 !== "string") && (data2 !== null)){
-validate246.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema360.properties.next_cursor.type},message:"must be string,null"}];
+validate246.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema361.properties.next_cursor.type},message:"must be string,null"}];
 return false;
 }
 var valid0 = _errs4 === errors;
@@ -34744,7 +34786,7 @@ return errors === 0;
 validate246.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v199 = validate248;
-const schema361 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/AuditEvent"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
+const schema362 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/AuditEvent"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate248(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -34798,7 +34840,7 @@ if(data.next_cursor !== undefined){
 let data2 = data.next_cursor;
 const _errs4 = errors;
 if((typeof data2 !== "string") && (data2 !== null)){
-validate248.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema361.properties.next_cursor.type},message:"must be string,null"}];
+validate248.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema362.properties.next_cursor.type},message:"must be string,null"}];
 return false;
 }
 var valid0 = _errs4 === errors;
@@ -34833,7 +34875,7 @@ return errors === 0;
 validate248.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v200 = validate250;
-const schema362 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Notification"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
+const schema363 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Notification"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate250(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -34887,7 +34929,7 @@ if(data.next_cursor !== undefined){
 let data2 = data.next_cursor;
 const _errs4 = errors;
 if((typeof data2 !== "string") && (data2 !== null)){
-validate250.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema362.properties.next_cursor.type},message:"must be string,null"}];
+validate250.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema363.properties.next_cursor.type},message:"must be string,null"}];
 return false;
 }
 var valid0 = _errs4 === errors;
@@ -34922,7 +34964,7 @@ return errors === 0;
 validate250.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v201 = validate252;
-const schema363 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Webhook"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
+const schema364 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Webhook"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate252(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -34976,7 +35018,7 @@ if(data.next_cursor !== undefined){
 let data2 = data.next_cursor;
 const _errs4 = errors;
 if((typeof data2 !== "string") && (data2 !== null)){
-validate252.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema363.properties.next_cursor.type},message:"must be string,null"}];
+validate252.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema364.properties.next_cursor.type},message:"must be string,null"}];
 return false;
 }
 var valid0 = _errs4 === errors;
@@ -35011,7 +35053,7 @@ return errors === 0;
 validate252.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v202 = validate254;
-const schema364 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Webhook"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
+const schema365 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/Webhook"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate254(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -35065,7 +35107,7 @@ if(data.next_cursor !== undefined){
 let data2 = data.next_cursor;
 const _errs4 = errors;
 if((typeof data2 !== "string") && (data2 !== null)){
-validate254.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema364.properties.next_cursor.type},message:"must be string,null"}];
+validate254.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema365.properties.next_cursor.type},message:"must be string,null"}];
 return false;
 }
 var valid0 = _errs4 === errors;
@@ -35100,7 +35142,7 @@ return errors === 0;
 validate254.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v203 = validate256;
-const schema365 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/WebhookDelivery"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
+const schema366 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/WebhookDelivery"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate256(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -35154,7 +35196,7 @@ if(data.next_cursor !== undefined){
 let data2 = data.next_cursor;
 const _errs4 = errors;
 if((typeof data2 !== "string") && (data2 !== null)){
-validate256.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema365.properties.next_cursor.type},message:"must be string,null"}];
+validate256.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema366.properties.next_cursor.type},message:"must be string,null"}];
 return false;
 }
 var valid0 = _errs4 === errors;
@@ -35189,7 +35231,7 @@ return errors === 0;
 validate256.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
 
 export const v204 = validate258;
-const schema366 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/WebhookDelivery"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
+const schema367 = {"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/$defs/WebhookDelivery"}},"next_cursor":{"type":["string","null"],"description":"Opaque cursor, null on the last page"},"has_more":{"type":"boolean"}},"required":["data","next_cursor","has_more"]};
 
 function validate258(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
 let vErrors = null;
@@ -35243,7 +35285,7 @@ if(data.next_cursor !== undefined){
 let data2 = data.next_cursor;
 const _errs4 = errors;
 if((typeof data2 !== "string") && (data2 !== null)){
-validate258.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema366.properties.next_cursor.type},message:"must be string,null"}];
+validate258.errors = [{instancePath:instancePath+"/next_cursor",schemaPath:"#/properties/next_cursor/type",keyword:"type",params:{type: schema367.properties.next_cursor.type},message:"must be string,null"}];
 return false;
 }
 var valid0 = _errs4 === errors;
@@ -35276,6 +35318,226 @@ validate258.errors = vErrors;
 return errors === 0;
 }
 validate258.evaluated = {"props":{"data":true,"next_cursor":true,"has_more":true},"dynamicProps":false,"dynamicItems":false};
+
+export const v205 = validate260;
+const schema368 = {"type":"object","properties":{"email":{"type":"string","format":"email","maxLength":254,"description":"Omit to create a link-only invite"},"role":{"type":"string","enum":["editor","viewer"],"default":"editor"},"expires_in_s":{"type":"integer","minimum":60,"maximum":604800,"default":86400},"share_history":{"type":"boolean"}}};
+
+function validate260(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
+let vErrors = null;
+let errors = 0;
+const evaluated0 = validate260.evaluated;
+if(evaluated0.dynamicProps){
+evaluated0.props = undefined;
+}
+if(evaluated0.dynamicItems){
+evaluated0.items = undefined;
+}
+if(errors === 0){
+if(data && typeof data == "object" && !Array.isArray(data)){
+if(data.email !== undefined){
+let data0 = data.email;
+const _errs1 = errors;
+if(errors === _errs1){
+if(errors === _errs1){
+if(typeof data0 === "string"){
+if(func1(data0) > 254){
+validate260.errors = [{instancePath:instancePath+"/email",schemaPath:"#/properties/email/maxLength",keyword:"maxLength",params:{limit: 254},message:"must NOT have more than 254 characters"}];
+return false;
+}
+else {
+if(!(formats46.test(data0))){
+validate260.errors = [{instancePath:instancePath+"/email",schemaPath:"#/properties/email/format",keyword:"format",params:{format: "email"},message:"must match format \""+"email"+"\""}];
+return false;
+}
+}
+}
+else {
+validate260.errors = [{instancePath:instancePath+"/email",schemaPath:"#/properties/email/type",keyword:"type",params:{type: "string"},message:"must be string"}];
+return false;
+}
+}
+}
+var valid0 = _errs1 === errors;
+}
+else {
+var valid0 = true;
+}
+if(valid0){
+if(data.role !== undefined){
+let data1 = data.role;
+const _errs3 = errors;
+if(typeof data1 !== "string"){
+validate260.errors = [{instancePath:instancePath+"/role",schemaPath:"#/properties/role/type",keyword:"type",params:{type: "string"},message:"must be string"}];
+return false;
+}
+if(!((data1 === "editor") || (data1 === "viewer"))){
+validate260.errors = [{instancePath:instancePath+"/role",schemaPath:"#/properties/role/enum",keyword:"enum",params:{allowedValues: schema368.properties.role.enum},message:"must be equal to one of the allowed values"}];
+return false;
+}
+var valid0 = _errs3 === errors;
+}
+else {
+var valid0 = true;
+}
+if(valid0){
+if(data.expires_in_s !== undefined){
+let data2 = data.expires_in_s;
+const _errs5 = errors;
+if(!(((typeof data2 == "number") && (!(data2 % 1) && !isNaN(data2))) && (isFinite(data2)))){
+validate260.errors = [{instancePath:instancePath+"/expires_in_s",schemaPath:"#/properties/expires_in_s/type",keyword:"type",params:{type: "integer"},message:"must be integer"}];
+return false;
+}
+if(errors === _errs5){
+if((typeof data2 == "number") && (isFinite(data2))){
+if(data2 > 604800 || isNaN(data2)){
+validate260.errors = [{instancePath:instancePath+"/expires_in_s",schemaPath:"#/properties/expires_in_s/maximum",keyword:"maximum",params:{comparison: "<=", limit: 604800},message:"must be <= 604800"}];
+return false;
+}
+else {
+if(data2 < 60 || isNaN(data2)){
+validate260.errors = [{instancePath:instancePath+"/expires_in_s",schemaPath:"#/properties/expires_in_s/minimum",keyword:"minimum",params:{comparison: ">=", limit: 60},message:"must be >= 60"}];
+return false;
+}
+}
+}
+}
+var valid0 = _errs5 === errors;
+}
+else {
+var valid0 = true;
+}
+if(valid0){
+if(data.share_history !== undefined){
+const _errs7 = errors;
+if(typeof data.share_history !== "boolean"){
+validate260.errors = [{instancePath:instancePath+"/share_history",schemaPath:"#/properties/share_history/type",keyword:"type",params:{type: "boolean"},message:"must be boolean"}];
+return false;
+}
+var valid0 = _errs7 === errors;
+}
+else {
+var valid0 = true;
+}
+}
+}
+}
+}
+else {
+validate260.errors = [{instancePath,schemaPath:"#/type",keyword:"type",params:{type: "object"},message:"must be object"}];
+return false;
+}
+}
+validate260.errors = vErrors;
+return errors === 0;
+}
+validate260.evaluated = {"props":{"email":true,"role":true,"expires_in_s":true,"share_history":true},"dynamicProps":false,"dynamicItems":false};
+
+export const v206 = validate261;
+const schema369 = {"type":"object","properties":{"session":{"$ref":"#/$defs/SessionId"},"role":{"type":"string","enum":["editor","viewer"]},"workspace":{"$ref":"#/$defs/WorkspaceId"}},"required":["session","role","workspace"],"description":"Accepting a session invite creates no membership and uses no seat: it records the right to join that one session."};
+
+function validate261(data, {instancePath="", parentData, parentDataProperty, rootData=data, dynamicAnchors={}}={}){
+let vErrors = null;
+let errors = 0;
+const evaluated0 = validate261.evaluated;
+if(evaluated0.dynamicProps){
+evaluated0.props = undefined;
+}
+if(evaluated0.dynamicItems){
+evaluated0.items = undefined;
+}
+if(errors === 0){
+if(data && typeof data == "object" && !Array.isArray(data)){
+let missing0;
+if((((data.session === undefined) && (missing0 = "session")) || ((data.role === undefined) && (missing0 = "role"))) || ((data.workspace === undefined) && (missing0 = "workspace"))){
+validate261.errors = [{instancePath,schemaPath:"#/required",keyword:"required",params:{missingProperty: missing0},message:"must have required property '"+missing0+"'"}];
+return false;
+}
+else {
+if(data.session !== undefined){
+let data0 = data.session;
+const _errs1 = errors;
+const _errs2 = errors;
+if(errors === _errs2){
+if(typeof data0 === "string"){
+if(func1(data0) > 40){
+validate261.errors = [{instancePath:instancePath+"/session",schemaPath:"#/$defs/SessionId/maxLength",keyword:"maxLength",params:{limit: 40},message:"must NOT have more than 40 characters"}];
+return false;
+}
+else {
+if(!pattern9.test(data0)){
+validate261.errors = [{instancePath:instancePath+"/session",schemaPath:"#/$defs/SessionId/pattern",keyword:"pattern",params:{pattern: "^ses_[0-9A-HJKMNP-TV-Z]{26}$"},message:"must match pattern \""+"^ses_[0-9A-HJKMNP-TV-Z]{26}$"+"\""}];
+return false;
+}
+}
+}
+else {
+validate261.errors = [{instancePath:instancePath+"/session",schemaPath:"#/$defs/SessionId/type",keyword:"type",params:{type: "string"},message:"must be string"}];
+return false;
+}
+}
+var valid0 = _errs1 === errors;
+}
+else {
+var valid0 = true;
+}
+if(valid0){
+if(data.role !== undefined){
+let data1 = data.role;
+const _errs4 = errors;
+if(typeof data1 !== "string"){
+validate261.errors = [{instancePath:instancePath+"/role",schemaPath:"#/properties/role/type",keyword:"type",params:{type: "string"},message:"must be string"}];
+return false;
+}
+if(!((data1 === "editor") || (data1 === "viewer"))){
+validate261.errors = [{instancePath:instancePath+"/role",schemaPath:"#/properties/role/enum",keyword:"enum",params:{allowedValues: schema369.properties.role.enum},message:"must be equal to one of the allowed values"}];
+return false;
+}
+var valid0 = _errs4 === errors;
+}
+else {
+var valid0 = true;
+}
+if(valid0){
+if(data.workspace !== undefined){
+let data2 = data.workspace;
+const _errs6 = errors;
+const _errs7 = errors;
+if(errors === _errs7){
+if(typeof data2 === "string"){
+if(func1(data2) > 40){
+validate261.errors = [{instancePath:instancePath+"/workspace",schemaPath:"#/$defs/WorkspaceId/maxLength",keyword:"maxLength",params:{limit: 40},message:"must NOT have more than 40 characters"}];
+return false;
+}
+else {
+if(!pattern4.test(data2)){
+validate261.errors = [{instancePath:instancePath+"/workspace",schemaPath:"#/$defs/WorkspaceId/pattern",keyword:"pattern",params:{pattern: "^wsp_[0-9A-HJKMNP-TV-Z]{26}$"},message:"must match pattern \""+"^wsp_[0-9A-HJKMNP-TV-Z]{26}$"+"\""}];
+return false;
+}
+}
+}
+else {
+validate261.errors = [{instancePath:instancePath+"/workspace",schemaPath:"#/$defs/WorkspaceId/type",keyword:"type",params:{type: "string"},message:"must be string"}];
+return false;
+}
+}
+var valid0 = _errs6 === errors;
+}
+else {
+var valid0 = true;
+}
+}
+}
+}
+}
+else {
+validate261.errors = [{instancePath,schemaPath:"#/type",keyword:"type",params:{type: "object"},message:"must be object"}];
+return false;
+}
+}
+validate261.errors = vErrors;
+return errors === 0;
+}
+validate261.evaluated = {"props":{"session":true,"role":true,"workspace":true},"dynamicProps":false,"dynamicItems":false};
 
 /** Every validator by schema key; `<key>#tolerant` exists only where an extensible enum is reachable. */
 export const VALIDATORS = Object.freeze({
@@ -35484,4 +35746,6 @@ export const VALIDATORS = Object.freeze({
   "api/WebhookPage#tolerant": v202,
   "api/WebhookDeliveryPage": v203,
   "api/WebhookDeliveryPage#tolerant": v204,
+  "api/SessionInviteCreate": v205,
+  "api/SessionInviteAcceptance": v206,
 });
