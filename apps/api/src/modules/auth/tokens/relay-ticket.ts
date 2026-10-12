@@ -4,6 +4,10 @@
  * use), and claims `sid`, `mid`, `role`, `dev`, `caps`. Signed with the API's active key, so the
  * relay verifies it against the same JWKS. The sessions lane's join-token endpoint calls this.
  *
+ * Share-link guests (B068, CT-RBAC "Share-link guests") get a limited ticket instead
+ * (`mintGuestRelayTicket`): `role` is always `viewer`, there is no `dev` claim (a guest has no
+ * registered device) and no capabilities.
+ *
  * Owns: minting. Single-use enforcement is the relay's (B038).
  */
 import { isId } from '@centcom/contracts';
@@ -57,6 +61,32 @@ export async function mintRelayTicket(
   return signJwt(
     keys,
     { sid, mid, role, dev, caps: [...caps] },
+    { typ: RELAY_TICKET_TYPE, audience: RELAY_AUDIENCE, ttlS: RELAY_TICKET_TTL_S, nowMs },
+  );
+}
+
+/** What a share-link guest's ticket says: only its session and member (B068). */
+export interface GuestTicketClaims {
+  sid: string;
+  mid: string;
+}
+
+/**
+ * A signed ticket for a share-link guest, valid 60 s from `nowMs`: `role` `viewer`, no `dev`, no
+ * `caps`. Nothing a caller passes can raise the role.
+ */
+export async function mintGuestRelayTicket(
+  keys: TokenKeys,
+  claims: GuestTicketClaims,
+  nowMs: number,
+): Promise<string> {
+  const { sid, mid } = claims;
+  if (!isId('ses', sid) || !isId('mem', mid)) {
+    throw new AppError('invalid_request', { detail: 'The relay ticket claims are not valid.' });
+  }
+  return signJwt(
+    keys,
+    { sid, mid, role: 'viewer', caps: [] },
     { typ: RELAY_TICKET_TYPE, audience: RELAY_AUDIENCE, ttlS: RELAY_TICKET_TTL_S, nowMs },
   );
 }

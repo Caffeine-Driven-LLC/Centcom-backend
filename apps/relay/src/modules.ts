@@ -21,6 +21,7 @@ import type { PolicyStore } from './control/policy-store.js';
 import type { QueueService } from './queue/service.js';
 import type { ConflictSignal } from './branches/conflict-signal.js';
 import type { ReactionCounts } from './reactions/ports.js';
+import type { PresenceHistory } from './presence-history/ports.js';
 import type { AgentRegistry } from './agents/registry.js';
 import type { ClusterNode } from './cluster/node.js';
 import type { FanOut } from './fanout/fanout.js';
@@ -119,6 +120,11 @@ export interface RelayContext {
     reactionsFor(sid: string, targets: readonly string[]): Promise<ReactionCounts>;
     purge(sid: string): Promise<void>;
   };
+  /**
+   * Presence history (B067): set by the presence-history module (order 35): `lastSeen`,
+   * `recentSessions` and `purgeOlderThan` for other backend lanes; never a route.
+   */
+  presenceHistory?: PresenceHistory;
 }
 
 /** A relay lane's plug-in: the default export of `src/<lane>/module.ts`. */

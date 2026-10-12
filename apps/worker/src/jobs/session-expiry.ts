@@ -2,7 +2,8 @@
  * The session expiry sweep (B053): the `session-expiry` job runs `session.expiry.sweep` every 60 s.
  * Each run asks the API's session lifecycle (`SessionService.sweep`, passed in as `sessions`) to
  * pause live sessions whose host has been gone 10 minutes, expire sessions paused 24 hours, and
- * retry notifications that did not go out.
+ * retry notifications that did not go out. Then, when given B068's share links, it deletes the
+ * guests of expired links and of sessions that are over.
  *
  * Idempotent and safe on several workers: the sweep holds a Postgres advisory lock, and each
  * transition is a conditional UPDATE, so an overlapping or repeated run changes nothing twice. A
@@ -56,6 +57,11 @@ export function sessionExpiryJobOptions(): {
 export interface SessionExpiryDeps {
   /** The API's `SessionService` (B053). */
   sessions: { sweep(now: Date): Promise<{ paused: number; expired: number }> };
+  /**
+   * B068's `ShareLinkService`: deletes the guests of expired links and of sessions that are over
+   * (closing their connections), after the session sweep.
+   */
+  shareLinks?: { sweep(now: Date): Promise<number> };
   /** Milliseconds; default Date.now. */
   clock?: () => number;
   /** Writes `session.expiry_swept` (counts only), `session.expiry_retry` and `.expiry_failed`. */
@@ -67,10 +73,15 @@ export interface SessionExpiryDeps {
 /** One run: pauses and expires what is due; returns the counts. */
 export async function processSessionExpiry(
   deps: SessionExpiryDeps,
-): Promise<{ paused: number; expired: number }> {
-  const result = await deps.sessions.sweep(new Date((deps.clock ?? Date.now)()));
-  deps.logger?.info({ paused: result.paused, expired: result.expired }, 'session.expiry_swept');
-  return result;
+): Promise<{ paused: number; expired: number; guests: number }> {
+  const now = new Date((deps.clock ?? Date.now)());
+  const result = await deps.sessions.sweep(now);
+  const guests = (await deps.shareLinks?.sweep(now)) ?? 0;
+  deps.logger?.info(
+    { paused: result.paused, expired: result.expired, count: guests },
+    'session.expiry_swept',
+  );
+  return { ...result, guests };
 }
 
 /** After a failed run: logs a retry, or counts and logs the run once it is dead-lettered. */

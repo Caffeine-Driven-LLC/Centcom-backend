@@ -36,6 +36,8 @@ export interface MagicLinkConfig {
   /** Without a trailing slash. */
   baseUrl: string;
   returnTo: ReturnToPolicy;
+  /** The allow-listed URLs behind `returnTo`, in order (the first is the default). */
+  returnToAllowlist: readonly string[];
 }
 
 /** Reads the settings (default: the process environment, through the config loader). */
@@ -45,5 +47,6 @@ export function loadMagicLinkConfig(env?: Env): MagicLinkConfig {
     ttlS: values.MAGIC_LINK_TTL_S,
     baseUrl: values.MAGIC_LINK_BASE_URL.replace(/\/+$/, ''),
     returnTo: returnToPolicy(values.LOGIN_RETURN_TO_ALLOWLIST),
+    returnToAllowlist: values.LOGIN_RETURN_TO_ALLOWLIST,
   };
 }

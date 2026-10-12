@@ -679,6 +679,16 @@ export interface SessionsAppOptions {
   deps?: Partial<SessionRouteDeps>;
   /** B021's membership reader; default the world's. */
   reader?: MembershipReader;
+  /** More routes on the same stack (B068's share links), registered before the app is ready. */
+  extra?: (
+    app: FastifyInstance,
+    parts: {
+      deps: SessionRouteDeps;
+      redis: ReturnType<typeof createMemoryRedis>;
+      emitter: ReturnType<typeof createAuditEmitter>;
+      tokens: ReturnType<typeof memoryTokens>['tokens'];
+    },
+  ) => void;
 }
 
 /** The session routes on the API's plugin stack over a fresh (or given) world. */
@@ -805,6 +815,7 @@ export async function sessionsApp(options: SessionsAppOptions = {}) {
   });
   await app.register(auditPlugin, { emitter });
   registerSessionRoutes(app, deps);
+  options.extra?.(app, { deps, redis, emitter, tokens });
   await app.ready();
 
   /** Bearer headers of `who` (their device) with `scopes`. */
@@ -841,6 +852,7 @@ export async function sessionsApp(options: SessionsAppOptions = {}) {
   return {
     app,
     world,
+    redis,
     clock,
     keys,
     tokens,

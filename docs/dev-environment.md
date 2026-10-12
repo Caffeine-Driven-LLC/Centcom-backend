@@ -97,9 +97,9 @@ Ed25519 key)).
 - **Migrations**: `dev:up` runs `centcom-db migrate` (B007). To check where the database is:
   `NODE_ENV=development DATABASE_URL=postgres://centcom:dev-only@127.0.0.1:5432/centcom_dev pnpm --filter @centcom/db run migrate:status`
   (after `pnpm build`).
-- **The API**: there is no runnable entrypoint yet. Once a lane adds `apps/api/src/main.ts`, build
-  with `pnpm build` and start it with `node --env-file=.env.local` and that entrypoint's `dist/`
-  file; it reads the stack's `DATABASE_URL` and `REDIS_URL` from `.env.local`.
+- **The API**: `pnpm dev:api` runs the service against this stack (B102; see `docs/api-service.md`):
+  it adds a local signing key to `.env.local` on its first run, sends sign-in mail to Mailpit and
+  listens on `http://localhost:3000`.
 - **The integration tests**: point the test harness at the stack and it creates (and drops) its own
   `test_*` databases on it, leaving `centcom_dev` alone:
   `DATABASE_URL=postgres://centcom:dev-only@127.0.0.1:5432/centcom_dev REDIS_URL=redis://127.0.0.1:6379/0 pnpm test`.

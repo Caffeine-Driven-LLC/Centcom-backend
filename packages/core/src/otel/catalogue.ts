@@ -220,6 +220,22 @@ export const METRICS = {
     ['state'],
     API_WORKER,
   ),
+  share_link_close_failed_total: counter(
+    'Revoked or expired share-link guests whose relay close could not be sent (their membership is gone all the same).',
+    [],
+    API,
+  ),
+  share_link_joins_total: counter(
+    'Joins through share links, by result (joined, not_found, rate_limited, locked, member_limit, full, unavailable).',
+    ['result'],
+    API,
+  ),
+  share_link_ticket_failures_total: counter(
+    'Guest tickets that could not be signed or recorded, by reason (signing, record); no use was spent.',
+    ['reason'],
+    API,
+  ),
+  share_links_created_total: counter('Share links created.', [], API),
   stripe_event_dead_letters_total: counter(
     'Stripe event jobs moved to stripe.event.dlq after their last attempt.',
     [],
@@ -559,6 +575,23 @@ export const METRICS = {
   ),
   relay_agent_store_failures_total: counter(
     'Agent registry saves that failed after the frame was sequenced.',
+    [],
+    RELAY,
+    { onFailure: true },
+  ),
+  relay_presence_history_events_total: counter(
+    'Members coming online and going offline recorded, by event (connected, disconnected).',
+    ['event'],
+    RELAY,
+  ),
+  relay_presence_history_flush_failures_total: counter(
+    'Presence history batches that could not be written (kept for the next flush).',
+    [],
+    RELAY,
+    { onFailure: true },
+  ),
+  relay_presence_history_dropped_total: counter(
+    'Presence history events dropped while the database was down (past 10 000 buffered).',
     [],
     RELAY,
     { onFailure: true },
