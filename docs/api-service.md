@@ -251,3 +251,9 @@ The API and the worker share Redis queues (BullMQ): the API always queues the pu
 
 `pnpm dev:full-check` now also reports usage, waits for the worker to fold it into the counters, and
 deletes a scratch workspace to see the worker purge it.
+
+`pnpm dev:replay-check` shows that the relay's durable log outlives the relay: a host talks, the
+relay is stopped and started again (its memory is gone), the host's client reconnects and talks
+again, and the sequence numbers go on from the log in the object store (5 before, 8 after) with
+the history route reading one unbroken log. A client that was away longer than the relay keeps
+frames in memory fetches the rest the same way (`GET /v1/sessions/{id}/history?after_seq=`).
