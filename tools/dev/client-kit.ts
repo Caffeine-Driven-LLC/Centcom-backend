@@ -201,10 +201,14 @@ export async function signUp(label: string): Promise<Person & { email: string }>
 
 /** An access token with the web app's scopes for `who` (invites need `workspaces:write`). */
 export function appToken(who: Person): string {
-  const out = execFileSync('pnpm', ['-s', 'dev:token', who.userId, who.deviceId], {
-    cwd: resolve(here, '../..'),
-    encoding: 'utf8',
-  });
+  // CENTCOM_APP_TOKEN_CMD: a program that prints the same JSON for another stack (the local drill
+  // of the production compose uses infra/deploy/drill-token.sh).
+  const custom = process.env['CENTCOM_APP_TOKEN_CMD'];
+  const out = execFileSync(
+    custom ?? 'pnpm',
+    [...(custom === undefined ? ['-s', 'dev:token'] : []), who.userId, who.deviceId],
+    { cwd: resolve(here, '../..'), encoding: 'utf8' },
+  );
   return (JSON.parse(out.trim().split('\n').pop() ?? '{}') as { access_token: string })
     .access_token;
 }

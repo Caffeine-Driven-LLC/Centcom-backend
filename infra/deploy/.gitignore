@@ -1,0 +1,5 @@
+# Real settings and deploy state never go into git.
+production.env
+*.env
+!*.env.example
+.state/
