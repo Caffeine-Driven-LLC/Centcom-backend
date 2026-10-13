@@ -341,12 +341,12 @@ export type BoardNoteSecret = {
 };
 
 export type BoardPinPayload = {
-  note: string;
+  target: string;
   pinned: boolean;
 };
 
 export type BoardRemovePayload = {
-  note: string;
+  target: string;
 };
 
 export type KeyGrantPayload = {
@@ -654,8 +654,8 @@ export const EVENT_CATALOGUE = {
   "reaction": { t: "event", mode: "clear", clearFields: ["target","code","op"], secret: false },
   "comment.add": { t: "event", mode: "encrypted", clearFields: [], secret: true },
   "board.note": { t: "event", mode: "hybrid", clearFields: ["type","supersedes"], secret: true },
-  "board.pin": { t: "event", mode: "clear", clearFields: ["note","pinned"], secret: false },
-  "board.remove": { t: "event", mode: "clear", clearFields: ["note"], secret: false },
+  "board.pin": { t: "event", mode: "clear", clearFields: ["target","pinned"], secret: false },
+  "board.remove": { t: "event", mode: "clear", clearFields: ["target"], secret: false },
   "key.grant": { t: "event", mode: "hybrid", clearFields: ["to_device","kids"], secret: true },
   "queue.submit": { t: "queue", mode: "hybrid", clearFields: ["item","size","kind"], secret: true },
   "queue.cancel": { t: "queue", mode: "clear", clearFields: ["item"], secret: false },
