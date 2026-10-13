@@ -1,0 +1,19 @@
+# Build context for infra/deploy/Dockerfile: sources and lockfile only.
+.git
+.github
+**/node_modules
+**/dist
+**/coverage
+**/*.tsbuildinfo
+.env
+.env.*
+!.env.example
+site
+assets
+apps/admin
+docs
+plan
+*.md
+!README.md
+infra/deploy/*.env
+infra/deploy/.state

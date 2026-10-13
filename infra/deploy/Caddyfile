@@ -1,0 +1,59 @@
+# Caddy for the one-box layout (B091): terminates HTTPS, proxies to the API and the relay on the
+# private compose network. Cloudflare sits in front (proxied DNS records, SSL mode "Full
+# (strict)"); Caddy gets its own certificate from Let's Encrypt, or use a Cloudflare Origin CA
+# certificate instead (docs/ops/deployment.md, "Certificates").
+#
+# Every value comes from the environment (docker-compose.prod.yml passes them in):
+#   API_HOST, RELAY_HOST   site addresses: api.example.com / relay.example.com in production,
+#                          http://localhost:18080 for a local drill (an http:// address turns
+#                          TLS off for that site)
+#   ACME_EMAIL             where Let's Encrypt writes about expiry
+#   HTTP_PORT, HTTPS_PORT  80 and 443 in production; moved for a local drill
+{
+	email {$ACME_EMAIL}
+	http_port {$HTTP_PORT:80}
+	https_port {$HTTPS_PORT:443}
+
+	servers {
+		# Only Cloudflare's edge may tell us who the client is. Source:
+		# https://www.cloudflare.com/ips/ (refresh when Cloudflare publishes a change; a stale list
+		# only means a new range's client address is not trusted, so rate limits see the edge).
+		trusted_proxies static 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
+		client_ip_headers CF-Connecting-IP X-Forwarded-For
+	}
+}
+
+(common) {
+	encode zstd gzip
+	# Never expose the staff API or metrics through the public host; the admin API listens on its
+	# own port on the private network only.
+	@private path /internal/admin/* /metrics
+	respond @private 404
+	log {
+		output stdout
+		format json
+	}
+}
+
+{$API_HOST} {
+	import common
+	reverse_proxy api:3000 {
+		# One address, the real client's: the API trusts exactly one proxy hop (TRUSTED_PROXY_HOPS=1).
+		header_up X-Forwarded-For {client_ip}
+		health_uri /healthz
+		health_interval 10s
+	}
+}
+
+{$RELAY_HOST} {
+	import common
+	# WebSocket upgrades pass through reverse_proxy unchanged. Close idle sockets only after the
+	# relay's own ping has had its chance (RELAY_PING_MS / RELAY_DEAD_MS).
+	reverse_proxy relay:8080 {
+		header_up X-Forwarded-For {client_ip}
+		health_uri /healthz
+		health_interval 10s
+		stream_timeout 24h
+		stream_close_delay 30s
+	}
+}

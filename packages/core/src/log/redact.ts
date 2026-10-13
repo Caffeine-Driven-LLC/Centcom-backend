@@ -97,6 +97,9 @@ function isDeniedKey(key: string): boolean {
   );
 }
 
+/** What `secret-guard`'s redaction leaves in place of a match: `[redacted:<pattern id>]`. */
+const GUARD_MARKER = /^\[redacted:[a-z0-9_]{1,40}\]$/;
+
 /** CT-AUTH API keys: `cen_live_` or `cen_test_` plus base62, at any length so a mangled key is caught. */
 const API_KEY = /cen_(?:live|test)_[0-9A-Za-z]+/g;
 /**
@@ -289,7 +292,13 @@ function copyEntries(
     if (isError && key === 'code' && (typeof item === 'string' || typeof item === 'number')) {
       copy = walk(item, depth + 1, state);
     } else if (denied) {
-      copy = item === undefined ? undefined : REDACTED;
+      // A secret-guard marker (B101) says only which pattern matched; it is kept so the line shows why.
+      copy =
+        item === undefined
+          ? undefined
+          : typeof item === 'string' && GUARD_MARKER.test(item)
+            ? item
+            : REDACTED;
     } else {
       copy = walk(item, depth + 1, state);
     }

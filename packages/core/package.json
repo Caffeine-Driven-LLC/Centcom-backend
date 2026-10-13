@@ -24,6 +24,7 @@
   "scripts": {
     "build": "tsc -b",
     "gen:config-docs": "tsx scripts/gen-config-docs.ts",
+    "gen:secret-patterns": "tsx scripts/gen-secret-patterns.ts",
     "gen:slo-rules": "tsx scripts/gen-slo-rules.ts"
   },
   "dependencies": {
