@@ -20,6 +20,7 @@ import type { MuteRegistry } from './control/mute-registry.js';
 import type { PolicyStore } from './control/policy-store.js';
 import type { QueueService } from './queue/service.js';
 import type { ConflictSignal } from './branches/conflict-signal.js';
+import type { ReactionCounts } from './reactions/ports.js';
 import type { PresenceHistory } from './presence-history/ports.js';
 import type { AgentRegistry } from './agents/registry.js';
 import type { ClusterNode } from './cluster/node.js';
@@ -112,6 +113,15 @@ export interface RelayContext {
    * locks module): B059's lock denials become server `conflict.detected` frames.
    */
   conflicts?: Pick<ConflictSignal, 'onLockDenied'>;
+  /**
+   * Reactions (B062): set by the reactions module when it registers (order 39): the join flow's
+   * `reactionsFor(sid, targets)` and B055's history purge (`purge(sid)`: reactions and comment
+   * pointers).
+   */
+  reactions?: {
+    reactionsFor(sid: string, targets: readonly string[]): Promise<ReactionCounts>;
+    purge(sid: string): Promise<void>;
+  };
   /**
    * Presence history (B067): set by the presence-history module (order 35): `lastSeen`,
    * `recentSessions` and `purgeOlderThan` for other backend lanes; never a route.
