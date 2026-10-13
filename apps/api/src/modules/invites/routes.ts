@@ -26,6 +26,10 @@ import { AppError, defineFilters, idFilter, parsePageQuery, type SigningKeys } f
 import { inviteStatus, type InviteRecord, type WorkspaceStore } from '@centcom/db';
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { requireScope } from '../../plugins/rbac.js';
+import { hasScope } from '@centcom/core';
+import { liveRole } from '../../routes/sessions/access.js';
+import type { SessionRouteStore } from '../../routes/sessions/store.js';
+import type { SessionInviteService } from './session-invites.js';
 import { memberBody } from '../members/routes.js';
 import { actorOf, ctxOf, workspaceAccess } from '../workspaces/access.js';
 import { workspaceBody } from '../workspaces/routes.js';
@@ -43,6 +47,10 @@ export interface InviteRouteOptions {
   cursorKeys: SigningKeys;
   /** Milliseconds, for statuses and cursors; default Date.now. */
   clock?: () => number;
+  /** B105: session invites share these routes (preview, accept, revoke, key bundle) by token or id. */
+  sessionInvites?: SessionInviteService;
+  /** B105: who hosts a session, for revoking and storing a bundle for a session invite. */
+  sessionStore?: Pick<SessionRouteStore, 'standing'>;
 }
 
 /** The details of the routes' own refusals (GUIDELINES §3.4). */
@@ -98,6 +106,13 @@ async function inviteOf(
   const invite = isId('inv', id) ? await options.service.find(id) : null;
   if (invite === null) throw new AppError('invite_invalid', { detail: INVITE_DETAILS.unknown });
   return invite;
+}
+
+/** The `:id` session invite, or null when the id is not one (B105). */
+async function sessionInviteOf(options: InviteRouteOptions, request: FastifyRequest) {
+  const id = (request.params as Record<string, unknown>)['id'];
+  if (options.sessionInvites === undefined || !isId('inv', id)) return null;
+  return options.sessionInvites.find(id);
 }
 
 export const inviteRoutes: FastifyPluginAsync<InviteRouteOptions> = async (app, opts) => {
@@ -156,8 +171,26 @@ export const inviteRoutes: FastifyPluginAsync<InviteRouteOptions> = async (app, 
 
   app.delete(
     '/v1/invites/:id',
-    { preHandler: requireScope('workspaces:write') },
+    {
+      preHandler: async (request, reply) => {
+        // A session host (scope sessions:host) may revoke a session invite; the rest is workspaces:write.
+        const actor = request.server.rbac.actor(request);
+        if (actor !== null && opts.sessionInvites !== undefined && hasScope(actor, 'sessions:host'))
+          return;
+        await requireScope('workspaces:write').call(app, request, reply);
+      },
+    },
     async (request, reply) => {
+      const sessionInvite = await sessionInviteOf(opts, request);
+      if (sessionInvite !== null) {
+        const userId = userOf(request);
+        const standing = await opts.sessionStore?.standing(sessionInvite.sessionId, userId);
+        if (standing === undefined || standing === null || liveRole(standing) !== 'host') {
+          throw new AppError('invite_invalid', { detail: INVITE_DETAILS.unknown });
+        }
+        await opts.sessionInvites?.revoke(sessionInvite);
+        return reply.code(204).send();
+      }
       const invite = await inviteOf(opts, request);
       await workspaceAccess(request, 'member.invite', {}, invite.workspaceId);
       await service.revoke(invite.id, inviteCtx(request));
@@ -167,6 +200,18 @@ export const inviteRoutes: FastifyPluginAsync<InviteRouteOptions> = async (app, 
 
   app.get('/v1/invites/:token', { config: { auth: false } }, async (request, reply) => {
     const token = (request.params as Record<string, unknown>)['token'];
+    const sessionPreview = await opts.sessionInvites?.preview(token);
+    if (sessionPreview !== undefined && sessionPreview !== null) {
+      reply.header('cache-control', 'no-store');
+      return {
+        workspace_name: sessionPreview.workspaceName,
+        session_name: sessionPreview.sessionName,
+        inviter_name: sessionPreview.inviterName,
+        role: sessionPreview.role,
+        expires_at: sessionPreview.expiresAt.toISOString(),
+        has_key_bundle: sessionPreview.hasKeyBundle,
+      };
+    }
     const preview = await service.preview(token);
     reply.header('cache-control', 'no-store');
     return {
@@ -184,6 +229,13 @@ export const inviteRoutes: FastifyPluginAsync<InviteRouteOptions> = async (app, 
     async (request, reply) => {
       const userId = userOf(request);
       const token = (request.params as Record<string, unknown>)['token'];
+      const granted = await opts.sessionInvites?.accept(token, userId);
+      if (granted !== undefined && granted !== null) {
+        reply.header('cache-control', 'no-store');
+        return reply
+          .code(201)
+          .send({ session: granted.sessionId, role: granted.role, workspace: granted.workspaceId });
+      }
       const { member, workspaceId } = await service.accept(token, userId, inviteCtx(request));
       const view = await opts.workspaces.findForMember(workspaceId, userId);
       if (view === null) throw new AppError('not_found', { detail: WORKSPACE_DETAILS.notFound });
@@ -200,6 +252,15 @@ export const inviteRoutes: FastifyPluginAsync<InviteRouteOptions> = async (app, 
     { preHandler: requireScope('sessions:host'), bodyLimit: KEY_BUNDLE_BODY_LIMIT },
     async (request, reply) => {
       const hostId = userOf(request);
+      const sessionInvite = await sessionInviteOf(opts, request);
+      if (sessionInvite !== null) {
+        const standing = await opts.sessionStore?.standing(sessionInvite.sessionId, hostId);
+        if (standing === undefined || standing === null || liveRole(standing) !== 'host') {
+          throw new AppError('host_required', { detail: INVITE_DETAILS.hostOnly });
+        }
+        await opts.sessionInvites?.putKeyBundle(sessionInvite, parseKeyBundle(request.body));
+        return reply.code(204).send();
+      }
       const invite = await inviteOf(opts, request);
       await workspaceAccess(request, 'workspace.read', {}, invite.workspaceId);
       const bundle = parseKeyBundle(request.body);
@@ -214,6 +275,11 @@ export const inviteRoutes: FastifyPluginAsync<InviteRouteOptions> = async (app, 
     async (request, reply) => {
       const userId = userOf(request);
       const token = (request.params as Record<string, unknown>)['token'];
+      const sessionBundle = await opts.sessionInvites?.takeKeyBundle(token, userId);
+      if (sessionBundle !== undefined && sessionBundle !== null) {
+        reply.header('cache-control', 'no-store');
+        return { bundle: sessionBundle.toString('base64url') };
+      }
       const bundle = await service.takeKeyBundle(token, userId);
       reply.header('cache-control', 'no-store');
       return { bundle: bundle.toString('base64url') };

@@ -75,7 +75,16 @@ data. It ends with `OK: two new accounts shared a session`:
 3. **Join and talk.** Bob joins the session through the relay (`POST /v1/sessions/{id}/join-token`,
    then `ws://localhost:8088/v1/ws`); the relay announces him (`control.member_joined`), Alice's
    client grants the session keys, and each reads the other's encrypted message.
-4. **Share link.** Alice makes a link (`POST /v1/sessions/{id}/share-links`, the key stays in the
+4. **Session invite (B105).** Carol, who signs up with her own workspace, is invited to this one
+   session by Alice (`POST /v1/sessions/{id}/invites`, the host only: an e-mail or link invite as
+   `editor` or `viewer`, up to 7 days), accepts it (`POST /v1/invites/{token}/accept` answers
+   `{session, role, workspace}`) and joins through the relay like Bob. She is **not** a member of
+   Alice's workspace: no seat is used (so a one-seat plan can share) and the session's
+   `max_session_members` is the only limit. The grant is a row of `session_invites` (accepted, not
+   revoked); the API's standing and members list and the relay's live membership read it, and
+   revoking the invite (`DELETE /v1/invites/{id}`, the host may) ends it. The invite's token,
+   preview and sealed key bundle use the workspace invite routes.
+5. **Share link.** Alice makes a link (`POST /v1/sessions/{id}/share-links`, the key stays in the
    fragment). A visitor with no account and no device turns it into a viewer ticket
    (`POST /v1/share-links/{token}/join`: a ticket with no `dev` claim, and a `guest_member` row),
    connects to the relay with it, is welcomed as a `viewer` under the name they gave, and receives

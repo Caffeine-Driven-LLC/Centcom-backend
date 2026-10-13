@@ -23,6 +23,7 @@ import { memberRoutes } from './modules/members/index.js';
 import { seatGatePlugin } from './modules/seats/index.js';
 import { workspaceRoutes } from './modules/workspaces/index.js';
 import { entitlementRoutes } from './routes/entitlements/index.js';
+import { sessionInviteRoutes } from './routes/sessions/invites.js';
 import { registerShareLinkRoutes } from './routes/share-links/index.js';
 import { registerSessionRoutes } from './routes/sessions/index.js';
 import { statusRoutes } from './routes/status.js';
@@ -165,7 +166,40 @@ export const API_MODULES: readonly ApiModule[] = [
       await app.register(seatGatePlugin, { gate: ctx.collab.seatGate });
       await app.register(inviteRoutes, {
         service: ctx.collab.invites,
+        ...(ctx.collab.sessionInvites === null || ctx.sessionRoutes === null
+          ? {}
+          : { sessionInvites: ctx.collab.sessionInvites, sessionStore: ctx.sessionRoutes.store }),
         workspaces: ctx.collab.workspaceStore,
+        cursorKeys: ctx.config.pagination.signingKeys,
+        clock: ctx.clock ?? Date.now,
+      });
+    },
+  },
+  {
+    name: 'session-invites',
+    skip: (ctx) =>
+      ctx.collab.sessionInvites === null
+        ? 'no mail transport is configured (DEV_MAILPIT_URL) or the session routes are off'
+        : ctx.config.idempotency.encryptionKey === undefined
+          ? 'IDEMPOTENCY_ENCRYPTION_KEY is not set'
+          : null,
+    register: async (app, ctx) => {
+      const routes = ctx.sessionRoutes;
+      if (ctx.collab.sessionInvites === null || routes === null) return;
+      await app.register(sessionInviteRoutes, {
+        service: ctx.collab.sessionInvites,
+        store: routes.store,
+        sessions: { get: (id) => routes.service.get(id) },
+        names: {
+          displayName: async (userId) =>
+            (
+              await ctx.db
+                .selectFrom('users')
+                .select('display_name')
+                .where('id', '=', userId)
+                .executeTakeFirst()
+            )?.display_name ?? 'Someone',
+        },
         cursorKeys: ctx.config.pagination.signingKeys,
         clock: ctx.clock ?? Date.now,
       });

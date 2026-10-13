@@ -106,6 +106,57 @@ await guest.sendEvent('message.user', { secret: { text: 'thanks, Alice' } });
 check(await until(() => log.length === 4, 5_000), 'both read both messages');
 log.forEach((line) => console.log(`     ${line}`));
 
+step('Carol, from another workspace, joins this one session by a session invite (no seat)');
+const carol = await signUp('carol');
+const before = await rest<{ data: { id: string }[] }>(
+  alice,
+  'GET',
+  `/v1/workspaces/${home}/members`,
+);
+const session = await rest<{ token: string; session: string; role: string }>(
+  alice,
+  'POST',
+  `/v1/sessions/${host.id}/invites`,
+  { email: carol.email, role: 'editor' },
+);
+check(
+  session.session === host.id && session.role === 'editor',
+  'Alice invited Carol to this session only',
+);
+const acceptedSession = await rest<{ session: string; role: string; workspace: string }>(
+  carol,
+  'POST',
+  `/v1/invites/${session.token}/accept`,
+);
+check(
+  acceptedSession.session === host.id && acceptedSession.workspace === home,
+  'Carol accepted: the right to join this session',
+);
+const after = await rest<{ data: { id: string }[] }>(
+  alice,
+  'GET',
+  `/v1/workspaces/${home}/members`,
+);
+check(
+  after.data.length === before.data.length,
+  "Carol is not a member of Alice's workspace (no seat used)",
+);
+const carolSession = await carol.sessions.joinSession({ sessionId: host.id });
+listen(carolSession, log, 'carol');
+check(
+  await until(() => carolSession.state === 'live'),
+  `Carol is ${carolSession.me.role} and ${carolSession.state} (keys granted)`,
+);
+await host.sendEvent('message.user', { secret: { text: 'hi, Carol' } });
+check(
+  await until(
+    () => log.filter((l) => l.startsWith('carol') && l.includes('hi, Carol')).length === 1,
+    5_000,
+  ),
+  'Carol reads the host',
+);
+await carolSession.leave();
+
 step('A visitor without an account joins by the share link');
 const link = await host.createShareLink();
 check(link.fragment.startsWith('#k='), `Alice made a link (${link.url}, key in the fragment)`);
