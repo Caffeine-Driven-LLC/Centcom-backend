@@ -1,6 +1,6 @@
 /**
  * Contract fixture runner (B010 acceptance 5): one registered test per file of
- * contracts/fixtures/events (45 at contract 1.2.0), all passing, and a deliberately broken copy
+ * contracts/fixtures/events (48 at contract 1.2.0), all passing, and a deliberately broken copy
  * failing; `{schema, valid, data}` fixtures judged by their declared verdict; `defKey` payload
  * checks; and fixtures the runner cannot judge fail rather than pass.
  */
@@ -41,11 +41,11 @@ describe('the events fixtures, registered as vitest cases', () => {
 });
 
 describe('runFixtureSuite', () => {
-  it('registers one case per events fixture file (45 at contract 1.2.0), and every one passes (acceptance 5)', async () => {
+  it('registers one case per events fixture file (48 at contract 1.2.0), and every one passes (acceptance 5)', async () => {
     const files = (await readdir(EVENTS)).filter((f) => f.endsWith('.json')).sort();
     const cases = collect({ fixturesDir: EVENTS, schemaFile: EVENTS_SCHEMA });
     expect([...cases.keys()]).toEqual(files);
-    expect(cases.size).toBe(45);
+    expect(cases.size).toBe(48);
     for (const [name, check] of cases) expect(check, name).not.toThrow();
   });
 
@@ -54,7 +54,7 @@ describe('runFixtureSuite', () => {
       fixturesDir: EVENTS,
       schemaFile: join(CONTRACTS, 'schemas', 'envelope.schema.json'),
     });
-    expect(cases.size).toBe(45);
+    expect(cases.size).toBe(48);
     for (const [name, check] of cases) expect(check, name).not.toThrow();
   });
 
