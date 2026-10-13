@@ -20,7 +20,7 @@ import { existsSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { defineConfig, z } from '@centcom/core';
-import { closeDb, createDb, type CoreDatabase } from '@centcom/db';
+import { closeDb, createDb, type CoreDatabase, type EntitlementsDatabase } from '@centcom/db';
 
 /** When every seeded row was created; the ids' ULID time is the same moment. */
 export const SEED_CREATED_AT = '2026-01-01T00:00:00.000Z';
@@ -144,6 +144,7 @@ export interface SeedResult {
 }
 
 type Db = ReturnType<typeof createDb<CoreDatabase>>;
+type EntitlementsWriter = Pick<ReturnType<typeof createDb<EntitlementsDatabase>>, 'insertInto'>;
 
 /** Writes the seed rows that are missing, in one transaction. Returns how many each table gained. */
 export async function seed(db: Db): Promise<SeedResult> {
@@ -218,6 +219,19 @@ export async function seed(db: Db): Promise<SeedResult> {
       })
       .onConflict((oc) => oc.column('id').doNothing())
       .executeTakeFirstOrThrow();
+    // The dev workspace is on the Team plan, so sessions can use the relay (free has no relay_access).
+    // A row still on the free defaults is upgraded; one someone changed is left alone.
+    await (trx as unknown as EntitlementsWriter)
+      .insertInto('workspace_entitlements')
+      .values({ workspace_id: SEED.workspace.id, plan_id: 'team', status: 'active' })
+      .onConflict((oc) =>
+        oc
+          .column('workspace_id')
+          .doUpdateSet({ plan_id: 'team', status: 'active' })
+          .where('workspace_entitlements.plan_id', '=', 'free')
+          .where('workspace_entitlements.status', '=', 'none'),
+      )
+      .execute();
     return {
       users: count(users),
       workspaces: count(workspaces),

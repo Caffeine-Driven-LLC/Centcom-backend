@@ -30,7 +30,7 @@ export interface SessionAccessResult {
 /** B038's port (B043: Postgres). */
 export interface SessionAccess {
   /** The live state of session `sid`, member `mid` and device `dev`; null when the session is unknown. */
-  resolve(sid: string, mid: string, dev: string): Promise<SessionAccessResult | null>;
+  resolve(sid: string, mid: string, dev: string | null): Promise<SessionAccessResult | null>;
 }
 
 /** The access used until B043 lands: every lookup is a 503, so handshakes fail closed (4503). */

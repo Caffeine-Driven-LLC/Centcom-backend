@@ -89,6 +89,29 @@ describe('verifyRelayTicket', () => {
     );
   });
 
+  it('accepts a share-link guest ticket (a viewer, no capabilities) with no dev claim, as dev null', async () => {
+    const { key, verify } = setup();
+    const guest = ticketFor({ role: 'viewer', caps: [], dev: undefined });
+    const claims = await verify(await mintTicket(key, guest, { nowMs: NOW, jti: 'g-1' }));
+    expect(claims).toMatchObject({ sid: guest.sid, mid: guest.mid, role: 'viewer', dev: null });
+  });
+
+  it.each([
+    ['an editor', { role: 'editor' as const, caps: [] }],
+    ['a host', { role: 'host' as const, caps: [] }],
+    ['a viewer with capabilities', { role: 'viewer' as const, caps: ['resume'] }],
+  ])('refuses a ticket with no dev claim for %s', async (_who, claims) => {
+    const { key, verify } = setup();
+    const ticket = await mintTicket(key, ticketFor({ ...claims, dev: undefined }), { nowMs: NOW });
+    expect(await outcome(verify(ticket))).toBe('invalid');
+  });
+
+  it('refuses a dev claim that is not a device id', async () => {
+    const { key, verify } = setup();
+    const ticket = await mintTicket(key, ticketFor({ dev: 'dev_nope' }), { nowMs: NOW });
+    expect(await outcome(verify(ticket))).toBe('invalid');
+  });
+
   it('refuses a ticket signed by another key under a known kid', async () => {
     const { verify } = setup();
     const forger = signingKey('k1');

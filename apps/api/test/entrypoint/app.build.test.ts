@@ -67,10 +67,22 @@ const ROUTES: [string, string][] = [
   ['GET', '/v1/devices'],
   ['GET', '/v1/auth/devices'],
   ['DELETE', '/v1/auth/devices/:id'],
+  ['GET', '/v1/sessions'],
+  ['POST', '/v1/sessions'],
+  ['GET', '/v1/sessions/:id'],
+  ['POST', '/v1/sessions/:id/join-token'],
+  ['GET', '/v1/sessions/:id/members'],
+  ['POST', '/v1/workspaces'],
+  ['GET', '/v1/workspaces/:id/members'],
+  ['GET', '/v1/workspaces/:id/entitlements'],
+  ['POST', '/v1/workspaces/:id/invites'],
+  ['POST', '/v1/invites/:token/accept'],
+  ['POST', '/v1/sessions/:id/share-links'],
+  ['POST', '/v1/share-links/:token/join'],
 ];
 
 describe('buildApp (B102)', () => {
-  it('serves every route of the login slice', async () => {
+  it('serves every route of the login, session and collaboration slices', async () => {
     const { app, close } = await build();
     for (const [method, url] of ROUTES) {
       expect(app.hasRoute({ method: method as 'GET', url }), `${method} ${url}`).toBe(true);
@@ -99,12 +111,55 @@ describe('buildApp (B102)', () => {
     expect(app.hasRoute({ method: 'POST', url: '/login/email' })).toBe(false);
     expect(app.hasRoute({ method: 'GET', url: '/device' })).toBe(true);
     const skipped = captured.lines().filter((l) => l['msg'] === 'api.module_skipped');
-    expect(skipped).toHaveLength(1);
-    expect(skipped[0]).toMatchObject({ module: 'email-login' });
+    expect(skipped.map((l) => l['module'])).toEqual(['email-login', 'invites']);
+    expect(app.hasRoute({ method: 'POST', url: '/v1/workspaces' })).toBe(true);
     const page = await app.inject({ method: 'GET', url: '/device?user_code=ABCD-EFGH' });
     expect(page.statusCode).toBe(503);
     expect((await app.inject({ method: 'GET', url: '/healthz' })).statusCode).toBe(200);
     await close();
+  });
+
+  it('leaves the session routes out, with one log line, when no relay address is configured', async () => {
+    const { app, captured, close } = await build({ RELAY_PUBLIC_URL: undefined });
+    expect(app.hasRoute({ method: 'POST', url: '/v1/sessions' })).toBe(false);
+    expect(app.hasRoute({ method: 'GET', url: '/v1/me' })).toBe(true);
+    const skipped = captured.lines().filter((l) => l['msg'] === 'api.module_skipped');
+    expect(skipped.map((l) => l['module'])).toEqual(['sessions', 'share-links']);
+    await close();
+  });
+
+  it('answers the session routes 401 without a token and puts the relay in the configuration', async () => {
+    const { app, close } = await build({ RELAY_REGION: 'eu' });
+    const res = await app.inject({ method: 'POST', url: '/v1/sessions', payload: {} });
+    expect(res.statusCode).toBe(401);
+    expect(loadApiConfig(testEnv({ RELAY_REGION: 'eu' })).relay).toEqual({
+      url: 'ws://localhost:8088/v1/ws',
+      region: 'eu',
+    });
+    await close();
+  });
+
+  it('leaves the invite routes out until the idempotency key that encrypts their replies is set', async () => {
+    const { app, captured, close } = await build({ IDEMPOTENCY_ENCRYPTION_KEY: undefined });
+    expect(app.hasRoute({ method: 'POST', url: '/v1/workspaces/:id/invites' })).toBe(false);
+    const skipped = captured.lines().filter((l) => l['msg'] === 'api.module_skipped');
+    expect(skipped).toHaveLength(1);
+    expect(skipped[0]).toMatchObject({ module: 'invites' });
+    await close();
+  });
+
+  it('refuses DEV_DEFAULT_PLAN in production and reads it elsewhere', () => {
+    expect(loadApiConfig(testEnv({ DEV_DEFAULT_PLAN: 'team' })).devDefaultPlan).toBe('team');
+    expect(loadApiConfig(testEnv()).devDefaultPlan).toBeNull();
+    expect(() =>
+      loadApiConfig(
+        testEnv({
+          NODE_ENV: 'production',
+          DEV_DEFAULT_PLAN: 'team',
+          ALLOW_INSECURE_BACKENDS: '1',
+        }),
+      ),
+    ).toThrow(/DEV_DEFAULT_PLAN/);
   });
 
   it('fails the boot with the module name when a module cannot register', async () => {

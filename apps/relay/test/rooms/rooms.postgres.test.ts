@@ -260,4 +260,91 @@ describe.runIf(STACK)('rooms on Postgres 16', () => {
         .execute();
     }
   });
+
+  describe('a share-link guest (B068 guest_member, no device)', () => {
+    /** A live link and a guest on it, in a live team session. */
+    async function guestOf(opts: { expires?: Date; revoke?: boolean } = {}) {
+      const s = await seed();
+      const mid = newId('mem');
+      const sql = stack.db as unknown as {
+        insertInto(t: string): {
+          values(v: object): {
+            returning(c: string): { executeTakeFirstOrThrow(): Promise<{ id: string }> };
+            execute(): Promise<unknown>;
+          };
+        };
+      };
+      const link = await sql
+        .insertInto('share_link')
+        .values({
+          session_id: s.session.id,
+          token_hash: Buffer.alloc(32, Math.floor(Math.random() * 255)),
+          expires_at: opts.expires ?? new Date(Date.now() + 3_600_000),
+          max_uses: 5,
+          revoked_at: opts.revoke === true ? new Date() : null,
+          created_by_member: s.member.id,
+        })
+        .returning('id')
+        .executeTakeFirstOrThrow();
+      await sql
+        .insertInto('guest_member')
+        .values({
+          member_id: mid,
+          session_id: s.session.id,
+          share_link_id: link.id,
+          name: 'Visitor',
+          slot: 3,
+        })
+        .execute();
+      return { ...s, mid };
+    }
+
+    it('is a live viewer with its own name and slot, welcomed without a device', async () => {
+      const g = await guestOf();
+      expect(await createPostgresMembership(stack.db).lookup(g.session.id, g.mid)).toEqual({
+        role: 'viewer',
+        userId: g.mid,
+        workspaceId: g.workspace.id,
+      });
+      const resolved = await access().access.resolve(g.session.id, g.mid, null);
+      expect(resolved).toMatchObject({
+        member: { id: g.mid, name: 'Visitor', slot: 3, role: 'viewer' },
+        deviceRevoked: false,
+        relayAccess: true,
+      });
+    });
+
+    it('is no member once its link is revoked or expired, or on another session', async () => {
+      const revoked = await guestOf({ revoke: true });
+      const expired = await guestOf({ expires: new Date(Date.now() - 1000) });
+      const live = await guestOf();
+      const members = createPostgresMembership(stack.db);
+      expect(await members.lookup(revoked.session.id, revoked.mid)).toBeNull();
+      expect(await members.lookup(expired.session.id, expired.mid)).toBeNull();
+      expect(await members.lookup(live.session.id, revoked.mid)).toBeNull();
+      expect(
+        (await access().access.resolve(revoked.session.id, revoked.mid, null))?.member,
+      ).toBeNull();
+    });
+
+    it('is refused with session_full when the room is at the plan cap', async () => {
+      const g = await guestOf();
+      const rooms = createRoomRegistry();
+      const room = rooms.getOrCreate(g.session.id);
+      for (let i = 0; i < 50; i++) {
+        room.join(fakeConnection(g.session.id), {
+          id: newId('mem'),
+          sid: g.session.id,
+          role: 'editor',
+          userId: newId('usr'),
+          workspaceId: g.workspace.id,
+          name: 'x',
+          slot: i,
+        });
+      }
+      await expect(access(rooms).access.resolve(g.session.id, g.mid, null)).rejects.toMatchObject({
+        code: 'session_full',
+      });
+    });
+  });
 });

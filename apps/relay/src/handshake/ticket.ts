@@ -38,7 +38,8 @@ export interface TicketClaims {
   mid: string;
   /** A hint only: the live membership's role wins. */
   role: 'host' | 'editor' | 'viewer';
-  dev: string;
+  /** The device; null for a share-link guest (a viewer with no capabilities, CT-RBAC). */
+  dev: string | null;
   caps: string[];
   jti: string;
   /** Seconds since the epoch. */
@@ -92,11 +93,12 @@ export async function verifyRelayTicket(token: unknown, deps: TicketDeps): Promi
   if (
     !isId('ses', sid) ||
     !isId('mem', mid) ||
-    !isId('dev', dev) ||
     typeof role !== 'string' ||
     !ROLES.has(role) ||
     !Array.isArray(caps) ||
     caps.length > 16 ||
+    // Only a share-link guest has no device: a viewer with no capabilities (CT-RBAC).
+    !(dev === undefined ? role === 'viewer' && caps.length === 0 : isId('dev', dev)) ||
     !caps.every((cap) => typeof cap === 'string' && CAP.test(cap)) ||
     typeof jti !== 'string' ||
     jti === '' ||
@@ -111,7 +113,7 @@ export async function verifyRelayTicket(token: unknown, deps: TicketDeps): Promi
     sid,
     mid,
     role: role as TicketClaims['role'],
-    dev,
+    dev: dev === undefined ? null : (dev as string),
     caps: caps as string[],
     jti,
     exp,

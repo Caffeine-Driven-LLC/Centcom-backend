@@ -45,7 +45,8 @@ export interface TicketInput {
   sid: string;
   mid: string;
   role: 'host' | 'editor' | 'viewer';
-  dev: string;
+  /** Undefined: a share-link guest's ticket has no `dev` claim. */
+  dev: string | undefined;
   caps: string[];
 }
 
@@ -97,9 +98,9 @@ export function memoryAccess(): SessionAccess & {
   const access = {
     records,
     calls: 0,
-    resolve(sid: string, mid: string, dev: string) {
+    resolve(sid: string, mid: string, dev: string | null) {
       access.calls += 1;
-      return Promise.resolve(records.get(`${sid}:${mid}:${dev}`) ?? null);
+      return Promise.resolve(records.get(`${sid}:${mid}:${dev ?? ''}`) ?? null);
     },
     allow(t: TicketInput, overrides: Partial<SessionAccessResult> = {}) {
       const record: SessionAccessResult = {
@@ -110,7 +111,7 @@ export function memoryAccess(): SessionAccess & {
         rosterV: 3,
         ...overrides,
       };
-      records.set(`${t.sid}:${t.mid}:${t.dev}`, record);
+      records.set(`${t.sid}:${t.mid}:${t.dev ?? ''}`, record);
       return record;
     },
   };
