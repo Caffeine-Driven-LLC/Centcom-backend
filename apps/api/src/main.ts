@@ -21,7 +21,12 @@ import {
 import { closeDb, createDb } from '@centcom/db';
 import type { Kysely } from 'kysely';
 import { sql } from 'kysely';
-import { createEmailQueue, createWorkspacePurgeQueue } from '@centcom/worker';
+import {
+  createEmailQueue,
+  createStripeEventQueue,
+  createWorkspacePurgeQueue,
+  enqueueStripeEvent,
+} from '@centcom/worker';
 import { Redis } from 'ioredis';
 import { buildApp } from './app.js';
 import { runWorker } from './worker.js';
@@ -111,10 +116,14 @@ async function main(): Promise<number> {
   // through EMAIL_PROVIDER (postmark, resend, brevo or smtp).
   const emailQueue =
     config.email === null ? null : createEmailQueue({ connection: queueConnection });
+  // Stripe webhook events are stored by the API and processed by the worker's stripe.event.process queue.
+  const stripeQueue =
+    config.billing === null ? null : createStripeEventQueue({ connection: queueConnection });
   const closeQueues = async (): Promise<void> => {
     await Promise.allSettled([
       purgeQueue.close(),
       emailQueue?.close() ?? Promise.resolve(),
+      stripeQueue?.close() ?? Promise.resolve(),
       queueConnection.quit(),
     ]);
   };
@@ -125,6 +134,9 @@ async function main(): Promise<number> {
     logger,
     purgeQueue,
     ...(emailQueue === null ? {} : { emailQueue }),
+    ...(stripeQueue === null
+      ? {}
+      : { stripeEventQueue: { enqueue: (eventId) => enqueueStripeEvent(stripeQueue, eventId) } }),
     ...(mailer === undefined ? {} : { mailer }),
   });
 

@@ -22,13 +22,17 @@ import { closeDb, createDb } from '@centcom/db';
 import {
   createInviteExpiryQueue,
   createSessionExpiryQueue,
+  createStripeEventDlq,
+  createStripeEventQueue,
   createUsageAggregateQueue,
   scheduleInviteExpiry,
   scheduleSessionExpiry,
+  scheduleStripeEventSweep,
   scheduleUsageAggregate,
   startEmailWorker,
   startInviteExpiryWorker,
   startSessionExpiryWorker,
+  startStripeEventWorker,
   startUsageAggregateWorker,
   startWorkspacePurgeWorker,
 } from '@centcom/worker';
@@ -138,6 +142,30 @@ export async function runWorker(env: Env): Promise<number> {
   });
   closers.push(() => purge.close());
 
+  // Stripe webhook events: stored by the API, processed here (subscriptions reach entitlements only
+  // through this job). The billing outbox (B081 webhooks, B063 notices) is not published yet.
+  if (ctx.billing !== null) {
+    const { processor, events } = ctx.billing;
+    const stripeQueue = createStripeEventQueue({ connection });
+    const dlq = createStripeEventDlq({ connection });
+    await scheduleStripeEventSweep(stripeQueue);
+    const stripeWorker = startStripeEventWorker({
+      connection,
+      queue: stripeQueue,
+      dlq,
+      process: (eventId, opts) => processor.process(eventId, opts),
+      waiting: (before, limit) => events.waiting(before, limit),
+      oldestWaiting: () => events.oldestWaiting(),
+      publish: () => Promise.resolve(0),
+      ...common,
+    });
+    closers.push(
+      () => stripeWorker.close(),
+      () => stripeQueue.close(),
+      () => dlq.close(),
+    );
+  }
+
   // Delivers the sign-in and invite mail the API queued (only when a real provider is chosen).
   if (config.email !== null) {
     const mail = startEmailWorker({
@@ -154,6 +182,7 @@ export async function runWorker(env: Env): Promise<number> {
     {
       jobs: ['usage.aggregate', 'invite-expiry', 'session-expiry', 'workspace-purge'],
       email: config.email?.provider ?? 'off',
+      billing: ctx.billing === null ? 'off' : 'stripe',
     },
     'worker.started',
   );

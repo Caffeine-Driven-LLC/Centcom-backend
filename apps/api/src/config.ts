@@ -34,6 +34,9 @@ import {
   objectStoreEnvSchema,
   type ObjectStoreConfig,
 } from '@centcom/storage';
+import { loadStripeConfig, type StripeConfig } from './modules/billing/stripe/stripe-client.js';
+import { loadPriceCatalog, type PriceCatalog } from './modules/billing/stripe/price-catalog.js';
+import { loadCheckoutConfig, type CheckoutConfig } from './modules/billing/checkout/service.js';
 import { loadWorkspacesConfig, type WorkspacesConfig } from './modules/workspaces/config.js';
 import { loadMagicLinkConfig, type MagicLinkConfig } from './modules/auth/magic-link/config.js';
 import { loadPkceConfig, type PkceConfig } from './modules/auth/pkce/config.js';
@@ -68,6 +71,11 @@ export const apiEnvSchema = z.object({
       'Development only: the plan every new personal workspace starts on (an active subscription written at sign-up), so a new account can use the relay without billing. Refused with NODE_ENV=production.',
     example: 'team',
   }),
+  SELF_HOST_PLAN: z.enum(['free', 'pro', 'team']).optional().meta({
+    description:
+      'Self-hosted servers without Stripe: the plan every new personal workspace starts on (an active subscription written at sign-up). Refused when STRIPE_SECRET_KEY is set, because then plans are sold, not given.',
+    example: 'team',
+  }),
   RELAY_REGION: z
     .string()
     .regex(/^[a-z][a-z0-9-]{1,31}$/, 'must be 2-32 characters of a-z, 0-9 and -')
@@ -99,6 +107,14 @@ export interface ApiConfig {
   /** Links to the web app (invites). */
   deeplinks: DeeplinkConfig;
   workspaces: WorkspacesConfig;
+  /** Stripe billing (key, webhook secret, price catalogue); null: billing is off and routes are left out. */
+  billing: {
+    stripe: StripeConfig;
+    prices: PriceCatalog;
+    checkout: CheckoutConfig;
+  } | null;
+  /** The plan new personal workspaces start on without Stripe (SELF_HOST_PLAN); null: Free. */
+  selfHostPlan: 'free' | 'pro' | 'team' | null;
   /** Development only: the plan new personal workspaces start on; null: Free, as in production. */
   devDefaultPlan: 'free' | 'pro' | 'team' | null;
   /** Where the relay is and the region it serves; null: the session routes are off. */
@@ -140,6 +156,16 @@ export function loadApiConfig(env?: Env): ApiConfig {
       { key: 'DEV_DEFAULT_PLAN', problem: 'must not be set with NODE_ENV=production' },
     ]);
   }
+  const stripeKey = defineConfig(
+    z.object({ STRIPE_SECRET_KEY: z.string().optional() }),
+    env,
+  ).STRIPE_SECRET_KEY;
+  if (own.SELF_HOST_PLAN !== undefined && stripeKey !== undefined) {
+    throw new ConfigError([
+      { key: 'SELF_HOST_PLAN', problem: 'must not be set together with STRIPE_SECRET_KEY' },
+    ]);
+  }
+  const stripe = stripeKey === undefined ? null : loadStripeConfig(env);
   return {
     base,
     keys: loadTokenKeys(env),
@@ -154,6 +180,11 @@ export function loadApiConfig(env?: Env): ApiConfig {
     idempotency: idempotencyConfig(env),
     deeplinks: deeplinkConfig(env),
     workspaces: loadWorkspacesConfig(env),
+    billing:
+      stripe === null
+        ? null
+        : { stripe, prices: loadPriceCatalog(env), checkout: loadCheckoutConfig(env) },
+    selfHostPlan: own.SELF_HOST_PLAN ?? null,
     devDefaultPlan: own.DEV_DEFAULT_PLAN ?? null,
     relay:
       own.RELAY_PUBLIC_URL === undefined
