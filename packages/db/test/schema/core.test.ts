@@ -102,7 +102,6 @@ const CORE_COLUMNS = {
     name: { nullable: false, udt: 'text' },
     state: { nullable: false, udt: 'text' },
     region: { nullable: false, udt: 'text' },
-    mode: { nullable: false, udt: 'text' },
     created_by: { nullable: false, udt: 'text' },
     created_at: { nullable: false, udt: 'timestamptz' },
     ended_at: { nullable: true, udt: 'timestamptz' },
