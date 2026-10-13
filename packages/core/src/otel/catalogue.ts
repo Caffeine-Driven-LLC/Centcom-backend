@@ -481,6 +481,17 @@ export const METRICS = {
     API_WORKER,
   ),
   log_dropped_total: counter('Log lines dropped.', [], ALL),
+  secret_guard_hits_total: counter(
+    'Provider credentials found by the credential-leak guard (B101); ids only.',
+    ['surface', 'pattern'],
+    ALL,
+  ),
+  secret_guard_scan_seconds: platform(
+    'histogram',
+    'Time one credential-leak scan took (B101).',
+    ['surface'],
+    ALL,
+  ),
   magic_link_failures_total: counter('Sign-in link failures.', ['reason']),
   magic_link_limited_total: counter('Sign-in links refused by the rate limit.'),
   magic_link_logins_total: counter('Sign-ins by e-mail link.'),

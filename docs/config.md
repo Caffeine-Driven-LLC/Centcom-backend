@@ -81,3 +81,13 @@ Owner: B033, `deeplinkConfig()` in `@centcom/core`.
 | Key | Type | Default | Required | Secret | Description |
 |---|---|---|---|---|---|
 | `WEB_BASE_URL` | URL (https://) | `https://centcom.dev` | no | no | Web origin of join, invite, session and billing links (https only). |
+
+## Credential-leak guard
+
+Owner: B101, `secretGuardConfig()` in `@centcom/core`.
+
+| Key | Type | Default | Required | Secret | Description |
+|---|---|---|---|---|---|
+| `SECRET_GUARD_ENABLED` | boolean (0, 1, true, false) | `true` | no | no | Scan requests, frames, telemetry and logs for provider credentials. May be false only when NODE_ENV=test. |
+| `SECRET_GUARD_MAX_BODY_BYTES` | integer 1024..16777216 | `1048576` | no | no | Largest request body the REST guard scans; a larger one is rejected with 413. |
+| `SECRET_GUARD_ALLOW_FILE` | string |  | no | no | Path of the allow-list JSON (secret-guard.allow.json): pattern id plus location, with a reason and an expiry. |

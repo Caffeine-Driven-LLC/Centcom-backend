@@ -16,6 +16,7 @@ import { emailEnvSchema } from '../src/email/config.js';
 import { idempotencyEnvSchema } from '../src/idempotency/crypto.js';
 import { paginationEnvSchema } from '../src/pagination/cursor.js';
 import { rateLimitEnvSchema } from '../src/ratelimit/buckets.js';
+import { secretGuardEnvSchema } from '../src/secret-guard/config.js';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const COMMAND = 'pnpm --filter @centcom/core gen:config-docs';
@@ -58,6 +59,11 @@ export const SECTIONS: readonly ConfigSection[] = [
     title: 'Deep links',
     owner: 'B033, `deeplinkConfig()` in `@centcom/core`',
     schema: deeplinkEnvSchema,
+  },
+  {
+    title: 'Credential-leak guard',
+    owner: 'B101, `secretGuardConfig()` in `@centcom/core`',
+    schema: secretGuardEnvSchema,
   },
 ];
 
