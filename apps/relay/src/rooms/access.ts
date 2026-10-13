@@ -125,7 +125,7 @@ async function resolveGuest(
 ): Promise<SessionAccessResult | null> {
   const session = await deps.db
     .selectFrom('sessions')
-    .select(['state', 'workspace_id'])
+    .select(['state', 'mode', 'workspace_id'])
     .where('id', '=', sid)
     .executeTakeFirst();
   if (session === undefined) return null;
@@ -135,7 +135,11 @@ async function resolveGuest(
     liveGuest(deps.db, sid, mid, now),
   ]);
   const result: SessionAccessResult = {
-    session: { state: session.state, maxMembers: entitlements.maxSessionMembers },
+    session: {
+      state: session.state,
+      mode: session.mode,
+      maxMembers: entitlements.maxSessionMembers,
+    },
     member: null,
     deviceRevoked: false,
     relayAccess: entitlements.relayAccess,
@@ -158,7 +162,7 @@ export function createPostgresSessionAccess(deps: PostgresSessionAccessDeps): Se
       if (dev === null) return resolveGuest(deps, clock, sid, mid);
       const session = await deps.db
         .selectFrom('sessions')
-        .select(['state', 'workspace_id'])
+        .select(['state', 'mode', 'workspace_id'])
         .where('id', '=', sid)
         .executeTakeFirst();
       if (session === undefined) return null;
@@ -172,7 +176,11 @@ export function createPostgresSessionAccess(deps: PostgresSessionAccessDeps): Se
           .executeTakeFirst(),
       ]);
       const result: SessionAccessResult = {
-        session: { state: session.state, maxMembers: entitlements.maxSessionMembers },
+        session: {
+          state: session.state,
+          mode: session.mode,
+          maxMembers: entitlements.maxSessionMembers,
+        },
         member: null,
         deviceRevoked:
           device === undefined || device.revoked_at !== null || device.user_id !== live?.userId,

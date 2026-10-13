@@ -111,6 +111,8 @@ export interface CreateSessionInput {
   creatorMemberId?: string;
   name: string;
   region: string;
+  /** How the session's agents run (B110); fixed for the session's life. Default `command_post`. */
+  mode?: 'command_post' | 'branch';
   policy?: Partial<SessionPolicyDefaults>;
 }
 
@@ -144,6 +146,7 @@ export function toSession(s: StoredSession): Session {
     host: s.row.host_member_id,
     policy: s.policy ?? { ...DEFAULT_SESSION_POLICY },
     region: s.row.region,
+    mode: s.row.mode,
     created_at: s.row.created_at.toISOString(),
     ended_at: s.row.ended_at?.toISOString() ?? null,
   };
@@ -215,6 +218,7 @@ export class SessionService {
       workspaceId: input.workspaceId,
       name: name.value,
       region: input.region,
+      mode: input.mode ?? 'command_post',
       createdBy: input.creatorUserId,
       at,
       host: {

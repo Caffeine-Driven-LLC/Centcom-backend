@@ -13,7 +13,7 @@
  * Owns: wiring. Must not: hold state outside what `register` creates.
  */
 import type { RedisBackend } from '@centcom/core';
-import { commandPostSessions } from '../agents/ports.js';
+import { createPostgresSessionModes } from '../agents/mode-store.js';
 import { connectedKey } from '../control/connections.js';
 import type { RelayModule } from '../modules.js';
 import { STAGE_ORDER } from '../pipeline.js';
@@ -51,6 +51,7 @@ const relayModule: RelayModule = {
   register(ctx) {
     const rooms = roomsFor(ctx);
     const kv = ctx.redis.kv;
+    const modes = createPostgresSessionModes(ctx.db);
     const conflicts = new ConflictSignal({
       agents: {
         async agents(sid) {
@@ -69,7 +70,7 @@ const relayModule: RelayModule = {
           return (await kv.get(connectedKey(sid, member))) !== null;
         },
       },
-      modes: commandPostSessions,
+      modes,
       gate: redisSignalGate(ctx.redis),
       emitter: {
         async emit(sid, p) {
@@ -81,7 +82,7 @@ const relayModule: RelayModule = {
       logger: ctx.log,
       metrics: ctx.metrics,
     });
-    const branches = new BranchHandler({ modes: commandPostSessions, metrics: ctx.metrics });
+    const branches = new BranchHandler({ modes, metrics: ctx.metrics });
     ctx.pipeline.use(
       STAGE_ORDER.queue,
       branchStage({ branches, conflicts, rooms: rooms.registry }),

@@ -21,8 +21,10 @@ import { roomsFor } from '../rooms/runtime.js';
 import type { AccessDbClient } from '../rooms/access.js';
 import { createPostgresAgentEntitlements } from './entitlements.js';
 import { agentStage } from './handler.js';
+import { commandPostGate } from './mode-gate.js';
 import { AgentRegistry } from './registry.js';
 import { agentStateCheck } from './state/validator.js';
+import { createPostgresSessionModes } from './mode-store.js';
 import { createStateRateLimiter } from './state-rate-limit.js';
 import { createRedisAgentStore, type AgentsDb } from './store.js';
 
@@ -31,7 +33,9 @@ const relayModule: RelayModule = {
   order: STAGE_ORDER.queue,
   register(ctx) {
     const rooms = roomsFor(ctx);
+    const modes = createPostgresSessionModes(ctx.db);
     const registry = new AgentRegistry({
+      sessions: modes,
       // The relay's client reaches every table; the agent table is typed in @centcom/db.
       store: createRedisAgentStore({
         kv: ctx.redis.kv,
@@ -59,6 +63,19 @@ const relayModule: RelayModule = {
         Object.entries(registry.liveByMode()).map(([mode, value]) => ({ value, labels: { mode } })),
       );
     }
+    ctx.pipeline.use(
+      STAGE_ORDER.queue,
+      commandPostGate({
+        modes,
+        rooms: rooms.registry,
+        owners: {
+          async ownerOf(sid, agentId) {
+            return (await registry.snapshot(sid)).find((a) => a.agentId === agentId)?.owner;
+          },
+        },
+        logger: ctx.log,
+      }),
+    );
     ctx.pipeline.use(
       STAGE_ORDER.queue,
       agentStage({ registry, rooms: rooms.registry, logger: ctx.log }),

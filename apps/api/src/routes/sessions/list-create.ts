@@ -131,6 +131,7 @@ function parseCreate(body: unknown): {
   name: string;
   policy?: Partial<SessionPolicyDefaults>;
   regionPreference?: string;
+  mode?: 'command_post' | 'branch';
 } {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) {
     throw validationFailed([{ pointer: '', code: 'invalid_type', detail: 'must be an object' }]);
@@ -153,6 +154,9 @@ function parseCreate(body: unknown): {
       detail: 'must be a string',
     });
   }
+  if (b['mode'] !== undefined && b['mode'] !== 'command_post' && b['mode'] !== 'branch') {
+    errors.push({ pointer: '/mode', code: 'invalid', detail: 'must be command_post or branch' });
+  }
   if (errors.length > 0) throw validationFailed(errors);
   return {
     workspace: b['workspace'] as string,
@@ -161,6 +165,7 @@ function parseCreate(body: unknown): {
     ...(typeof b['region_preference'] === 'string'
       ? { regionPreference: b['region_preference'] }
       : {}),
+    ...(b['mode'] === undefined ? {} : { mode: b['mode'] as 'command_post' | 'branch' }),
   };
 }
 
@@ -281,6 +286,7 @@ export const listCreateRoutes: FastifyPluginAsync<SessionRouteDeps> = async (app
           creatorDeviceId: deviceId,
           name: input.name,
           region,
+          ...(input.mode === undefined ? {} : { mode: input.mode }),
           ...(input.policy === undefined ? {} : { policy: input.policy }),
         })
         .catch(stateConflict);
@@ -290,7 +296,7 @@ export const listCreateRoutes: FastifyPluginAsync<SessionRouteDeps> = async (app
         action: 'session.create',
         workspaceId: input.workspace,
         target: { type: 'session', id: session.id },
-        meta: { mode: 'command_post' },
+        meta: { mode: session.mode },
       });
       deps.logger?.info({ session: session.id, at: clock() }, 'session.created');
       reply

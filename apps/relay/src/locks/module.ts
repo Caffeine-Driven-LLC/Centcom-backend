@@ -37,6 +37,13 @@ const relayModule: RelayModule = {
     const rooms = roomsFor(ctx);
     const service = new LockService({
       store: createRedisLockStore({ kv: ctx.redis.kv, clock: ctx.clock }),
+      agents: {
+        async ownerOf(sid, agentId) {
+          const agents = ctx.agents;
+          if (agents === undefined) return undefined;
+          return (await agents.snapshot(sid)).find((a) => a.agentId === agentId)?.owner;
+        },
+      },
       emitter: {
         async emit(sid, frames) {
           const fanout = ctx.fanout;

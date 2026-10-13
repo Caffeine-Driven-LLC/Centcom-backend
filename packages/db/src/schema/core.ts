@@ -105,6 +105,8 @@ export interface SessionsTable {
   state: Generated<Api.Session['state']>;
   /** Relay region, such as `eu`. */
   region: string;
+  /** How the session's agents run (B110): fixed when the session is created. */
+  mode: ColumnType<'command_post' | 'branch', 'command_post' | 'branch' | undefined, never>;
   created_by: FixedId;
   created_at: CreatedAt;
   ended_at: NullableTimestamp;

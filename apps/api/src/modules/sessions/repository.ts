@@ -36,6 +36,8 @@ export interface SessionRow {
   name: string;
   state: SessionState;
   region: string;
+  /** How the session's agents run; fixed at creation (B110). */
+  mode: 'command_post' | 'branch';
   created_by: string;
   created_at: Date;
   ended_at: Date | null;
@@ -78,6 +80,8 @@ export interface NewSession {
   workspaceId: string;
   name: string;
   region: string;
+  /** Default `command_post`. */
+  mode?: 'command_post' | 'branch';
   createdBy: string;
   at: Date;
   host: { id: string; userId: string; deviceId: string };
@@ -100,6 +104,7 @@ const COLUMNS = [
   'sessions.name',
   'sessions.state',
   'sessions.region',
+  'sessions.mode',
   'sessions.created_by',
   'sessions.created_at',
   'sessions.ended_at',
@@ -193,6 +198,7 @@ export function createSessionRepository(db: SessionsDb) {
             name: s.name,
             state: 'live',
             region: s.region,
+            mode: s.mode ?? 'command_post',
             created_by: s.createdBy,
             created_at: s.at,
             host_member_id: s.host.id,

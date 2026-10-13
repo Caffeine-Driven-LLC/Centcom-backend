@@ -29,6 +29,8 @@ export interface Person {
   http: any;
   sessions: any;
   token: string;
+  /** The device keys and keychain, for a session client built with another HTTP layer. */
+  crypto: { device: any; trust: any; keychain: any };
 }
 
 function makePerson(
@@ -44,15 +46,16 @@ function makePerson(
     userAgent: net.defaultUserAgent('0.0.0'),
     getAccessToken: () => Promise.resolve(token),
   });
+  const crypto = { device: keys, trust: new net.TrustStore(), keychain };
   const sessions = net.createSessionClient({
     http,
-    crypto: { device: keys, trust: new net.TrustStore(), keychain },
+    crypto,
     deviceId,
     clientInfo,
     relayUrl: relay,
     allowPlainWs: true,
   });
-  return { name, userId, deviceId, http, sessions, token };
+  return { name, userId, deviceId, http, sessions, token, crypto };
 }
 
 /** A seeded person (owner or member) on their seeded device; no sign-in needed. */
@@ -220,4 +223,29 @@ export async function until(ok: () => boolean, ms = 10_000): Promise<boolean> {
     await pause(100);
   }
   return ok();
+}
+
+/**
+ * A session client for `who` whose `createSession` asks for `mode`. The client library's
+ * `createSession` has no mode option yet, so the request body is completed on its way out.
+ */
+export function sessionClientWithMode(who: Person, mode: 'command_post' | 'branch'): any {
+  const http = {
+    ...who.http,
+    call: (op: string, args: any, o?: any) =>
+      who.http.call(
+        op,
+        op === 'createSession' ? { ...args, body: { ...args.body, mode } } : args,
+        o,
+      ),
+    paginate: (...a: any[]) => who.http.paginate(...a),
+  };
+  return net.createSessionClient({
+    http,
+    crypto: who.crypto,
+    deviceId: who.deviceId,
+    clientInfo,
+    relayUrl: relay,
+    allowPlainWs: true,
+  });
 }
