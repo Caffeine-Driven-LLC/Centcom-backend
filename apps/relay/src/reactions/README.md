@@ -33,7 +33,7 @@ history can show them, without the relay reading comment text.
   the frame stays in the log, and `rebuild` re-applies the log's reactions. A target the history
   does not have is stored anyway.
 
-## Storage (Postgres, migration `20260102004800_reactions_comments.sql`)
+## Storage (Postgres, migration `20260102005400_reactions_comments.sql`)
 
 - `reaction(session_id, target, code, member_id, seq, removed, updated_at)`, primary key
   `(session_id, target, code, member_id)`.
