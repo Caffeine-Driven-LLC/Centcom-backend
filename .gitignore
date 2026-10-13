@@ -16,3 +16,6 @@ __pycache__/
 # OS and editor noise
 .DS_Store
 Thumbs.db
+
+# CycloneDX SBOMs written by pnpm security:sbom
+/sbom/

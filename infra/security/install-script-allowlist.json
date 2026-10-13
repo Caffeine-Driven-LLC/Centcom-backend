@@ -1,0 +1,34 @@
+{
+  "entries": [
+    {
+      "package": "esbuild",
+      "reason": "Dev tooling only (vite, tsx). Its postinstall only checks the platform binary; pnpm ignoreScripts keeps it from running. Not in any service image.",
+      "issue": "docs/security/hardening.md#install-scripts",
+      "expires": "2027-04-13"
+    },
+    {
+      "package": "cpu-features",
+      "reason": "Dev only (testcontainers -> ssh2). Optional native speed-up; never built here. Not in any service image.",
+      "issue": "docs/security/hardening.md#install-scripts",
+      "expires": "2027-04-13"
+    },
+    {
+      "package": "ssh2",
+      "reason": "Dev only (testcontainers). Declares an install step for an optional native module; never run. Not in any service image.",
+      "issue": "docs/security/hardening.md#install-scripts",
+      "expires": "2027-04-13"
+    },
+    {
+      "package": "msgpackr-extract",
+      "reason": "Production, via bullmq. Its install step is node-gyp-build, which only locates a prebuilt binary; with scripts ignored msgpackr falls back to pure JavaScript. Revisit if bullmq drops it.",
+      "issue": "docs/security/hardening.md#install-scripts",
+      "expires": "2027-04-13"
+    },
+    {
+      "package": "protobufjs",
+      "reason": "Production, via the OpenTelemetry exporters. Its postinstall only rewrites a version file; never run here and not needed at run time.",
+      "issue": "docs/security/hardening.md#install-scripts",
+      "expires": "2027-04-13"
+    }
+  ]
+}
