@@ -37,6 +37,8 @@ import { ADMIN_URL, onDatabase, tempDatabase } from '../runner/helpers.js';
 const FILE = '20260101000000_core_schema.sql';
 /** This file's version: the tests stop the runner here, so later lanes' migrations (B017 on) do not change them. */
 const CORE_VERSION = '20260101000000';
+/** Columns of the Kysely map that migrations after CORE_VERSION add. */
+const LATER_COLUMNS: Record<string, string[]> = { sessions: ['mode'] };
 const TABLES = ['devices', 'memberships', 'session_members', 'sessions', 'users', 'workspaces'];
 
 type Udt = 'text' | 'citext' | 'timestamptz' | 'bool' | 'int4' | 'jsonb';
@@ -102,6 +104,7 @@ const CORE_COLUMNS = {
     name: { nullable: false, udt: 'text' },
     state: { nullable: false, udt: 'text' },
     region: { nullable: false, udt: 'text' },
+    mode: { nullable: false, udt: 'text' },
     created_by: { nullable: false, udt: 'text' },
     created_at: { nullable: false, udt: 'timestamptz' },
     ended_at: { nullable: true, udt: 'timestamptz' },
@@ -308,7 +311,11 @@ describe.runIf(ADMIN_URL !== undefined)('core schema on Postgres 16', () => {
           ).rows.map((r) => [r.name, { nullable: r.nullable === 'YES', udt: r.udt }]),
         ),
       );
-      expect(actual, table).toEqual(columns);
+      // Columns that later migrations add (sessions.mode, B110) are not in the database at CORE_VERSION.
+      const atCoreVersion = Object.fromEntries(
+        Object.entries(columns).filter(([name]) => !(LATER_COLUMNS[table] ?? []).includes(name)),
+      );
+      expect(actual, table).toEqual(atCoreVersion);
     }
   });
 
