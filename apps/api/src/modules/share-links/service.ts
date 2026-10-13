@@ -75,6 +75,9 @@ export const MAX_MAX_USES = 50;
 export const CREATE_PER_USER = 20;
 export const JOIN_PER_ADDRESS = 10;
 export const JOIN_PER_TOKEN = 30;
+/** Reading the members' keys (B104): a guest does it on join and again when it meets an unknown sender. */
+export const MEMBERS_PER_ADDRESS = 60;
+export const MEMBERS_PER_TOKEN = 120;
 /** B031's slots per session. */
 export const MAX_SESSION_SLOTS = 50;
 /** `retry_after_s` when a ticket or the counters are unavailable. */
@@ -319,6 +322,49 @@ export class ShareLinkService {
   }
 
   /** Exchanges a link's token for a guest's relay ticket. */
+  /**
+   * B104: may the holder of `token` read the members' public keys of the link's session? The same
+   * lookups and refusals as `join` (a revoked, expired or unknown link, an ended session or a
+   * workspace without the relay are all the same 404), without spending a use. Returns what the
+   * route needs to list the members.
+   */
+  async membersAccess(
+    token: string,
+    address: string,
+  ): Promise<{ sessionId: string; inWorkspace: boolean }> {
+    await this.#limit(`share:members:ip:${address}`, MEMBERS_PER_ADDRESS, true);
+    const tokenKey = hashShareToken(typeof token === 'string' ? token : '').toString('hex');
+    await this.#limit(`share:members:token:${tokenKey.slice(0, 32)}`, MEMBERS_PER_TOKEN, true);
+    const notFound = (): AppError =>
+      new AppError('not_found', { detail: SHARE_LINK_DETAILS.notFound });
+    const now = this.#clock();
+    const hash = hashShareToken(isShareTokenShape(token) ? token : '');
+    const found = isShareTokenShape(token) ? await this.#deps.store.findByHash(hash) : null;
+    const link: ShareLinkRecord | null =
+      found !== null && sameHash(found.tokenHash, hash) ? found : null;
+    const session = await this.#deps.store.session(
+      link?.sessionId ?? 'ses_00000000000000000000000000',
+    );
+    const usable =
+      link !== null &&
+      session !== null &&
+      link.revokedAt === null &&
+      link.expiresAt.getTime() > now &&
+      (session.state === 'live' || session.state === 'paused' || session.state === 'pending');
+    if (!usable || session === null || session.workspaceId === null) throw notFound();
+    let relay;
+    try {
+      relay = await this.#deps.entitlements.check(session.workspaceId, 'relay_access');
+    } catch {
+      throw new AppError('service_unavailable', {
+        detail: SHARE_LINK_DETAILS.unavailable,
+        retryAfterS: RETRY_AFTER_S,
+      });
+    }
+    if (!relay.allowed) throw notFound();
+    return { sessionId: session.id, inWorkspace: true };
+  }
+
   async join(token: string, body: unknown, address: string): Promise<Api.JoinToken> {
     try {
       await this.#limit(`share:join:ip:${address}`, JOIN_PER_ADDRESS, true);
