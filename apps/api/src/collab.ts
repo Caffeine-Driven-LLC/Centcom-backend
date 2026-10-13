@@ -35,6 +35,7 @@ import { SeatService, createSeatGate, seatLimitsFrom } from './modules/seats/ind
 import { createPostgresShareLinkStore, ShareLinkService } from './modules/share-links/index.js';
 import type { ShareLinkDb } from './modules/share-links/repository.js';
 import { WorkspaceService } from './modules/workspaces/index.js';
+import type { PurgeQueue } from './modules/workspaces/service.js';
 import type { TokenService } from './modules/auth/tokens/index.js';
 import { standingOf } from './routes/share-links/index.js';
 import type { SessionRouteDeps } from './routes/sessions/index.js';
@@ -68,6 +69,8 @@ export interface CollabDeps {
   entitlements: CachedEntitlements;
   sessionRoutes: SessionRouteDeps | null;
   mailer: unknown;
+  /** The worker's `workspace-purge` queue; without one a purge is only logged. */
+  purgeQueue?: PurgeQueue;
 }
 
 /** Mails go to Mailpit until the worker's mail queue (B032) is on the list. */
@@ -105,8 +108,8 @@ export function createCollab(deps: CollabDeps): Collab {
   const workspaces = new WorkspaceService({
     store: workspaceStore,
     events: redis.pubsub,
-    // A deleted workspace is purged by the worker, which is not running locally yet.
-    purgeQueue: {
+    // A deleted workspace is purged by the worker (`pnpm dev:worker` locally).
+    purgeQueue: deps.purgeQueue ?? {
       add: (name, data) => {
         logger.info({ job: name, workspace: data.workspaceId }, 'collab.purge_not_queued');
         return Promise.resolve();

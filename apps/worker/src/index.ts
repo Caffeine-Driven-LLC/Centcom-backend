@@ -373,3 +373,16 @@ export {
   type QuotaStateRedisClientOptions,
   type RedisQuotaStateCache,
 } from './jobs/quota-signals/index.js';
+export {
+  createUsageAggregateQueue,
+  processUsageAggregate,
+  scheduleUsageAggregate,
+  startUsageAggregateWorker,
+  USAGE_AGGREGATE_ATTEMPTS,
+  USAGE_AGGREGATE_EVERY_MS,
+  USAGE_AGGREGATE_QUEUE,
+  USAGE_AGGREGATE_SCHEDULER_ID,
+  type UsageAggregateDeps,
+  type UsageAggregateQueueOptions,
+  type UsageAggregateWorkerOptions,
+} from './jobs/usage-aggregate.js';

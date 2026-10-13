@@ -1,0 +1,96 @@
+/**
+ * The worker's jobs over the API's services (B109): the usage aggregation that fills the monthly
+ * counters, the session and invite expiry sweeps and the workspace purge with its hooks. The
+ * process that runs them is `worker.ts`; the queues, schedules and retries are @centcom/worker's.
+ *
+ * Owns: wiring the jobs to the services. Must not: open connections or read the environment.
+ */
+import {
+  createPurgeHookRegistry,
+  HISTORY_PURGE_HOOK,
+  registerEntitlementsPurgeHook,
+  registerHistoryPurgeHook,
+  registerInvitePurgeHook,
+  registerProjectPurgeHook,
+  registerWorkspaceSettingsPurgeHook,
+  type PurgeHookRegistry,
+} from '@centcom/worker';
+import {
+  createInviteStore,
+  createProjectStore,
+  createWorkspaceSettingsStore,
+  createWorkspaceStore,
+  type CoreDatabase,
+  type InviteDatabase,
+  type HistoryDatabase,
+  type ProjectDatabase,
+  type WorkspaceSettingsDb,
+} from '@centcom/db';
+import {
+  createHistoryStore,
+  createS3BlobStore,
+  createWorkspaceHistoryPurger,
+} from '@centcom/storage';
+import type { Kysely } from 'kysely';
+import type { AppContext } from './context.js';
+import { createEntitlementRepository } from './modules/entitlements/repository.js';
+import { UsageAggregator } from './modules/usage/aggregate.js';
+import { subscribedPeriod } from './modules/usage/quota.js';
+
+/** What the jobs run over. */
+export interface JobServices {
+  usage: UsageAggregator;
+  sessions: { sweep(now: Date): Promise<{ paused: number; expired: number }> } | null;
+  shareLinks: { sweep(now: Date): Promise<number> } | null;
+  invites: { sweep(now: Date): Promise<{ expired: number; bundlesDropped: number }> };
+  /** Hard-deletes a deleted workspace. */
+  workspaces: { purge(workspaceId: string): Promise<{ purged: boolean }> };
+  hooks: PurgeHookRegistry;
+}
+
+/** Builds the job services from the API's context. */
+export function createJobServices(ctx: AppContext): JobServices {
+  const db = ctx.db as unknown as Kysely<CoreDatabase>;
+  const view = <DB>(): Kysely<DB> => ctx.db as unknown as Kysely<DB>;
+  const hooks = createPurgeHookRegistry();
+  const invites = createInviteStore(view<InviteDatabase>());
+  registerInvitePurgeHook(hooks, invites);
+  registerEntitlementsPurgeHook(hooks, createEntitlementRepository(view()));
+  registerProjectPurgeHook(hooks, createProjectStore(view<ProjectDatabase>()));
+  registerWorkspaceSettingsPurgeHook(
+    hooks,
+    createWorkspaceSettingsStore(view<WorkspaceSettingsDb>()),
+  );
+  if (ctx.config.objectStore !== null) {
+    registerHistoryPurgeHook(
+      hooks,
+      createWorkspaceHistoryPurger({
+        db: view<HistoryDatabase>(),
+        store: createHistoryStore({
+          db: view<HistoryDatabase>(),
+          blobs: createS3BlobStore(ctx.config.objectStore),
+        }),
+      }),
+    );
+  } else {
+    ctx.logger.info({ hook: HISTORY_PURGE_HOOK }, 'worker.purge_hook_skipped');
+  }
+  return {
+    usage: new UsageAggregator({
+      counters: ctx.counters,
+      periods: {
+        period: async (workspaceId) =>
+          subscribedPeriod((await ctx.entitlementService.get(workspaceId))?.period),
+      },
+      quota: ctx.quota,
+      clock: ctx.clock ?? Date.now,
+      logger: ctx.logger,
+      metrics: ctx.metrics,
+    }),
+    sessions: ctx.sessionService,
+    shareLinks: ctx.collab.shareLinks,
+    invites,
+    workspaces: createWorkspaceStore(db),
+    hooks,
+  };
+}
