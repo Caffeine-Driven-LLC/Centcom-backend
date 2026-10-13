@@ -32,6 +32,11 @@ import { planRoutes } from './routes/plans/index.js';
 import { sessionInviteRoutes } from './routes/sessions/invites.js';
 import { registerShareLinkRoutes } from './routes/share-links/index.js';
 import { registerSessionRoutes } from './routes/sessions/index.js';
+import { historyRoutes } from './routes/history/index.js';
+import { snapshotRoutes } from './routes/snapshots/index.js';
+import { usageRoutes } from './routes/usage/index.js';
+import { usageSummaryRoutes } from './routes/usage-summary/index.js';
+import { notificationPreferenceRoutes } from './routes/notification-preferences/index.js';
 import { statusRoutes } from './routes/status.js';
 import { wellKnownRoutes } from './routes/well-known.js';
 
@@ -198,6 +203,44 @@ export const API_MODULES: readonly ApiModule[] = [
         }),
         clock: ctx.clock ?? Date.now,
       });
+    },
+  },
+  {
+    name: 'history',
+    skip: (ctx) =>
+      ctx.data.history === null ? 'no object store is configured (OBJECT_STORE_*)' : null,
+    register: async (app, ctx) => {
+      if (ctx.data.history === null) return;
+      await app.register(historyRoutes, {
+        service: ctx.data.history,
+        cursorKeys: ctx.config.pagination.signingKeys,
+        clock: ctx.clock ?? Date.now,
+      });
+    },
+  },
+  {
+    name: 'snapshots',
+    skip: (ctx) =>
+      ctx.data.snapshots === null ? 'no object store is configured (OBJECT_STORE_*)' : null,
+    register: async (app, ctx) => {
+      if (ctx.data.snapshots === null) return;
+      await app.register(snapshotRoutes, { service: ctx.data.snapshots });
+    },
+  },
+  {
+    name: 'usage',
+    register: async (app, ctx) => {
+      await app.register(usageRoutes, {
+        ingest: ctx.data.usageIngest,
+        clock: ctx.clock ?? Date.now,
+      });
+      await app.register(usageSummaryRoutes, { summary: ctx.data.usageSummary });
+    },
+  },
+  {
+    name: 'notification-preferences',
+    register: async (app, ctx) => {
+      await app.register(notificationPreferenceRoutes, { preferences: ctx.data.preferences });
     },
   },
   {

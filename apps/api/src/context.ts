@@ -50,6 +50,12 @@ import { deviceStoreFromDb } from './modules/devices/repo.js';
 import { DeviceService } from './modules/devices/service.js';
 import { createCollab, type Collab } from './collab.js';
 import { CachedEntitlements } from './modules/entitlements/enforcement.js';
+import type { UsageAggregationDb } from '@centcom/db';
+import { createData, type Data } from './data.js';
+import { createCounterStore } from './modules/usage/counters.js';
+import { QuotaService } from './modules/usage/quota.js';
+import { createUsageReader } from './modules/usage/reader.js';
+import { pubsubQuotaEvents } from './modules/usage/quota.js';
 import { createEntitlementRepository } from './modules/entitlements/repository.js';
 import { EntitlementService } from './modules/entitlements/service.js';
 import { SessionService, createSessionRepository } from './modules/sessions/index.js';
@@ -107,6 +113,8 @@ export interface AppContext extends AppDeps {
   entitlements: CachedEntitlements;
   /** The plan catalogue and the uncached reads (B069). */
   entitlementService: EntitlementService;
+  /** History, snapshots, usage and notification preferences (B107). */
+  data: Data;
 }
 
 const newId = createIdGenerator();
@@ -246,17 +254,29 @@ export function createContext(deps: AppDeps): AppContext {
     now: clock,
   });
 
+  const counters = createCounterStore(view<UsageAggregationDb>());
   const entitlementService = new EntitlementService({
     repository: createEntitlementRepository(view()),
     events: redis.pubsub,
+    usage: createUsageReader(counters, clock),
+    clock,
+    logger,
+    metrics,
+  });
+  // Devices report usage (POST /v1/usage); the worker's aggregation job turns the reports into the
+  // counters this reads, so a metered limit (queue items, hosted minutes) is enforced from them.
+  const quota = new QuotaService({
+    counters,
+    entitlements: entitlementService,
+    rev: entitlementService,
+    events: pubsubQuotaEvents(redis.pubsub),
     clock,
     logger,
     metrics,
   });
   const entitlements = new CachedEntitlements({
     source: entitlementService,
-    // The monthly quota counters are not served yet (usage module); nothing is metered locally.
-    quota: { check: () => Promise.resolve({ allowed: true, retryAfterS: null }) },
+    quota,
     pubsub: redis.pubsub,
     clock,
     logger,
@@ -309,6 +329,19 @@ export function createContext(deps: AppDeps): AppContext {
     };
   }
 
+  const data = createData({
+    config,
+    db,
+    redis,
+    logger,
+    metrics,
+    clock,
+    audit,
+    entitlementService,
+    counters,
+    quota,
+  });
+
   const collab = createCollab({
     config,
     db,
@@ -331,6 +364,7 @@ export function createContext(deps: AppDeps): AppContext {
     audit,
     sessionRoutes,
     collab,
+    data,
     entitlements,
     entitlementService,
     tokens,

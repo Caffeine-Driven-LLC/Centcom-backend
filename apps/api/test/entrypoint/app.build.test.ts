@@ -106,12 +106,55 @@ describe('buildApp (B102)', () => {
     await close();
   });
 
+  it('serves history, snapshots, usage and preferences when an object store is configured (B107)', async () => {
+    const { app, captured, close } = await build({
+      OBJECT_STORE_ENDPOINT: 'http://127.0.0.1:9',
+      OBJECT_STORE_BUCKET: 'history',
+      OBJECT_STORE_ACCESS_KEY_ID: 'k',
+      OBJECT_STORE_SECRET_ACCESS_KEY: 's',
+    });
+    for (const [method, url] of [
+      ['GET', '/v1/sessions/:id/history'],
+      ['DELETE', '/v1/sessions/:id/history'],
+      ['POST', '/v1/sessions/:id/snapshot'],
+      ['GET', '/v1/sessions/:id/snapshot'],
+      ['POST', '/v1/usage/events'],
+      ['GET', '/v1/workspaces/:id/usage/summary'],
+      ['GET', '/v1/notification-preferences'],
+      ['PUT', '/v1/notification-preferences'],
+    ] as const) {
+      expect(app.hasRoute({ method, url }), `${method} ${url}`).toBe(true);
+    }
+    const skipped = captured.lines().filter((l) => l['msg'] === 'api.module_skipped');
+    expect(skipped.map((l) => l['module'])).not.toContain('history');
+    expect(skipped.map((l) => l['module'])).not.toContain('snapshots');
+    await close();
+  });
+
+  it('leaves history and snapshots out, with a line each, without an object store; usage and preferences stay (B107)', async () => {
+    const { app, captured, close } = await build({});
+    expect(app.hasRoute({ method: 'GET', url: '/v1/sessions/:id/history' })).toBe(false);
+    expect(app.hasRoute({ method: 'POST', url: '/v1/usage/events' })).toBe(true);
+    expect(app.hasRoute({ method: 'GET', url: '/v1/notification-preferences' })).toBe(true);
+    const lines = captured.lines().filter((l) => l['msg'] === 'api.module_skipped');
+    expect(
+      lines.filter((l) => l['module'] === 'history' || l['module'] === 'snapshots'),
+    ).toHaveLength(2);
+    await close();
+  });
+
   it('boots without the mail configuration: one log line, no e-mail routes, the rest serves', async () => {
     const { app, captured, close } = await build({ DEV_MAILPIT_URL: undefined });
     expect(app.hasRoute({ method: 'POST', url: '/login/email' })).toBe(false);
     expect(app.hasRoute({ method: 'GET', url: '/device' })).toBe(true);
     const skipped = captured.lines().filter((l) => l['msg'] === 'api.module_skipped');
-    expect(skipped.map((l) => l['module'])).toEqual(['email-login', 'invites', 'session-invites']);
+    expect(skipped.map((l) => l['module'])).toEqual([
+      'email-login',
+      'invites',
+      'history',
+      'snapshots',
+      'session-invites',
+    ]);
     expect(app.hasRoute({ method: 'POST', url: '/v1/workspaces' })).toBe(true);
     const page = await app.inject({ method: 'GET', url: '/device?user_code=ABCD-EFGH' });
     expect(page.statusCode).toBe(503);
@@ -124,7 +167,13 @@ describe('buildApp (B102)', () => {
     expect(app.hasRoute({ method: 'POST', url: '/v1/sessions' })).toBe(false);
     expect(app.hasRoute({ method: 'GET', url: '/v1/me' })).toBe(true);
     const skipped = captured.lines().filter((l) => l['msg'] === 'api.module_skipped');
-    expect(skipped.map((l) => l['module'])).toEqual(['sessions', 'session-invites', 'share-links']);
+    expect(skipped.map((l) => l['module'])).toEqual([
+      'sessions',
+      'history',
+      'snapshots',
+      'session-invites',
+      'share-links',
+    ]);
     await close();
   });
 
@@ -143,7 +192,12 @@ describe('buildApp (B102)', () => {
     const { app, captured, close } = await build({ IDEMPOTENCY_ENCRYPTION_KEY: undefined });
     expect(app.hasRoute({ method: 'POST', url: '/v1/workspaces/:id/invites' })).toBe(false);
     const skipped = captured.lines().filter((l) => l['msg'] === 'api.module_skipped');
-    expect(skipped.map((l) => l['module'])).toEqual(['invites', 'session-invites']);
+    expect(skipped.map((l) => l['module'])).toEqual([
+      'invites',
+      'history',
+      'snapshots',
+      'session-invites',
+    ]);
     await close();
   });
 
