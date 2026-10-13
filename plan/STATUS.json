@@ -361,6 +361,10 @@
    "pct": 1,
    "note": "merged in #96"
   },
+  "B091": {
+   "pct": 0.7,
+   "note": "2026-10-13: production images, compose, Caddy and deploy scripts for one server (#126); gaps: only one environment (no dev/stage/prod split), not run on a real server, ARM images unchecked"
+  },
   "B093": {
    "pct": 1,
    "note": "merged in #69"
@@ -368,6 +372,18 @@
   "B094": {
    "pct": 1,
    "note": "merged in #70"
+  },
+  "B097": {
+   "pct": 0.85,
+   "note": "2026-10-13: security headers and CORS, dependency policy and secret scripts, gitleaks rules, WAF module (#128); gaps: WAF rules not exercised against a live proxy"
+  },
+  "B099": {
+   "pct": 0.85,
+   "note": "2026-10-13: encrypted backups, verified restore and a restore drill for one server (#129); gaps: off-site bucket not tried with a real R2 or B2 account"
+  },
+  "B101": {
+   "pct": 0.9,
+   "note": "2026-10-13: credential-leak guard for logs, requests, frames, telemetry, backups and the repo (#127)"
   },
   "B102": {
    "pct": 1,
