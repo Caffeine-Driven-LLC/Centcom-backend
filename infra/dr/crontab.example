@@ -1,0 +1,6 @@
+# Install with `crontab -e` as the user that owns the checkout (it needs docker, gpg and curl).
+# Nightly backup at 03:10, prune afterwards, a backup-age gauge every 15 minutes for the
+# node_exporter textfile collector, and a restore drill on the first of the month at 04:30.
+10 3 * * *  cd /opt/centcom && infra/dr/backup.sh >>/var/log/centcom-backup.log 2>&1 && infra/dr/prune.sh >>/var/log/centcom-backup.log 2>&1
+*/15 * * * * cd /opt/centcom && infra/dr/backup-status.sh --prom /var/lib/node_exporter/textfile/centcom_backup.prom >/dev/null 2>&1
+30 4 1 * *  cd /opt/centcom && infra/dr/drill.sh --use-latest --report /var/log/centcom-dr-drill.json >>/var/log/centcom-backup.log 2>&1
