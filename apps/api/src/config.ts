@@ -13,6 +13,9 @@ import {
   baseConfig,
   ConfigError,
   deeplinkConfig,
+  emailConfig,
+  REAL_EMAIL_PROVIDERS,
+  type EmailConfig,
   idempotencyConfig,
   type IdempotencyConfig,
   defineConfig,
@@ -43,7 +46,7 @@ export const apiEnvSchema = z.object({
     .optional()
     .meta({
       description:
-        'Development only: the Mailpit HTTP address (such as http://127.0.0.1:8025) that sign-in links are sent to. Setting it turns e-mail sign-in on; production mail goes through the email worker (not wired here yet).',
+        'Development only: the Mailpit HTTP address (such as http://127.0.0.1:8025) that sign-in links are sent to. Setting it turns e-mail sign-in on. Production mail uses EMAIL_PROVIDER (postmark, resend, brevo or smtp) instead.',
       example: 'http://127.0.0.1:8025',
     }),
   DEVICE_VERIFICATION_URI: envUrl({ protocols: ['https:', 'http:'], plain: true })
@@ -85,6 +88,8 @@ export interface ApiConfig {
   pkce: PkceConfig;
   /** Null: e-mail sign-in is off (no mail transport is configured). */
   magicLink: MagicLinkConfig | null;
+  /** The real mail provider's settings (EMAIL_PROVIDER postmark, resend, brevo or smtp); null: none chosen. */
+  email: EmailConfig | null;
   /** Where sign-in mail goes in development; null: nowhere. */
   mailpitUrl: string | null;
   /** Overrides the default verification address (development). */
@@ -121,6 +126,15 @@ export function loadApiConfig(env?: Env): ApiConfig {
   const base = baseConfig(env);
   const own = defineConfig(apiEnvSchema, env);
   const mailpitUrl = own.DEV_MAILPIT_URL ?? null;
+  // Only a provider that delivers real mail turns the production path on; `console` and `memory` keep it off.
+  const chosen = defineConfig(
+    z.object({ EMAIL_PROVIDER: z.string().optional() }),
+    env,
+  ).EMAIL_PROVIDER;
+  const email =
+    chosen !== undefined && (REAL_EMAIL_PROVIDERS as readonly string[]).includes(chosen)
+      ? emailConfig(env)
+      : null;
   if (own.DEV_DEFAULT_PLAN !== undefined && base.nodeEnv === 'production') {
     throw new ConfigError([
       { key: 'DEV_DEFAULT_PLAN', problem: 'must not be set with NODE_ENV=production' },
@@ -133,7 +147,8 @@ export function loadApiConfig(env?: Env): ApiConfig {
     rateLimit: rateLimitConfig(base, env),
     status: loadStatusConfig(env),
     pkce: loadPkceConfig(env),
-    magicLink: mailpitUrl === null ? null : loadMagicLinkConfig(env),
+    magicLink: mailpitUrl === null && email === null ? null : loadMagicLinkConfig(env),
+    email,
     mailpitUrl,
     verificationUri: own.DEVICE_VERIFICATION_URI ?? null,
     idempotency: idempotencyConfig(env),

@@ -11,12 +11,14 @@ import { createIdGenerator } from '@centcom/contracts';
 import {
   type AuditDb,
   type Authorizer as RbacAuthorizer,
+  type EmailQueue,
   type Logger,
   type Metrics,
   type RedisBackend,
   cachedMembershipReader,
   createAuditEmitter,
   createAuthorizer,
+  createEmailService,
   noopMetrics,
   rbacAuditSink,
   RELAY_CONTROL_CHANNEL,
@@ -39,7 +41,7 @@ import { createDeviceGrantStore } from './modules/auth/device/store.js';
 import { registerDeviceGrant } from './modules/auth/device/grant-handler.js';
 import { MagicLinkService } from './modules/auth/magic-link/service.js';
 import { createLoginTokenStore } from './modules/auth/magic-link/store.js';
-import type { MagicLinkMailer } from './modules/auth/magic-link/mailer.js';
+import { emailMagicLinkMailer, type MagicLinkMailer } from './modules/auth/magic-link/mailer.js';
 import { Authorizer } from './modules/auth/pkce/authorize.js';
 import { AuthorizationCodeStore } from './modules/auth/pkce/code-store.js';
 import { registerAuthorizationCodeGrant } from './modules/auth/pkce/grant-handler.js';
@@ -84,6 +86,11 @@ export interface AppDeps {
   clock?: () => number;
   /** Sends sign-in links; without one, e-mail sign-in is off. */
   mailer?: MagicLinkMailer;
+  /**
+   * The worker's `email-send` queue (production mail). With one, sign-in links and invites are
+   * queued through B032's email service and the worker delivers them with the configured provider.
+   */
+  emailQueue?: EmailQueue;
   /** Where a deleted workspace's purge is queued (the worker's `workspace-purge` queue); without one it is only logged. */
   purgeQueue?: PurgeQueue;
 }
@@ -136,6 +143,24 @@ export function createContext(deps: AppDeps): AppContext {
   const metrics = deps.metrics ?? noopMetrics;
   const clock = deps.clock ?? Date.now;
   const kv = redis.kv;
+
+  // Production mail: queued through B032's service, delivered by the worker's email-send job.
+  const emailService =
+    deps.emailQueue !== undefined && config.email !== null
+      ? createEmailService({
+          queue: deps.emailQueue,
+          rateLimit: redis.rateLimit,
+          kv: redis.kv,
+          from: config.email.from,
+          logger,
+          metrics,
+        })
+      : null;
+  const mailer: MagicLinkMailer | undefined =
+    deps.mailer ??
+    (emailService !== null && config.magicLink !== null
+      ? emailMagicLinkMailer(emailService, config.magicLink.ttlS)
+      : undefined);
 
   // Each lane types its tables narrowly; Kysely is invariant in them, so the wiring narrows here.
   const view = <DB>(): Kysely<DB> => db as unknown as Kysely<DB>;
@@ -190,13 +215,12 @@ export function createContext(deps: AppDeps): AppContext {
   });
 
   const login = config.magicLink;
-  const deviceReturnTo =
-    login !== null && deps.mailer !== undefined ? deviceUrl(login.baseUrl) : null;
+  const deviceReturnTo = login !== null && mailer !== undefined ? deviceUrl(login.baseUrl) : null;
   const magicLink =
-    login !== null && deps.mailer !== undefined && deviceReturnTo !== null
+    login !== null && mailer !== undefined && deviceReturnTo !== null
       ? new MagicLinkService({
           store: createLoginTokenStore(view<MagicLinkDatabase>()),
-          mailer: deps.mailer,
+          mailer,
           users,
           rateLimit: redis.rateLimit,
           // The device pages are a fixed place to come back to; everything else is the allow-list.
@@ -364,7 +388,8 @@ export function createContext(deps: AppDeps): AppContext {
     entitlementService,
     entitlements,
     sessionRoutes,
-    mailer: deps.mailer,
+    mailer,
+    email: emailService,
     ...(deps.purgeQueue === undefined ? {} : { purgeQueue: deps.purgeQueue }),
   });
 

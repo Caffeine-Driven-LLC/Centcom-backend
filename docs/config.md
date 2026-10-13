@@ -69,9 +69,16 @@ Owner: B032, `emailConfig()` in `@centcom/core`.
 
 | Key | Type | Default | Required | Secret | Description |
 |---|---|---|---|---|---|
-| `EMAIL_PROVIDER` | `postmark` \| `memory` \| `console` | `console` | no | no | Who sends email: postmark (production), memory (tests: kept in memory) or console (logs the template only). |
+| `EMAIL_PROVIDER` | `postmark` \| `resend` \| `brevo` \| `smtp` \| `memory` \| `console` | `console` | no | no | Who sends email: postmark, resend, brevo or smtp (production), memory (tests: kept in memory) or console (logs the template only). |
 | `EMAIL_FROM` | sender |  | yes | no | Sender of every email: `address` or `Display Name <address>`. |
 | `POSTMARK_SERVER_TOKEN` | string |  | no | yes | Postmark server token; required when EMAIL_PROVIDER is postmark. |
+| `RESEND_API_KEY` | string |  | no | yes | Resend API key; required when EMAIL_PROVIDER is resend. |
+| `BREVO_API_KEY` | string |  | no | yes | Brevo API key (v3); required when EMAIL_PROVIDER is brevo. |
+| `SMTP_HOST` | string |  | no | no | SMTP server host name; required when EMAIL_PROVIDER is smtp. |
+| `SMTP_PORT` | integer 1..65535 | `587` | no | no | SMTP server port: 587 for starttls, 465 for tls, 25 for none. |
+| `SMTP_SECURE` | `tls` \| `starttls` \| `none` | `starttls` | no | no | SMTP link protection: tls (encrypted from the start, port 465), starttls (upgrade, required) or none (plain text; a trusted local relay only). |
+| `SMTP_USER` | string |  | no | no | SMTP user name; with SMTP_PASSWORD it turns on AUTH PLAIN. |
+| `SMTP_PASSWORD` | string |  | no | yes | SMTP password; set together with SMTP_USER. |
 | `EMAIL_TIMEOUT_MS` | integer 1000..60000 | `10000` | no | no | Longest wait for one provider call, in milliseconds; slower calls are retried. |
 
 ## Deep links

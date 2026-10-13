@@ -11,6 +11,7 @@
  */
 import {
   ConfigError,
+  createEmailProvider,
   createLogger,
   createRedis,
   keyPrefixFor,
@@ -25,6 +26,7 @@ import {
   scheduleInviteExpiry,
   scheduleSessionExpiry,
   scheduleUsageAggregate,
+  startEmailWorker,
   startInviteExpiryWorker,
   startSessionExpiryWorker,
   startUsageAggregateWorker,
@@ -136,8 +138,23 @@ export async function runWorker(env: Env): Promise<number> {
   });
   closers.push(() => purge.close());
 
+  // Delivers the sign-in and invite mail the API queued (only when a real provider is chosen).
+  if (config.email !== null) {
+    const mail = startEmailWorker({
+      connection,
+      provider: createEmailProvider(config.email, logger),
+      kv: redis.kv,
+      timeoutMs: config.email.timeoutMs,
+      ...common,
+    });
+    closers.push(() => mail.close());
+  }
+
   logger.info(
-    { jobs: ['usage.aggregate', 'invite-expiry', 'session-expiry', 'workspace-purge'] },
+    {
+      jobs: ['usage.aggregate', 'invite-expiry', 'session-expiry', 'workspace-purge'],
+      email: config.email?.provider ?? 'off',
+    },
     'worker.started',
   );
   await new Promise<void>((resolve) => {

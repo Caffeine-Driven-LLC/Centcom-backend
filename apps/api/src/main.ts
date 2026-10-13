@@ -21,7 +21,7 @@ import {
 import { closeDb, createDb } from '@centcom/db';
 import type { Kysely } from 'kysely';
 import { sql } from 'kysely';
-import { createWorkspacePurgeQueue } from '@centcom/worker';
+import { createEmailQueue, createWorkspacePurgeQueue } from '@centcom/worker';
 import { Redis } from 'ioredis';
 import { buildApp } from './app.js';
 import { runWorker } from './worker.js';
@@ -107,8 +107,16 @@ async function main(): Promise<number> {
   const queueConnection = new Redis(base.redisUrl.reveal(), { maxRetriesPerRequest: null });
   queueConnection.on('error', () => undefined); // a down Redis is the readiness probe's business
   const purgeQueue = createWorkspacePurgeQueue({ connection: queueConnection });
+  // Sign-in codes and invites in production: queued here, delivered by the worker's email-send job
+  // through EMAIL_PROVIDER (postmark, resend, brevo or smtp).
+  const emailQueue =
+    config.email === null ? null : createEmailQueue({ connection: queueConnection });
   const closeQueues = async (): Promise<void> => {
-    await Promise.allSettled([purgeQueue.close(), queueConnection.quit()]);
+    await Promise.allSettled([
+      purgeQueue.close(),
+      emailQueue?.close() ?? Promise.resolve(),
+      queueConnection.quit(),
+    ]);
   };
   const app = await buildApp({
     config,
@@ -116,6 +124,7 @@ async function main(): Promise<number> {
     redis,
     logger,
     purgeQueue,
+    ...(emailQueue === null ? {} : { emailQueue }),
     ...(mailer === undefined ? {} : { mailer }),
   });
 
