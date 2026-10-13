@@ -44,7 +44,7 @@ describe.runIf(ADMIN_URL !== undefined)('session invites on Postgres 16', () => 
     await test?.drop();
   });
 
-  async function world(plan: 'free' | 'pro' | 'team' = 'pro') {
+  async function world(plan: 'free' | 'pro' | 'team' = 'pro', auditThrows = false) {
     const env = lifecycleOn(db, plan);
     const w = await env.seed();
     const s = await env.service.create({
@@ -67,7 +67,12 @@ describe.runIf(ADMIN_URL !== undefined)('session invites on Postgres 16', () => 
         },
       } as never,
       entitlements: { check: (ws, key) => env.entitlements.port.check(ws, key) },
-      audit: { emitDetached: (e) => void audited.push(e as never) },
+      audit: {
+        emitDetached: (e) => {
+          if (auditThrows) throw new Error('audit store is down');
+          audited.push(e as never);
+        },
+      },
       clock: () => now,
     });
     const session = { id: s.id, workspaceId: w.workspace, name: 'Release train', state: 'live' };
@@ -179,6 +184,18 @@ describe.runIf(ADMIN_URL !== undefined)('session invites on Postgres 16', () => 
       meta: { user_id: outsider, role: 'viewer' },
     });
     expect(JSON.stringify(audited)).not.toContain(link.token);
+  });
+
+  it('an audit write that throws does not fail create, accept or revoke (B108)', async () => {
+    const { w, service, session } = await world('pro', true);
+    const outsider = await pgUser(db);
+    const created = await service.create(session, w.owner.user, 'Owner', {
+      role: 'viewer',
+      expiresInS: 3600,
+      shareHistory: true,
+    });
+    expect(await service.accept(created.token, outsider)).toMatchObject({ role: 'viewer' });
+    await expect(service.revoke(created.invite, w.owner.user)).resolves.toBeUndefined();
   });
 
   it('revoking withdraws the right; a revoked invite is 410; an unknown token is not a session invite', async () => {
