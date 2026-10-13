@@ -1,0 +1,108 @@
+{
+  "scenario": "crossnode",
+  "started_at": "2026-10-13T20:14:24.590Z",
+  "target": "localhost",
+  "environment": {
+    "cpus": 8,
+    "cpu_model": "Intel(R) Core(TM) Ultra 7 355",
+    "memory_gib": 30.7,
+    "kernel": "7.2.8-arch1-2",
+    "node": "v22.23.3",
+    "generator_processes": 1,
+    "relay": "apps/relay/src/main.ts via tsx, one process per node",
+    "backing": "Redis 7 (AOF on), Postgres 16, MinIO in Docker on loopback; generators and relay share this machine"
+  },
+  "thresholds": [
+    {
+      "name": "members behind their session at the end (frame loss)",
+      "ok": true,
+      "value": 0,
+      "limit": 0
+    },
+    {
+      "name": "clients that could not connect",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 % of 2000"
+    },
+    {
+      "name": "2000 connections: fan-out p95 (ms)",
+      "ok": true,
+      "value": 60.2,
+      "limit": 150
+    },
+    {
+      "name": "2000 connections: fan-out p99 (ms)",
+      "ok": true,
+      "value": 146.2,
+      "limit": 400
+    },
+    {
+      "name": "2000 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "2000 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 3.6,
+      "limit": 100
+    },
+    {
+      "name": "windows that failed their checks",
+      "ok": true,
+      "value": 0,
+      "limit": 0
+    }
+  ],
+  "steps": [
+    {
+      "connections": 2000,
+      "sessions": 400,
+      "seconds": 35.1,
+      "framesSent": 14008,
+      "deliveries": 70130,
+      "deliveryRatio": 1.0013,
+      "deliveriesPerS": 2000,
+      "p50Ms": 12.2,
+      "p95Ms": 60.2,
+      "p99Ms": 146.2,
+      "maxMs": 257.6,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.85,
+      "relayRssMiB": 679,
+      "generatorLagP99Ms": 3.6,
+      "loadavg1": 9.1,
+      "fps": 1,
+      "sequencedFramesPerS": 399,
+      "foreignCores": 3,
+      "machineBusyCores": 4.9,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 10.47,
+        "postgresCpuPercent": 48.25,
+        "minioCpuPercent": 38.61
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": true,
+      "failed": []
+    }
+  ],
+  "extra": {
+    "connect_failures": 0,
+    "handshake_retries_after_4503": 0,
+    "loss_check": {
+      "sessions": 400,
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "duplicates": 0
+    }
+  },
+  "resources": {
+    "relay_rss_mib_max": 679,
+    "relay_cpu_cores_max": 0.85
+  },
+  "passed": true
+}

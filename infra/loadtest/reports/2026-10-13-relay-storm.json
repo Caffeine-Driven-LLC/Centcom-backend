@@ -1,0 +1,131 @@
+{
+  "scenario": "storm",
+  "started_at": "2026-10-13T20:15:38.530Z",
+  "target": "localhost",
+  "environment": {
+    "cpus": 8,
+    "cpu_model": "Intel(R) Core(TM) Ultra 7 355",
+    "memory_gib": 30.7,
+    "kernel": "7.2.8-arch1-2",
+    "node": "v22.23.3",
+    "generator_processes": 1,
+    "relay": "apps/relay/src/main.ts via tsx, one process per node",
+    "backing": "Redis 7 (AOF on), Postgres 16, MinIO in Docker on loopback; generators and relay share this machine"
+  },
+  "thresholds": [
+    {
+      "name": "clients welcome again within 60 s",
+      "ok": true,
+      "value": 1,
+      "limit": 0.999
+    },
+    {
+      "name": "members behind their session after the replay",
+      "ok": true,
+      "value": 0,
+      "limit": 0
+    },
+    {
+      "name": "members waiting on a seq gap",
+      "ok": true,
+      "value": 0,
+      "limit": 0
+    },
+    {
+      "name": "clients that could not connect",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 % of 1000"
+    },
+    {
+      "name": "1000 connections: fan-out p95 (ms)",
+      "ok": true,
+      "value": 19.6,
+      "limit": 150
+    },
+    {
+      "name": "1000 connections: fan-out p99 (ms)",
+      "ok": true,
+      "value": 33.4,
+      "limit": 400
+    },
+    {
+      "name": "1000 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "1000 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 2.6,
+      "limit": 100
+    },
+    {
+      "name": "windows that failed their checks",
+      "ok": true,
+      "value": 0,
+      "limit": 0
+    }
+  ],
+  "steps": [
+    {
+      "connections": 1000,
+      "sessions": 200,
+      "seconds": 25.1,
+      "framesSent": 5012,
+      "deliveries": 25060,
+      "deliveryRatio": 1,
+      "deliveriesPerS": 1000,
+      "p50Ms": 7,
+      "p95Ms": 19.6,
+      "p99Ms": 33.4,
+      "maxMs": 93.5,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.32,
+      "relayRssMiB": 258,
+      "generatorLagP99Ms": 2.6,
+      "loadavg1": 9,
+      "fps": 1,
+      "sequencedFramesPerS": 200,
+      "foreignCores": 3.4,
+      "machineBusyCores": 4.1,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 4.44,
+        "postgresCpuPercent": 15.14,
+        "minioCpuPercent": 12.43
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": true,
+      "failed": []
+    }
+  ],
+  "extra": {
+    "storm": {
+      "connections": 1000,
+      "relay_restart_seconds": 3.8,
+      "resumed": 1000,
+      "resumed_within_60s": 1000,
+      "resumed_ratio_60s": 1,
+      "resume_p50_s": 6.5,
+      "resume_p95_s": 8.7,
+      "resume_max_s": 14.7,
+      "resume_states": {
+        "frames replayed by the relay": 1000
+      },
+      "sessions": 200,
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "duplicates": 0
+    },
+    "connect_failures": 0,
+    "handshake_retries_after_4503": 0
+  },
+  "resources": {
+    "relay_rss_mib_max": 258,
+    "relay_cpu_cores_max": 0.32
+  },
+  "passed": true
+}

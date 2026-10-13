@@ -1,0 +1,102 @@
+{
+  "scenario": "smoke",
+  "started_at": "2026-10-13T19:29:33.553Z",
+  "target": "localhost",
+  "environment": {
+    "cpus": 8,
+    "cpu_model": "Intel(R) Core(TM) Ultra 7 355",
+    "memory_gib": 30.7,
+    "kernel": "7.2.8-arch1-2",
+    "node": "v22.23.3",
+    "generator_processes": 1,
+    "relay": "apps/relay/src/main.ts via tsx, one process per node",
+    "backing": "Redis 7 (AOF on), Postgres 16, MinIO in Docker on loopback; generators and relay share this machine"
+  },
+  "thresholds": [
+    {
+      "name": "members behind their session at the end (frame loss)",
+      "ok": true,
+      "value": 0,
+      "limit": 0
+    },
+    {
+      "name": "clients that could not connect",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 % of 200"
+    },
+    {
+      "name": "200 connections: fan-out p95 (ms)",
+      "ok": true,
+      "value": 8.6,
+      "limit": 150
+    },
+    {
+      "name": "200 connections: fan-out p99 (ms)",
+      "ok": true,
+      "value": 12.2,
+      "limit": 400
+    },
+    {
+      "name": "200 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "200 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 1.8,
+      "limit": 100
+    }
+  ],
+  "steps": [
+    {
+      "connections": 200,
+      "sessions": 40,
+      "seconds": 35.1,
+      "framesSent": 2807,
+      "deliveries": 14035,
+      "deliveryRatio": 1,
+      "deliveriesPerS": 400,
+      "p50Ms": 4.5,
+      "p95Ms": 8.6,
+      "p99Ms": 12.2,
+      "maxMs": 22.3,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.17,
+      "relayRssMiB": 193,
+      "generatorLagP99Ms": 1.8,
+      "loadavg1": 3,
+      "fps": 2,
+      "sequencedFramesPerS": 80,
+      "foreignCores": 2.1,
+      "machineBusyCores": 2.4,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 2.75,
+        "postgresCpuPercent": 2.78,
+        "minioCpuPercent": 1.32
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": true,
+      "failed": []
+    }
+  ],
+  "extra": {
+    "connect_failures": 0,
+    "handshake_retries_after_4503": 0,
+    "loss_check": {
+      "sessions": 40,
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "duplicates": 0
+    }
+  },
+  "resources": {
+    "relay_rss_mib_max": 193,
+    "relay_cpu_cores_max": 0.17
+  },
+  "passed": true
+}
