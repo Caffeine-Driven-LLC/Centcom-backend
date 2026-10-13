@@ -25,18 +25,14 @@
 
 (common) {
 	encode zstd gzip
-	# Never expose the staff API or metrics through the public host; the admin API listens on its
-	# own port on the private network only.
-	@private path /internal/admin/* /metrics
-	respond @private 404
 	log {
 		output stdout
 		format json
 	}
 }
 
-{$API_HOST} {
-	import common
+# One upstream definition for both bodies-size classes below.
+(api_upstream) {
 	reverse_proxy api:3000 {
 		# One address, the real client's: the API trusts exactly one proxy hop (TRUSTED_PROXY_HOPS=1).
 		header_up X-Forwarded-For {client_ip}
@@ -45,15 +41,51 @@
 	}
 }
 
+{$API_HOST} {
+	import common
+
+	# Never expose the staff API or metrics through the public host; the admin API listens on its
+	# own port on the private network only. (A handle block of its own, first, so it wins.)
+	@private path /internal/admin/* /metrics
+	handle @private {
+		respond 404
+	}
+
+	# Request body limits (CT-PAGE): 1 MiB where the API accepts batches (usage events, telemetry,
+	# the Stripe webhook), 256 KiB everywhere else. The API enforces the same limits itself; this
+	# refuses an oversized body before it reaches Node.
+	@large path /v1/usage/events /v1/telemetry /internal/stripe/webhook
+	handle @large {
+		request_body {
+			max_size 1MiB
+		}
+		import api_upstream
+	}
+	handle {
+		request_body {
+			max_size 256KiB
+		}
+		import api_upstream
+	}
+}
+
 {$RELAY_HOST} {
 	import common
+
+	@private path /internal/admin/* /metrics
+	handle @private {
+		respond 404
+	}
+
 	# WebSocket upgrades pass through reverse_proxy unchanged. Close idle sockets only after the
 	# relay's own ping has had its chance (RELAY_PING_MS / RELAY_DEAD_MS).
-	reverse_proxy relay:8080 {
-		header_up X-Forwarded-For {client_ip}
-		health_uri /healthz
-		health_interval 10s
-		stream_timeout 24h
-		stream_close_delay 30s
+	handle {
+		reverse_proxy relay:8080 {
+			header_up X-Forwarded-For {client_ip}
+			health_uri /healthz
+			health_interval 10s
+			stream_timeout 24h
+			stream_close_delay 30s
+		}
 	}
 }

@@ -280,4 +280,18 @@ describe('Caddyfile', () => {
     expect(text).toContain('reverse_proxy api:3000');
     expect(text).toContain('reverse_proxy relay:8080');
   });
+
+  it('limits request bodies (1 MiB for batch endpoints, 256 KiB elsewhere) and hides private paths first', async () => {
+    const text = await read('Caddyfile');
+    expect(text).toMatch(
+      /@large path \/v1\/usage\/events \/v1\/telemetry \/internal\/stripe\/webhook/,
+    );
+    expect(text).toMatch(/max_size 1MiB/);
+    expect(text).toMatch(/max_size 256KiB/);
+    // the private-path handle block comes before the proxying ones, so it wins
+    expect(text.indexOf('handle @private')).toBeLessThan(text.indexOf('handle @large'));
+    expect(text.indexOf('handle @large')).toBeLessThan(
+      text.indexOf('request_body {\n\t\t\tmax_size 256KiB'),
+    );
+  });
 });
