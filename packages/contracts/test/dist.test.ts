@@ -79,6 +79,6 @@ describe('build output', () => {
       }));`;
     const run = spawnSync(process.execPath, ['--input-type=module', '-e', script], { cwd: root, encoding: 'utf8', timeout: TIMEOUT });
     expect(run.status, run.stderr).toBe(0);
-    expect(JSON.parse(run.stdout)).toEqual({ version: '1.2.0', frame: true, bad: false, id: true, kinds: 45 });
+    expect(JSON.parse(run.stdout)).toEqual({ version: '1.2.0', frame: true, bad: false, id: true, kinds: 48 });
   });
 });
