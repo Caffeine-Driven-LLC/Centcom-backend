@@ -1,0 +1,2682 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "serialNumber": "urn:uuid:e79ac558-5841-4ab8-a28c-aabeff1f2744",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-10-13T17:07:25.092Z",
+    "lifecycles": [
+      {
+        "phase": "pre-build"
+      }
+    ],
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "pnpm",
+          "version": "12.9.1"
+        }
+      ]
+    },
+    "component": {
+      "type": "application",
+      "name": "api",
+      "version": "0.0.0",
+      "purl": "pkg:npm/%40centcom/api@0.0.0",
+      "bom-ref": "pkg:npm/%40centcom/api@0.0.0",
+      "group": "@centcom",
+      "description": "Fastify REST API (/v1/*)."
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "contracts",
+      "version": "0.0.0",
+      "purl": "pkg:npm/%40centcom/contracts@0.0.0",
+      "bom-ref": "pkg:npm/%40centcom/contracts@0.0.0",
+      "group": "@centcom",
+      "description": "Types, validators and helpers generated from contracts/."
+    },
+    {
+      "type": "library",
+      "name": "storage",
+      "version": "0.0.0",
+      "purl": "pkg:npm/%40centcom/storage@0.0.0",
+      "bom-ref": "pkg:npm/%40centcom/storage@0.0.0",
+      "group": "@centcom",
+      "description": "Object storage (S3-compatible, SigV4) and the durable session history log, shared by the API and the relay."
+    },
+    {
+      "type": "library",
+      "name": "hashes",
+      "version": "2.4.0",
+      "purl": "pkg:npm/%40noble/hashes@2.4.0",
+      "bom-ref": "pkg:npm/%40noble/hashes@2.4.0",
+      "group": "@noble",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@noble/hashes/-/hashes-2.4.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "5f95da5566480424fb1c76469b923b6505c3c0b1be6c65ee4ab310016fbb66f97cee1d6499cd5907555244972951fa14ac6429e05928c66e6467e32cf9a5be78"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fastify",
+      "version": "5.12.5",
+      "purl": "pkg:npm/fastify@5.12.5",
+      "bom-ref": "pkg:npm/fastify@5.12.5",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/fastify/-/fastify-5.12.5.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "381da4d5d971b39fcd00006a78a5761541e4483d816c436c09a93cc942d57329a7ddf1c83c355af532374839c9496612965666498b995f2da04e7b13f92badd4"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ajv-compiler",
+      "version": "4.0.6",
+      "purl": "pkg:npm/%40fastify/ajv-compiler@4.0.6",
+      "bom-ref": "pkg:npm/%40fastify/ajv-compiler@4.0.6",
+      "group": "@fastify",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@fastify/ajv-compiler/-/ajv-compiler-4.0.6.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "36dbb333449f68c25b1a59e3afd2d64143792f3812adb07cb5fff045935ab3ee04d4efcd9b3979ddeeebb93eb51c36724422460ba1712288263593b573911304"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ajv",
+      "version": "8.20.0",
+      "purl": "pkg:npm/ajv@8.20.0",
+      "bom-ref": "pkg:npm/ajv@8.20.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/ajv/-/ajv-8.20.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "4e16e58be3a53a3fa230f60505505f2773a60809da4b2367e0cd6fcfd4fa1a46b926df5b6bf1c8479ea3a32eb9b58ea4c7f142179557341f35f58eff194ac118"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "require-from-string",
+      "version": "2.0.2",
+      "purl": "pkg:npm/require-from-string@2.0.2",
+      "bom-ref": "pkg:npm/require-from-string@2.0.2",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/require-from-string/-/require-from-string-2.0.2.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "5dfd2759ee91b1ece214cbbe029f5b8a251b9a996ae92f7fa7eef0ed85cffc904786b5030d48706bebc0372b9bbaa7d9593bde53ffc36151ac0c6ed128bfef13"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fast-deep-equal",
+      "version": "3.1.3",
+      "purl": "pkg:npm/fast-deep-equal@3.1.3",
+      "bom-ref": "pkg:npm/fast-deep-equal@3.1.3",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/fast-deep-equal/-/fast-deep-equal-3.1.3.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "7f7a90f68432f63d808417bf1fd542f75c0b98a042094fe00ce9ca340606e61b303bb04b2a3d3d1dce4760dcfd70623efb19690c22200da8ad56cd3701347ce1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "json-schema-traverse",
+      "version": "1.0.0",
+      "purl": "pkg:npm/json-schema-traverse@1.0.0",
+      "bom-ref": "pkg:npm/json-schema-traverse@1.0.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/json-schema-traverse/-/json-schema-traverse-1.0.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "34cf3f3fd9f75e35e12199f594b86415a0024ce5114178d6855e0103f4673aff31be0aadaa9017f483b89914314b1d51968e2dab37aa6f4b0e96bb9a3b2dddba"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fast-uri",
+      "version": "3.1.8",
+      "purl": "pkg:npm/fast-uri@3.1.8",
+      "bom-ref": "pkg:npm/fast-uri@3.1.8",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/fast-uri/-/fast-uri-3.1.8.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "19932d6544cd4693952040a85f02cd652e7150613e99535b4c1f21ffb4708764c559c05088fcd3832662d39045f543192a42c9bfc5c14494e553bce0f3e65f32"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fast-uri",
+      "version": "4.2.1",
+      "purl": "pkg:npm/fast-uri@4.2.1",
+      "bom-ref": "pkg:npm/fast-uri@4.2.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/fast-uri/-/fast-uri-4.2.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "4e61d081ec231ed32ad44e50280d2d384d32798190b36e4a642ff3889a6e6d1b56235e56f767babcf17275639e6415513921c1630fd0843f5de4e79f743e8b0e"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ajv-formats",
+      "version": "3.0.1",
+      "purl": "pkg:npm/ajv-formats@3.0.1",
+      "bom-ref": "pkg:npm/ajv-formats@3.0.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/ajv-formats/-/ajv-formats-3.0.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "f2252a979d04511fae51c7514371c3a9ae84572a3776870bf20e5627714d7169aeeb621b90652e7bfa44c8b056f1518a2ae7133e0a9e92ce1f214d43038ca8c1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "avvio",
+      "version": "9.3.0",
+      "purl": "pkg:npm/avvio@9.3.0",
+      "bom-ref": "pkg:npm/avvio@9.3.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/avvio/-/avvio-9.3.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "836b50ecb13ba0e4aa0dfc049b733e64231325ceca89909d278530c9925be5c9132b262ee743989afbf49821573ee617a0ce33912b7ccccf5743d282bf103be0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "error",
+      "version": "4.2.0",
+      "purl": "pkg:npm/%40fastify/error@4.2.0",
+      "bom-ref": "pkg:npm/%40fastify/error@4.2.0",
+      "group": "@fastify",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@fastify/error/-/error-4.2.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "452a37b150d77c7b2488164a04f4609d04ed22aa62ffbce124e1260310a205c33b774bb07467712e5b0268bcc6b3cbfc367c484657c6d0de75a79c8568e7a7b5"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fastq",
+      "version": "1.20.3",
+      "purl": "pkg:npm/fastq@1.20.3",
+      "bom-ref": "pkg:npm/fastq@1.20.3",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/fastq/-/fastq-1.20.3.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "5cabf99e72ecea72c5ef536088a24b21914b90fc8812e3ac7a52c6eee8d99c6ad17d02bc1e9bd8f96a8a84025401d2e89b054712b552e0b7f11653ead3f15303"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "reusify",
+      "version": "1.1.0",
+      "purl": "pkg:npm/reusify@1.1.0",
+      "bom-ref": "pkg:npm/reusify@1.1.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/reusify/-/reusify-1.1.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "83a4147dfd38a19a47b34786e69f37ac52e11de574d2e83f61ff6764ce9f2de52b3e0b814e44d039da40596b29321e794d97d54033da37735025f6d5440c5d23"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "abstract-logging",
+      "version": "2.0.1",
+      "purl": "pkg:npm/abstract-logging@2.0.1",
+      "bom-ref": "pkg:npm/abstract-logging@2.0.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/abstract-logging/-/abstract-logging-2.0.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "d818d14d9c533ef85e3af19b06c94549839492bf928cfb4e9eb2cfdf77fe54858bcdecd0a5972a560ee36b72f87415e6cf38304fe6b4dbd8d1c793c28b726e88"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "process-warning",
+      "version": "5.1.0",
+      "purl": "pkg:npm/process-warning@5.1.0",
+      "bom-ref": "pkg:npm/process-warning@5.1.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/process-warning/-/process-warning-5.1.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "8d049a547b0f82dcb0eb47b5ad0fc0fbf02b3c48ff4bca52fef167c866bf818157aca93fe91b83928a950d0e4d2393264b4d7af7c96d9409343680c134bba347"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "rfdc",
+      "version": "1.4.1",
+      "purl": "pkg:npm/rfdc@1.4.1",
+      "bom-ref": "pkg:npm/rfdc@1.4.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/rfdc/-/rfdc-1.4.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "ab56f737942445459497b8b2ca569a8f790ea484f43768bd32a2044173fbdc656c37d730ddf771f17eb77049968491a2d8f3c2176dc88e9ee4b66777f6b6b020"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "semver",
+      "version": "7.8.5",
+      "purl": "pkg:npm/semver@7.8.5",
+      "bom-ref": "pkg:npm/semver@7.8.5",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/semver/-/semver-7.8.5.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "63bfca0ec6fc2e3a28669c1aa86cae94ee8342592c8029dc7211c693eb19218e1206f52870c044147e54af57c8e1d57e26f974c3a723bee71a222e34a6e462a0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fast-json-stringify",
+      "version": "7.0.1",
+      "purl": "pkg:npm/fast-json-stringify@7.0.1",
+      "bom-ref": "pkg:npm/fast-json-stringify@7.0.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/fast-json-stringify/-/fast-json-stringify-7.0.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "79149ac804526dbc25063a4fe2f9d34c8443e503dc22b9a284fc4378dd43b4a9c73e0eba52e24bc7ef2194ad64685763bf3c90fddcc02e88b8bf0010f93fa264"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "json-schema-ref-resolver",
+      "version": "3.0.0",
+      "purl": "pkg:npm/json-schema-ref-resolver@3.0.0",
+      "bom-ref": "pkg:npm/json-schema-ref-resolver@3.0.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/json-schema-ref-resolver/-/json-schema-ref-resolver-3.0.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "84ead92152f98f26058f393bfb2ee7e490f31a553cadf583b98c87c066b6580f3fa5c98c1dece9db1b15c31ade6c3fd0f6df0d7390dba227b2483a42a78586e0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "dequal",
+      "version": "2.0.3",
+      "purl": "pkg:npm/dequal@2.0.3",
+      "bom-ref": "pkg:npm/dequal@2.0.3",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/dequal/-/dequal-2.0.3.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "d237bea8f28710ca21bdf453084a370ab3c6e9c033018826ccacb1462612483912e9e1897725499bb59a600e4409a003f702c1d93e0411eca603968555c61708"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "merge-json-schemas",
+      "version": "0.2.1",
+      "purl": "pkg:npm/%40fastify/merge-json-schemas@0.2.1",
+      "bom-ref": "pkg:npm/%40fastify/merge-json-schemas@0.2.1",
+      "group": "@fastify",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@fastify/merge-json-schemas/-/merge-json-schemas-0.2.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "380dca1810b2e8ab48bcb7fc0c8342e7cf34a398819435f84b1ccb412f07a2b2406ea96eccb467f345175346f1667ed43858458294490dab1fc27f671b8146e0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "proxy-addr",
+      "version": "5.1.1",
+      "purl": "pkg:npm/%40fastify/proxy-addr@5.1.1",
+      "bom-ref": "pkg:npm/%40fastify/proxy-addr@5.1.1",
+      "group": "@fastify",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@fastify/proxy-addr/-/proxy-addr-5.1.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "cefd3b63d184b83b093de819a0315de120d6699396f0dda96b4192ad898aa4877fb63b751e0a37063641563755a5f56b1da03e42fe636b0b52d8ee74279c4cf6"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ipaddr.js",
+      "version": "2.5.0",
+      "purl": "pkg:npm/ipaddr.js@2.5.0",
+      "bom-ref": "pkg:npm/ipaddr.js@2.5.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/ipaddr.js/-/ipaddr.js-2.5.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "6aafade4d01cf9c4baad94105560b6c7df023ea1ad28a4cc0dde066a876fd304a19c8b5d2a0ff9d5d8e4189d61a87f8ecb48af0dfb426d22c24286fcceca34d7"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "forwarded",
+      "version": "3.0.2",
+      "purl": "pkg:npm/%40fastify/forwarded@3.0.2",
+      "bom-ref": "pkg:npm/%40fastify/forwarded@3.0.2",
+      "group": "@fastify",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@fastify/forwarded/-/forwarded-3.0.2.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "344f0780a2e061e8d5f650e9aa410568328c2d87a524155f1de92107450abd7d2085a817449aa0ebc7de83c7abd4d3d7c46e0df62eaf3f1cedf04fb7c077dc98"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "light-my-request",
+      "version": "6.6.0",
+      "purl": "pkg:npm/light-my-request@6.6.0",
+      "bom-ref": "pkg:npm/light-my-request@6.6.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/light-my-request/-/light-my-request-6.6.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "08761bbbc46d6e8488a15b0767a61ee1c8f8030ff2836a001629a517b98dbdf0d5d7dd8b47b9c388ab5221f0ae2d3ecaa243d24e7ffd91f54b9b9386374036f0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "set-cookie-parser",
+      "version": "2.7.2",
+      "purl": "pkg:npm/set-cookie-parser@2.7.2",
+      "bom-ref": "pkg:npm/set-cookie-parser@2.7.2",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/set-cookie-parser/-/set-cookie-parser-2.7.2.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "a1e33596953f52f853c70fa0ddc21fc571f225173fba275ddf22b53f6e368331ddb34b9d401633b37cbc8f8802096f9927b69dd3272d95df1160ef9b76eae5bf"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "cookie",
+      "version": "1.1.1",
+      "purl": "pkg:npm/cookie@1.1.1",
+      "bom-ref": "pkg:npm/cookie@1.1.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/cookie/-/cookie-1.1.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "7a2f00a2cee36b4c1e469173267100f541c9ffb5d09aa8256d1c277f60138dc07d5aaf3be15287f647e38e2acce94854dbf1397c561a77297284595d72a4a275"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "process-warning",
+      "version": "4.0.1",
+      "purl": "pkg:npm/process-warning@4.0.1",
+      "bom-ref": "pkg:npm/process-warning@4.0.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/process-warning/-/process-warning-4.0.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "ddcd8bcd0deb63d77485cd5e99cb0785f4fd270cf47028626ff40df3da0c136478e75c397f2ddfd1a7c0844445640c2b6c3538df0935d9dd0e441a4354c139d1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pino",
+      "version": "10.4.0",
+      "purl": "pkg:npm/pino@10.4.0",
+      "bom-ref": "pkg:npm/pino@10.4.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/pino/-/pino-10.4.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "6e4d59313c06fd5ca6c7eccfa1adbc321373b9c16f5c95a9ddcb2b4aec6e1cf48c7947adb5a0a843926f834ee6b42e0918da5c7d3c33e35a150a736004af7ebc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "thread-stream",
+      "version": "4.2.0",
+      "purl": "pkg:npm/thread-stream@4.2.0",
+      "bom-ref": "pkg:npm/thread-stream@4.2.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/thread-stream/-/thread-stream-4.2.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "7b6cd9f7ac120a16b306c6c435ffcf726ff8b301edd9c10a43ddab8548e42fd1822a24c324869305e9e313f9bd0d78b44019933039050dd3a8994cb6d00d6d0d"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "real-require",
+      "version": "1.0.0",
+      "purl": "pkg:npm/real-require@1.0.0",
+      "bom-ref": "pkg:npm/real-require@1.0.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/real-require/-/real-require-1.0.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "3f89db41841f78f271452998faffca20dc55b9c9b8345de9decee926f78c4eda26e76151e181a5b5440b07c89d0d7c030d65be798ad60c56eecd49e3a161c5ee"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "sonic-boom",
+      "version": "4.2.1",
+      "purl": "pkg:npm/sonic-boom@4.2.1",
+      "bom-ref": "pkg:npm/sonic-boom@4.2.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/sonic-boom/-/sonic-boom-4.2.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "c3a031b6e6d76b6c135c052c64c316111aec21101dacad1273e154cad5af60084124bcae238965acc202d43b65352748f7d108f3a299ba6d8c32adc4019945f5"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "atomic-sleep",
+      "version": "1.0.0",
+      "purl": "pkg:npm/atomic-sleep@1.0.0",
+      "bom-ref": "pkg:npm/atomic-sleep@1.0.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/atomic-sleep/-/atomic-sleep-1.0.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "90d3a30ea021ee9c745d6348fb841bce8891fe74e41c058db9ddaebe726ab83d7fc796bb11064c253d00733a8ad109faee863f4d34352db50a6a3669a7723db5"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "safe-stable-stringify",
+      "version": "2.5.0",
+      "purl": "pkg:npm/safe-stable-stringify@2.5.0",
+      "bom-ref": "pkg:npm/safe-stable-stringify@2.5.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/safe-stable-stringify/-/safe-stable-stringify-2.5.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "6f7ae9a532a6f53f8fb1508110e511e3a19623b7dd3acd3454a675fbd7351160da0ccbe341cead530b85c88a6b806813716a151d22ab53c1f7d591c0d9ed111c"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "on-exit-leak-free",
+      "version": "2.1.2",
+      "purl": "pkg:npm/on-exit-leak-free@2.1.2",
+      "bom-ref": "pkg:npm/on-exit-leak-free@2.1.2",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/on-exit-leak-free/-/on-exit-leak-free-2.1.2.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "d1e24963a8572c67f5b9d1f07cd7ed06a1fe83bdc4538079d389d978aa73d6c61129a7c0821c31109ba70763bbac36642f83c67ec3159d35d9d848e26dba9cb0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "quick-format-unescaped",
+      "version": "4.0.4",
+      "purl": "pkg:npm/quick-format-unescaped@4.0.4",
+      "bom-ref": "pkg:npm/quick-format-unescaped@4.0.4",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/quick-format-unescaped/-/quick-format-unescaped-4.0.4.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "b580b5435860c91b87825a15fd85ecdb0d79ba73d587ca9fbbfa824df85361a99ac3b7f286e98a6b6c86a5d4a8f3bbd8df6ac87258fee1f59841750cb3d107be"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pino-abstract-transport",
+      "version": "3.0.0",
+      "purl": "pkg:npm/pino-abstract-transport@3.0.0",
+      "bom-ref": "pkg:npm/pino-abstract-transport@3.0.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/pino-abstract-transport/-/pino-abstract-transport-3.0.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "c257d473353e9fb1f2fc76b98fd6bf819372ed67b9f9c5e9f182fe5fe3c6f12d0a5f1c3b9ff257037738e98d334339c827cdd44498b0cbb2e1e7a58ba2436ec6"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "split2",
+      "version": "4.2.0",
+      "purl": "pkg:npm/split2@4.2.0",
+      "bom-ref": "pkg:npm/split2@4.2.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/split2/-/split2-4.2.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "51c8dc24e5a49eb36417a3cb5fcdea70733a28781528d915eb663c6b9b980d5bfdc9d19057000730aa877498ded554d6a658c6d1662908386b09d00e607e135a"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "redact",
+      "version": "0.4.0",
+      "purl": "pkg:npm/%40pinojs/redact@0.4.0",
+      "bom-ref": "pkg:npm/%40pinojs/redact@0.4.0",
+      "group": "@pinojs",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@pinojs/redact/-/redact-0.4.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "93610d9e606e804febcd07c471d58770263efc533754bcc7f5c604b1b76ca2aaefcc029185465e44d84066f07c3a2b502754c179ddf2a96b5d8f34bac09281c2"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pino-std-serializers",
+      "version": "7.1.0",
+      "purl": "pkg:npm/pino-std-serializers@7.1.0",
+      "bom-ref": "pkg:npm/pino-std-serializers@7.1.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/pino-std-serializers/-/pino-std-serializers-7.1.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "06774f1faeff271184c518225f5757d30d45bd9724e566b869a97dd7df12ad18598c7dc6c4a4142880676094dd8f61c3377510012d3a1e57dc49b423d8e1e66b"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "find-my-way",
+      "version": "9.9.0",
+      "purl": "pkg:npm/find-my-way@9.9.0",
+      "bom-ref": "pkg:npm/find-my-way@9.9.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/find-my-way/-/find-my-way-9.9.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "b09b20675b101f6503ba8c0fb8c2a0f1acfb41cf05d239e3f922a415653ff93d31705960579b2481738652a990cce7665ba00b03b021248356c77a850646cb1c"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fast-querystring",
+      "version": "1.1.2",
+      "purl": "pkg:npm/fast-querystring@1.1.2",
+      "bom-ref": "pkg:npm/fast-querystring@1.1.2",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/fast-querystring/-/fast-querystring-1.1.2.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "83a2ae2969855dcd1f203f16587d238ade20d00181a0984290931bd5199bb1211436f43e642f03e82519f86b45f2733348f5e786278fcb2aaa8a9ccd3449c78e"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fast-decode-uri-component",
+      "version": "1.0.1",
+      "purl": "pkg:npm/fast-decode-uri-component@1.0.1",
+      "bom-ref": "pkg:npm/fast-decode-uri-component@1.0.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/fast-decode-uri-component/-/fast-decode-uri-component-1.0.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "58a80a5a0e5e531bd1646c16f05bdf6da1fb0174a1d9c2fede3e5f306cd4302c56049ddd5776bb5b3f32d9ffee4347b707a5a6a1d0f7a12e788d343d1d54c822"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "safe-regex2",
+      "version": "5.1.1",
+      "purl": "pkg:npm/safe-regex2@5.1.1",
+      "bom-ref": "pkg:npm/safe-regex2@5.1.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/safe-regex2/-/safe-regex2-5.1.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "98e481bc718364cb8811931d3b3fda0846030afd04ee77dc36c221505fbf3fec42ec7c9fdc592fca6aa03db83d0f511d486bbeb8a6c9832d3d2bf44a29cee424"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ret",
+      "version": "0.5.0",
+      "purl": "pkg:npm/ret@0.5.0",
+      "bom-ref": "pkg:npm/ret@0.5.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/ret/-/ret-0.5.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "2355f1ad9490fa812b9114788d86c0c8412ed88d1abc1bef30ce4937ee84069ace1910aceb710da99def8dabeaf1f070dbeeb61b92c5e577a52b0b89a5cbdcc7"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "toad-cache",
+      "version": "3.7.4",
+      "purl": "pkg:npm/toad-cache@3.7.4",
+      "bom-ref": "pkg:npm/toad-cache@3.7.4",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/toad-cache/-/toad-cache-3.7.4.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "9b54dd47faef4fb920189661b2936d5ddb1d624d1f75d1692491651b9b3e5243c5a3a9642e867760b39aa2f3d88ead51ef934fe497de4e548768eb04d3da5e0a"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fast-json-stringify-compiler",
+      "version": "5.1.0",
+      "purl": "pkg:npm/%40fastify/fast-json-stringify-compiler@5.1.0",
+      "bom-ref": "pkg:npm/%40fastify/fast-json-stringify-compiler@5.1.0",
+      "group": "@fastify",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@fastify/fast-json-stringify-compiler/-/fast-json-stringify-compiler-5.1.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "3f1718b4a2db43c67ec80a62aa32bc170c48c2f123dfc9363a22dcd7bbbc7642529667e2db01c73da4a76a8a813d0aadbc5f1856c0e00e93f6b270c27c5ae97f"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "secure-json-parse",
+      "version": "4.1.0",
+      "purl": "pkg:npm/secure-json-parse@4.1.0",
+      "bom-ref": "pkg:npm/secure-json-parse@4.1.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/secure-json-parse/-/secure-json-parse-4.1.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "9782a761f132a982710f094d57245f3b61383531df30a016754b80f09d32bded83cff13f3dd05ea58d3746fc89a6cb08a51170268083e79c00fa6103b3a07258"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ioredis",
+      "version": "6.0.0",
+      "purl": "pkg:npm/ioredis@6.0.0",
+      "bom-ref": "pkg:npm/ioredis@6.0.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/ioredis/-/ioredis-6.0.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "7fe0edb9bc5fa5fe8a605abb5955c9a0e2e7d1b9384c9accacdf52cde13e8eb5ab0968fb5d7ddf03abe4af269f8400d7f86332991c600c90ce237dc23a425cd3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "denque",
+      "version": "2.1.0",
+      "purl": "pkg:npm/denque@2.1.0",
+      "bom-ref": "pkg:npm/denque@2.1.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/denque/-/denque-2.1.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "1d5404dc001bfe9c45f1f400a22aa9be0f62ddebeaba0de1a22c1a90ec99030266fbabd97a16e46176749782714be23743133deefe5a6913618fcbf9a0185e93"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "debug",
+      "version": "4.4.3",
+      "purl": "pkg:npm/debug@4.4.3",
+      "bom-ref": "pkg:npm/debug@4.4.3",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/debug/-/debug-4.4.3.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "446c305a7c10be455f6af295b76d8518bc3ec5849dcc04709b4aeee83853540dee994e6165cdbc57790ee2cb6062bcab4e52e9baf808f468a28e5b408cd6dca8"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ms",
+      "version": "2.1.3",
+      "purl": "pkg:npm/ms@2.1.3",
+      "bom-ref": "pkg:npm/ms@2.1.3",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "e85973b9b4cb646dc9d9afcd542025784863ceae68c601f268253dc985ef70bb2fa1568726afece715c8ebf5d73fab73ed1f7100eb479d23bfb57b45dd645394"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "commands",
+      "version": "2.0.0",
+      "purl": "pkg:npm/%40ioredis/commands@2.0.0",
+      "bom-ref": "pkg:npm/%40ioredis/commands@2.0.0",
+      "group": "@ioredis",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@ioredis/commands/-/commands-2.0.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "bebc74004fd3d21edc459c1fa35337f42afe66166b91fd15f2640def9c2e70a0b108b0fd97f557ea7a37805beb2ea0f52251bfd4bb735a8bea130dedd15afdce"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "cluster-key-slot",
+      "version": "1.1.1",
+      "purl": "pkg:npm/cluster-key-slot@1.1.1",
+      "bom-ref": "pkg:npm/cluster-key-slot@1.1.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/cluster-key-slot/-/cluster-key-slot-1.1.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "af01f051f5cbe340a19b5af4f32ae1537aa952f75596090a35ec9e18f3b19d6f3f4b2543be045a79dfd4cf9e00a9635a4c20138658fa400b374d970a234c4313"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "standard-as-callback",
+      "version": "2.1.0",
+      "purl": "pkg:npm/standard-as-callback@2.1.0",
+      "bom-ref": "pkg:npm/standard-as-callback@2.1.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/standard-as-callback/-/standard-as-callback-2.1.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "aa84514b244e9dc6b3d73d26bd8a8813894277da7647dd22e86c56dee66fe6e712bbcb54ec1e475d43f5806f29559b183556978e4f029571cfb6d2f2c402f8f0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "redis-errors",
+      "version": "1.2.0",
+      "purl": "pkg:npm/redis-errors@1.2.0",
+      "bom-ref": "pkg:npm/redis-errors@1.2.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/redis-errors/-/redis-errors-1.2.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "d6a9f2dce13109fd14bd457fe70a5829fd98c0f70ea97ce4c0a29298a1e213a64c42ce6179e13f73c7972be3cd9653ef9a38006df9ec6e9906656cbc701a67f7"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "kysely",
+      "version": "0.29.6",
+      "purl": "pkg:npm/kysely@0.29.6",
+      "bom-ref": "pkg:npm/kysely@0.29.6",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/kysely/-/kysely-0.29.6.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "847681f02feb7f30c3b6bfedf18670c40b8f2534f4cc7c9a3e8573717c0362160d0201ffe2c21f5618bf5cb2c863e6cbfc5a9a2099e30130db8bc39b4842e6c6"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "bullmq",
+      "version": "6.3.11",
+      "purl": "pkg:npm/bullmq@6.3.11",
+      "bom-ref": "pkg:npm/bullmq@6.3.11",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/bullmq/-/bullmq-6.3.11.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "ca5498dc562297a13d223a95b53f961dc66f4b5ae04d9d0bdc07afeb6bb8e4d5d015ef87dfb6b502e0b758301347b49c3437add4087c3273f795ff176946cf53"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pg",
+      "version": "8.23.1",
+      "purl": "pkg:npm/pg@8.23.1",
+      "bom-ref": "pkg:npm/pg@8.23.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/pg/-/pg-8.23.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "68bf7a00700db568cf2c338baa7871fa7829f7e50aec44c453c549ac3086bec4928bf9862dc598b12e877ab83b96668125ee2ec2b7eab1aee04c415a4a2cc3a1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pg-cloudflare",
+      "version": "1.4.1",
+      "purl": "pkg:npm/pg-cloudflare@1.4.1",
+      "bom-ref": "pkg:npm/pg-cloudflare@1.4.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/pg-cloudflare/-/pg-cloudflare-1.4.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "e8f41bb05599729f44989130cb97064362daf80316a4fe3a9606dbf17f94fd7b07214c1e603342a5eb8a724e51c4bd8c755162ee4adb6c48b99d7e1987b261ad"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pg-connection-string",
+      "version": "2.14.1",
+      "purl": "pkg:npm/pg-connection-string@2.14.1",
+      "bom-ref": "pkg:npm/pg-connection-string@2.14.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/pg-connection-string/-/pg-connection-string-2.14.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "a91de418d3c12e908db73d1ebdb280d18fcc4455f0492753fa94c9bd8a7f6d74dc45e65bbd7d64cc5d08c93735427c6a17b0196ce78184d2fc47999841957f30"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pg-types",
+      "version": "2.2.0",
+      "purl": "pkg:npm/pg-types@2.2.0",
+      "bom-ref": "pkg:npm/pg-types@2.2.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/pg-types/-/pg-types-2.2.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "a9300096b12c97cb383a211063af700ef70c21d40deb0773e688d088ecba61132eca7c5e9ce3743b9a02a4923a96c85ceac720018f2abc9d8e9ffa7e09763418"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pg-int8",
+      "version": "1.0.1",
+      "purl": "pkg:npm/pg-int8@1.0.1",
+      "bom-ref": "pkg:npm/pg-int8@1.0.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/pg-int8/-/pg-int8-1.0.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "582b5a6d2eadddcf129290c15256f59233acee5ebac6c19d2a920f66c838c11f81dfebbd500ba6da8752b05f6d9efc60f348786712d6332e294633ac148a90a7"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "postgres-interval",
+      "version": "1.2.0",
+      "purl": "pkg:npm/postgres-interval@1.2.0",
+      "bom-ref": "pkg:npm/postgres-interval@1.2.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/postgres-interval/-/postgres-interval-1.2.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "f5985728cfebc37e74375a2fb961db1b19c687f48d278727c4788cd2bc44e15378d70b20f0ff335a7f61bff6ee2b4d113f85af94ecabfd10438a9b72c556e465"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "xtend",
+      "version": "4.0.2",
+      "purl": "pkg:npm/xtend@4.0.2",
+      "bom-ref": "pkg:npm/xtend@4.0.2",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/xtend/-/xtend-4.0.2.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "2ca614d620172575200179fd5118e2bbe3168725171ecbdfa7b99cb989bd75250a2b4fc28edad4c050310fcdbf98259bb4bb068c521a774c08b28778ceb4c011"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "postgres-date",
+      "version": "1.0.7",
+      "purl": "pkg:npm/postgres-date@1.0.7",
+      "bom-ref": "pkg:npm/postgres-date@1.0.7",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/postgres-date/-/postgres-date-1.0.7.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "b2e0e68cb55083bf2730ad94678e788401be3805be1d03d9ea7fbe4cd0d45fe2f4fae5252f2c27a3124a0e8bb9d599becd30a3ac297436ae89f42e613fdbcafd"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "postgres-bytea",
+      "version": "1.0.1",
+      "purl": "pkg:npm/postgres-bytea@1.0.1",
+      "bom-ref": "pkg:npm/postgres-bytea@1.0.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/postgres-bytea/-/postgres-bytea-1.0.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "e7ee47a979ec64f13ae4825948c919b544404597a57a5da85d410ef2b1fcdd54bf8711f9befd6e1eab8f839c19b3cc8c01f76ff7bd4853e91c3d47338bb35505"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "postgres-array",
+      "version": "2.0.0",
+      "purl": "pkg:npm/postgres-array@2.0.0",
+      "bom-ref": "pkg:npm/postgres-array@2.0.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/postgres-array/-/postgres-array-2.0.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "56966b52a53903af5e4325b6739080d63b4b79c0ac37653f6c3e958a5ac50d6ab9fb95081153bb9dacd2dd311c1dfd73b8f60efeca86bd4bd6eb683ce915d9b8"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pg-pool",
+      "version": "3.14.0",
+      "purl": "pkg:npm/pg-pool@3.14.0",
+      "bom-ref": "pkg:npm/pg-pool@3.14.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/pg-pool/-/pg-pool-3.14.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "80ab4f9057503d4dc392ca2854b8bd2ec8d9c6bb015192296beeda571f8b579a4d8742b33f86657ae776a68f82a27af16ee5c6049e877deafa85d829201a416b"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pg-protocol",
+      "version": "1.16.1",
+      "purl": "pkg:npm/pg-protocol@1.16.1",
+      "bom-ref": "pkg:npm/pg-protocol@1.16.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/pg-protocol/-/pg-protocol-1.16.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "a7d54e14c88707f65b2404deb5b83ef7d3f1b2c4d5490467cae3d243aee6375fb52813a365a67cdd943396d9f13e12704ac0b79f0563275d0354995eadb1732e"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pgpass",
+      "version": "1.0.5",
+      "purl": "pkg:npm/pgpass@1.0.5",
+      "bom-ref": "pkg:npm/pgpass@1.0.5",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/pgpass/-/pgpass-1.0.5.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "15d5bdaff8d066149ea21b35677b08d72c4540d16f31c9e67ee8f85813144f13ab0322cc693704d5a00c0624e56cc35a5ef04242e562d11ee177cb9d0d23fbba"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "msgpackr",
+      "version": "2.1.0",
+      "purl": "pkg:npm/msgpackr@2.1.0",
+      "bom-ref": "pkg:npm/msgpackr@2.1.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/msgpackr/-/msgpackr-2.1.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "a7fa410953badc2b2fbe99289949cd35a83afa7dfcad42ee0c0e871deef4a3682d0bc383239d9fa05ff8928daa41ca7a3a212b2574e6ad97979ac1861ec21035"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "msgpackr-extract",
+      "version": "3.0.4",
+      "purl": "pkg:npm/msgpackr-extract@3.0.4",
+      "bom-ref": "pkg:npm/msgpackr-extract@3.0.4",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/msgpackr-extract/-/msgpackr-extract-3.0.4.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "e2498efcc77250890b22f4cfafc5472e297802da0a2289e258f204939f820f2d319d60bce1ace14859ae27b3f165db18b623f9904790b0e44054878c8314fe1f"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "msgpackr-extract-linux-arm",
+      "version": "3.0.4",
+      "purl": "pkg:npm/%40msgpackr-extract/msgpackr-extract-linux-arm@3.0.4",
+      "bom-ref": "pkg:npm/%40msgpackr-extract/msgpackr-extract-linux-arm@3.0.4",
+      "group": "@msgpackr-extract",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@msgpackr-extract/msgpackr-extract-linux-arm/-/msgpackr-extract-linux-arm-3.0.4.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "4e0df25fae5fe466ed5cb92b6041c4e6889b646f5ea726166acec5a204d3109783105f499572732a05da3614f751795339e03e01f669619619d2e3e3ec27eabb"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "msgpackr-extract-darwin-arm64",
+      "version": "3.0.4",
+      "purl": "pkg:npm/%40msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.4",
+      "bom-ref": "pkg:npm/%40msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.4",
+      "group": "@msgpackr-extract",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@msgpackr-extract/msgpackr-extract-darwin-arm64/-/msgpackr-extract-darwin-arm64-3.0.4.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "2c2906a3a2437da0618124fb5293d680d80b20da5ca5a6da1dfcb3e4e071ef99d463106c6843f18e7c8d8d6a5e6ffc41ba9ffaf3642705f441cb6fcbbcfbad65"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "msgpackr-extract-darwin-x64",
+      "version": "3.0.4",
+      "purl": "pkg:npm/%40msgpackr-extract/msgpackr-extract-darwin-x64@3.0.4",
+      "bom-ref": "pkg:npm/%40msgpackr-extract/msgpackr-extract-darwin-x64@3.0.4",
+      "group": "@msgpackr-extract",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@msgpackr-extract/msgpackr-extract-darwin-x64/-/msgpackr-extract-darwin-x64-3.0.4.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "cc4c655bdcd424a647fed3ad54cb6dc2329ae179bfdca70d8e713774f37ddae0a4b706af331a60080dcca092bf0ce9d35ac420a36db839a493dbbfe63cd01ffb"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "msgpackr-extract-linux-x64",
+      "version": "3.0.4",
+      "purl": "pkg:npm/%40msgpackr-extract/msgpackr-extract-linux-x64@3.0.4",
+      "bom-ref": "pkg:npm/%40msgpackr-extract/msgpackr-extract-linux-x64@3.0.4",
+      "group": "@msgpackr-extract",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@msgpackr-extract/msgpackr-extract-linux-x64/-/msgpackr-extract-linux-x64-3.0.4.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "f133573048c9737404cbb47fc7520d860894f976a40c0154cc185acfbf916ebb3c347e5441e1d0c719b3b120491b257a2358d6efdba7762426f2d388f83fbc15"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "msgpackr-extract-linux-arm64",
+      "version": "3.0.4",
+      "purl": "pkg:npm/%40msgpackr-extract/msgpackr-extract-linux-arm64@3.0.4",
+      "bom-ref": "pkg:npm/%40msgpackr-extract/msgpackr-extract-linux-arm64@3.0.4",
+      "group": "@msgpackr-extract",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@msgpackr-extract/msgpackr-extract-linux-arm64/-/msgpackr-extract-linux-arm64-3.0.4.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "7605f43fff7018f25e1c5046f999a1804e9b9ad32decd3f9091046cb292da68a5d93f996e0f3a7ae942c48bb4a235770a5cfa93cbb971c387abefb24c9013fb3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "msgpackr-extract-win32-x64",
+      "version": "3.0.4",
+      "purl": "pkg:npm/%40msgpackr-extract/msgpackr-extract-win32-x64@3.0.4",
+      "bom-ref": "pkg:npm/%40msgpackr-extract/msgpackr-extract-win32-x64@3.0.4",
+      "group": "@msgpackr-extract",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@msgpackr-extract/msgpackr-extract-win32-x64/-/msgpackr-extract-win32-x64-3.0.4.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "0a60973d0ae46f0131c778fde3afcfb475876d82620910510e5e0196445070907f60ec10c49453a68a3b693b28aed8e0a09d71ee8a734d2c67ec2f804922d58d"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "node-gyp-build-optional-packages",
+      "version": "5.2.2",
+      "purl": "pkg:npm/node-gyp-build-optional-packages@5.2.2",
+      "bom-ref": "pkg:npm/node-gyp-build-optional-packages@5.2.2",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/node-gyp-build-optional-packages/-/node-gyp-build-optional-packages-5.2.2.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "b3ec3eac15a7a533304856da134517b11960ee15381637a4294e1ec808a1e53f2726e3594f59cdb2c917a7199ea922bd53390197a5204659ca73c873f0812a3b"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "detect-libc",
+      "version": "2.1.2",
+      "purl": "pkg:npm/detect-libc@2.1.2",
+      "bom-ref": "pkg:npm/detect-libc@2.1.2",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/detect-libc/-/detect-libc-2.1.2.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "06d8f604e38ef37a375b21f9f5ef0c817b3111055c6ab9143a9118aee6c1d2eaf09cdd74c90dfae2bb22072535d67665a966199b4e62fe87fb8a8e26ce2841b5"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "cron-parser",
+      "version": "5.10.1",
+      "purl": "pkg:npm/cron-parser@5.10.1",
+      "bom-ref": "pkg:npm/cron-parser@5.10.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/cron-parser/-/cron-parser-5.10.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "a4a46b45a808b7093dac6212b5c532331157df8c79eb3a17dca0dff47278b6dc245c82b5ab12badc4bd7bc40e697123d01d3c9f98ed310a45fb51956e5e492ec"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "luxon",
+      "version": "3.7.2",
+      "purl": "pkg:npm/luxon@3.7.2",
+      "bom-ref": "pkg:npm/luxon@3.7.2",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/luxon/-/luxon-3.7.2.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "bed1215e1fe036323d620d6ee235ffd1854f32fc731ee1a00a6ead0b9919c9bd3cca31961a7a808c626f7176ea411d8fdccc8c1059d16e971d152e8f05c2ea7b"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "node-abort-controller",
+      "version": "3.1.1",
+      "purl": "pkg:npm/node-abort-controller@3.1.1",
+      "bom-ref": "pkg:npm/node-abort-controller@3.1.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/node-abort-controller/-/node-abort-controller-3.1.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "0062b6c902888d1baa9dce95917d978f977e416f3167cee96b550aeb203aa2e532bb17c7b8c3faba613940aed499378e0329a8f99c751718aec3dad5c7cb5a1d"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tslib",
+      "version": "2.8.1",
+      "purl": "pkg:npm/tslib@2.8.1",
+      "bom-ref": "pkg:npm/tslib@2.8.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "a0916ef781d06fe29576e49440bef09e99aa9df98bb0e03f9c087a6fa107d30084a0ad3f98f79753a737c0a0d5f373243ae1cf447b525ca294f7d2016b34bfdb"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "core",
+      "version": "0.0.0",
+      "purl": "pkg:npm/%40centcom/core@0.0.0",
+      "bom-ref": "pkg:npm/%40centcom/core@0.0.0",
+      "group": "@centcom",
+      "description": "Config, logging, errors, RBAC, rate limiting, Redis and email primitives."
+    },
+    {
+      "type": "library",
+      "name": "jose",
+      "version": "6.2.12",
+      "purl": "pkg:npm/jose@6.2.12",
+      "bom-ref": "pkg:npm/jose@6.2.12",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/jose/-/jose-6.2.12.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "f4d88598911ec74b32d83939f23d94181487814b36ca917d7994aee0beaf8ce5f70e9f7a4b0d45dee2fe1fe0f5b31d368d965dcd44f41e0bc2cb9f42baf5dc5b"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "worker",
+      "version": "0.0.0",
+      "purl": "pkg:npm/%40centcom/worker@0.0.0",
+      "bom-ref": "pkg:npm/%40centcom/worker@0.0.0",
+      "group": "@centcom",
+      "description": "BullMQ jobs: webhooks, notifications, billing, retention."
+    },
+    {
+      "type": "library",
+      "name": "api",
+      "version": "1.9.1",
+      "purl": "pkg:npm/%40opentelemetry/api@1.9.1",
+      "bom-ref": "pkg:npm/%40opentelemetry/api@1.9.1",
+      "group": "@opentelemetry",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@opentelemetry/api/-/api-1.9.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "80bc8994f1cf658740935244340f4b7877a365ed538bbeffa537859bf9cc5e6407fc715995c4bf3b65c907e2fc7e46eb352aa176d96f8c1563c705186a7347e5"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "db",
+      "version": "0.0.0",
+      "purl": "pkg:npm/%40centcom/db@0.0.0",
+      "bom-ref": "pkg:npm/%40centcom/db@0.0.0",
+      "group": "@centcom",
+      "description": "Postgres client (Kysely) and plain SQL migrations."
+    },
+    {
+      "type": "library",
+      "name": "core",
+      "version": "2.12.0",
+      "purl": "pkg:npm/%40opentelemetry/core@2.12.0",
+      "bom-ref": "pkg:npm/%40opentelemetry/core@2.12.0",
+      "group": "@opentelemetry",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@opentelemetry/core/-/core-2.12.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "d47b1202ebd3e3f9b2d10ad75acc9715d5a329a3de087b22b262998041086fc34ad772cfe83acc465b146ef0ffd05f660d62b7c43a26f4032fdc8b1cc603a739"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "semantic-conventions",
+      "version": "1.43.0",
+      "purl": "pkg:npm/%40opentelemetry/semantic-conventions@1.43.0",
+      "bom-ref": "pkg:npm/%40opentelemetry/semantic-conventions@1.43.0",
+      "group": "@opentelemetry",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@opentelemetry/semantic-conventions/-/semantic-conventions-1.43.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "7926164e6eb6d2d4e4e3910a49e75a50bf0c15823c856d7ae21217b20207cb1bb75686d40777c50aee6dd2141bcba3a85913ec1b52a42941b633951a7622e256"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "sdk-trace-base",
+      "version": "2.12.0",
+      "purl": "pkg:npm/%40opentelemetry/sdk-trace-base@2.12.0",
+      "bom-ref": "pkg:npm/%40opentelemetry/sdk-trace-base@2.12.0",
+      "group": "@opentelemetry",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@opentelemetry/sdk-trace-base/-/sdk-trace-base-2.12.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "24e1118190b144cd3a1442799045b195244285a87a3265c3c772b00abbaa12ffe21322e44e890249e99fdb2d70f28207b5faebf04553a7379babfdf5be7d82a6"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "resources",
+      "version": "2.12.0",
+      "purl": "pkg:npm/%40opentelemetry/resources@2.12.0",
+      "bom-ref": "pkg:npm/%40opentelemetry/resources@2.12.0",
+      "group": "@opentelemetry",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@opentelemetry/resources/-/resources-2.12.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "fab491a0e7659fa3615d355c05d1d2959c490cdcf0c5a75ec1e2b696d64eded56d7e9e9a925001734eb17250e4ea8bd147e1221a021c49b87fe8d8231619dbdc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "sdk-trace",
+      "version": "2.12.0",
+      "purl": "pkg:npm/%40opentelemetry/sdk-trace@2.12.0",
+      "bom-ref": "pkg:npm/%40opentelemetry/sdk-trace@2.12.0",
+      "group": "@opentelemetry",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@opentelemetry/sdk-trace/-/sdk-trace-2.12.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "22656e450e9f68eb138b55a76bcf2cd9abe0aeb7ff8838173e28087b29e45218ecb4cba84140ce2578247b3da3d66954e1bb635dc5c119afaaeea285611dc6b0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "exporter-trace-otlp-http",
+      "version": "0.223.0",
+      "purl": "pkg:npm/%40opentelemetry/exporter-trace-otlp-http@0.223.0",
+      "bom-ref": "pkg:npm/%40opentelemetry/exporter-trace-otlp-http@0.223.0",
+      "group": "@opentelemetry",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@opentelemetry/exporter-trace-otlp-http/-/exporter-trace-otlp-http-0.223.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "37c35665aa10b85f5edf4ed2eb1a15a08d65bf138e1649819f29c3e36af4d823c27f1a02f7970913100a045ad30f80b98ae86ab616f339924dfd6dbd7b3e28fc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "otlp-exporter-base",
+      "version": "0.223.0",
+      "purl": "pkg:npm/%40opentelemetry/otlp-exporter-base@0.223.0",
+      "bom-ref": "pkg:npm/%40opentelemetry/otlp-exporter-base@0.223.0",
+      "group": "@opentelemetry",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@opentelemetry/otlp-exporter-base/-/otlp-exporter-base-0.223.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "1e524cac95e33aa7507a860d0c712f153a5a636a7db960cad463e5e40678c08e5e6accdfa29a5376e3afe3b33c7a217ee1ec38daf7c8fd7beded31d88044a747"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "otlp-transformer",
+      "version": "0.223.0",
+      "purl": "pkg:npm/%40opentelemetry/otlp-transformer@0.223.0",
+      "bom-ref": "pkg:npm/%40opentelemetry/otlp-transformer@0.223.0",
+      "group": "@opentelemetry",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@opentelemetry/otlp-transformer/-/otlp-transformer-0.223.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "a319a63cbe7f31b4ac3bc2b9f3c57d9ff5cb21eec56532b7d05a3efd4fe5027b746482bf8683ccd379f65a94936556d40464d413b68bcb19c0ce1ee71363c3e1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "sdk-logs",
+      "version": "0.223.0",
+      "purl": "pkg:npm/%40opentelemetry/sdk-logs@0.223.0",
+      "bom-ref": "pkg:npm/%40opentelemetry/sdk-logs@0.223.0",
+      "group": "@opentelemetry",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@opentelemetry/sdk-logs/-/sdk-logs-0.223.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "0298807d489487a7e626dd466ec06ea1e0e7f03f082f8d94bc6c8f52bf28d59f3d65e222382135ad9efc2a42148c45f7395f0ea2b97d7b3e508e8e376729c3cb"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "api-logs",
+      "version": "0.223.0",
+      "purl": "pkg:npm/%40opentelemetry/api-logs@0.223.0",
+      "bom-ref": "pkg:npm/%40opentelemetry/api-logs@0.223.0",
+      "group": "@opentelemetry",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@opentelemetry/api-logs/-/api-logs-0.223.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "39ea66e9eb553c50a7d15581d6df37de2393833d5e6010d43f172b391fd7bf0cc3d7e020f55cd23d2aeb28014d27f85a6ad8fef025db1b8ee9657bdd35028327"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "sdk-metrics",
+      "version": "2.12.0",
+      "purl": "pkg:npm/%40opentelemetry/sdk-metrics@2.12.0",
+      "bom-ref": "pkg:npm/%40opentelemetry/sdk-metrics@2.12.0",
+      "group": "@opentelemetry",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@opentelemetry/sdk-metrics/-/sdk-metrics-2.12.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "99531a107c02509b98dd2e04b27fa74f4c90037a8210687e48e3c9b17ca05341a5e39dd672c0cd8ed11af047dd7b0330a0bcabd6d9687c1e1f5f2b55a625eea3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "exporter-metrics-otlp-http",
+      "version": "0.223.0",
+      "purl": "pkg:npm/%40opentelemetry/exporter-metrics-otlp-http@0.223.0",
+      "bom-ref": "pkg:npm/%40opentelemetry/exporter-metrics-otlp-http@0.223.0",
+      "group": "@opentelemetry",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@opentelemetry/exporter-metrics-otlp-http/-/exporter-metrics-otlp-http-0.223.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "84d0bcc9a8bffb108dc93ba23b2e8915ea575c0fec6ffda30b341163b7367145b3ea8c1a89d8a19475293b6d01f7f763f0928f368f2b727ee2913cbb0a3f8969"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "zod",
+      "version": "4.6.5",
+      "purl": "pkg:npm/zod@4.6.5",
+      "bom-ref": "pkg:npm/zod@4.6.5",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/zod/-/zod-4.6.5.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "bf997f6855d941e6a2e1ac0b6cea52a0779c13d52232b9dfc7be6d1172e33689d754047143998e7a2a538d1394721b3350d0aa9c4fa1a8032e8d1b111ecbadd9"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:npm/%40centcom/api@0.0.0",
+      "dependsOn": [
+        "pkg:npm/%40centcom/contracts@0.0.0",
+        "pkg:npm/%40centcom/core@0.0.0",
+        "pkg:npm/%40centcom/db@0.0.0",
+        "pkg:npm/%40centcom/storage@0.0.0",
+        "pkg:npm/%40centcom/worker@0.0.0",
+        "pkg:npm/%40noble/hashes@2.4.0",
+        "pkg:npm/%40opentelemetry/api@1.9.1",
+        "pkg:npm/bullmq@6.3.11",
+        "pkg:npm/fastify@5.12.5",
+        "pkg:npm/ioredis@6.0.0",
+        "pkg:npm/jose@6.2.12",
+        "pkg:npm/kysely@0.29.6"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40centcom/contracts@0.0.0",
+      "dependsOn": [
+        "pkg:npm/ajv-formats@3.0.1",
+        "pkg:npm/ajv@8.20.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40centcom/core@0.0.0",
+      "dependsOn": [
+        "pkg:npm/%40centcom/contracts@0.0.0",
+        "pkg:npm/%40opentelemetry/api@1.9.1",
+        "pkg:npm/%40opentelemetry/core@2.12.0",
+        "pkg:npm/%40opentelemetry/exporter-metrics-otlp-http@0.223.0",
+        "pkg:npm/%40opentelemetry/exporter-trace-otlp-http@0.223.0",
+        "pkg:npm/%40opentelemetry/resources@2.12.0",
+        "pkg:npm/%40opentelemetry/sdk-metrics@2.12.0",
+        "pkg:npm/%40opentelemetry/sdk-trace-base@2.12.0",
+        "pkg:npm/ioredis@6.0.0",
+        "pkg:npm/kysely@0.29.6",
+        "pkg:npm/pino@10.4.0",
+        "pkg:npm/zod@4.6.5"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40centcom/db@0.0.0",
+      "dependsOn": [
+        "pkg:npm/%40centcom/contracts@0.0.0",
+        "pkg:npm/%40centcom/core@0.0.0",
+        "pkg:npm/kysely@0.29.6",
+        "pkg:npm/pg@8.23.1"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40centcom/storage@0.0.0",
+      "dependsOn": [
+        "pkg:npm/%40centcom/contracts@0.0.0",
+        "pkg:npm/%40centcom/core@0.0.0",
+        "pkg:npm/%40centcom/db@0.0.0",
+        "pkg:npm/kysely@0.29.6"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40centcom/worker@0.0.0",
+      "dependsOn": [
+        "pkg:npm/%40centcom/contracts@0.0.0",
+        "pkg:npm/%40centcom/core@0.0.0",
+        "pkg:npm/bullmq@6.3.11",
+        "pkg:npm/ioredis@6.0.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40fastify/ajv-compiler@4.0.6",
+      "dependsOn": [
+        "pkg:npm/ajv-formats@3.0.1",
+        "pkg:npm/ajv@8.20.0",
+        "pkg:npm/fast-uri@4.2.1"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40fastify/error@4.2.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40fastify/fast-json-stringify-compiler@5.1.0",
+      "dependsOn": [
+        "pkg:npm/fast-json-stringify@7.0.1"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40fastify/forwarded@3.0.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40fastify/merge-json-schemas@0.2.1",
+      "dependsOn": [
+        "pkg:npm/dequal@2.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40fastify/proxy-addr@5.1.1",
+      "dependsOn": [
+        "pkg:npm/%40fastify/forwarded@3.0.2",
+        "pkg:npm/ipaddr.js@2.5.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40ioredis/commands@2.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40msgpackr-extract/msgpackr-extract-darwin-x64@3.0.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40msgpackr-extract/msgpackr-extract-linux-arm64@3.0.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40msgpackr-extract/msgpackr-extract-linux-arm@3.0.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40msgpackr-extract/msgpackr-extract-linux-x64@3.0.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40msgpackr-extract/msgpackr-extract-win32-x64@3.0.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40noble/hashes@2.4.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40opentelemetry/api-logs@0.223.0",
+      "dependsOn": [
+        "pkg:npm/%40opentelemetry/api@1.9.1"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40opentelemetry/api@1.9.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40opentelemetry/core@2.12.0",
+      "dependsOn": [
+        "pkg:npm/%40opentelemetry/api@1.9.1",
+        "pkg:npm/%40opentelemetry/semantic-conventions@1.43.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40opentelemetry/exporter-metrics-otlp-http@0.223.0",
+      "dependsOn": [
+        "pkg:npm/%40opentelemetry/api@1.9.1",
+        "pkg:npm/%40opentelemetry/core@2.12.0",
+        "pkg:npm/%40opentelemetry/otlp-exporter-base@0.223.0",
+        "pkg:npm/%40opentelemetry/otlp-transformer@0.223.0",
+        "pkg:npm/%40opentelemetry/resources@2.12.0",
+        "pkg:npm/%40opentelemetry/sdk-metrics@2.12.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40opentelemetry/exporter-trace-otlp-http@0.223.0",
+      "dependsOn": [
+        "pkg:npm/%40opentelemetry/api@1.9.1",
+        "pkg:npm/%40opentelemetry/otlp-exporter-base@0.223.0",
+        "pkg:npm/%40opentelemetry/otlp-transformer@0.223.0",
+        "pkg:npm/%40opentelemetry/sdk-trace@2.12.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40opentelemetry/otlp-exporter-base@0.223.0",
+      "dependsOn": [
+        "pkg:npm/%40opentelemetry/api@1.9.1",
+        "pkg:npm/%40opentelemetry/core@2.12.0",
+        "pkg:npm/%40opentelemetry/otlp-transformer@0.223.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40opentelemetry/otlp-transformer@0.223.0",
+      "dependsOn": [
+        "pkg:npm/%40opentelemetry/api-logs@0.223.0",
+        "pkg:npm/%40opentelemetry/api@1.9.1",
+        "pkg:npm/%40opentelemetry/core@2.12.0",
+        "pkg:npm/%40opentelemetry/resources@2.12.0",
+        "pkg:npm/%40opentelemetry/sdk-logs@0.223.0",
+        "pkg:npm/%40opentelemetry/sdk-metrics@2.12.0",
+        "pkg:npm/%40opentelemetry/sdk-trace@2.12.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40opentelemetry/resources@2.12.0",
+      "dependsOn": [
+        "pkg:npm/%40opentelemetry/api@1.9.1",
+        "pkg:npm/%40opentelemetry/core@2.12.0",
+        "pkg:npm/%40opentelemetry/semantic-conventions@1.43.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40opentelemetry/sdk-logs@0.223.0",
+      "dependsOn": [
+        "pkg:npm/%40opentelemetry/api-logs@0.223.0",
+        "pkg:npm/%40opentelemetry/api@1.9.1",
+        "pkg:npm/%40opentelemetry/core@2.12.0",
+        "pkg:npm/%40opentelemetry/resources@2.12.0",
+        "pkg:npm/%40opentelemetry/semantic-conventions@1.43.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40opentelemetry/sdk-metrics@2.12.0",
+      "dependsOn": [
+        "pkg:npm/%40opentelemetry/api@1.9.1",
+        "pkg:npm/%40opentelemetry/core@2.12.0",
+        "pkg:npm/%40opentelemetry/resources@2.12.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40opentelemetry/sdk-trace-base@2.12.0",
+      "dependsOn": [
+        "pkg:npm/%40opentelemetry/api@1.9.1",
+        "pkg:npm/%40opentelemetry/core@2.12.0",
+        "pkg:npm/%40opentelemetry/resources@2.12.0",
+        "pkg:npm/%40opentelemetry/sdk-trace@2.12.0",
+        "pkg:npm/%40opentelemetry/semantic-conventions@1.43.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40opentelemetry/sdk-trace@2.12.0",
+      "dependsOn": [
+        "pkg:npm/%40opentelemetry/api@1.9.1",
+        "pkg:npm/%40opentelemetry/core@2.12.0",
+        "pkg:npm/%40opentelemetry/resources@2.12.0",
+        "pkg:npm/%40opentelemetry/semantic-conventions@1.43.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/%40opentelemetry/semantic-conventions@1.43.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/%40pinojs/redact@0.4.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/abstract-logging@2.0.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/ajv-formats@3.0.1",
+      "dependsOn": [
+        "pkg:npm/ajv@8.20.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/ajv@8.20.0",
+      "dependsOn": [
+        "pkg:npm/fast-deep-equal@3.1.3",
+        "pkg:npm/fast-uri@3.1.8",
+        "pkg:npm/json-schema-traverse@1.0.0",
+        "pkg:npm/require-from-string@2.0.2"
+      ]
+    },
+    {
+      "ref": "pkg:npm/atomic-sleep@1.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/avvio@9.3.0",
+      "dependsOn": [
+        "pkg:npm/%40fastify/error@4.2.0",
+        "pkg:npm/fastq@1.20.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/bullmq@6.3.11",
+      "dependsOn": [
+        "pkg:npm/cron-parser@5.10.1",
+        "pkg:npm/msgpackr@2.1.0",
+        "pkg:npm/node-abort-controller@3.1.1",
+        "pkg:npm/pg@8.23.1",
+        "pkg:npm/semver@7.8.5",
+        "pkg:npm/tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "pkg:npm/cluster-key-slot@1.1.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/cookie@1.1.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/cron-parser@5.10.1",
+      "dependsOn": [
+        "pkg:npm/luxon@3.7.2"
+      ]
+    },
+    {
+      "ref": "pkg:npm/debug@4.4.3",
+      "dependsOn": [
+        "pkg:npm/ms@2.1.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/denque@2.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/dequal@2.0.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/detect-libc@2.1.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/fast-decode-uri-component@1.0.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/fast-deep-equal@3.1.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/fast-json-stringify@7.0.1",
+      "dependsOn": [
+        "pkg:npm/%40fastify/merge-json-schemas@0.2.1",
+        "pkg:npm/ajv-formats@3.0.1",
+        "pkg:npm/ajv@8.20.0",
+        "pkg:npm/fast-uri@4.2.1",
+        "pkg:npm/json-schema-ref-resolver@3.0.0",
+        "pkg:npm/rfdc@1.4.1"
+      ]
+    },
+    {
+      "ref": "pkg:npm/fast-querystring@1.1.2",
+      "dependsOn": [
+        "pkg:npm/fast-decode-uri-component@1.0.1"
+      ]
+    },
+    {
+      "ref": "pkg:npm/fast-uri@3.1.8",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/fast-uri@4.2.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/fastify@5.12.5",
+      "dependsOn": [
+        "pkg:npm/%40fastify/ajv-compiler@4.0.6",
+        "pkg:npm/%40fastify/error@4.2.0",
+        "pkg:npm/%40fastify/fast-json-stringify-compiler@5.1.0",
+        "pkg:npm/%40fastify/proxy-addr@5.1.1",
+        "pkg:npm/abstract-logging@2.0.1",
+        "pkg:npm/avvio@9.3.0",
+        "pkg:npm/fast-json-stringify@7.0.1",
+        "pkg:npm/find-my-way@9.9.0",
+        "pkg:npm/light-my-request@6.6.0",
+        "pkg:npm/pino@10.4.0",
+        "pkg:npm/process-warning@5.1.0",
+        "pkg:npm/rfdc@1.4.1",
+        "pkg:npm/secure-json-parse@4.1.0",
+        "pkg:npm/semver@7.8.5",
+        "pkg:npm/toad-cache@3.7.4"
+      ]
+    },
+    {
+      "ref": "pkg:npm/fastq@1.20.3",
+      "dependsOn": [
+        "pkg:npm/reusify@1.1.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/find-my-way@9.9.0",
+      "dependsOn": [
+        "pkg:npm/fast-deep-equal@3.1.3",
+        "pkg:npm/fast-querystring@1.1.2",
+        "pkg:npm/safe-regex2@5.1.1"
+      ]
+    },
+    {
+      "ref": "pkg:npm/ioredis@6.0.0",
+      "dependsOn": [
+        "pkg:npm/%40ioredis/commands@2.0.0",
+        "pkg:npm/cluster-key-slot@1.1.1",
+        "pkg:npm/debug@4.4.3",
+        "pkg:npm/denque@2.1.0",
+        "pkg:npm/redis-errors@1.2.0",
+        "pkg:npm/standard-as-callback@2.1.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/ipaddr.js@2.5.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/jose@6.2.12",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/json-schema-ref-resolver@3.0.0",
+      "dependsOn": [
+        "pkg:npm/dequal@2.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:npm/json-schema-traverse@1.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/kysely@0.29.6",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/light-my-request@6.6.0",
+      "dependsOn": [
+        "pkg:npm/cookie@1.1.1",
+        "pkg:npm/process-warning@4.0.1",
+        "pkg:npm/set-cookie-parser@2.7.2"
+      ]
+    },
+    {
+      "ref": "pkg:npm/luxon@3.7.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/ms@2.1.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/msgpackr-extract@3.0.4",
+      "dependsOn": [
+        "pkg:npm/%40msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.4",
+        "pkg:npm/%40msgpackr-extract/msgpackr-extract-darwin-x64@3.0.4",
+        "pkg:npm/%40msgpackr-extract/msgpackr-extract-linux-arm64@3.0.4",
+        "pkg:npm/%40msgpackr-extract/msgpackr-extract-linux-arm@3.0.4",
+        "pkg:npm/%40msgpackr-extract/msgpackr-extract-linux-x64@3.0.4",
+        "pkg:npm/%40msgpackr-extract/msgpackr-extract-win32-x64@3.0.4",
+        "pkg:npm/node-gyp-build-optional-packages@5.2.2"
+      ]
+    },
+    {
+      "ref": "pkg:npm/msgpackr@2.1.0",
+      "dependsOn": [
+        "pkg:npm/msgpackr-extract@3.0.4"
+      ]
+    },
+    {
+      "ref": "pkg:npm/node-abort-controller@3.1.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/node-gyp-build-optional-packages@5.2.2",
+      "dependsOn": [
+        "pkg:npm/detect-libc@2.1.2"
+      ]
+    },
+    {
+      "ref": "pkg:npm/on-exit-leak-free@2.1.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/pg-cloudflare@1.4.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/pg-connection-string@2.14.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/pg-int8@1.0.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/pg-pool@3.14.0",
+      "dependsOn": [
+        "pkg:npm/pg@8.23.1"
+      ]
+    },
+    {
+      "ref": "pkg:npm/pg-protocol@1.16.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/pg-types@2.2.0",
+      "dependsOn": [
+        "pkg:npm/pg-int8@1.0.1",
+        "pkg:npm/postgres-array@2.0.0",
+        "pkg:npm/postgres-bytea@1.0.1",
+        "pkg:npm/postgres-date@1.0.7",
+        "pkg:npm/postgres-interval@1.2.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/pg@8.23.1",
+      "dependsOn": [
+        "pkg:npm/pg-cloudflare@1.4.1",
+        "pkg:npm/pg-connection-string@2.14.1",
+        "pkg:npm/pg-pool@3.14.0",
+        "pkg:npm/pg-protocol@1.16.1",
+        "pkg:npm/pg-types@2.2.0",
+        "pkg:npm/pgpass@1.0.5"
+      ]
+    },
+    {
+      "ref": "pkg:npm/pgpass@1.0.5",
+      "dependsOn": [
+        "pkg:npm/split2@4.2.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/pino-abstract-transport@3.0.0",
+      "dependsOn": [
+        "pkg:npm/split2@4.2.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/pino-std-serializers@7.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/pino@10.4.0",
+      "dependsOn": [
+        "pkg:npm/%40pinojs/redact@0.4.0",
+        "pkg:npm/atomic-sleep@1.0.0",
+        "pkg:npm/on-exit-leak-free@2.1.2",
+        "pkg:npm/pino-abstract-transport@3.0.0",
+        "pkg:npm/pino-std-serializers@7.1.0",
+        "pkg:npm/process-warning@5.1.0",
+        "pkg:npm/quick-format-unescaped@4.0.4",
+        "pkg:npm/real-require@1.0.0",
+        "pkg:npm/safe-stable-stringify@2.5.0",
+        "pkg:npm/sonic-boom@4.2.1",
+        "pkg:npm/thread-stream@4.2.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/postgres-array@2.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/postgres-bytea@1.0.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/postgres-date@1.0.7",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/postgres-interval@1.2.0",
+      "dependsOn": [
+        "pkg:npm/xtend@4.0.2"
+      ]
+    },
+    {
+      "ref": "pkg:npm/process-warning@4.0.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/process-warning@5.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/quick-format-unescaped@4.0.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/real-require@1.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/redis-errors@1.2.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/require-from-string@2.0.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/ret@0.5.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/reusify@1.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/rfdc@1.4.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/safe-regex2@5.1.1",
+      "dependsOn": [
+        "pkg:npm/ret@0.5.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/safe-stable-stringify@2.5.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/secure-json-parse@4.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/semver@7.8.5",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/set-cookie-parser@2.7.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/sonic-boom@4.2.1",
+      "dependsOn": [
+        "pkg:npm/atomic-sleep@1.0.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/split2@4.2.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/standard-as-callback@2.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/thread-stream@4.2.0",
+      "dependsOn": [
+        "pkg:npm/real-require@1.0.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/toad-cache@3.7.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/tslib@2.8.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/xtend@4.0.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/zod@4.6.5",
+      "dependsOn": []
+    }
+  ]
+}
