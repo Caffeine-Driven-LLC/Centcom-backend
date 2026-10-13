@@ -1,0 +1,28 @@
+# gitleaks configuration (B097). CI runs gitleaks over the diff of every pull request and over the
+# whole history weekly (.github/workflows/security.yml; the card's security-scan.yml is for a human
+# to add). `infra/security/scan-secrets.mjs` applies the same custom rules locally and in the
+# pre-commit hook, so a hit shows up before the push.
+#
+# Findings that were reviewed and accepted go in `.gitleaksignore` (one fingerprint each) or in an
+# allowlist below. Every allowlist carries an `expires:` date in its description; a test fails the
+# build once a date has passed, so an exception is reviewed again instead of lingering.
+title = "Centcom backend"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "centcom-api-key"
+description = "Centcom API key (cen_live_ or cen_test_ plus 32 base62 characters, CT-AUTH)"
+regex = '''\bcen_(?:live|test)_[0-9A-Za-z]{32}\b'''
+keywords = ["cen_live_", "cen_test_"]
+
+  [[rules.allowlists]]
+  description = "expires: 2027-10-01. A sequential, obviously fake key pasted in a test to prove the admin console refuses an API key where a staff token belongs."
+  paths = ['''apps/admin/test/console\.test\.tsx''']
+
+[[rules]]
+id = "centcom-stripe-webhook-secret"
+description = "Stripe webhook signing secret"
+regex = '''\bwhsec_[0-9A-Za-z]{24,}\b'''
+keywords = ["whsec_"]

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Pre-commit hook (B097): refuses a commit that stages a credential. Enable it once per clone with
+#   pnpm security:install-hook
+# (git config core.hooksPath infra/security/hooks). It runs the same rules as `pnpm security:secrets`
+# on the staged files only, so it takes well under a second, and never prints the secret.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+exec node infra/security/scan-secrets.mjs --staged

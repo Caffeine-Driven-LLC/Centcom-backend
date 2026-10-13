@@ -2,7 +2,8 @@
  * `buildApp` (B102): the API as a Fastify instance, without a process or a port, so the entrypoint
  * and the tests build the very same thing.
  *
- * Plugin order is the one the lanes require: request context first (ids, access log), then the
+ * Plugin order is the one the lanes require: security headers and CORS first (B097), request
+ * context (ids, access log), then the
  * error handler, the rate limiter (it counts before body parsing and any handler), the web token
  * cookies (they hook the token route as it registers) and the auth plugin, and only then the
  * route modules of `modules.ts`.
@@ -23,6 +24,7 @@ import { idempotencyPlugin } from './plugins/idempotency.js';
 import { rbacPlugin } from './plugins/rbac.js';
 import { rateLimitPlugin } from './plugins/rate-limit.js';
 import { requestContextPlugin } from './plugins/request-context.js';
+import { securityHeadersPlugin } from './plugins/security-headers.js';
 
 export interface BuildOptions {
   /** Replaces the module list (tests). */
@@ -41,6 +43,8 @@ export async function buildApp(
     frameworkErrors: frameworkErrorHandler({ logger }),
   });
 
+  // First: answers CORS preflights before the rate limiter counts them, and hardens every reply.
+  await app.register(securityHeadersPlugin, { allowedOrigins: config.pkce.allowedOrigins });
   await app.register(requestContextPlugin, { logger, metrics });
   await app.register(errorHandlerPlugin, { logger });
   await app.register(rateLimitPlugin, {
