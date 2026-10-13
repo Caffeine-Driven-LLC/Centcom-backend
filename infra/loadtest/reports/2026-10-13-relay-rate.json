@@ -1,0 +1,478 @@
+{
+  "scenario": "rate",
+  "started_at": "2026-10-13T19:35:07.498Z",
+  "target": "localhost",
+  "environment": {
+    "cpus": 8,
+    "cpu_model": "Intel(R) Core(TM) Ultra 7 355",
+    "memory_gib": 30.7,
+    "kernel": "7.2.8-arch1-2",
+    "node": "v22.23.3",
+    "generator_processes": 1,
+    "relay": "apps/relay/src/main.ts via tsx, one process per node",
+    "backing": "Redis 7 (AOF on), Postgres 16, MinIO in Docker on loopback; generators and relay share this machine"
+  },
+  "thresholds": [
+    {
+      "name": "clients that could not connect",
+      "ok": true,
+      "value": 0,
+      "limit": "none in the passing steps"
+    },
+    {
+      "name": "1000 connections: fan-out p95 (ms)",
+      "ok": true,
+      "value": 11.2,
+      "limit": 150
+    },
+    {
+      "name": "1000 connections: fan-out p99 (ms)",
+      "ok": true,
+      "value": 20.2,
+      "limit": 400
+    },
+    {
+      "name": "1000 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "1000 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 2.4,
+      "limit": 100
+    },
+    {
+      "name": "1000 connections: fan-out p95 (ms)",
+      "ok": true,
+      "value": 15.5,
+      "limit": 150
+    },
+    {
+      "name": "1000 connections: fan-out p99 (ms)",
+      "ok": true,
+      "value": 20.2,
+      "limit": 400
+    },
+    {
+      "name": "1000 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "1000 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 1.3,
+      "limit": 100
+    },
+    {
+      "name": "1000 connections: fan-out p95 (ms)",
+      "ok": true,
+      "value": 21.4,
+      "limit": 150
+    },
+    {
+      "name": "1000 connections: fan-out p99 (ms)",
+      "ok": true,
+      "value": 37.5,
+      "limit": 400
+    },
+    {
+      "name": "1000 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "1000 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 1.6,
+      "limit": 100
+    },
+    {
+      "name": "1000 connections: fan-out p95 (ms)",
+      "ok": true,
+      "value": 19,
+      "limit": 150
+    },
+    {
+      "name": "1000 connections: fan-out p99 (ms)",
+      "ok": true,
+      "value": 30.5,
+      "limit": 400
+    },
+    {
+      "name": "1000 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "1000 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 1,
+      "limit": 100
+    },
+    {
+      "name": "1000 connections: fan-out p95 (ms)",
+      "ok": true,
+      "value": 23.4,
+      "limit": 150
+    },
+    {
+      "name": "1000 connections: fan-out p99 (ms)",
+      "ok": true,
+      "value": 34.4,
+      "limit": 400
+    },
+    {
+      "name": "1000 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "1000 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 1.1,
+      "limit": 100
+    },
+    {
+      "name": "1000 connections: fan-out p95 (ms)",
+      "ok": true,
+      "value": 49,
+      "limit": 150
+    },
+    {
+      "name": "1000 connections: fan-out p99 (ms)",
+      "ok": true,
+      "value": 208.5,
+      "limit": 400
+    },
+    {
+      "name": "1000 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "1000 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 2,
+      "limit": 100
+    },
+    {
+      "name": "1000 connections: fan-out p95 (ms)",
+      "ok": true,
+      "value": 53.5,
+      "limit": 150
+    },
+    {
+      "name": "1000 connections: fan-out p99 (ms)",
+      "ok": true,
+      "value": 159.8,
+      "limit": 400
+    },
+    {
+      "name": "1000 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "1000 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 2.4,
+      "limit": 100
+    },
+    {
+      "name": "1000 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "1000 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 3.6,
+      "limit": 100
+    },
+    {
+      "name": "at least the first step passed",
+      "ok": true,
+      "value": 799,
+      "limit": "> 0"
+    }
+  ],
+  "steps": [
+    {
+      "connections": 1000,
+      "sessions": 200,
+      "seconds": 25.1,
+      "framesSent": 1262,
+      "deliveries": 6310,
+      "deliveryRatio": 1,
+      "deliveriesPerS": 252,
+      "p50Ms": 6.4,
+      "p95Ms": 11.2,
+      "p99Ms": 20.2,
+      "maxMs": 31.4,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.21,
+      "relayRssMiB": 231,
+      "generatorLagP99Ms": 2.4,
+      "loadavg1": 7.2,
+      "fps": 0.25,
+      "sequencedFramesPerS": 50,
+      "foreignCores": 2,
+      "machineBusyCores": 2.7,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 1.91,
+        "postgresCpuPercent": 25.18,
+        "minioCpuPercent": 11.67
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": true,
+      "failed": []
+    },
+    {
+      "connections": 1000,
+      "sessions": 200,
+      "seconds": 25.1,
+      "framesSent": 2498,
+      "deliveries": 12505,
+      "deliveryRatio": 1.0012,
+      "deliveriesPerS": 499,
+      "p50Ms": 7.4,
+      "p95Ms": 15.5,
+      "p99Ms": 20.2,
+      "maxMs": 22.5,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.3,
+      "relayRssMiB": 259,
+      "generatorLagP99Ms": 1.3,
+      "loadavg1": 5.8,
+      "fps": 0.5,
+      "sequencedFramesPerS": 100,
+      "foreignCores": 2.2,
+      "machineBusyCores": 2.9,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 2.64,
+        "postgresCpuPercent": 17.46,
+        "minioCpuPercent": 14.33
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": true,
+      "failed": []
+    },
+    {
+      "connections": 1000,
+      "sessions": 200,
+      "seconds": 25.1,
+      "framesSent": 5011,
+      "deliveries": 25055,
+      "deliveryRatio": 1,
+      "deliveriesPerS": 1000,
+      "p50Ms": 7.2,
+      "p95Ms": 21.4,
+      "p99Ms": 37.5,
+      "maxMs": 83.9,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.32,
+      "relayRssMiB": 259,
+      "generatorLagP99Ms": 1.6,
+      "loadavg1": 7.5,
+      "fps": 1,
+      "sequencedFramesPerS": 200,
+      "foreignCores": 3.4,
+      "machineBusyCores": 4.2,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 4.23,
+        "postgresCpuPercent": 28.69,
+        "minioCpuPercent": 12.85
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": true,
+      "failed": []
+    },
+    {
+      "connections": 1000,
+      "sessions": 200,
+      "seconds": 25.1,
+      "framesSent": 7524,
+      "deliveries": 37620,
+      "deliveryRatio": 1,
+      "deliveriesPerS": 1502,
+      "p50Ms": 7.6,
+      "p95Ms": 19,
+      "p99Ms": 30.5,
+      "maxMs": 123.4,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.34,
+      "relayRssMiB": 257,
+      "generatorLagP99Ms": 1,
+      "loadavg1": 6.6,
+      "fps": 1.5,
+      "sequencedFramesPerS": 300,
+      "foreignCores": 2.4,
+      "machineBusyCores": 3.4,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 17.17,
+        "postgresCpuPercent": 23.63,
+        "minioCpuPercent": 19.43
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": true,
+      "failed": []
+    },
+    {
+      "connections": 1000,
+      "sessions": 200,
+      "seconds": 25.1,
+      "framesSent": 10006,
+      "deliveries": 50160,
+      "deliveryRatio": 1.0026,
+      "deliveriesPerS": 2002,
+      "p50Ms": 8.6,
+      "p95Ms": 23.4,
+      "p99Ms": 34.4,
+      "maxMs": 59.5,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.38,
+      "relayRssMiB": 260,
+      "generatorLagP99Ms": 1.1,
+      "loadavg1": 8.3,
+      "fps": 2,
+      "sequencedFramesPerS": 399,
+      "foreignCores": 1.8,
+      "machineBusyCores": 2.9,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 6.24,
+        "postgresCpuPercent": 50.16,
+        "minioCpuPercent": 7.73
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": true,
+      "failed": []
+    },
+    {
+      "connections": 1000,
+      "sessions": 200,
+      "seconds": 25.1,
+      "framesSent": 15025,
+      "deliveries": 75305,
+      "deliveryRatio": 1.0024,
+      "deliveriesPerS": 3006,
+      "p50Ms": 10.8,
+      "p95Ms": 49,
+      "p99Ms": 208.5,
+      "maxMs": 290.5,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.43,
+      "relayRssMiB": 272,
+      "generatorLagP99Ms": 2,
+      "loadavg1": 8.8,
+      "fps": 3,
+      "sequencedFramesPerS": 600,
+      "foreignCores": 4,
+      "machineBusyCores": 4.7,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 9.33,
+        "postgresCpuPercent": 0.07,
+        "minioCpuPercent": 0.48
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": true,
+      "failed": []
+    },
+    {
+      "connections": 1000,
+      "sessions": 200,
+      "seconds": 25.1,
+      "framesSent": 20016,
+      "deliveries": 100265,
+      "deliveryRatio": 1.0018,
+      "deliveriesPerS": 4000,
+      "p50Ms": 12.6,
+      "p95Ms": 53.5,
+      "p99Ms": 159.8,
+      "maxMs": 269.2,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.52,
+      "relayRssMiB": 272,
+      "generatorLagP99Ms": 2.4,
+      "loadavg1": 8.1,
+      "fps": 4,
+      "sequencedFramesPerS": 799,
+      "foreignCores": 1.8,
+      "machineBusyCores": 3.4,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 11.51,
+        "postgresCpuPercent": 66.3,
+        "minioCpuPercent": 7.29
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": true,
+      "failed": []
+    },
+    {
+      "connections": 1000,
+      "sessions": 200,
+      "seconds": 25.1,
+      "framesSent": 30068,
+      "deliveries": 150230,
+      "deliveryRatio": 0.9993,
+      "deliveriesPerS": 5996,
+      "p50Ms": 19.6,
+      "p95Ms": 208.5,
+      "p99Ms": 449.6,
+      "maxMs": 721.9,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.71,
+      "relayRssMiB": 358,
+      "generatorLagP99Ms": 3.6,
+      "loadavg1": 6.9,
+      "fps": 6,
+      "sequencedFramesPerS": 1200,
+      "foreignCores": 3.1,
+      "machineBusyCores": 4.3,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 17.11,
+        "postgresCpuPercent": 6.21,
+        "minioCpuPercent": 2.21
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": false,
+      "failed": ["p95 208.5 ms >= 150", "p99 449.6 ms >= 400"]
+    }
+  ],
+  "extra": {
+    "max_passing_sequenced_frames_per_s": 799,
+    "max_passing_fps_per_session": 4,
+    "connect_failures": 0,
+    "handshake_retries_after_4503": 0
+  },
+  "resources": {
+    "relay_rss_mib_max": 358,
+    "relay_cpu_cores_max": 0.71
+  },
+  "passed": true
+}
