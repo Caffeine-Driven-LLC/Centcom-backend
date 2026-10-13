@@ -10,6 +10,7 @@
  *   cap refuses with `session_full` before any slot is taken (acceptance 6);
  * - `effectivePlan` agrees with B069's resolver for every status, before and after its deadline.
  */
+import { randomBytes } from 'node:crypto';
 import { newId } from '@centcom/contracts';
 import { createSessionSlotStore } from '@centcom/db';
 import { createFactories } from '@centcom/testkit';
@@ -278,7 +279,7 @@ describe.runIf(STACK)('rooms on Postgres 16', () => {
         .insertInto('share_link')
         .values({
           session_id: s.session.id,
-          token_hash: Buffer.alloc(32, Math.floor(Math.random() * 255)),
+          token_hash: randomBytes(32), // one byte repeated 32 times collided now and then (a unique index)
           expires_at: opts.expires ?? new Date(Date.now() + 3_600_000),
           max_uses: 5,
           revoked_at: opts.revoke === true ? new Date() : null,
