@@ -119,6 +119,16 @@ const joined = await fetch(`${api}/v1/share-links/${link.token}/join`, {
 });
 const grant = (await joined.json()) as { ticket: string; relay_url: string; role: string };
 check(joined.status === 200 && grant.role === 'viewer', 'the link gives a viewer ticket');
+const keyList = await fetch(`${api}/v1/share-links/${link.token}/members`);
+const keys = (await keyList.json()) as {
+  data: { user?: string; device_keys?: { ed25519?: string } }[];
+};
+check(
+  keyList.status === 200 &&
+    keys.data.length >= 2 &&
+    keys.data.every((m) => m.device_keys?.ed25519 !== undefined && m.user === undefined),
+  `the link also gives the ${keys.data.length} members' public keys (no user ids), so a guest can check who signed`,
+);
 const visitor = new net.RelayClient({
   url: relay,
   sessionId: host.id,

@@ -176,8 +176,13 @@ export const API_MODULES: readonly ApiModule[] = [
     skip: (ctx) =>
       ctx.collab.shareLinks === null ? 'the session routes are off (RELAY_PUBLIC_URL)' : null,
     register: async (app, ctx) => {
-      if (ctx.collab.shareLinks !== null) {
-        registerShareLinkRoutes(app, { service: ctx.collab.shareLinks });
+      if (ctx.collab.shareLinks !== null && ctx.sessionRoutes !== null) {
+        registerShareLinkRoutes(app, {
+          service: ctx.collab.shareLinks,
+          members: ctx.sessionRoutes.store,
+          cursorKeys: ctx.config.pagination.signingKeys,
+          clock: ctx.clock ?? Date.now,
+        });
       }
     },
   },

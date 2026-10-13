@@ -82,9 +82,12 @@ data. It ends with `OK: two new accounts shared a session`:
    the session's encrypted frames. The relay admits a ticket without `dev` only for a viewer with
    no capabilities, and reads the guest from `guest_member` (not `session_members`); the guest is
    refused (`not_a_member`, 4403) once its link is revoked or has expired, and counts toward the
-   member cap. The script connects at the protocol level: the client's `joinViaShareLink` still
-   fetches a member join token for its relay ticket instead of using the one the link gave it
-   (a client fix, in the client repo).
+   member cap. A guest checks who signed a frame with the members' public keys from
+   `GET /v1/share-links/{token}/members` (B104, public: the link token is the credential; the live
+   members' ids, names, slots, roles and device keys, no user ids or e-mail; its own rate limit of
+   60 a minute per address and 120 per link; the same 404 as `join` for a revoked, expired or
+   unknown link, an ended session or a workspace without the relay). The script connects at the
+   protocol level; the client's own `joinViaShareLink` (client PR #145) gets a ticket from the link.
 
 To use your own clients instead of these scripts: sign in for real with
 `CENTCOM_API_URL=http://localhost:3000 centcom login --no-browser`, or mint a token for a seeded

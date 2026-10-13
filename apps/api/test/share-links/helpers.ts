@@ -176,7 +176,7 @@ export async function shareApp(opts: { service?: Partial<ShareLinkServiceDeps> }
         ...opts.service,
       });
       holder.service = service;
-      registerShareLinkRoutes(app, { service });
+      registerShareLinkRoutes(app, { service, members: deps.store, cursorKeys: deps.cursorKeys });
     },
   });
   const service = holder.service;
@@ -220,6 +220,15 @@ export async function shareApp(opts: { service?: Partial<ShareLinkServiceDeps> }
     });
   }
 
+  /** A guest reads the members' public keys through `token` (B104). */
+  function guestMembers(token: string, ip = '203.0.113.7', query = '') {
+    return h.app.inject({
+      method: 'GET',
+      url: `/v1/share-links/${token}/members${query}`,
+      remoteAddress: ip,
+    });
+  }
+
   /** Revokes `token` as `who`. */
   async function revoke(sid: string, token: string, who: { user: string; device: string }) {
     return h.app.inject({
@@ -248,6 +257,7 @@ export async function shareApp(opts: { service?: Partial<ShareLinkServiceDeps> }
     session,
     create,
     join,
+    guestMembers,
     revoke,
     claims,
     ip,
