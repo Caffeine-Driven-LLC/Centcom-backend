@@ -185,6 +185,7 @@ export function createCollab(deps: CollabDeps): Collab {
           urls: inviteUrls,
           email,
           entitlements: deps.entitlements,
+          audit: deps.audit,
           clock,
           logger,
           metrics,

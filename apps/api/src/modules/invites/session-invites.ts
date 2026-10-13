@@ -25,6 +25,7 @@ import {
   forbidden,
   noopMetrics,
   validationFailed,
+  type AuditEmitter,
   type EmailService,
   type FieldError,
   type Logger,
@@ -143,6 +144,8 @@ export interface SessionInviteServiceOptions {
   entitlements: {
     check(workspaceId: string, key: 'relay_access'): Promise<CheckResult>;
   };
+  /** Writes `invite.*` audit events (kind `session`); without it only the log lines are written. */
+  audit?: Pick<AuditEmitter, 'emitDetached'>;
   clock?: () => number;
   logger?: Logger;
   metrics?: Metrics;
@@ -224,6 +227,7 @@ export class SessionInviteService {
       { invite_id: invite.id, session_id: session.id },
       'session_invite.created',
     );
+    this.#audit('invite.create', invite, creatorId, { role: invite.role, kind: 'session' });
     return { invite, token, url };
   }
 
@@ -236,9 +240,9 @@ export class SessionInviteService {
   ): Promise<void> {
     try {
       await this.#o.email.send(
-        'workspace_invite',
+        'session_invite',
         email,
-        { inviterName, workspaceName: sessionName, url, expiresAt: invite.expiresAt },
+        { inviterName, sessionName, role: invite.role, url, expiresAt: invite.expiresAt },
         { idempotencyKey: invite.id },
       );
     } catch (err) {
@@ -298,6 +302,10 @@ export class SessionInviteService {
     if (accepted.kind === 'accepted') {
       this.#metrics.counter('invites_accepted_total').inc();
       this.#o.logger?.info({ session_id: accepted.invite.sessionId }, 'session_invite.accepted');
+      this.#audit('invite.accept', accepted.invite, userId, {
+        user_id: userId,
+        role: accepted.invite.role,
+      });
     }
     return {
       sessionId: accepted.invite.sessionId,
@@ -315,10 +323,28 @@ export class SessionInviteService {
   }
 
   /** Revokes (the host: the routes check); 410 for one already revoked. An accepted invite's grant ends. */
-  async revoke(invite: SessionInviteRecord): Promise<void> {
+  async revoke(invite: SessionInviteRecord, actorUserId?: string): Promise<void> {
     if (!(await this.#o.store.revoke(invite.id, this.#now()))) {
       throw new AppError('invite_revoked', { detail: INVITE_DETAILS.revoked });
     }
+    this.#audit('invite.revoke', invite, actorUserId ?? invite.createdBy, {});
+  }
+
+  /** One audit event, in the background (a failed write never fails the request). */
+  #audit(
+    action: 'invite.create' | 'invite.accept' | 'invite.revoke',
+    invite: SessionInviteRecord,
+    actorUserId: string,
+    meta: Record<string, string | number | boolean | null>,
+  ): void {
+    this.#o.audit?.emitDetached({
+      workspaceId: invite.workspaceId,
+      actor: { type: 'user', id: actorUserId },
+      action,
+      target: { type: 'invite', id: invite.id },
+      outcome: 'success',
+      meta,
+    });
   }
 
   /** The live grant of `userId` to `sessionId`. */

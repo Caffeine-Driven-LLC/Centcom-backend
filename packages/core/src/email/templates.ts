@@ -25,6 +25,13 @@ export interface TemplateParams {
   workspace_invite: { inviterName: string; workspaceName: string; url: string; expiresAt: Date };
   account_deletion_scheduled: { displayName: string; deletionDate: Date; restoreUrl: string };
   export_ready: { displayName: string; url: string; expiresAt: Date };
+  session_invite: {
+    inviterName: string;
+    sessionName: string;
+    role: string;
+    url: string;
+    expiresAt: Date;
+  };
 }
 
 /** A template id. */
@@ -34,7 +41,8 @@ export type TemplateId = keyof TemplateParams;
  * The ids of this lane's templates. Typed apart from TemplateId, which grows as lanes add
  * templates (B014 adds `magic_link`), so the built-in set never has to list theirs.
  */
-export type BuiltInTemplateId = 'workspace_invite' | 'account_deletion_scheduled' | 'export_ready';
+export type BuiltInTemplateId =
+  'workspace_invite' | 'session_invite' | 'account_deletion_scheduled' | 'export_ready';
 
 /** How a parameter is checked: text (escaped), a link (https, used as given), or a date. */
 export type ParamKind = 'text' | 'url' | 'date';
@@ -145,6 +153,26 @@ ${link(p.url, 'Accept the invitation')}
         `${p.inviterName} invited you to join ${p.workspaceName} on Centcom.`,
         `Accept the invitation: ${p.url}`,
         `The invitation expires on ${formatDate(p.expiresAt)}. If you did not expect it, you can ignore this email.`,
+      ),
+  },
+  session_invite: {
+    params: {
+      inviterName: 'text',
+      sessionName: 'text',
+      role: 'text',
+      url: 'url',
+      expiresAt: 'date',
+    },
+    subject: (p) => `${p.inviterName} invited you to the session "${p.sessionName}" on Centcom`,
+    html: (p) =>
+      markup`<p>${p.inviterName} invited you to join the session <strong>${p.sessionName}</strong> on Centcom as ${p.role}.</p>
+${link(p.url, 'Join the session')}
+<p>The invitation is for this one session only: it does not add you to a workspace. It expires on ${formatDate(p.expiresAt)}. If you did not expect it, you can ignore this email.</p>`,
+    text: (p) =>
+      paragraphs(
+        `${p.inviterName} invited you to join the session "${p.sessionName}" on Centcom as ${p.role}.`,
+        `Join the session: ${p.url}`,
+        `The invitation is for this one session only: it does not add you to a workspace. It expires on ${formatDate(p.expiresAt)}. If you did not expect it, you can ignore this email.`,
       ),
   },
   account_deletion_scheduled: {
