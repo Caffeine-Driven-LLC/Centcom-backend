@@ -144,10 +144,10 @@ on the Team plan, because production refuses `DEV_DEFAULT_PLAN`.
    `brevo`, `postmark` or `smtp` with its key and a verified sending domain, and the API queues
    sign-in links and invites while the worker delivers them ([mail.md](mail.md)). Until a human
    creates the account and the SPF/DKIM records, the default `console` keeps e-mail sign-in off.
-2. **Nobody has a paid plan.** Billing is not connected to the API process, new accounts are on
-   Free, and Free cannot create a hosted session. `DEV_DEFAULT_PLAN` is refused in production. The
-   stop-gap is one SQL statement per workspace:
-   `insert into workspace_entitlements (workspace_id, plan_id, status) values ('wsp_...', 'team', 'active') on conflict (workspace_id) do update set plan_id = 'team', status = 'active';`
+2. **Billing needs a Stripe account.** The code is wired ([billing/going-live.md](../billing/going-live.md)):
+   with `STRIPE_SECRET_KEY` set, checkout, the portal and the signed webhook work and the worker applies
+   subscriptions. Without it, new accounts are on Free (which cannot create a hosted session) unless
+   `SELF_HOST_PLAN` gives them a plan. Never run against real Stripe so far.
 3. **No high availability.** One server, one database. B091's multi-region Terraform design is
    not started (it needs cloud accounts).
 4. **No off-site backups yet** (B099), no WAF or rate-limit rules at Cloudflare (B097), no load

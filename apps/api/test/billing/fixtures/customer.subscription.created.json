@@ -1,0 +1,16 @@
+{
+  "id": "evt_1QfixtureSubCreated",
+  "object": "event",
+  "api_version": "2025-03-31.basil",
+  "created": 1790000000,
+  "type": "customer.subscription.created",
+  "livemode": false,
+  "data": {
+    "object": {
+      "id": "sub_1QfixtureSub",
+      "object": "subscription",
+      "customer": "cus_fixture1",
+      "status": "active"
+    }
+  }
+}

@@ -51,6 +51,8 @@ import { createLoginSessions, type LoginSessions } from './modules/auth/web-sess
 import { deviceStoreFromDb } from './modules/devices/repo.js';
 import { DeviceService } from './modules/devices/service.js';
 import { createCollab, type Collab } from './collab.js';
+import { createBilling, type Billing } from './billing.js';
+import type { EventQueue as StripeEventQueue } from './modules/billing/webhooks/ingest.js';
 import { CachedEntitlements } from './modules/entitlements/enforcement.js';
 import type { UsageAggregationDb } from '@centcom/db';
 import { createData, type Data } from './data.js';
@@ -91,6 +93,8 @@ export interface AppDeps {
    * queued through B032's email service and the worker delivers them with the configured provider.
    */
   emailQueue?: EmailQueue;
+  /** Where Stripe webhook events are queued for the worker; without one the worker's sweep finds them. */
+  stripeEventQueue?: StripeEventQueue;
   /** Where a deleted workspace's purge is queued (the worker's `workspace-purge` queue); without one it is only logged. */
   purgeQueue?: PurgeQueue;
 }
@@ -121,6 +125,8 @@ export interface AppContext extends AppDeps {
   sessionService: SessionService | null;
   /** Workspaces, members, invites, share links and seats. */
   collab: Collab;
+  /** Stripe billing; null when STRIPE_SECRET_KEY is not set. */
+  billing: Billing | null;
   /** What each workspace's plan allows, cached. */
   entitlements: CachedEntitlements;
   /** The plan catalogue and the uncached reads (B069). */
@@ -193,12 +199,13 @@ export function createContext(deps: AppDeps): AppContext {
     keys: config.keys,
     now: clock,
   });
-  const devPlan = config.devDefaultPlan;
+  const devPlan = config.devDefaultPlan ?? config.selfHostPlan;
   const users = new UserService({
     db: view<CoreDatabase>(),
     newId,
     now: () => new Date(clock()),
-    // Development: a new personal workspace starts on a paid plan (see DEV_DEFAULT_PLAN).
+    // Development or self-hosting without Stripe: a new personal workspace starts on a paid plan
+    // (see DEV_DEFAULT_PLAN and SELF_HOST_PLAN).
     ...(devPlan === null || devPlan === 'free'
       ? {}
       : {
@@ -393,9 +400,20 @@ export function createContext(deps: AppDeps): AppContext {
     ...(deps.purgeQueue === undefined ? {} : { purgeQueue: deps.purgeQueue }),
   });
 
+  const billing = createBilling({
+    config,
+    db: db as unknown as Kysely<unknown>,
+    entitlementService,
+    logger,
+    metrics,
+    clock,
+    ...(deps.stripeEventQueue === undefined ? {} : { eventQueue: deps.stripeEventQueue }),
+  });
+
   return {
     ...deps,
     metrics,
+    billing,
     rbac,
     audit,
     sessionRoutes,

@@ -11,6 +11,11 @@ title = "Centcom backend"
 [extend]
 useDefault = true
 
+[[allowlists]]
+description = "expires: 2027-10-01. The production env template names secrets by key with an empty value and a comment describing the format; there is no secret in it."
+targetRules = ["generic-api-key"]
+paths = ['''infra/deploy/production\.env\.example''']
+
 [[rules]]
 id = "centcom-api-key"
 description = "Centcom API key (cen_live_ or cen_test_ plus 32 base62 characters, CT-AUTH)"

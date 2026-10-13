@@ -22,6 +22,10 @@ import { inviteRoutes } from './modules/invites/index.js';
 import { memberRoutes } from './modules/members/index.js';
 import { seatGatePlugin } from './modules/seats/index.js';
 import { workspaceRoutes } from './modules/workspaces/index.js';
+import { checkoutRoutes } from './routes/checkout/index.js';
+import { portalRoutes } from './routes/portal/index.js';
+import { stripeWebhookRoutes } from './routes/stripe-webhook/index.js';
+import { subscriptionRoutes } from './routes/subscription/index.js';
 import { entitlementRoutes } from './routes/entitlements/index.js';
 import type { NotificationDb } from '@centcom/db';
 import type { Kysely } from 'kysely';
@@ -49,6 +53,21 @@ export interface ApiModule {
 }
 
 export const API_MODULES: readonly ApiModule[] = [
+  {
+    name: 'billing',
+    skip: (ctx) => (ctx.billing === null ? 'Stripe is not configured (STRIPE_SECRET_KEY)' : null),
+    register: async (app, ctx) => {
+      const { billing } = ctx;
+      if (billing === null) return;
+      await app.register(subscriptionRoutes, { billing: billing.billing });
+      await app.register(checkoutRoutes, { checkout: billing.checkout });
+      await app.register(portalRoutes, { checkout: billing.checkout });
+      await app.register(stripeWebhookRoutes, {
+        ingest: billing.ingest,
+        clock: ctx.clock ?? Date.now,
+      });
+    },
+  },
   {
     name: 'status',
     register: async (app, ctx) => {

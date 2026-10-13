@@ -149,6 +149,7 @@ describe('buildApp (B102)', () => {
     expect(app.hasRoute({ method: 'GET', url: '/device' })).toBe(true);
     const skipped = captured.lines().filter((l) => l['msg'] === 'api.module_skipped');
     expect(skipped.map((l) => l['module'])).toEqual([
+      'billing',
       'email-login',
       'invites',
       'history',
@@ -168,6 +169,7 @@ describe('buildApp (B102)', () => {
     expect(app.hasRoute({ method: 'GET', url: '/v1/me' })).toBe(true);
     const skipped = captured.lines().filter((l) => l['msg'] === 'api.module_skipped');
     expect(skipped.map((l) => l['module'])).toEqual([
+      'billing',
       'sessions',
       'history',
       'snapshots',
@@ -193,6 +195,7 @@ describe('buildApp (B102)', () => {
     expect(app.hasRoute({ method: 'POST', url: '/v1/workspaces/:id/invites' })).toBe(false);
     const skipped = captured.lines().filter((l) => l['msg'] === 'api.module_skipped');
     expect(skipped.map((l) => l['module'])).toEqual([
+      'billing',
       'invites',
       'history',
       'snapshots',
