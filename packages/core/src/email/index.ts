@@ -7,6 +7,8 @@ export {
   createEmailProvider,
   DEFAULT_EMAIL_TIMEOUT_MS,
   EMAIL_PROVIDERS,
+  REAL_EMAIL_PROVIDERS,
+  type SmtpSettings,
   emailConfig,
   emailEnvSchema,
   type EmailConfig,
@@ -43,6 +45,19 @@ export {
   type EmailService,
   type EmailServiceOptions,
 } from './service.js';
+export {
+  BREVO_API_URL,
+  BrevoProvider,
+  buildMime,
+  RESEND_API_URL,
+  ResendProvider,
+  SmtpProvider,
+  splitSender,
+  type BrevoOptions,
+  type ResendOptions,
+  type SmtpOptions,
+  type SmtpSecure,
+} from './providers-more.js';
 export {
   BUILT_IN_TEMPLATES,
   createTemplateRegistry,

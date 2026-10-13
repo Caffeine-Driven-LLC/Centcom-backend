@@ -69,6 +69,8 @@ export interface CollabDeps {
   entitlements: CachedEntitlements;
   sessionRoutes: SessionRouteDeps | null;
   mailer: unknown;
+  /** The production email service (queue-backed); wins over the Mailpit development queue. */
+  email?: EmailService | null;
   /** The worker's `workspace-purge` queue; without one a purge is only logged. */
   purgeQueue?: PurgeQueue;
 }
@@ -135,8 +137,8 @@ export function createCollab(deps: CollabDeps): Collab {
   });
   const inviteUrls = createInviteUrlBuilder(config.deeplinks.webBase);
 
-  let email: EmailService | null = null;
-  if (config.mailpitUrl !== null) {
+  let email: EmailService | null = deps.email ?? null;
+  if (email === null && config.mailpitUrl !== null) {
     email = createEmailService({
       queue: mailpitQueue(config.mailpitUrl, logger),
       rateLimit: redis.rateLimit,

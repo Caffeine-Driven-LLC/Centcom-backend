@@ -75,7 +75,7 @@ describe('emailConfig', () => {
     ]);
     expect(badKeys({})).toEqual(['EMAIL_FROM']);
     expect(badKeys({ EMAIL_FROM: 'nobody' })).toEqual(['EMAIL_FROM']);
-    expect(badKeys({ EMAIL_FROM: FROM, EMAIL_PROVIDER: 'smtp' })).toEqual(['EMAIL_PROVIDER']);
+    expect(badKeys({ EMAIL_FROM: FROM, EMAIL_PROVIDER: 'sendgrid' })).toEqual(['EMAIL_PROVIDER']);
     expect(badKeys({ EMAIL_FROM: FROM, EMAIL_TIMEOUT_MS: '999' })).toEqual(['EMAIL_TIMEOUT_MS']);
   });
 });

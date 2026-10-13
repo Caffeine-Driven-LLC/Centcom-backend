@@ -117,15 +117,15 @@ tested restore drill are lane B099.
 
 `gen-env.mjs` creates all of these; the services see only what is marked for them.
 
-| Setting                                               | Read by                   | What breaks if lost or leaked                                                         |
-| ----------------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------- |
-| `POSTGRES_PASSWORD`, `REDIS_PASSWORD`                 | data services and the app | Only reachable on the private network; rotate by editing the file and redeploying.    |
-| `AUTH_SIGNING_KEYS`, `AUTH_SIGNING_KID`               | api, worker               | Leak: anyone can mint tokens. Loss: everyone signs in again. Rotation: add a new key. |
-| `IDEMPOTENCY_ENCRYPTION_KEY`                          | api, worker               | Loss: stored invite replies cannot be read; clients retry.                            |
-| `CURSOR_SIGNING_KEYS`                                 | api, worker               | Loss: open pagination cursors stop working.                                           |
-| `OBJECT_STORE_ACCESS_KEY_ID`, `..._SECRET_ACCESS_KEY` | minio, api, worker, relay | The session history bucket.                                                           |
-| `BACKUP_PASSPHRASE`                                   | backup scripts (B099)     | **Loss: every backup is unreadable.** Keep it outside the server.                     |
-| `POSTMARK_SERVER_TOKEN`                               | api, worker (when wired)  | Sending mail as you.                                                                  |
+| Setting                                                                     | Read by                         | What breaks if lost or leaked                                                         |
+| --------------------------------------------------------------------------- | ------------------------------- | ------------------------------------------------------------------------------------- |
+| `POSTGRES_PASSWORD`, `REDIS_PASSWORD`                                       | data services and the app       | Only reachable on the private network; rotate by editing the file and redeploying.    |
+| `AUTH_SIGNING_KEYS`, `AUTH_SIGNING_KID`                                     | api, worker                     | Leak: anyone can mint tokens. Loss: everyone signs in again. Rotation: add a new key. |
+| `IDEMPOTENCY_ENCRYPTION_KEY`                                                | api, worker                     | Loss: stored invite replies cannot be read; clients retry.                            |
+| `CURSOR_SIGNING_KEYS`                                                       | api, worker                     | Loss: open pagination cursors stop working.                                           |
+| `OBJECT_STORE_ACCESS_KEY_ID`, `..._SECRET_ACCESS_KEY`                       | minio, api, worker, relay       | The session history bucket.                                                           |
+| `BACKUP_PASSPHRASE`                                                         | backup scripts (B099)           | **Loss: every backup is unreadable.** Keep it outside the server.                     |
+| `RESEND_API_KEY`, `BREVO_API_KEY`, `POSTMARK_SERVER_TOKEN`, `SMTP_PASSWORD` | api, worker (the one you chose) | Sending mail as you ([mail.md](mail.md)).                                             |
 
 Plain-text Postgres and Redis inside the private network are allowed explicitly
 (`ALLOW_INSECURE_BACKENDS=1`); the services refuse that otherwise in production.
@@ -140,10 +140,10 @@ on the Team plan, because production refuses `DEV_DEFAULT_PLAN`.
 
 ## Open gaps (read before going live)
 
-1. **Sign-in mail is not wired for production.** `apps/api/src/main.ts` builds only the Mailpit
-   development mailer, so with no `DEV_MAILPIT_URL` e-mail sign-in is off, whatever `EMAIL_PROVIDER`
-   says. `@centcom/core` has a Postmark provider but nothing connects it to the sign-in link. Resend,
-   Brevo and SES have no provider at all. Until a lane wires one, nobody can sign in on a real server.
+1. **Sign-in mail needs a provider account.** The code is wired: set `EMAIL_PROVIDER` to `resend`,
+   `brevo`, `postmark` or `smtp` with its key and a verified sending domain, and the API queues
+   sign-in links and invites while the worker delivers them ([mail.md](mail.md)). Until a human
+   creates the account and the SPF/DKIM records, the default `console` keeps e-mail sign-in off.
 2. **Nobody has a paid plan.** Billing is not connected to the API process, new accounts are on
    Free, and Free cannot create a hosted session. `DEV_DEFAULT_PLAN` is refused in production. The
    stop-gap is one SQL statement per workspace:
