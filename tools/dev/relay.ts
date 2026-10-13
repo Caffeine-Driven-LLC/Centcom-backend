@@ -35,6 +35,14 @@ for (const [key, value] of fromFile) if (value !== '') set(key, value);
 const api = process.env['PUBLIC_API_URL'] ?? 'http://localhost:3000';
 set('RELAY_JWKS_URL', `${api.replace(/\/+$/, '')}/.well-known/jwks.json`);
 set('RELAY_PORT', '8088');
+// Session history and snapshots live in the dev stack's MinIO (buckets made by `pnpm dev:up`); the
+// relay writes the durable log there and the API reads it back.
+const minio = `http://127.0.0.1:${process.env['CENTCOM_DEV_MINIO_PORT'] ?? '9000'}`;
+set('OBJECT_STORE_ENDPOINT', minio);
+set('OBJECT_STORE_REGION', 'us-east-1');
+set('OBJECT_STORE_BUCKET', 'history');
+set('OBJECT_STORE_ACCESS_KEY_ID', 'centcom');
+set('OBJECT_STORE_SECRET_ACCESS_KEY', 'dev-only');
 
 // Run the relay in a child so Ctrl-C and SIGTERM reach it and its exit code is ours.
 const child = spawn(

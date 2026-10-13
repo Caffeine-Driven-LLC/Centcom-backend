@@ -48,6 +48,27 @@ export function capRole(
   return sessionRole;
 }
 
+/**
+ * The role of the live session invite `userId` accepted for `sid` (B105), or null: the right of a
+ * person the host invited to this one session, who is not a member of its workspace.
+ */
+export async function sessionGrant(
+  db: object,
+  sid: string,
+  userId: string,
+): Promise<'editor' | 'viewer' | null> {
+  const row = await (db as GuestKysely)
+    .selectFrom('session_invites')
+    .select('role')
+    .where('session_id', '=', sid)
+    .where('accepted_by', '=', userId)
+    .where('revoked_at', 'is', null)
+    .orderBy('accepted_at', 'desc')
+    .limit(1)
+    .executeTakeFirst();
+  return row === undefined ? null : row.role;
+}
+
 /** A share-link guest as the records have them (B068's `guest_member`, `share_link`). */
 export interface GuestRow {
   name: string;
@@ -65,6 +86,13 @@ type GuestKysely = ReturnType<
       slot: number;
     };
     share_link: { id: string; expires_at: Date; revoked_at: Date | null };
+    session_invites: {
+      session_id: string;
+      accepted_by: string | null;
+      revoked_at: Date | null;
+      role: 'editor' | 'viewer';
+      accepted_at: Date | null;
+    };
     sessions: { id: string; workspace_id: string | null };
     workspaces: { id: string; deleted_at: Date | null };
   }>
@@ -140,8 +168,14 @@ export function createPostgresMembership(db: RelayDb): MembershipSource {
       if (row === undefined) return guestLookup(db, sid, memberId);
       if (row.left_at !== null) return null;
       if (row.workspace_id !== null) {
-        // The user must still be a member of a live workspace.
-        if (row.workspace_role === null || row.workspace_deleted_at !== null) return null;
+        if (row.workspace_deleted_at !== null) return null;
+        if (row.workspace_role === null) {
+          // Not a member of the workspace: only a live session invite (B105) lets them stay.
+          const grant = await sessionGrant(db, sid, row.user_id);
+          if (grant === null) return null;
+          const granted = grant === 'viewer' ? 'viewer' : row.role === 'host' ? 'editor' : row.role;
+          return { role: granted, userId: row.user_id, workspaceId: row.workspace_id };
+        }
       }
       const role = capRole(row.role, row.workspace_role);
       if (role === null) return null;

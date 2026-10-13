@@ -1,5 +1,5 @@
 /**
- * `pnpm dev:api` (B102): runs the API service against the `pnpm dev:up` stack. Reads `.env.local`
+ * `pnpm dev:api` (B102), and `pnpm dev:worker` (B109: the same settings, running the worker process): runs the API service against the `pnpm dev:up` stack. Reads `.env.local`
  * (written by dev:up), adds what the service needs on a laptop and starts `src/main.ts`:
  *
  * - a signing key, generated on the first run and appended to `.env.local` (that file is ignored
@@ -70,16 +70,34 @@ for (const key of ['RATELIMIT_AUTH_LIMIT', 'RATELIMIT_ANONYMOUS_LIMIT']) {
 // Invite links point at this server in development.
 set('WEB_BASE_URL', base);
 set('DEVICE_VERIFICATION_URI', `${base}/device`);
+// Session history and snapshots live in the dev stack's MinIO (buckets made by `pnpm dev:up`); the
+// relay writes the durable log there and the API reads it back.
+const minio = `http://127.0.0.1:${process.env['CENTCOM_DEV_MINIO_PORT'] ?? '9000'}`;
+set('OBJECT_STORE_ENDPOINT', minio);
+set('OBJECT_STORE_REGION', 'us-east-1');
+set('OBJECT_STORE_BUCKET', 'history');
+set('OBJECT_STORE_ACCESS_KEY_ID', 'centcom');
+set('OBJECT_STORE_SECRET_ACCESS_KEY', 'dev-only');
+
 // Sessions: clients are told to connect to the relay `pnpm dev:relay` starts.
 // A new account's personal workspace starts on the Team plan, so it can use the relay.
 set('DEV_DEFAULT_PLAN', 'team');
 set('RELAY_PUBLIC_URL', 'ws://localhost:8088/v1/ws');
 
 // Run the service in a child so Ctrl-C and SIGTERM reach it and its exit code is ours.
-const child = spawn(process.execPath, ['--import', 'tsx', resolve(root, 'apps/api/src/main.ts')], {
-  cwd: root,
-  stdio: 'inherit',
-  env: { ...process.env, TSX_TSCONFIG_PATH: resolve(root, 'tsconfig.test.json') },
-});
+const child = spawn(
+  process.execPath,
+  [
+    '--import',
+    'tsx',
+    resolve(root, 'apps/api/src/main.ts'),
+    ...(process.argv[2] === 'worker' ? ['--worker'] : []),
+  ],
+  {
+    cwd: root,
+    stdio: 'inherit',
+    env: { ...process.env, TSX_TSCONFIG_PATH: resolve(root, 'tsconfig.test.json') },
+  },
+);
 for (const signal of ['SIGINT', 'SIGTERM'] as const) process.on(signal, () => child.kill(signal));
 child.on('exit', (code) => process.exit(code ?? 1));

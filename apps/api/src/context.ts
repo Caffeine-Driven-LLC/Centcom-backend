@@ -19,6 +19,7 @@ import {
   createAuthorizer,
   noopMetrics,
   rbacAuditSink,
+  RELAY_CONTROL_CHANNEL,
 } from '@centcom/core';
 import {
   createMembershipRepo,
@@ -49,6 +50,13 @@ import { deviceStoreFromDb } from './modules/devices/repo.js';
 import { DeviceService } from './modules/devices/service.js';
 import { createCollab, type Collab } from './collab.js';
 import { CachedEntitlements } from './modules/entitlements/enforcement.js';
+import type { UsageAggregationDb } from '@centcom/db';
+import { createData, type Data } from './data.js';
+import type { PurgeQueue } from './modules/workspaces/service.js';
+import { createCounterStore } from './modules/usage/counters.js';
+import { QuotaService } from './modules/usage/quota.js';
+import { createUsageReader } from './modules/usage/reader.js';
+import { pubsubQuotaEvents } from './modules/usage/quota.js';
 import { createEntitlementRepository } from './modules/entitlements/repository.js';
 import { EntitlementService } from './modules/entitlements/service.js';
 import { SessionService, createSessionRepository } from './modules/sessions/index.js';
@@ -76,6 +84,8 @@ export interface AppDeps {
   clock?: () => number;
   /** Sends sign-in links; without one, e-mail sign-in is off. */
   mailer?: MagicLinkMailer;
+  /** Where a deleted workspace's purge is queued (the worker's `workspace-purge` queue); without one it is only logged. */
+  purgeQueue?: PurgeQueue;
 }
 
 /** The services the route modules draw on. */
@@ -100,10 +110,19 @@ export interface AppContext extends AppDeps {
   audit: ReturnType<typeof createAuditEmitter>;
   /** The session routes' dependencies; null when no relay address is configured. */
   sessionRoutes: SessionRouteDeps | null;
+  /** The session lifecycle service (the worker's expiry sweep); null with the session routes. */
+  sessionService: SessionService | null;
   /** Workspaces, members, invites, share links and seats. */
   collab: Collab;
   /** What each workspace's plan allows, cached. */
   entitlements: CachedEntitlements;
+  /** The plan catalogue and the uncached reads (B069). */
+  entitlementService: EntitlementService;
+  /** History, snapshots, usage and notification preferences (B107). */
+  data: Data;
+  /** The monthly usage counters and the quotas over them (read by the entitlement check, filled by the worker). */
+  counters: ReturnType<typeof createCounterStore>;
+  quota: QuotaService;
 }
 
 const newId = createIdGenerator();
@@ -243,17 +262,29 @@ export function createContext(deps: AppDeps): AppContext {
     now: clock,
   });
 
+  const counters = createCounterStore(view<UsageAggregationDb>());
   const entitlementService = new EntitlementService({
     repository: createEntitlementRepository(view()),
     events: redis.pubsub,
+    usage: createUsageReader(counters, clock),
+    clock,
+    logger,
+    metrics,
+  });
+  // Devices report usage (POST /v1/usage); the worker's aggregation job turns the reports into the
+  // counters this reads, so a metered limit (queue items, hosted minutes) is enforced from them.
+  const quota = new QuotaService({
+    counters,
+    entitlements: entitlementService,
+    rev: entitlementService,
+    events: pubsubQuotaEvents(redis.pubsub),
     clock,
     logger,
     metrics,
   });
   const entitlements = new CachedEntitlements({
     source: entitlementService,
-    // The monthly quota counters are not served yet (usage module); nothing is metered locally.
-    quota: { check: () => Promise.resolve({ allowed: true, retryAfterS: null }) },
+    quota,
     pubsub: redis.pubsub,
     clock,
     logger,
@@ -261,34 +292,44 @@ export function createContext(deps: AppDeps): AppContext {
   });
 
   let sessionRoutes: SessionRouteDeps | null = null;
+  let sessionService: SessionService | null = null;
   if (config.relay !== null) {
     const regions = {
       defaultRegion: config.relay.region,
       urls: { [config.relay.region]: config.relay.url },
     };
+    sessionService = new SessionService({
+      repository: createSessionRepository(db as unknown as SessionsDb),
+      entitlements,
+      // The relay emits `control.session_state` to connected clients (B106). Web hooks and the
+      // worker's outbox delivery are later lanes.
+      relay: {
+        notify: (sid, state) =>
+          redis.pubsub
+            .publish(RELAY_CONTROL_CHANNEL, JSON.stringify({ kind: 'session_state', sid, state }))
+            .then(() => undefined),
+      },
+      events: { publish: () => Promise.resolve() },
+      cursorKeys: config.pagination.signingKeys,
+      clock,
+      logger,
+      metrics,
+    });
     sessionRoutes = {
-      service: new SessionService({
-        repository: createSessionRepository(db as unknown as SessionsDb),
-        entitlements,
-        // The relay learns of state changes from the database for now; web hooks and the worker's
-        // outbox delivery are later lanes.
-        relay: { notify: () => Promise.resolve() },
-        events: { publish: () => Promise.resolve() },
-        cursorKeys: config.pagination.signingKeys,
-        clock,
-        logger,
-        metrics,
-      }),
+      service: sessionService,
       store: createSessionRouteStore(db as unknown as SessionRoutesDb),
       slots: createSessionSlotStore(view<SessionSlotDatabase>()),
       entitlements,
       tickets: tokens,
       issued: kv,
       hostNotifier: {
-        hostChanged: (sid, host, code) => {
-          logger.info({ session: sid, host, code }, 'sessions.host_changed_not_delivered');
-          return Promise.resolve();
-        },
+        hostChanged: (sid, host, code) =>
+          redis.pubsub
+            .publish(
+              RELAY_CONTROL_CHANNEL,
+              JSON.stringify({ kind: 'host_changed', sid, host, code }),
+            )
+            .then(() => undefined),
       },
       relays: regions,
       cursorKeys: config.pagination.signingKeys,
@@ -297,6 +338,19 @@ export function createContext(deps: AppDeps): AppContext {
       metrics,
     };
   }
+
+  const data = createData({
+    config,
+    db,
+    redis,
+    logger,
+    metrics,
+    clock,
+    audit,
+    entitlementService,
+    counters,
+    quota,
+  });
 
   const collab = createCollab({
     config,
@@ -311,6 +365,7 @@ export function createContext(deps: AppDeps): AppContext {
     entitlements,
     sessionRoutes,
     mailer: deps.mailer,
+    ...(deps.purgeQueue === undefined ? {} : { purgeQueue: deps.purgeQueue }),
   });
 
   return {
@@ -319,8 +374,13 @@ export function createContext(deps: AppDeps): AppContext {
     rbac,
     audit,
     sessionRoutes,
+    sessionService,
     collab,
+    data,
+    counters,
+    quota,
     entitlements,
+    entitlementService,
     tokens,
     sessions,
     deviceGrants,

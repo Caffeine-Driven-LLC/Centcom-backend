@@ -179,11 +179,28 @@ describe('markup and the registry', () => {
     );
   });
 
-  it('holds the three templates, refuses a taken id, and is per service', () => {
+  it('renders the session invite: for one session only, with the role, escaped', () => {
+    const { service } = setup();
+    const rendered = service.render('session_invite', {
+      inviterName: 'A <b>',
+      sessionName: 'Release train',
+      role: 'editor',
+      url: 'https://app.centcom.dev/i/abc',
+      expiresAt: new Date('2026-10-20T00:00:00Z'),
+    });
+    expect(rendered.html).toContain('A &lt;b&gt;');
+    expect(rendered.html).toContain('one session only');
+    expect(rendered.html).toContain('href="https://app.centcom.dev/i/abc"');
+    expect(rendered.text).toContain('as editor');
+    expect(rendered.subject).toBe('A <b> invited you to the session "Release train" on Centcom');
+  });
+
+  it('holds the four templates, refuses a taken id, and is per service', () => {
     const registry = createTemplateRegistry();
     expect(registry.ids().sort()).toEqual([
       'account_deletion_scheduled',
       'export_ready',
+      'session_invite',
       'workspace_invite',
     ]);
     expect(() => registry.registerTemplate('export_ready', note as never)).toThrow(TypeError);

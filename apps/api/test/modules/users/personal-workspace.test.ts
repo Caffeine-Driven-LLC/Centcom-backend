@@ -56,6 +56,35 @@ describe.runIf(ADMIN_URL !== undefined)('the personal workspace on Postgres 16',
     ]);
   });
 
+  it('writes no plan of its own: a production sign-up is on the free plan (B103/B106)', async () => {
+    // Production wires no `onCreated` (a paid default plan exists only with DEV_DEFAULT_PLAN, which
+    // the configuration refuses under NODE_ENV=production), and a workspace with no entitlements
+    // row resolves to the free plan (no relay, B069).
+    const service = new UserService({ db: t.db, newId, now: () => NOW });
+    const { user } = await service.getOrCreateByEmail('free-plan@example.test', {
+      name: 'Free Person',
+    });
+    const workspace = await t.db
+      .selectFrom('workspaces')
+      .select('id')
+      .where('created_by', '=', user.id)
+      .executeTakeFirstOrThrow();
+    const rows = await (
+      t.db as unknown as {
+        selectFrom(t: string): {
+          selectAll(): {
+            where(c: string, o: string, v: string): { execute(): Promise<unknown[]> };
+          };
+        };
+      }
+    )
+      .selectFrom('workspace_entitlements')
+      .selectAll()
+      .where('workspace_id', '=', workspace.id)
+      .execute();
+    expect(rows).toEqual([]);
+  });
+
   it('hands the new user and workspace to onCreated, in the same transaction (a throw undoes the sign-up)', async () => {
     const seen: { userId: string; workspaceId: string }[] = [];
     const service = new UserService({

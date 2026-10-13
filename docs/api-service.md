@@ -75,7 +75,16 @@ data. It ends with `OK: two new accounts shared a session`:
 3. **Join and talk.** Bob joins the session through the relay (`POST /v1/sessions/{id}/join-token`,
    then `ws://localhost:8088/v1/ws`); the relay announces him (`control.member_joined`), Alice's
    client grants the session keys, and each reads the other's encrypted message.
-4. **Share link.** Alice makes a link (`POST /v1/sessions/{id}/share-links`, the key stays in the
+4. **Session invite (B105).** Carol, who signs up with her own workspace, is invited to this one
+   session by Alice (`POST /v1/sessions/{id}/invites`, the host only: an e-mail or link invite as
+   `editor` or `viewer`, up to 7 days), accepts it (`POST /v1/invites/{token}/accept` answers
+   `{session, role, workspace}`) and joins through the relay like Bob. She is **not** a member of
+   Alice's workspace: no seat is used (so a one-seat plan can share) and the session's
+   `max_session_members` is the only limit. The grant is a row of `session_invites` (accepted, not
+   revoked); the API's standing and members list and the relay's live membership read it, and
+   revoking the invite (`DELETE /v1/invites/{id}`, the host may) ends it. The invite's token,
+   preview and sealed key bundle use the workspace invite routes.
+5. **Share link.** Alice makes a link (`POST /v1/sessions/{id}/share-links`, the key stays in the
    fragment). A visitor with no account and no device turns it into a viewer ticket
    (`POST /v1/share-links/{token}/join`: a ticket with no `dev` claim, and a `guest_member` row),
    connects to the relay with it, is welcomed as a `viewer` under the name they gave, and receives
@@ -123,7 +132,7 @@ The login slice: `/healthz`, `/readyz`, `/v1/status`, `/.well-known/jwks.json`,
 `/v1/auth/devices`; the workspaces, their members and entitlements (`/v1/workspaces`, `/members`,
 `/entitlements`); invites (`/v1/workspaces/{id}/invites`, `/v1/invites/...`, which need mail and the
 idempotency key); and, when `RELAY_PUBLIC_URL` is set, the session routes (`/v1/sessions`: list,
-create, get, patch, end, join-token, claim-host, members) and share links. The other modules (billing, sessions, webhooks, usage, admin, ...) are built
+create, get, patch, end, join-token, claim-host, members) and share links. The other modules (billing, webhooks, usage, admin, history, snapshots, ...) are built
 and tested but not yet on the list in `modules.ts`; each lane adds its entry there.
 
 A module whose settings are missing is left out with one `api.module_skipped` log line and the
@@ -173,3 +182,78 @@ rate limits, status, PKCE and sign-in links.
   token belongs to, because the auth plugin runs after the limiter. Authenticated callers share
   the anonymous budget until the two are ordered so bad credentials still count.
 - The other modules, and the relay and worker entrypoints.
+
+## Plans, the inbox and the relay's control channel (B106)
+
+- `GET /v1/plans` (public) and the notification inbox routes (`/v1/notifications`, scope `profile`)
+  are served. Billing, usage, webhooks, history, snapshots and admin are still not on the list: they
+  need a payment provider, the usage counters' feed, object storage or staff credentials that the
+  dev stack does not have.
+- **API to relay.** A host change made through the API (`claim-host`) and a state change made through
+  the API (`POST /v1/sessions/{id}/end`, pause, resume) are published on the Redis channel
+  `centcom:relay-control` (`RELAY_CONTROL_CHANNEL`); the relay's control module checks every field
+  and emits `control.host_changed` or `control.session_state` to the people in the session. `pnpm
+dev:two-accounts` ends with that: Alice ends the session over REST and Bob's client sees it end.
+  A message published while no relay listens is lost (the relay re-reads the records on the next
+  hello).
+- **Production sign-ups are on the free plan**: nothing writes a plan for a new workspace, and
+  `DEV_DEFAULT_PLAN` is refused under `NODE_ENV=production` (tests in `app.build.test.ts` and
+  `personal-workspace.test.ts`).
+
+## History, snapshots, usage and preferences (B107)
+
+`pnpm dev:up` makes the buckets in MinIO (`history`, `snapshots`, `exports`, `releases`), and
+`dev:api` and `dev:relay` point at it (`OBJECT_STORE_*`, see `docs/config.md`). That turns on:
+
+- the relay's **durable log**: every sequenced frame is written to the `history` bucket, so a client
+  that was away longer than the relay keeps in memory gets the rest from `GET
+/v1/sessions/{id}/history?after_seq=`;
+- `GET` and `DELETE /v1/sessions/{id}/history` (the host or a workspace owner purges);
+- `POST /v1/sessions/{id}/snapshot`, `POST .../snapshot/{snp}/commit` and `GET
+.../snapshot` (the `snapshots` bucket: encrypted checkpoints a late joiner starts from).
+
+Without an object store the history and snapshot modules are left out with one `api.module_skipped`
+line each, and the rest of the service still starts. A half-set store (some `OBJECT_STORE_*` keys)
+refuses to start and names the bad keys.
+
+Always on: `POST /v1/usage/events` (a device reports minutes, tokens and queue items),
+`GET /v1/workspaces/{id}/usage/summary`, and `GET`/`PUT /v1/notification-preferences`. The
+entitlement check now reads the monthly counters (`queue_items_month`, `hosted_minutes_month`)
+instead of allowing everything; the counters are filled by the worker's aggregation job
+(`usage-aggregate`), which is not run locally yet, so locally the reports are stored and the counters
+stay at zero until that job runs.
+
+```
+pnpm dev:full-check   # one new account: history over REST and the client, a snapshot up and down,
+                      # a usage report and summary, preferences, the inbox, plans and entitlements
+```
+
+## Session invites: audit and mail (B108)
+
+Creating, accepting and revoking a session invite now write `invite.create`, `invite.accept` and
+`invite.revoke` audit events (kind `session`; the token is never in them), and the invite mail has
+its own `session_invite` template (it says the invite is for one session only and does not add the
+person to a workspace).
+
+## The worker (B109)
+
+`pnpm dev:worker` (run it next to `dev:api`) starts `apps/api/src/worker.ts`: the same configuration,
+the API's services, and the jobs of `@centcom/worker` over them:
+
+| Job                            | What it does                                                                                                                                                                                                      |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `usage.aggregate` (every 15 s) | folds the usage reports of devices into the monthly counters the entitlement check reads (reports settle for 30 s first)                                                                                          |
+| `session-expiry` (every 60 s)  | pauses and expires sessions, and removes the guests of expired links                                                                                                                                              |
+| `invite-expiry` (every 5 min)  | expires invites and drops their key bundles                                                                                                                                                                       |
+| `workspace-purge`              | when a workspace is deleted, the API queues a purge; the worker runs its hooks (invites, entitlements, projects, settings and, with an object store, the session history and snapshots) and then deletes the rows |
+
+The API and the worker share Redis queues (BullMQ): the API always queues the purge, and the job waits in Redis until a worker runs. The email queue, notification dispatch, webhooks, billing and the retention jobs are not run yet.
+
+`pnpm dev:full-check` now also reports usage, waits for the worker to fold it into the counters, and
+deletes a scratch workspace to see the worker purge it.
+
+`pnpm dev:replay-check` shows that the relay's durable log outlives the relay: a host talks, the
+relay is stopped and started again (its memory is gone), the host's client reconnects and talks
+again, and the sequence numbers go on from the log in the object store (5 before, 8 after) with
+the history route reading one unbroken log. A client that was away longer than the relay keeps
+frames in memory fetches the rest the same way (`GET /v1/sessions/{id}/history?after_seq=`).

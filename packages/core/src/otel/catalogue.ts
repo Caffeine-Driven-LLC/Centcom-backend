@@ -602,6 +602,23 @@ export const METRICS = {
     RELAY,
     { onFailure: true },
   ),
+  relay_api_control_total: counter(
+    'Control commands from the API to the relay (host change, session state), by result (emitted, invalid, failed).',
+    ['result'],
+    RELAY,
+    { onFailure: true },
+  ),
+  relay_board_notes_total: counter(
+    'Board notes sequenced, by type (decision, constraint, pointer, question).',
+    ['type'],
+    RELAY,
+  ),
+  relay_board_refused_total: counter(
+    'Board frames refused, by reason (role, limit, unknown note, shape).',
+    ['reason'],
+    RELAY,
+    { onFailure: true },
+  ),
   relay_branch_updates_total: counter(
     'branch.update frames sequenced (passed through).',
     [],

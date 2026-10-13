@@ -158,13 +158,16 @@ export async function admit(
   }
   if (workspaceId === null) throw notVisible();
   const { authorizer } = request.server.rbac;
-  const editor = await authorizer.decide(caller.actor, 'session.join.editor', { workspaceId });
-  if (!editor.allow) {
-    // No session invites exist yet, so a guest is never invited (CT-RBAC "if invited").
-    await authorizer.authorize(caller.actor, 'session.join.viewer', {
-      workspaceId,
-      invited: false,
-    });
+  // B105: outside the workspace, the live session invite is the right to join, at its role.
+  const grantRole = standing.workspaceRole === null ? (standing.grantRole ?? null) : null;
+  if (grantRole === null) {
+    const editor = await authorizer.decide(caller.actor, 'session.join.editor', { workspaceId });
+    if (!editor.allow) {
+      await authorizer.authorize(caller.actor, 'session.join.viewer', {
+        workspaceId,
+        invited: false,
+      });
+    }
   }
   if (standing.session.locked && opts.ignoreLock !== true) {
     throw new AppError('session_locked', { detail: SESSION_ROUTE_DETAILS.locked });
@@ -188,7 +191,7 @@ export async function admit(
       memberId,
       userId: caller.userId,
       deviceId,
-      role: 'editor',
+      role: grantRole ?? 'editor',
       slot: slot.slot,
       at: new Date(clock()),
     });
@@ -237,7 +240,9 @@ export const joinTokenRoutes: FastifyPluginAsync<SessionRouteDeps> = async (app,
       const inWorkspace = standing?.session.workspaceId != null;
       if (
         standing === null ||
-        (inWorkspace ? standing.workspaceRole === null : liveRole(standing) === null)
+        (inWorkspace
+          ? standing.workspaceRole === null && (standing.grantRole ?? null) === null
+          : liveRole(standing) === null)
       ) {
         throw notVisible();
       }
