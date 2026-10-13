@@ -118,6 +118,60 @@ describe.runIf(STACK)('rooms on Postgres 16', () => {
     };
   }
 
+  it('a person outside the workspace stays a member only while their session invite stands (B105)', async () => {
+    const s = await seed();
+    const outsider = await f.users.create({ display_name: 'Visitor' });
+    const device = await f.devices.create({ user: outsider.id });
+    const member = await f.sessionMembers.create({
+      session: s.session.id,
+      user: outsider.id,
+      device: device.id,
+      role: 'editor',
+    });
+    const live = createPostgresMembership(stack.db);
+    // No workspace membership and no invite: not a member.
+    expect(await live.lookup(s.session.id, member.id)).toBeNull();
+    const invite = newId('inv');
+    const grants = db as unknown as {
+      insertInto(t: string): { values(v: object): { execute(): Promise<unknown> } };
+      updateTable(t: string): {
+        set(v: object): { where(c: string, o: string, v: string): { execute(): Promise<unknown> } };
+      };
+    };
+    await grants
+      .insertInto('session_invites')
+      .values({
+        id: invite,
+        session_id: s.session.id,
+        workspace_id: s.workspace.id,
+        role: 'viewer',
+        token_hash: Buffer.alloc(32, 9),
+        created_by: s.user.id,
+        expires_at: new Date(Date.now() + 86_400_000),
+        accepted_at: new Date(),
+        accepted_by: outsider.id,
+      })
+      .execute();
+    // A viewer grant caps an editor row to viewer.
+    expect(await live.lookup(s.session.id, member.id)).toEqual({
+      role: 'viewer',
+      userId: outsider.id,
+      workspaceId: s.workspace.id,
+    });
+    await grants
+      .updateTable('session_invites')
+      .set({ role: 'editor' })
+      .where('id', '=', invite)
+      .execute();
+    expect((await live.lookup(s.session.id, member.id))?.role).toBe('editor');
+    await grants
+      .updateTable('session_invites')
+      .set({ revoked_at: new Date() })
+      .where('id', '=', invite)
+      .execute();
+    expect(await live.lookup(s.session.id, member.id)).toBeNull();
+  });
+
   it('reads the live member: role from the records, capped by the workspace role', async () => {
     const s = await seed();
     const live = createPostgresMembership(stack.db);

@@ -17,6 +17,8 @@ import {
 import {
   type CoreDatabase,
   type InviteDatabase,
+  type SessionInviteDatabase,
+  createSessionInviteStore,
   createInviteStore,
   createMemberStore,
   createWorkspaceStore,
@@ -27,12 +29,13 @@ import type { ApiDatabase } from './context.js';
 import { createInviteUrlBuilder } from './modules/deeplinks/invite-urls.js';
 import type { CachedEntitlements } from './modules/entitlements/enforcement.js';
 import type { EntitlementService } from './modules/entitlements/service.js';
-import { InviteService, type SeatGate } from './modules/invites/index.js';
+import { InviteService, SessionInviteService, type SeatGate } from './modules/invites/index.js';
 import { MembershipService } from './modules/members/index.js';
 import { SeatService, createSeatGate, seatLimitsFrom } from './modules/seats/index.js';
 import { createPostgresShareLinkStore, ShareLinkService } from './modules/share-links/index.js';
 import type { ShareLinkDb } from './modules/share-links/repository.js';
 import { WorkspaceService } from './modules/workspaces/index.js';
+import type { PurgeQueue } from './modules/workspaces/service.js';
 import type { TokenService } from './modules/auth/tokens/index.js';
 import { standingOf } from './routes/share-links/index.js';
 import type { SessionRouteDeps } from './routes/sessions/index.js';
@@ -48,6 +51,8 @@ export interface Collab {
   inviteUrls: ReturnType<typeof createInviteUrlBuilder>;
   /** Null when the session routes are off (no relay address). */
   shareLinks: ShareLinkService | null;
+  /** B105: null without a mail transport or without the session routes. */
+  sessionInvites: SessionInviteService | null;
 }
 
 /** What the services are built from. */
@@ -64,6 +69,8 @@ export interface CollabDeps {
   entitlements: CachedEntitlements;
   sessionRoutes: SessionRouteDeps | null;
   mailer: unknown;
+  /** The worker's `workspace-purge` queue; without one a purge is only logged. */
+  purgeQueue?: PurgeQueue;
 }
 
 /** Mails go to Mailpit until the worker's mail queue (B032) is on the list. */
@@ -101,8 +108,8 @@ export function createCollab(deps: CollabDeps): Collab {
   const workspaces = new WorkspaceService({
     store: workspaceStore,
     events: redis.pubsub,
-    // A deleted workspace is purged by the worker, which is not running locally yet.
-    purgeQueue: {
+    // A deleted workspace is purged by the worker (`pnpm dev:worker` locally).
+    purgeQueue: deps.purgeQueue ?? {
       add: (name, data) => {
         logger.info({ job: name, workspace: data.workspaceId }, 'collab.purge_not_queued');
         return Promise.resolve();
@@ -173,5 +180,28 @@ export function createCollab(deps: CollabDeps): Collab {
           metrics,
         });
 
-  return { workspaceStore, workspaces, members, seatGate, invites, inviteUrls, shareLinks };
+  const sessionInvites =
+    email === null || routes === null
+      ? null
+      : new SessionInviteService({
+          store: createSessionInviteStore(view<SessionInviteDatabase>()),
+          urls: inviteUrls,
+          email,
+          entitlements: deps.entitlements,
+          audit: deps.audit,
+          clock,
+          logger,
+          metrics,
+        });
+
+  return {
+    workspaceStore,
+    workspaces,
+    members,
+    seatGate,
+    invites,
+    inviteUrls,
+    shareLinks,
+    sessionInvites,
+  };
 }

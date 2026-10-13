@@ -248,15 +248,24 @@ importers:
       '@centcom/storage':
         specifier: workspace:*
         version: link:../../packages/storage
+      '@centcom/worker':
+        specifier: workspace:*
+        version: link:../worker
       '@noble/hashes':
         specifier: 2.4.0
         version: 2.4.0
       '@opentelemetry/api':
         specifier: 1.9.1
         version: 1.9.1
+      bullmq:
+        specifier: 6.3.11
+        version: 6.3.11(ioredis@6.0.0)(pg@8.23.1)
       fastify:
         specifier: 5.12.5
         version: 5.12.5
+      ioredis:
+        specifier: 6.0.0
+        version: 6.0.0
       jose:
         specifier: 6.2.12
         version: 6.2.12

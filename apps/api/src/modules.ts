@@ -23,8 +23,20 @@ import { memberRoutes } from './modules/members/index.js';
 import { seatGatePlugin } from './modules/seats/index.js';
 import { workspaceRoutes } from './modules/workspaces/index.js';
 import { entitlementRoutes } from './routes/entitlements/index.js';
+import type { NotificationDb } from '@centcom/db';
+import type { Kysely } from 'kysely';
+import { InboxService } from './modules/notifications/inbox/service.js';
+import { createInboxRepository } from './modules/notifications/inbox/repository.js';
+import { notificationRoutes } from './routes/notifications/index.js';
+import { planRoutes } from './routes/plans/index.js';
+import { sessionInviteRoutes } from './routes/sessions/invites.js';
 import { registerShareLinkRoutes } from './routes/share-links/index.js';
 import { registerSessionRoutes } from './routes/sessions/index.js';
+import { historyRoutes } from './routes/history/index.js';
+import { snapshotRoutes } from './routes/snapshots/index.js';
+import { usageRoutes } from './routes/usage/index.js';
+import { usageSummaryRoutes } from './routes/usage-summary/index.js';
+import { notificationPreferenceRoutes } from './routes/notification-preferences/index.js';
 import { statusRoutes } from './routes/status.js';
 import { wellKnownRoutes } from './routes/well-known.js';
 
@@ -165,7 +177,97 @@ export const API_MODULES: readonly ApiModule[] = [
       await app.register(seatGatePlugin, { gate: ctx.collab.seatGate });
       await app.register(inviteRoutes, {
         service: ctx.collab.invites,
+        ...(ctx.collab.sessionInvites === null || ctx.sessionRoutes === null
+          ? {}
+          : { sessionInvites: ctx.collab.sessionInvites, sessionStore: ctx.sessionRoutes.store }),
         workspaces: ctx.collab.workspaceStore,
+        cursorKeys: ctx.config.pagination.signingKeys,
+        clock: ctx.clock ?? Date.now,
+      });
+    },
+  },
+  {
+    name: 'plans',
+    register: async (app, ctx) => {
+      await app.register(planRoutes, { service: ctx.entitlementService });
+    },
+  },
+  {
+    name: 'notifications',
+    register: async (app, ctx) => {
+      await app.register(notificationRoutes, {
+        inbox: new InboxService({
+          repository: createInboxRepository(ctx.db as unknown as Kysely<NotificationDb>),
+          cursorKeys: ctx.config.pagination.signingKeys,
+          clock: ctx.clock ?? Date.now,
+        }),
+        clock: ctx.clock ?? Date.now,
+      });
+    },
+  },
+  {
+    name: 'history',
+    skip: (ctx) =>
+      ctx.data.history === null ? 'no object store is configured (OBJECT_STORE_*)' : null,
+    register: async (app, ctx) => {
+      if (ctx.data.history === null) return;
+      await app.register(historyRoutes, {
+        service: ctx.data.history,
+        cursorKeys: ctx.config.pagination.signingKeys,
+        clock: ctx.clock ?? Date.now,
+      });
+    },
+  },
+  {
+    name: 'snapshots',
+    skip: (ctx) =>
+      ctx.data.snapshots === null ? 'no object store is configured (OBJECT_STORE_*)' : null,
+    register: async (app, ctx) => {
+      if (ctx.data.snapshots === null) return;
+      await app.register(snapshotRoutes, { service: ctx.data.snapshots });
+    },
+  },
+  {
+    name: 'usage',
+    register: async (app, ctx) => {
+      await app.register(usageRoutes, {
+        ingest: ctx.data.usageIngest,
+        clock: ctx.clock ?? Date.now,
+      });
+      await app.register(usageSummaryRoutes, { summary: ctx.data.usageSummary });
+    },
+  },
+  {
+    name: 'notification-preferences',
+    register: async (app, ctx) => {
+      await app.register(notificationPreferenceRoutes, { preferences: ctx.data.preferences });
+    },
+  },
+  {
+    name: 'session-invites',
+    skip: (ctx) =>
+      ctx.collab.sessionInvites === null
+        ? 'no mail transport is configured (DEV_MAILPIT_URL) or the session routes are off'
+        : ctx.config.idempotency.encryptionKey === undefined
+          ? 'IDEMPOTENCY_ENCRYPTION_KEY is not set'
+          : null,
+    register: async (app, ctx) => {
+      const routes = ctx.sessionRoutes;
+      if (ctx.collab.sessionInvites === null || routes === null) return;
+      await app.register(sessionInviteRoutes, {
+        service: ctx.collab.sessionInvites,
+        store: routes.store,
+        sessions: { get: (id) => routes.service.get(id) },
+        names: {
+          displayName: async (userId) =>
+            (
+              await ctx.db
+                .selectFrom('users')
+                .select('display_name')
+                .where('id', '=', userId)
+                .executeTakeFirst()
+            )?.display_name ?? 'Someone',
+        },
         cursorKeys: ctx.config.pagination.signingKeys,
         clock: ctx.clock ?? Date.now,
       });

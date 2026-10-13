@@ -38,7 +38,12 @@ import type {
   SessionRow,
   StoredSession,
 } from '../../modules/sessions/index.js';
-import type { CreatedAt, createDb, SessionsLifecycleDatabase } from '@centcom/db';
+import type {
+  CreatedAt,
+  createDb,
+  SessionInvitesDatabase,
+  SessionsLifecycleDatabase,
+} from '@centcom/db';
 import { sql, type ColumnType, type Generated, type Transaction } from 'kysely';
 
 /** `session_host_outbox` (migration 20260102004400). */
@@ -52,9 +57,10 @@ export interface SessionHostOutboxTable {
 }
 
 /** What the routes read and write. */
-export type SessionRoutesDatabase = SessionsLifecycleDatabase & {
-  session_host_outbox: SessionHostOutboxTable;
-};
+export type SessionRoutesDatabase = SessionsLifecycleDatabase &
+  SessionInvitesDatabase & {
+    session_host_outbox: SessionHostOutboxTable;
+  };
 /** A client over those tables. */
 export type SessionRoutesDb = ReturnType<typeof createDb<SessionRoutesDatabase>>;
 type Tx = Transaction<SessionRoutesDatabase>;
@@ -82,6 +88,8 @@ export interface Standing {
   removed: boolean;
   /** The caller's role in the session's workspace, while it is not deleted. */
   workspaceRole: string | null;
+  /** B105: the role of a live session invite the caller accepted; only for a caller outside the workspace. */
+  grantRole?: 'editor' | 'viewer' | null;
 }
 
 /** A member as the members list shows it. */
@@ -98,6 +106,8 @@ export interface MemberView {
   device: { id: string; x25519: string; ed25519: string; fingerprint: string; revoked: boolean };
   /** The member's role in the session's workspace (caps the shown role), null outside one. */
   workspaceRole: string | null;
+  /** B105: the role of a live session invite the member accepted (they are not in the workspace). */
+  grantRole?: 'editor' | 'viewer' | null;
 }
 
 /** What `addMember` came to. */
@@ -237,6 +247,11 @@ export function createSessionRouteStore(db: SessionRoutesDb): SessionRouteStore 
         'devices.fingerprint',
         'devices.revoked_at',
         'memberships.role as workspace_role',
+        sql<
+          string | null
+        >`(select si.role from session_invites si where si.session_id = ${sessionId} and si.accepted_by = ranked.user_id and si.revoked_at is null order by si.accepted_at desc limit 1)`.as(
+          'grant_role',
+        ),
       ])
       .where('ranked.left_at', 'is', null)
       // A member whose workspace role no longer allows a session (removed, or billing) is not
@@ -245,6 +260,11 @@ export function createSessionRouteStore(db: SessionRoutesDb): SessionRouteStore 
         eb.or([
           eb('ranked.workspace_id', 'is', null),
           eb.and([eb('memberships.role', 'is not', null), eb('memberships.role', '!=', 'billing')]),
+          // B105: a person the host invited to this one session, outside the workspace.
+          eb.and([
+            eb('memberships.role', 'is', null),
+            sql<boolean>`exists (select 1 from session_invites si where si.session_id = ${sessionId} and si.accepted_by = ranked.user_id and si.revoked_at is null)`,
+          ]),
         ]),
       );
 
@@ -265,6 +285,7 @@ export function createSessionRouteStore(db: SessionRoutesDb): SessionRouteStore 
       revoked: r.revoked_at !== null,
     },
     workspaceRole: r.workspace_role ?? null,
+    grantRole: (r.grant_role as 'editor' | 'viewer' | null) ?? null,
   });
 
   /** The session as B053 stores it (its row and policy), the row locked when `lock`. */
@@ -359,6 +380,19 @@ export function createSessionRouteStore(db: SessionRoutesDb): SessionRouteStore 
         .orderBy('id', 'desc')
         .execute();
       const live = rows.find((r) => r.left_at === null);
+      const workspaceRole = s.deleted_at === null ? (s.workspace_role ?? null) : null;
+      const grant =
+        workspaceRole === null && s.workspace_id !== null
+          ? await db
+              .selectFrom('session_invites')
+              .select('role')
+              .where('session_id', '=', sessionId)
+              .where('accepted_by', '=', userId)
+              .where('revoked_at', 'is', null)
+              .orderBy('accepted_at', 'desc')
+              .limit(1)
+              .executeTakeFirst()
+          : undefined;
       return {
         session: {
           id: s.id,
@@ -373,7 +407,8 @@ export function createSessionRouteStore(db: SessionRoutesDb): SessionRouteStore 
             ? null
             : { id: live.id, role: live.role, deviceId: live.device_id, slot: live.slot },
         removed: live === undefined && rows.length > 0,
-        workspaceRole: s.deleted_at === null ? (s.workspace_role ?? null) : null,
+        workspaceRole,
+        grantRole: grant?.role ?? null,
       };
     },
 

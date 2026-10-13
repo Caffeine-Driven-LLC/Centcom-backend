@@ -26,6 +26,11 @@ import {
   type PaginationConfig,
   type RateLimitConfig,
 } from '@centcom/core';
+import {
+  loadObjectStoreConfig,
+  objectStoreEnvSchema,
+  type ObjectStoreConfig,
+} from '@centcom/storage';
 import { loadWorkspacesConfig, type WorkspacesConfig } from './modules/workspaces/config.js';
 import { loadMagicLinkConfig, type MagicLinkConfig } from './modules/auth/magic-link/config.js';
 import { loadPkceConfig, type PkceConfig } from './modules/auth/pkce/config.js';
@@ -93,8 +98,22 @@ export interface ApiConfig {
   devDefaultPlan: 'free' | 'pro' | 'team' | null;
   /** Where the relay is and the region it serves; null: the session routes are off. */
   relay: { url: string; region: string } | null;
+  /** The S3-compatible store of session history and snapshots; null: those routes are off. */
+  objectStore: ObjectStoreConfig | null;
   /** Cookies are `Secure` only when the public URL is https. */
   secureCookies: boolean;
+}
+
+/** The object store, when any of its keys is set (the region has a default); a half-set store is an error. */
+function objectStoreOf(env?: Env): ObjectStoreConfig | null {
+  const partial = defineConfig(objectStoreEnvSchema.partial(), env);
+  const keys = [
+    'OBJECT_STORE_ENDPOINT',
+    'OBJECT_STORE_BUCKET',
+    'OBJECT_STORE_ACCESS_KEY_ID',
+    'OBJECT_STORE_SECRET_ACCESS_KEY',
+  ] as const;
+  return keys.some((k) => partial[k] !== undefined) ? loadObjectStoreConfig(env) : null;
 }
 
 /** Reads and checks the whole configuration. Throws `ConfigError`. */
@@ -125,6 +144,7 @@ export function loadApiConfig(env?: Env): ApiConfig {
       own.RELAY_PUBLIC_URL === undefined
         ? null
         : { url: own.RELAY_PUBLIC_URL, region: own.RELAY_REGION },
+    objectStore: objectStoreOf(env),
     secureCookies: base.publicApiUrl.startsWith('https:'),
   };
 }

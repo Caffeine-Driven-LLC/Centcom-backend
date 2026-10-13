@@ -13,6 +13,14 @@ import type { PubSub } from '../redis/types.js';
 /** Redis pub/sub channel of membership changes (the relay re-checks the member's live role). */
 export const MEMBERSHIP_EVENTS_CHANNEL = 'centcom:membership';
 
+/**
+ * Where the API tells the relay about changes it made that connected clients must see (B106): a
+ * new host (`control.host_changed`, after a claim) or a session's state (`control.session_state`).
+ * Messages are JSON `{kind: 'host_changed', sid, host, code}` or `{kind: 'session_state', sid,
+ * state}`; the relay checks every field before it emits a frame.
+ */
+export const RELAY_CONTROL_CHANNEL = 'centcom:relay-control';
+
 /** A membership change: `role_changed` (with the new role), `removed` by someone else, or `left`. */
 export interface MembershipEvent {
   type: 'role_changed' | 'removed' | 'left';
