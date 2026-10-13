@@ -17,7 +17,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 ![Progress](docs/progress.svg)
 
-**93% built** (weighted by lane size across 111 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
+**95% built** (weighted by lane size across 111 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
 
 ## Next steps
 
@@ -32,16 +32,17 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 | Lane | What | Done | Note |
 |---|---|--:|---|
+| [B097](plan/backend/B097.md) | Security hardening: headers, WAF rules, secret scanning, dependency policy | 90% | 2026-10-13: security headers and CORS, dependency policy and secret scripts, gitleaks rules, WAF Terraform module (#128), Caddy request-body limits and private paths (#132); gaps: WAF rules not tried against a real Cloudflare plan, workflows and dependabot are protected paths |
 | [B101](plan/backend/B101.md) | Credential-leak guard: scanners for logs, frames, telemetry, backups and CI | 90% | 2026-10-13: credential-leak guard for logs, requests, frames, telemetry, backups and the repo (#127) |
-| [B097](plan/backend/B097.md) | Security hardening: headers, WAF rules, secret scanning, dependency policy | 85% | 2026-10-13: security headers and CORS, dependency policy and secret scripts, gitleaks rules, WAF module (#128); gaps: WAF rules not exercised against a live proxy |
 | [B099](plan/backend/B099.md) | Backup, restore and disaster-recovery drills | 85% | 2026-10-13: encrypted backups, verified restore and a restore drill for one server (#129); gaps: off-site bucket not tried with a real R2 or B2 account |
+| [B095](plan/backend/B095.md) | Load testing and capacity model | 75% | 2026-10-13: relay load runner, capacity model, docs/capacity.md (#131); 2,500 connections pass on one relay (planning figure 2,000), 799 frames/s pass; gaps: a 10-minute soak stalled at minute 4 with memory 241 to 423 MiB (cause open), load against API routes, no measurement on the real server |
 | [B091](plan/backend/B091.md) | Infrastructure as code: environments dev, stage, prod | 70% | 2026-10-13: production images, compose, Caddy and deploy scripts for one server (#126); gaps: only one environment (no dev/stage/prod split), not run on a real server, ARM images unchecked |
+| [B092](plan/backend/B092.md) | Deployment pipeline: blue/green, safe migrations, rollback | 60% | 2026-10-13: safe-migration runner, deploy.sh with automatic rollback on a failed health check, rollback.sh, restore option; proven on the local prod compose (#126); gaps: not blue/green, nothing run on a real server |
 
 ### Ready to pick up (all dependencies done)
 
 | Lane | What | Size | Milestone |
 |---|---|---|---|
-| [B095](plan/backend/B095.md) | Load testing and capacity model | L | M6 |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
 

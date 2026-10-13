@@ -374,8 +374,8 @@
    "note": "merged in #70"
   },
   "B097": {
-   "pct": 0.85,
-   "note": "2026-10-13: security headers and CORS, dependency policy and secret scripts, gitleaks rules, WAF module (#128); gaps: WAF rules not exercised against a live proxy"
+   "pct": 0.9,
+   "note": "2026-10-13: security headers and CORS, dependency policy and secret scripts, gitleaks rules, WAF Terraform module (#128), Caddy request-body limits and private paths (#132); gaps: WAF rules not tried against a real Cloudflare plan, workflows and dependabot are protected paths"
   },
   "B099": {
    "pct": 0.85,
@@ -424,6 +424,14 @@
   "B111": {
    "pct": 0.95,
    "note": "merged in #122; board state is a Redis document for 48 hours and is not yet deleted when a session is purged"
+  },
+  "B092": {
+   "pct": 0.6,
+   "note": "2026-10-13: safe-migration runner, deploy.sh with automatic rollback on a failed health check, rollback.sh, restore option; proven on the local prod compose (#126); gaps: not blue/green, nothing run on a real server"
+  },
+  "B095": {
+   "pct": 0.75,
+   "note": "2026-10-13: relay load runner, capacity model, docs/capacity.md (#131); 2,500 connections pass on one relay (planning figure 2,000), 799 frames/s pass; gaps: a 10-minute soak stalled at minute 4 with memory 241 to 423 MiB (cause open), load against API routes, no measurement on the real server"
   }
  },
  "next": [
