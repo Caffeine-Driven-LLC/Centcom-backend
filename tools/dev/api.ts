@@ -70,6 +70,15 @@ for (const key of ['RATELIMIT_AUTH_LIMIT', 'RATELIMIT_ANONYMOUS_LIMIT']) {
 // Invite links point at this server in development.
 set('WEB_BASE_URL', base);
 set('DEVICE_VERIFICATION_URI', `${base}/device`);
+// Session history and snapshots live in the dev stack's MinIO (buckets made by `pnpm dev:up`); the
+// relay writes the durable log there and the API reads it back.
+const minio = `http://127.0.0.1:${process.env['CENTCOM_DEV_MINIO_PORT'] ?? '9000'}`;
+set('OBJECT_STORE_ENDPOINT', minio);
+set('OBJECT_STORE_REGION', 'us-east-1');
+set('OBJECT_STORE_BUCKET', 'history');
+set('OBJECT_STORE_ACCESS_KEY_ID', 'centcom');
+set('OBJECT_STORE_SECRET_ACCESS_KEY', 'dev-only');
+
 // Sessions: clients are told to connect to the relay `pnpm dev:relay` starts.
 // A new account's personal workspace starts on the Team plan, so it can use the relay.
 set('DEV_DEFAULT_PLAN', 'team');

@@ -199,3 +199,31 @@ dev:two-accounts` ends with that: Alice ends the session over REST and Bob's cli
 - **Production sign-ups are on the free plan**: nothing writes a plan for a new workspace, and
   `DEV_DEFAULT_PLAN` is refused under `NODE_ENV=production` (tests in `app.build.test.ts` and
   `personal-workspace.test.ts`).
+
+## History, snapshots, usage and preferences (B107)
+
+`pnpm dev:up` makes the buckets in MinIO (`history`, `snapshots`, `exports`, `releases`), and
+`dev:api` and `dev:relay` point at it (`OBJECT_STORE_*`, see `docs/config.md`). That turns on:
+
+- the relay's **durable log**: every sequenced frame is written to the `history` bucket, so a client
+  that was away longer than the relay keeps in memory gets the rest from `GET
+/v1/sessions/{id}/history?after_seq=`;
+- `GET` and `DELETE /v1/sessions/{id}/history` (the host or a workspace owner purges);
+- `POST /v1/sessions/{id}/snapshot`, `POST .../snapshot/{snp}/commit` and `GET
+.../snapshot` (the `snapshots` bucket: encrypted checkpoints a late joiner starts from).
+
+Without an object store the history and snapshot modules are left out with one `api.module_skipped`
+line each, and the rest of the service still starts. A half-set store (some `OBJECT_STORE_*` keys)
+refuses to start and names the bad keys.
+
+Always on: `POST /v1/usage/events` (a device reports minutes, tokens and queue items),
+`GET /v1/workspaces/{id}/usage/summary`, and `GET`/`PUT /v1/notification-preferences`. The
+entitlement check now reads the monthly counters (`queue_items_month`, `hosted_minutes_month`)
+instead of allowing everything; the counters are filled by the worker's aggregation job
+(`usage-aggregate`), which is not run locally yet, so locally the reports are stored and the counters
+stay at zero until that job runs.
+
+```
+pnpm dev:full-check   # one new account: history over REST and the client, a snapshot up and down,
+                      # a usage report and summary, preferences, the inbox, plans and entitlements
+```
