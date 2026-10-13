@@ -37,13 +37,49 @@
    "pct": 1,
    "note": "merged in #19"
   },
+  "B010": {
+   "pct": 1,
+   "note": "merged in #20"
+  },
+  "B011": {
+   "pct": 1,
+   "note": "merged in #35"
+  },
+  "B012": {
+   "pct": 1,
+   "note": "merged in #37"
+  },
   "B013": {
    "pct": 1,
    "note": "merged in #21"
   },
+  "B014": {
+   "pct": 1,
+   "note": "merged in #30"
+  },
   "B015": {
    "pct": 1,
    "note": "merged in #23"
+  },
+  "B016": {
+   "pct": 1,
+   "note": "merged in #39"
+  },
+  "B017": {
+   "pct": 1,
+   "note": "merged in #22"
+  },
+  "B018": {
+   "pct": 1,
+   "note": "merged in #47"
+  },
+  "B019": {
+   "pct": 1,
+   "note": "merged in #50"
+  },
+  "B020": {
+   "pct": 1,
+   "note": "merged in #48"
   },
   "B021": {
    "pct": 1,
@@ -65,17 +101,9 @@
    "pct": 1,
    "note": "merged in #28"
   },
-  "B032": {
+  "B026": {
    "pct": 1,
-   "note": "merged in #29"
-  },
-  "B014": {
-   "pct": 1,
-   "note": "merged in #30"
-  },
-  "B036": {
-   "pct": 1,
-   "note": "merged in #31"
+   "note": "merged in #71"
   },
   "B027": {
    "pct": 1,
@@ -85,165 +113,69 @@
    "pct": 1,
    "note": "merged in #33"
   },
-  "B033": {
+  "B029": {
    "pct": 1,
-   "note": "merged in #42"
-  },
-  "B063": {
-   "pct": 1,
-   "note": "merged in #45"
-  },
-  "B034": {
-   "pct": 1,
-   "note": "merged in #43"
-  },
-  "B069": {
-   "pct": 1,
-   "note": "merged in #46"
-  },
-  "B012": {
-   "pct": 1,
-   "note": "merged in #37"
-  },
-  "B037": {
-   "pct": 1,
-   "note": "merged in #86"
-  },
-  "B018": {
-   "pct": 1,
-   "note": "merged in #47"
-  },
-  "B019": {
-   "pct": 1,
-   "note": "merged in #50"
+   "note": "merged in #34"
   },
   "B030": {
    "pct": 1,
    "note": "merged in #51"
   },
-  "B035": {
-   "pct": 1,
-   "note": "merged in #38"
-  },
-  "B064": {
-   "pct": 1,
-   "note": "merged in #54"
-  },
-  "B065": {
-   "pct": 1,
-   "note": "merged in #55"
-  },
-  "B066": {
-   "pct": 1,
-   "note": "merged in #56"
-  },
-  "B074": {
-   "pct": 1,
-   "note": "merged in #58"
-  },
-  "B075": {
-   "pct": 1,
-   "note": "merged in #59"
-  },
-  "B080": {
-   "pct": 1,
-   "note": "merged in #60"
-  },
-  "B082": {
-   "pct": 1,
-   "note": "merged in #62"
-  },
-  "B083": {
-   "pct": 1,
-   "note": "merged in #63"
-  },
-  "B084": {
-   "pct": 1,
-   "note": "merged in #64"
-  },
-  "B085": {
-   "pct": 1,
-   "note": "merged in #65"
-  },
-  "B086": {
-   "pct": 1,
-   "note": "merged in #66"
-  },
-  "B087": {
-   "pct": 1,
-   "note": "merged in #67"
-  },
-  "B088": {
-   "pct": 1,
-   "note": "merged in #68"
-  },
-  "B011": {
-   "pct": 1,
-   "note": "merged in #35"
-  },
-  "B020": {
-   "pct": 1,
-   "note": "merged in #48"
-  },
-  "B039": {
-   "pct": 1,
-   "note": "merged in #53"
-  },
   "B031": {
    "pct": 1,
    "note": "merged in #41"
   },
-  "B070": {
+  "B032": {
    "pct": 1,
-   "note": "merged in #57"
+   "note": "merged in #29"
+  },
+  "B033": {
+   "pct": 1,
+   "note": "merged in #42"
+  },
+  "B034": {
+   "pct": 1,
+   "note": "merged in #43"
+  },
+  "B035": {
+   "pct": 1,
+   "note": "merged in #38"
+  },
+  "B036": {
+   "pct": 1,
+   "note": "merged in #31"
+  },
+  "B037": {
+   "pct": 1,
+   "note": "merged in #86"
   },
   "B038": {
    "pct": 1,
    "note": "merged in #52"
   },
-  "B094": {
+  "B039": {
    "pct": 1,
-   "note": "merged in #70"
+   "note": "merged in #53"
   },
   "B040": {
    "pct": 1,
    "note": "merged in #72"
   },
-  "B071": {
+  "B041": {
    "pct": 1,
-   "note": "merged in #76"
-  },
-  "B072": {
-   "pct": 1,
-   "note": "merged in #77"
-  },
-  "B055": {
-   "pct": 1,
-   "note": "merged in #74"
-  },
-  "B043": {
-   "pct": 1,
-   "note": "merged in #121"
-  },
-  "B077": {
-   "pct": 1,
-   "note": "merged in #79"
-  },
-  "B044": {
-   "pct": 1,
-   "note": "merged in #80"
+   "note": "merged in #117"
   },
   "B042": {
    "pct": 1,
    "note": "merged in #81"
   },
-  "B079": {
+  "B043": {
    "pct": 1,
-   "note": "merged in #82"
+   "note": "merged in #121"
   },
-  "B073": {
+  "B044": {
    "pct": 1,
-   "note": "merged in #84"
+   "note": "merged in #80"
   },
   "B045": {
    "pct": 1,
@@ -281,25 +213,17 @@
    "pct": 1,
    "note": "merged in #99"
   },
-  "B076": {
-   "pct": 1,
-   "note": "merged in #93"
-  },
-  "B078": {
-   "pct": 1,
-   "note": "merged in #97"
-  },
   "B054": {
    "pct": 1,
    "note": "merged in #98"
   },
+  "B055": {
+   "pct": 1,
+   "note": "merged in #74"
+  },
   "B056": {
    "pct": 1,
    "note": "merged in #100"
-  },
-  "B090": {
-   "pct": 1,
-   "note": "merged in #96"
   },
   "B057": {
    "pct": 1,
@@ -321,53 +245,169 @@
    "pct": 1,
    "note": "merged in #105"
   },
+  "B062": {
+   "pct": 0.95,
+   "note": "merged in #106; the per-target comment cap was dropped because the relay cannot read the target"
+  },
+  "B063": {
+   "pct": 1,
+   "note": "merged in #45"
+  },
+  "B064": {
+   "pct": 1,
+   "note": "merged in #54"
+  },
+  "B065": {
+   "pct": 1,
+   "note": "merged in #55"
+  },
+  "B066": {
+   "pct": 1,
+   "note": "merged in #56"
+  },
   "B067": {
    "pct": 1,
    "note": "merged in #107"
-  },
-  "B041": {
-   "pct": 1,
-   "note": "merged in #117"
-  },
-  "B026": {
-   "pct": 1,
-   "note": "merged in #71"
-  },
-  "B081": {
-   "pct": 1,
-   "note": "merged in #61"
-  },
-  "B093": {
-   "pct": 1,
-   "note": "merged in #69"
-  },
-  "B016": {
-   "pct": 1,
-   "note": "merged in #39"
-  },
-  "B010": {
-   "pct": 1,
-   "note": "merged in #20"
-  },
-  "B017": {
-   "pct": 1,
-   "note": "merged in #22"
-  },
-  "B029": {
-   "pct": 1,
-   "note": "merged in #34"
-  },
-  "B102": {
-   "pct": 1,
-   "note": "merged in #109"
   },
   "B068": {
    "pct": 1,
    "note": "merged in #110"
   },
+  "B069": {
+   "pct": 1,
+   "note": "merged in #46"
+  },
+  "B070": {
+   "pct": 1,
+   "note": "merged in #57"
+  },
+  "B071": {
+   "pct": 1,
+   "note": "merged in #76"
+  },
+  "B072": {
+   "pct": 1,
+   "note": "merged in #77"
+  },
+  "B073": {
+   "pct": 1,
+   "note": "merged in #84"
+  },
+  "B074": {
+   "pct": 1,
+   "note": "merged in #58"
+  },
+  "B075": {
+   "pct": 1,
+   "note": "merged in #59"
+  },
+  "B076": {
+   "pct": 1,
+   "note": "merged in #93"
+  },
+  "B077": {
+   "pct": 1,
+   "note": "merged in #79"
+  },
+  "B078": {
+   "pct": 1,
+   "note": "merged in #97"
+  },
+  "B079": {
+   "pct": 1,
+   "note": "merged in #82"
+  },
+  "B080": {
+   "pct": 1,
+   "note": "merged in #60"
+  },
+  "B081": {
+   "pct": 1,
+   "note": "merged in #61"
+  },
+  "B082": {
+   "pct": 1,
+   "note": "merged in #62"
+  },
+  "B083": {
+   "pct": 1,
+   "note": "merged in #63"
+  },
+  "B084": {
+   "pct": 1,
+   "note": "merged in #64"
+  },
+  "B085": {
+   "pct": 1,
+   "note": "merged in #65"
+  },
+  "B086": {
+   "pct": 1,
+   "note": "merged in #66"
+  },
+  "B087": {
+   "pct": 1,
+   "note": "merged in #67"
+  },
+  "B088": {
+   "pct": 1,
+   "note": "merged in #68"
+  },
   "B089": {
    "pct": 1,
    "note": "merged in #111"
+  },
+  "B090": {
+   "pct": 1,
+   "note": "merged in #96"
+  },
+  "B093": {
+   "pct": 1,
+   "note": "merged in #69"
+  },
+  "B094": {
+   "pct": 1,
+   "note": "merged in #70"
+  },
+  "B102": {
+   "pct": 1,
+   "note": "merged in #109"
+  },
+  "B103": {
+   "pct": 1,
+   "note": "merged in #112"
+  },
+  "B104": {
+   "pct": 1,
+   "note": "merged in #114"
+  },
+  "B105": {
+   "pct": 1,
+   "note": "merged in #115"
+  },
+  "B106": {
+   "pct": 1,
+   "note": "merged in #116"
+  },
+  "B107": {
+   "pct": 1,
+   "note": "merged in #118"
+  },
+  "B108": {
+   "pct": 1,
+   "note": "merged in #119"
+  },
+  "B109": {
+   "pct": 1,
+   "note": "merged in #120"
+  },
+  "B110": {
+   "pct": 1,
+   "note": "merged in #122; checked live with pnpm dev:branch-check"
+  },
+  "B111": {
+   "pct": 0.95,
+   "note": "merged in #122; board state is a Redis document for 48 hours and is not yet deleted when a session is purged"
   }
  },
  "next": [
