@@ -330,6 +330,25 @@ export type CommentAddSecret = {
   text: string;
 };
 
+export type BoardNotePayload = {
+  type: "decision" | "warning" | "finding";
+  supersedes?: string;
+};
+
+export type BoardNoteSecret = {
+  text: string;
+  refs?: Record<string, unknown>;
+};
+
+export type BoardPinPayload = {
+  note: string;
+  pinned: boolean;
+};
+
+export type BoardRemovePayload = {
+  note: string;
+};
+
 export type KeyGrantPayload = {
   to_device: string;
   kids: string[];
@@ -502,6 +521,9 @@ export type EventKind =
   | "diff.share"
   | "reaction"
   | "comment.add"
+  | "board.note"
+  | "board.pin"
+  | "board.remove"
   | "key.grant"
   | "queue.submit"
   | "queue.cancel"
@@ -544,6 +566,9 @@ export interface EventPayloads {
   "agent.handoff": AgentHandoffPayload;
   "conflict.detected": ConflictDetectedPayload;
   "reaction": ReactionPayload;
+  "board.note": BoardNotePayload;
+  "board.pin": BoardPinPayload;
+  "board.remove": BoardRemovePayload;
   "key.grant": KeyGrantPayload;
   "queue.submit": QueueSubmitPayload;
   "queue.cancel": QueueCancelPayload;
@@ -590,6 +615,7 @@ export interface EventSecrets {
   "conflict.detected": ConflictDetectedSecret;
   "diff.share": DiffShareSecret;
   "comment.add": CommentAddSecret;
+  "board.note": BoardNoteSecret;
   "key.grant": KeyGrantSecret;
   "queue.submit": QueueSubmitSecret;
   "queue.reject": QueueRejectSecret;
@@ -627,6 +653,9 @@ export const EVENT_CATALOGUE = {
   "diff.share": { t: "event", mode: "encrypted", clearFields: [], secret: true },
   "reaction": { t: "event", mode: "clear", clearFields: ["target","code","op"], secret: false },
   "comment.add": { t: "event", mode: "encrypted", clearFields: [], secret: true },
+  "board.note": { t: "event", mode: "hybrid", clearFields: ["type","supersedes"], secret: true },
+  "board.pin": { t: "event", mode: "clear", clearFields: ["note","pinned"], secret: false },
+  "board.remove": { t: "event", mode: "clear", clearFields: ["note"], secret: false },
   "key.grant": { t: "event", mode: "hybrid", clearFields: ["to_device","kids"], secret: true },
   "queue.submit": { t: "queue", mode: "hybrid", clearFields: ["item","size","kind"], secret: true },
   "queue.cancel": { t: "queue", mode: "clear", clearFields: ["item"], secret: false },
@@ -657,7 +686,7 @@ export const EVENT_CATALOGUE = {
 } as const satisfies Record<EventKind, EventCatalogueEntry>;
 
 /** Every event kind, in catalogue order. */
-export const EVENT_KINDS: readonly EventKind[] = ["message.user","message.assistant.delta","message.assistant.done","message.system","tool.request","approval.request","approval.decision","tool.result","agent.spawn","agent.state","agent.exit","branch.update","file.lock","agent.handoff","conflict.detected","diff.share","reaction","comment.add","key.grant","queue.submit","queue.cancel","queue.approve","queue.reject","queue.reorder","queue.drop","queue.claim","queue.done","queue.state","control.kick","control.mute","control.unmute","control.role","control.transfer_host","control.end","control.policy","control.member_joined","control.member_left","control.roster","control.host_changed","control.session_state","control.rotate_request","control.rotate_key","presence.update","presence.nudge","presence.cursor"];
+export const EVENT_KINDS: readonly EventKind[] = ["message.user","message.assistant.delta","message.assistant.done","message.system","tool.request","approval.request","approval.decision","tool.result","agent.spawn","agent.state","agent.exit","branch.update","file.lock","agent.handoff","conflict.detected","diff.share","reaction","comment.add","board.note","board.pin","board.remove","key.grant","queue.submit","queue.cancel","queue.approve","queue.reject","queue.reorder","queue.drop","queue.claim","queue.done","queue.state","control.kick","control.mute","control.unmute","control.role","control.transfer_host","control.end","control.policy","control.member_joined","control.member_left","control.roster","control.host_changed","control.session_state","control.rotate_request","control.rotate_key","presence.update","presence.nudge","presence.cursor"];
 
 /**
  * Value type per schema key. Keys: a schema file stem (`events` validates a whole frame),
@@ -684,6 +713,9 @@ export interface SchemaTypes {
   "event/agent.handoff": AgentHandoffPayload;
   "event/conflict.detected": ConflictDetectedPayload;
   "event/reaction": ReactionPayload;
+  "event/board.note": BoardNotePayload;
+  "event/board.pin": BoardPinPayload;
+  "event/board.remove": BoardRemovePayload;
   "event/key.grant": KeyGrantPayload;
   "event/queue.submit": QueueSubmitPayload;
   "event/queue.cancel": QueueCancelPayload;
@@ -726,6 +758,7 @@ export interface SchemaTypes {
   "event-secret/conflict.detected": ConflictDetectedSecret;
   "event-secret/diff.share": DiffShareSecret;
   "event-secret/comment.add": CommentAddSecret;
+  "event-secret/board.note": BoardNoteSecret;
   "event-secret/key.grant": KeyGrantSecret;
   "event-secret/queue.submit": QueueSubmitSecret;
   "event-secret/queue.reject": QueueRejectSecret;
@@ -785,6 +818,7 @@ export interface SchemaTypes {
   "api/SessionPolicy": Api.SessionPolicy;
   "api/SessionMember": Api.SessionMember;
   "api/Session": Api.Session;
+  "api/SessionMode": Api.SessionMode;
   "api/SessionCreate": Api.SessionCreate;
   "api/SessionCreated": Api.SessionCreated;
   "api/SessionUpdate": Api.SessionUpdate;

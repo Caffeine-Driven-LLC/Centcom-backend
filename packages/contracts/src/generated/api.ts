@@ -350,7 +350,11 @@ export type Session = {
   created_at: string;
   ended_at?: string | null;
   member_count?: number;
+  mode?: SessionMode;
 };
+
+/** command_post: the host runs the agents and members send requests through the queue. branch: every member runs their own agents and emits their own events. Fixed when the session is created. */
+export type SessionMode = "command_post" | "branch";
 
 export type SessionCreate = {
   workspace: WorkspaceId;
@@ -358,6 +362,7 @@ export type SessionCreate = {
   project?: ProjectId;
   policy?: SessionPolicy;
   region_preference?: string;
+  mode?: SessionMode;
 };
 
 export type SessionCreated = Session & {
