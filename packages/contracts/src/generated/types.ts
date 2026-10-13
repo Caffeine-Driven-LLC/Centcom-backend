@@ -855,6 +855,8 @@ export interface SchemaTypes {
   "api/NotificationPage": Api.NotificationPage;
   "api/WebhookPage": Api.WebhookPage;
   "api/WebhookDeliveryPage": Api.WebhookDeliveryPage;
+  "api/SessionInviteCreate": Api.SessionInviteCreate;
+  "api/SessionInviteAcceptance": Api.SessionInviteAcceptance;
 }
 
 /** Every key accepted by `validate()`. */
