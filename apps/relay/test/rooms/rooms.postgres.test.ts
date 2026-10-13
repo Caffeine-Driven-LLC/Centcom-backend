@@ -172,7 +172,7 @@ describe.runIf(STACK)('rooms on Postgres 16', () => {
       .execute();
     const result = await a.resolve(s.session.id, s.member.id, s.device.id);
     expect(result).toEqual({
-      session: { state: 'live', maxMembers: 12 },
+      session: { state: 'live', mode: 'command_post', maxMembers: 12 },
       member: { id: s.member.id, name: 'Grace', slot: 0, role: 'viewer' },
       deviceRevoked: false,
       relayAccess: true,

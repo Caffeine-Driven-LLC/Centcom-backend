@@ -6,4 +6,4 @@
 export const CONTRACT_VERSION = "1.2.0";
 
 /** SHA-256 of contracts/CONTRACTS.lock when this code was generated. */
-export const CONTRACTS_LOCK_SHA256: string | null = "f8fcee9040de356d3944fb8a563583217faa5539d16aff722dba5f8426211ea5";
+export const CONTRACTS_LOCK_SHA256: string | null = "41a222e805107b9a940bab7478b25322d26bdfc1f2c3cfe42a3bb052e82ba319";

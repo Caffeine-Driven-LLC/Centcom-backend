@@ -246,7 +246,7 @@ export function welcomeFrame(input: {
         ...input.seqLimits,
         max_members: Math.min(access.session.maxMembers, MAX_MEMBERS_CAP),
       },
-      session: { state: access.session.state },
+      session: { mode: access.session.mode ?? 'command_post', state: access.session.state },
       resume: input.resume ?? null,
     },
   };

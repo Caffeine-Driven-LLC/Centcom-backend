@@ -72,6 +72,8 @@ export interface Session {
   host: string | null;
   policy: SessionPolicyDefaults;
   region: string;
+  /** How the session's agents run (B110); fixed at creation. */
+  mode: 'command_post' | 'branch';
   created_at: string;
   ended_at: string | null;
 }

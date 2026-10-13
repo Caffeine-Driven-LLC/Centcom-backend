@@ -48,6 +48,10 @@ export const KIND_MIN_ROLE: Readonly<Record<string, readonly SessionRole[]>> = O
   'agent.handoff': HOST_EDITOR,
   'conflict.detected': HOST_EDITOR,
   'diff.share': HOST_EDITOR,
+  // The shared context board (B111): host and editor add and pin; the author check is the board stage's.
+  'board.note': HOST_EDITOR,
+  'board.pin': HOST_EDITOR,
+  'board.remove': HOST_EDITOR,
   reaction: ANYONE,
   'comment.add': ANYONE,
   'key.grant': HOST_EDITOR,

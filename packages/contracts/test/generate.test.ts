@@ -107,7 +107,7 @@ describe('standalone validators (acceptance 8)', () => {
       timeout: TIMEOUT,
     });
     // Every validator ran without code generation; only the deliberate eval at the end failed.
-    expect(r.stdout).toContain('valid frames: 45');
+    expect(r.stdout).toContain('valid frames: 48');
     expect(r.stderr).toMatch(/EvalError: Code generation from strings disallowed/);
     expect(r.stderr).toMatch(/eval\('1'\)/);
   });

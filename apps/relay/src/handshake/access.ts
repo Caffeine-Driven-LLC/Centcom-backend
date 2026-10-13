@@ -15,6 +15,8 @@ import { unavailable } from '@centcom/core';
 export interface SessionAccessResult {
   session: {
     state: 'pending' | 'live' | 'paused' | 'ended' | 'expired';
+    /** `sessions.mode` (B110); a result without one is a command post. */
+    mode?: 'command_post' | 'branch';
     /** `max_session_members` of the session's plan (CT-ENTITLEMENTS). */
     maxMembers: number;
   };

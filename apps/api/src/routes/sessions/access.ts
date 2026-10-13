@@ -141,6 +141,7 @@ export function sessionEtag(session: Session): string {
         session.state,
         session.host,
         session.region,
+        session.mode,
         session.ended_at,
         [p.auto_approve, p.share_history, p.queue_limit, p.locked, p.auto_failover],
       ]),
@@ -173,6 +174,7 @@ export function sessionBody(session: Session): Api.Session {
     host: (session.host ?? '') as Api.Session['host'],
     policy: { ...session.policy },
     region: session.region,
+    mode: session.mode,
     created_at: session.created_at,
     ended_at: session.ended_at,
   };

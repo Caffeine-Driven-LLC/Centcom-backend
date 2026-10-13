@@ -106,6 +106,8 @@ export interface RelayContext {
    * for roster and join flows, `setStateValidator` for B058's state map.
    */
   agents?: AgentRegistry;
+  /** The shared context board (B111): set by the board module (order 39). */
+  board?: import('./board/service.js').BoardService;
   /**
    * Conflict signals (B061): set by the branches module when it registers (order 39, before the
    * locks module): B059's lock denials become server `conflict.detected` frames.
