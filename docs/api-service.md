@@ -234,3 +234,26 @@ Creating, accepting and revoking a session invite now write `invite.create`, `in
 `invite.revoke` audit events (kind `session`; the token is never in them), and the invite mail has
 its own `session_invite` template (it says the invite is for one session only and does not add the
 person to a workspace).
+
+## The worker (B109)
+
+`pnpm dev:worker` (run it next to `dev:api`) starts `apps/api/src/worker.ts`: the same configuration,
+the API's services, and the jobs of `@centcom/worker` over them:
+
+| Job                            | What it does                                                                                                                                                                                                      |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `usage.aggregate` (every 15 s) | folds the usage reports of devices into the monthly counters the entitlement check reads (reports settle for 30 s first)                                                                                          |
+| `session-expiry` (every 60 s)  | pauses and expires sessions, and removes the guests of expired links                                                                                                                                              |
+| `invite-expiry` (every 5 min)  | expires invites and drops their key bundles                                                                                                                                                                       |
+| `workspace-purge`              | when a workspace is deleted, the API queues a purge; the worker runs its hooks (invites, entitlements, projects, settings and, with an object store, the session history and snapshots) and then deletes the rows |
+
+The API and the worker share Redis queues (BullMQ): the API always queues the purge, and the job waits in Redis until a worker runs. The email queue, notification dispatch, webhooks, billing and the retention jobs are not run yet.
+
+`pnpm dev:full-check` now also reports usage, waits for the worker to fold it into the counters, and
+deletes a scratch workspace to see the worker purge it.
+
+`pnpm dev:replay-check` shows that the relay's durable log outlives the relay: a host talks, the
+relay is stopped and started again (its memory is gone), the host's client reconnects and talks
+again, and the sequence numbers go on from the log in the object store (5 before, 8 after) with
+the history route reading one unbroken log. A client that was away longer than the relay keeps
+frames in memory fetches the rest the same way (`GET /v1/sessions/{id}/history?after_seq=`).

@@ -12,7 +12,8 @@
  * Needs `pnpm dev:up`, `pnpm dev:api` and `pnpm dev:relay` running (and the client checked out next
  * to this repo, or CENTCOM_CLIENT_DIR). Exits 1 when a step failed.
  */
-import { api, listen, signUp, until, type Person } from './client-kit.js';
+import { execFileSync } from 'node:child_process';
+import { api, appToken, listen, signUp, until, type Person } from './client-kit.js';
 
 const step = (text: string): void => console.log(`\n== ${text}`);
 const check = (ok: boolean, text: string): void => {
@@ -20,11 +21,17 @@ const check = (ok: boolean, text: string): void => {
   if (!ok) process.exitCode = 1;
 };
 
-async function rest<T>(who: Person, method: string, path: string, body?: unknown): Promise<T> {
+async function rest<T>(
+  who: Person,
+  method: string,
+  path: string,
+  body?: unknown,
+  token = who.token,
+): Promise<T> {
   const res = await fetch(`${api}${path}`, {
     method,
     headers: {
-      authorization: `Bearer ${who.token}`,
+      authorization: `Bearer ${token}`,
       ...(body === undefined ? {} : { 'content-type': 'application/json' }),
       'idempotency-key': crypto.randomUUID(),
     },
@@ -119,6 +126,21 @@ check(
   typeof summary === 'object',
   `the usage summary reads: ${JSON.stringify(summary).slice(0, 160)}`,
 );
+// The worker's aggregation job (pnpm dev:worker, every 15 s) folds the reports into the counters.
+type Item = { metric?: string; key?: string; used: number };
+const usedOf = (s: { items?: Item[] }, metric: string): number =>
+  s.items?.find((i) => (i.metric ?? i.key) === metric)?.used ?? 0;
+let counted = false;
+for (let i = 0; i < 12 && !counted; i += 1) {
+  await new Promise((r) => setTimeout(r, 5_000));
+  const again = await rest<{ items?: Item[] }>(alice, 'GET', `/v1/workspaces/${ws}/usage/summary`);
+  counted = usedOf(again, 'agent_minutes') >= 12; // queue_items is shown only for plans that limit it
+}
+console.log(
+  counted
+    ? 'ok   the worker folded the reports into the counters (agent_minutes 12)'
+    : 'note the counters did not move: is `pnpm dev:worker` running? (it aggregates every 15 s)',
+);
 
 step('Notification preferences and the inbox');
 const prefs = await rest<{ channels: Record<string, unknown> }>(
@@ -155,6 +177,50 @@ check(
   typeof ent.plan === 'string',
   `entitlements: plan ${ent.plan}, relay_access ${String(ent.limits['relay_access'])}`,
 );
+
+step('Delete a workspace: the worker purges it');
+const scratch = await rest<{ id: string }>(
+  alice,
+  'POST',
+  '/v1/workspaces',
+  { name: 'scratch' },
+  appToken(alice),
+);
+await rest(alice, 'DELETE', `/v1/workspaces/${scratch.id}`, undefined, appToken(alice));
+const rowsOf = (id: string): number | null => {
+  try {
+    return Number(
+      execFileSync(
+        'docker',
+        [
+          'exec',
+          'centcom-dev-postgres-1',
+          'psql',
+          '-U',
+          'centcom',
+          '-d',
+          'centcom_dev',
+          '-At',
+          '-c',
+          `select count(*) from workspaces where id = '${id}'`,
+        ],
+        { encoding: 'utf8' },
+      ).trim(),
+    );
+  } catch {
+    return null; // no docker or another database: the check below is skipped
+  }
+};
+if (rowsOf(scratch.id) === null) {
+  console.log('note could not look at the database, so the purge is not checked');
+} else {
+  let gone = false;
+  for (let i = 0; i < 10 && !gone; i += 1) {
+    await new Promise((r) => setTimeout(r, 1_500));
+    gone = rowsOf(scratch.id) === 0;
+  }
+  check(gone, 'the deleted workspace was purged from the database (is `pnpm dev:worker` running?)');
+}
 
 await host.end();
 console.log(

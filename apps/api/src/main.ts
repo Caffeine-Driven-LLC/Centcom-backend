@@ -21,7 +21,10 @@ import {
 import { closeDb, createDb } from '@centcom/db';
 import type { Kysely } from 'kysely';
 import { sql } from 'kysely';
+import { createWorkspacePurgeQueue } from '@centcom/worker';
+import { Redis } from 'ioredis';
 import { buildApp } from './app.js';
+import { runWorker } from './worker.js';
 import { loadApiConfig } from './config.js';
 import type { ApiDatabase } from './context.js';
 import { mailpitMailer } from './modules/auth/magic-link/dev-mailer.js';
@@ -57,6 +60,7 @@ async function reachable(
 }
 
 async function main(): Promise<number> {
+  if (process.argv.includes('--worker')) return runWorker(process.env); // `pnpm dev:worker`
   let config;
   try {
     config = loadApiConfig(process.env);
@@ -99,11 +103,19 @@ async function main(): Promise<number> {
           ttlS: config.magicLink.ttlS,
         })
       : undefined;
+  // A deleted workspace is purged by the worker through this queue (BullMQ wants its own connection).
+  const queueConnection = new Redis(base.redisUrl.reveal(), { maxRetriesPerRequest: null });
+  queueConnection.on('error', () => undefined); // a down Redis is the readiness probe's business
+  const purgeQueue = createWorkspacePurgeQueue({ connection: queueConnection });
+  const closeQueues = async (): Promise<void> => {
+    await Promise.allSettled([purgeQueue.close(), queueConnection.quit()]);
+  };
   const app = await buildApp({
     config,
     db,
     redis,
     logger,
+    purgeQueue,
     ...(mailer === undefined ? {} : { mailer }),
   });
 
@@ -111,7 +123,10 @@ async function main(): Promise<number> {
     host: base.host,
     port: base.port,
     logger,
-    closeBackends,
+    closeBackends: async () => {
+      await closeQueues();
+      await closeBackends();
+    },
   });
   return new Promise<number>((resolve) => {
     for (const signal of ['SIGTERM', 'SIGINT'] as const) {
