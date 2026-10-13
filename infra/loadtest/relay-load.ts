@@ -745,6 +745,17 @@ async function main(argv: readonly string[]): Promise<number> {
         },
       );
     }
+    if (!limitSearch) {
+      // every window of a smoke, soak, storm or crossnode run must have passed on its own
+      const failed = report.steps.filter((s) => !s.ok);
+      report.thresholds.push({
+        name: 'windows that failed their checks',
+        ok: failed.length === 0,
+        value: failed.length,
+        limit: 0,
+      });
+      for (const s of failed) report.extra[`failed_window_${s.connections}`] = s.failed;
+    }
     if (limitSearch) {
       // a ramp ends on its first failing step by design: it passes when at least one step passed,
       // and the failing step is recorded as the limit

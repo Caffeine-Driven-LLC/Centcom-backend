@@ -15,6 +15,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const MAX_MEASUREMENT_AGE_DAYS = 30;
+/** Planning leaves this share of the highest passing step unused: the knee moves with the machine and the traffic. */
+export const HEADROOM = 0.8;
 
 /** The launch targets of the card. */
 export interface Targets {
@@ -39,10 +41,12 @@ export interface Measurements {
   connectionsPerInstance: number;
   /** Per-session sending rate (events/s) of that ramp. */
   rampFpsPerSession: number;
-  /** Connections at which the relay used 60 % of a core, from the ramp (interpolated). */
+  /** The planning figure: the lower of the connections at 60 % of a core (interpolated from the ramp) and HEADROOM times the highest passing step. */
   connectionsAtCpu60: number;
-  /** Sequenced frames/s one instance sustained within thresholds, with `membersPerSession` members. */
+  /** Planning figure: HEADROOM times the sequenced frames/s one instance sustained within thresholds, with `membersPerSession` members. */
   framesPerSecondPerInstance: number | null;
+  /** The measured highest passing values the two planning figures come from. */
+  measuredFramesPerSecond: number | null;
   memoryBaseMiB: number;
   memoryMiBPerConnection: number;
   /** vCPU one relay instance uses (it is one Node process). */
@@ -182,7 +186,7 @@ export function measurementsFrom(ramp: Report, rate?: Report): Measurements {
   const points = ramp.steps
     .filter((s) => s.relayCpuCores > 0)
     .map((s) => [s.connections, s.relayCpuCores] as const);
-  let at60 = last.connections;
+  let at60 = Math.round(last.connections * HEADROOM);
   for (let i = 1; i < points.length; i += 1) {
     const [c0, u0] = points[i - 1] as readonly [number, number];
     const [c1, u1] = points[i] as readonly [number, number];
@@ -196,8 +200,9 @@ export function measurementsFrom(ramp: Report, rate?: Report): Measurements {
       : 0.15;
   const base = Math.max(0, first.relayRssMiB - perConnection * first.connections);
   const ratePassing = rate?.steps.filter((s) => s.ok) ?? [];
-  const frames =
+  const measuredFrames =
     ratePassing.length === 0 ? null : Math.max(...ratePassing.map((s) => s.sequencedFramesPerS));
+  const frames = measuredFrames === null ? null : Math.floor(measuredFrames * HEADROOM);
   const newest =
     [ramp, rate]
       .filter((r): r is Report => r !== undefined)
@@ -210,6 +215,7 @@ export function measurementsFrom(ramp: Report, rate?: Report): Measurements {
     rampFpsPerSession: last.fps,
     connectionsAtCpu60: Math.max(1, at60),
     framesPerSecondPerInstance: frames,
+    measuredFramesPerSecond: measuredFrames,
     memoryBaseMiB: Math.round(base),
     memoryMiBPerConnection: Math.round(perConnection * 1000) / 1000,
     vcpuPerInstance: 1,
@@ -260,8 +266,9 @@ export function renderMarkdown(p: InstancePlan, sources: Sources): string {
     '| Measurement | Value |',
     '| --- | --- |',
     `| Connections held while every threshold passed (sessions of ${p.targets.membersPerSession}, ${m.rampFpsPerSession} event/s per session) | ${m.connectionsPerInstance} |`,
-    `| Connections at 60 % of one core (the planning figure) | ${m.connectionsAtCpu60} |`,
-    `| Sequenced frames/s within thresholds (${p.targets.membersPerSession} members, so ${p.targets.membersPerSession} times as many deliveries) | ${m.framesPerSecondPerInstance ?? 'not measured'} |`,
+    `| Planning figure: the lower of the connections at 60 % of one core and ${HEADROOM * 100} % of the highest passing step | ${m.connectionsAtCpu60} |`,
+    `| Highest sequenced frames/s within thresholds (${p.targets.membersPerSession} members, so ${p.targets.membersPerSession} times as many deliveries) | ${m.measuredFramesPerSecond ?? 'not measured'} |`,
+    `| Planning figure for frames/s (${HEADROOM * 100} % of that) | ${m.framesPerSecondPerInstance ?? 'not measured'} |`,
     `| Memory | about ${m.memoryBaseMiB} MiB plus ${m.memoryMiBPerConnection} MiB per connection |`,
     '',
     "Thresholds (the card's): fan-out p95 under 150 ms and p99 under 400 ms measured end to end from the sender to every member, under 0.1 % unexpected closes, every client holds every sequenced frame 3 s after the senders stop, and the machine was not busier than 65 % of its cores during the window (otherwise the window is repeated, and reported inconclusive if the machine never calms down).",
@@ -298,7 +305,18 @@ export function renderMarkdown(p: InstancePlan, sources: Sources): string {
         ]),
     ...(sources.soak === undefined
       ? []
-      : ['### Soak (one result per minute)', '', ...stepTable(sources.soak.report, 'ramp'), '']),
+      : [
+          `### Soak (${sources.soak.report.steps[0]?.connections ?? ''} connections, one result per minute)`,
+          '',
+          ...stepTable(sources.soak.report, 'ramp'),
+          '',
+          ...(sources.soak.report.steps.some((s) => !s.ok)
+            ? [
+                `**${sources.soak.report.steps.filter((s) => !s.ok).length} of ${sources.soak.report.steps.length} windows failed their checks.** The cause was not established: the failing window shows the relay's memory jumping and latency stalling for seconds while the other minutes sit at a steady 20 to 30 ms, on a laptop that other work was using. Treat it as an open finding for the relay owners until a soak on a quiet server says otherwise.`,
+                '',
+              ]
+            : []),
+        ]),
     '## Instances and cost for the launch targets',
     '',
     `Targets at 1x: ${p.targets.connections} connections, ${p.targets.sessions} sessions, ${p.targets.sequencedFramesPerS} sequenced frames/s. Each relay is one process (one vCPU); N+1 adds one spare. Servers are the cheapest set of the price table (\`infra/loadtest/capacity.ts\`, edit the prices: they are approximate list prices) holding the relays plus one core and 2 GiB for the rest of the stack.`,

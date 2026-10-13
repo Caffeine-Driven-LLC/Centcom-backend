@@ -192,13 +192,21 @@ export class Population {
     };
   }
 
-  /** What `welcome.resume` said to each reconnected member, counted by state. */
+  /** How each member that reconnected was caught up: replayed frames, a snapshot, or with a history gap. */
   resumeStates(): Record<string, number> {
     const out: Record<string, number> = {};
     for (const s of this.sessions) {
       for (const m of s.members) {
-        const r = m.client.lastResume as { state?: string } | null | undefined;
-        const key = r === undefined || r === null ? 'none' : (r.state ?? JSON.stringify(r));
+        const r = m.client.lastResume as Record<string, unknown> | null | undefined;
+        let key = 'welcomed fresh (no resume object)';
+        if (r !== undefined && r !== null) {
+          key =
+            r['snapshot_required'] === true
+              ? 'snapshot_required'
+              : r['history_gap'] === true
+                ? 'history_gap'
+                : 'frames replayed by the relay';
+        }
         out[key] = (out[key] ?? 0) + 1;
       }
     }

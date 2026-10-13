@@ -209,6 +209,7 @@ describe('capacity model', () => {
     rampFpsPerSession: 1,
     connectionsAtCpu60: 1500,
     framesPerSecondPerInstance: 400,
+    measuredFramesPerSecond: 500,
     memoryBaseMiB: 160,
     memoryMiBPerConnection: 0.12,
     vcpuPerInstance: 1,
@@ -301,8 +302,16 @@ describe('capacity model', () => {
     };
     const got = measurementsFrom(ramp, rate);
     expect(got.connectionsPerInstance).toBe(1500);
-    expect(got.connectionsAtCpu60).toBe(1250); // halfway between 1000 (0.45) and 1500 (0.75)
-    expect(got.framesPerSecondPerInstance).toBe(200);
+    // 80 % of the highest passing step (1200) is lower than the 60 % of a core point (1250)
+    expect(got.connectionsAtCpu60).toBe(1200);
+    expect(
+      measurementsFrom({
+        ...ramp,
+        steps: ramp.steps.map((s) => ({ ...s, relayCpuCores: s.relayCpuCores * 1.5 })),
+      }).connectionsAtCpu60,
+    ).toBe(833);
+    expect(got.measuredFramesPerSecond).toBe(200);
+    expect(got.framesPerSecondPerInstance).toBe(160);
     expect(got.memoryMiBPerConnection).toBeCloseTo(0.12, 2);
     expect(got.measuredAt).toBe('2026-10-13T10:00:00Z');
     const md = renderMarkdown(plan(LAUNCH_TARGETS, got, { now: NOW }), {
