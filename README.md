@@ -17,7 +17,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 ![Progress](docs/progress.svg)
 
-**90% built** (weighted by lane size across 111 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
+**93% built** (weighted by lane size across 111 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
 
 ## Next steps
 
@@ -28,13 +28,19 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 5. **B016 device authorization grant and B017 token service** — the terminal client's `centcom login` needs these first (client lane C052)
 6. **Relay lanes (see plan/ROADMAP.md M2-M3)** — the backend should be ready by the time the client reaches M3; start the relay while identity is in review
 
+### Started, not finished
+
+| Lane | What | Done | Note |
+|---|---|--:|---|
+| [B101](plan/backend/B101.md) | Credential-leak guard: scanners for logs, frames, telemetry, backups and CI | 90% | 2026-10-13: credential-leak guard for logs, requests, frames, telemetry, backups and the repo (#127) |
+| [B097](plan/backend/B097.md) | Security hardening: headers, WAF rules, secret scanning, dependency policy | 85% | 2026-10-13: security headers and CORS, dependency policy and secret scripts, gitleaks rules, WAF module (#128); gaps: WAF rules not exercised against a live proxy |
+| [B099](plan/backend/B099.md) | Backup, restore and disaster-recovery drills | 85% | 2026-10-13: encrypted backups, verified restore and a restore drill for one server (#129); gaps: off-site bucket not tried with a real R2 or B2 account |
+| [B091](plan/backend/B091.md) | Infrastructure as code: environments dev, stage, prod | 70% | 2026-10-13: production images, compose, Caddy and deploy scripts for one server (#126); gaps: only one environment (no dev/stage/prod split), not run on a real server, ARM images unchecked |
+
 ### Ready to pick up (all dependencies done)
 
 | Lane | What | Size | Milestone |
 |---|---|---|---|
-| [B091](plan/backend/B091.md) | Infrastructure as code: environments dev, stage, prod | L | M3 |
-| [B101](plan/backend/B101.md) | Credential-leak guard: scanners for logs, frames, telemetry, backups and CI | S | M3 |
-| [B097](plan/backend/B097.md) | Security hardening: headers, WAF rules, secret scanning, dependency policy | M | M6 |
 | [B095](plan/backend/B095.md) | Load testing and capacity model | L | M6 |
 
 Each lane card lists its goal, contracts, acceptance criteria and tests. Read [`plan/START_HERE.md`](plan/START_HERE.md) first.
