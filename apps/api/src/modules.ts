@@ -23,6 +23,12 @@ import { memberRoutes } from './modules/members/index.js';
 import { seatGatePlugin } from './modules/seats/index.js';
 import { workspaceRoutes } from './modules/workspaces/index.js';
 import { entitlementRoutes } from './routes/entitlements/index.js';
+import type { NotificationDb } from '@centcom/db';
+import type { Kysely } from 'kysely';
+import { InboxService } from './modules/notifications/inbox/service.js';
+import { createInboxRepository } from './modules/notifications/inbox/repository.js';
+import { notificationRoutes } from './routes/notifications/index.js';
+import { planRoutes } from './routes/plans/index.js';
 import { sessionInviteRoutes } from './routes/sessions/invites.js';
 import { registerShareLinkRoutes } from './routes/share-links/index.js';
 import { registerSessionRoutes } from './routes/sessions/index.js';
@@ -171,6 +177,25 @@ export const API_MODULES: readonly ApiModule[] = [
           : { sessionInvites: ctx.collab.sessionInvites, sessionStore: ctx.sessionRoutes.store }),
         workspaces: ctx.collab.workspaceStore,
         cursorKeys: ctx.config.pagination.signingKeys,
+        clock: ctx.clock ?? Date.now,
+      });
+    },
+  },
+  {
+    name: 'plans',
+    register: async (app, ctx) => {
+      await app.register(planRoutes, { service: ctx.entitlementService });
+    },
+  },
+  {
+    name: 'notifications',
+    register: async (app, ctx) => {
+      await app.register(notificationRoutes, {
+        inbox: new InboxService({
+          repository: createInboxRepository(ctx.db as unknown as Kysely<NotificationDb>),
+          cursorKeys: ctx.config.pagination.signingKeys,
+          clock: ctx.clock ?? Date.now,
+        }),
         clock: ctx.clock ?? Date.now,
       });
     },

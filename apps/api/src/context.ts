@@ -19,6 +19,7 @@ import {
   createAuthorizer,
   noopMetrics,
   rbacAuditSink,
+  RELAY_CONTROL_CHANNEL,
 } from '@centcom/core';
 import {
   createMembershipRepo,
@@ -104,6 +105,8 @@ export interface AppContext extends AppDeps {
   collab: Collab;
   /** What each workspace's plan allows, cached. */
   entitlements: CachedEntitlements;
+  /** The plan catalogue and the uncached reads (B069). */
+  entitlementService: EntitlementService;
 }
 
 const newId = createIdGenerator();
@@ -270,9 +273,14 @@ export function createContext(deps: AppDeps): AppContext {
       service: new SessionService({
         repository: createSessionRepository(db as unknown as SessionsDb),
         entitlements,
-        // The relay learns of state changes from the database for now; web hooks and the worker's
-        // outbox delivery are later lanes.
-        relay: { notify: () => Promise.resolve() },
+        // The relay emits `control.session_state` to connected clients (B106). Web hooks and the
+        // worker's outbox delivery are later lanes.
+        relay: {
+          notify: (sid, state) =>
+            redis.pubsub
+              .publish(RELAY_CONTROL_CHANNEL, JSON.stringify({ kind: 'session_state', sid, state }))
+              .then(() => undefined),
+        },
         events: { publish: () => Promise.resolve() },
         cursorKeys: config.pagination.signingKeys,
         clock,
@@ -285,10 +293,13 @@ export function createContext(deps: AppDeps): AppContext {
       tickets: tokens,
       issued: kv,
       hostNotifier: {
-        hostChanged: (sid, host, code) => {
-          logger.info({ session: sid, host, code }, 'sessions.host_changed_not_delivered');
-          return Promise.resolve();
-        },
+        hostChanged: (sid, host, code) =>
+          redis.pubsub
+            .publish(
+              RELAY_CONTROL_CHANNEL,
+              JSON.stringify({ kind: 'host_changed', sid, host, code }),
+            )
+            .then(() => undefined),
       },
       relays: regions,
       cursorKeys: config.pagination.signingKeys,
@@ -321,6 +332,7 @@ export function createContext(deps: AppDeps): AppContext {
     sessionRoutes,
     collab,
     entitlements,
+    entitlementService,
     tokens,
     sessions,
     deviceGrants,

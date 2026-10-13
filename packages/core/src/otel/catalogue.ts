@@ -596,6 +596,12 @@ export const METRICS = {
     RELAY,
     { onFailure: true },
   ),
+  relay_api_control_total: counter(
+    'Control commands from the API to the relay (host change, session state), by result (emitted, invalid, failed).',
+    ['result'],
+    RELAY,
+    { onFailure: true },
+  ),
   relay_branch_updates_total: counter(
     'branch.update frames sequenced (passed through).',
     [],
