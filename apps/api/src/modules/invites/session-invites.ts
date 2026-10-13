@@ -43,6 +43,7 @@ import type { CheckResult } from '../entitlements/enforcement.js';
 import { checkEmail } from '../users/index.js';
 import { INVITE_DETAILS, KEY_BUNDLE_AFTER_ACCEPT_MS } from './service.js';
 import type { InviteUrlBuilder } from './ports.js';
+import { sessionInviteAuditEvent, type SessionInviteAuditAction } from './session-invite-audit.js';
 import { hashInviteToken, isInviteToken, newInviteToken } from './tokens.js';
 
 /** The expiry a session invite may ask for, in seconds. */
@@ -227,7 +228,7 @@ export class SessionInviteService {
       { invite_id: invite.id, session_id: session.id },
       'session_invite.created',
     );
-    this.#audit('invite.create', invite, creatorId, { role: invite.role, kind: 'session' });
+    this.#audit('invite.create', invite, creatorId);
     return { invite, token, url };
   }
 
@@ -302,10 +303,7 @@ export class SessionInviteService {
     if (accepted.kind === 'accepted') {
       this.#metrics.counter('invites_accepted_total').inc();
       this.#o.logger?.info({ session_id: accepted.invite.sessionId }, 'session_invite.accepted');
-      this.#audit('invite.accept', accepted.invite, userId, {
-        user_id: userId,
-        role: accepted.invite.role,
-      });
+      this.#audit('invite.accept', accepted.invite, userId);
     }
     return {
       sessionId: accepted.invite.sessionId,
@@ -327,24 +325,19 @@ export class SessionInviteService {
     if (!(await this.#o.store.revoke(invite.id, this.#now()))) {
       throw new AppError('invite_revoked', { detail: INVITE_DETAILS.revoked });
     }
-    this.#audit('invite.revoke', invite, actorUserId ?? invite.createdBy, {});
+    this.#audit('invite.revoke', invite, actorUserId ?? invite.createdBy);
   }
 
   /** One audit event, in the background (a failed write never fails the request). */
-  #audit(
-    action: 'invite.create' | 'invite.accept' | 'invite.revoke',
-    invite: SessionInviteRecord,
-    actorUserId: string,
-    meta: Record<string, string | number | boolean | null>,
-  ): void {
-    this.#o.audit?.emitDetached({
-      workspaceId: invite.workspaceId,
-      actor: { type: 'user', id: actorUserId },
-      action,
-      target: { type: 'invite', id: invite.id },
-      outcome: 'success',
-      meta,
-    });
+  #audit(action: SessionInviteAuditAction, invite: SessionInviteRecord, actorUserId: string): void {
+    try {
+      this.#o.audit?.emitDetached(sessionInviteAuditEvent(action, invite, actorUserId));
+    } catch (err) {
+      this.#o.logger?.warn(
+        { invite_id: invite.id, error: err instanceof Error ? err.name : 'unknown' },
+        'session_invite.audit_failed',
+      );
+    }
   }
 
   /** The live grant of `userId` to `sessionId`. */
