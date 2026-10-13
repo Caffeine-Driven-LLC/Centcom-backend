@@ -22,3 +22,4 @@ export * from './entitlements/index.js';
 export * from './webhooks/index.js';
 export * from './auth/index.js';
 export * from './otel/index.js';
+export * as secretGuard from './secret-guard/index.js';
