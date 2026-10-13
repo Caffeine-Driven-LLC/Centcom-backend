@@ -44,7 +44,7 @@ describe.runIf(ADMIN_URL !== undefined)('session invites on Postgres 16', () => 
     await test?.drop();
   });
 
-  async function world(plan: 'free' | 'pro' | 'team' = 'pro') {
+  async function world(plan: 'free' | 'pro' | 'team' = 'pro', auditThrows = false) {
     const env = lifecycleOn(db, plan);
     const w = await env.seed();
     const s = await env.service.create({
@@ -55,6 +55,7 @@ describe.runIf(ADMIN_URL !== undefined)('session invites on Postgres 16', () => 
       region: 'eu',
     });
     const sent: { to: string; params: Record<string, unknown> }[] = [];
+    const audited: { action: string; actor: { id: string }; meta?: Record<string, unknown> }[] = [];
     let now = T0;
     const service = new SessionInviteService({
       store: createSessionInviteStore(db as unknown as Kysely<SessionInviteDatabase>),
@@ -66,10 +67,16 @@ describe.runIf(ADMIN_URL !== undefined)('session invites on Postgres 16', () => 
         },
       } as never,
       entitlements: { check: (ws, key) => env.entitlements.port.check(ws, key) },
+      audit: {
+        emitDetached: (e) => {
+          if (auditThrows) throw new Error('audit store is down');
+          audited.push(e as never);
+        },
+      },
       clock: () => now,
     });
     const session = { id: s.id, workspaceId: w.workspace, name: 'Release train', state: 'live' };
-    return { env, w, s, service, session, sent, advance: (ms: number) => (now += ms) };
+    return { env, w, s, service, session, sent, audited, advance: (ms: number) => (now += ms) };
   }
 
   const memberships = async (user: string) =>
@@ -137,6 +144,58 @@ describe.runIf(ADMIN_URL !== undefined)('session invites on Postgres 16', () => 
     const listed = await store.members(s.id, 0, 50);
     expect(listed.map((m) => m.userId)).toContain(outsider);
     expect(listed.find((m) => m.userId === outsider)?.grantRole).toBe('editor');
+  });
+
+  it('writes audit events for create, accept and revoke, and mails the session-invite template (B108)', async () => {
+    const { w, service, session, sent, audited } = await world('pro');
+    const outsider = await pgUser(db);
+    const mailed = await service.create(session, w.owner.user, 'Owner', {
+      role: 'editor',
+      email: 'friend@example.test',
+      expiresInS: 3600,
+      shareHistory: true,
+    });
+    expect(sent).toHaveLength(1);
+    expect(sent[0]?.params).toMatchObject({
+      inviterName: 'Owner',
+      sessionName: 'Release train',
+      role: 'editor',
+    });
+    await service.accept(mailed.token, outsider).catch(() => undefined);
+    const link = await service.create(session, w.owner.user, 'Owner', {
+      role: 'viewer',
+      expiresInS: 3600,
+      shareHistory: true,
+    });
+    await service.accept(link.token, outsider);
+    await service.revoke(link.invite, w.owner.user);
+    expect(audited.map((e) => e.action)).toEqual([
+      'invite.create',
+      'invite.create',
+      'invite.accept',
+      'invite.revoke',
+    ]);
+    expect(audited[0]).toMatchObject({
+      actor: { id: w.owner.user },
+      meta: { role: 'editor', kind: 'session' },
+    });
+    expect(audited[2]).toMatchObject({
+      actor: { id: outsider },
+      meta: { user_id: outsider, role: 'viewer' },
+    });
+    expect(JSON.stringify(audited)).not.toContain(link.token);
+  });
+
+  it('an audit write that throws does not fail create, accept or revoke (B108)', async () => {
+    const { w, service, session } = await world('pro', true);
+    const outsider = await pgUser(db);
+    const created = await service.create(session, w.owner.user, 'Owner', {
+      role: 'viewer',
+      expiresInS: 3600,
+      shareHistory: true,
+    });
+    expect(await service.accept(created.token, outsider)).toMatchObject({ role: 'viewer' });
+    await expect(service.revoke(created.invite, w.owner.user)).resolves.toBeUndefined();
   });
 
   it('revoking withdraws the right; a revoked invite is 410; an unknown token is not a session invite', async () => {

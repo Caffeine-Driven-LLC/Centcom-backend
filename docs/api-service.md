@@ -227,3 +227,10 @@ stay at zero until that job runs.
 pnpm dev:full-check   # one new account: history over REST and the client, a snapshot up and down,
                       # a usage report and summary, preferences, the inbox, plans and entitlements
 ```
+
+## Session invites: audit and mail (B108)
+
+Creating, accepting and revoking a session invite now write `invite.create`, `invite.accept` and
+`invite.revoke` audit events (kind `session`; the token is never in them), and the invite mail has
+its own `session_invite` template (it says the invite is for one session only and does not add the
+person to a workspace).

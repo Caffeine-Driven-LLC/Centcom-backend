@@ -25,6 +25,7 @@ import {
   forbidden,
   noopMetrics,
   validationFailed,
+  type AuditEmitter,
   type EmailService,
   type FieldError,
   type Logger,
@@ -42,6 +43,7 @@ import type { CheckResult } from '../entitlements/enforcement.js';
 import { checkEmail } from '../users/index.js';
 import { INVITE_DETAILS, KEY_BUNDLE_AFTER_ACCEPT_MS } from './service.js';
 import type { InviteUrlBuilder } from './ports.js';
+import { sessionInviteAuditEvent, type SessionInviteAuditAction } from './session-invite-audit.js';
 import { hashInviteToken, isInviteToken, newInviteToken } from './tokens.js';
 
 /** The expiry a session invite may ask for, in seconds. */
@@ -143,6 +145,8 @@ export interface SessionInviteServiceOptions {
   entitlements: {
     check(workspaceId: string, key: 'relay_access'): Promise<CheckResult>;
   };
+  /** Writes `invite.*` audit events (kind `session`); without it only the log lines are written. */
+  audit?: Pick<AuditEmitter, 'emitDetached'>;
   clock?: () => number;
   logger?: Logger;
   metrics?: Metrics;
@@ -224,6 +228,7 @@ export class SessionInviteService {
       { invite_id: invite.id, session_id: session.id },
       'session_invite.created',
     );
+    this.#audit('invite.create', invite, creatorId);
     return { invite, token, url };
   }
 
@@ -236,9 +241,9 @@ export class SessionInviteService {
   ): Promise<void> {
     try {
       await this.#o.email.send(
-        'workspace_invite',
+        'session_invite',
         email,
-        { inviterName, workspaceName: sessionName, url, expiresAt: invite.expiresAt },
+        { inviterName, sessionName, role: invite.role, url, expiresAt: invite.expiresAt },
         { idempotencyKey: invite.id },
       );
     } catch (err) {
@@ -298,6 +303,7 @@ export class SessionInviteService {
     if (accepted.kind === 'accepted') {
       this.#metrics.counter('invites_accepted_total').inc();
       this.#o.logger?.info({ session_id: accepted.invite.sessionId }, 'session_invite.accepted');
+      this.#audit('invite.accept', accepted.invite, userId);
     }
     return {
       sessionId: accepted.invite.sessionId,
@@ -315,9 +321,22 @@ export class SessionInviteService {
   }
 
   /** Revokes (the host: the routes check); 410 for one already revoked. An accepted invite's grant ends. */
-  async revoke(invite: SessionInviteRecord): Promise<void> {
+  async revoke(invite: SessionInviteRecord, actorUserId?: string): Promise<void> {
     if (!(await this.#o.store.revoke(invite.id, this.#now()))) {
       throw new AppError('invite_revoked', { detail: INVITE_DETAILS.revoked });
+    }
+    this.#audit('invite.revoke', invite, actorUserId ?? invite.createdBy);
+  }
+
+  /** One audit event, in the background (a failed write never fails the request). */
+  #audit(action: SessionInviteAuditAction, invite: SessionInviteRecord, actorUserId: string): void {
+    try {
+      this.#o.audit?.emitDetached(sessionInviteAuditEvent(action, invite, actorUserId));
+    } catch (err) {
+      this.#o.logger?.warn(
+        { invite_id: invite.id, error: err instanceof Error ? err.name : 'unknown' },
+        'session_invite.audit_failed',
+      );
     }
   }
 

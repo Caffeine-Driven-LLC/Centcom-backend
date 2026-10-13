@@ -188,7 +188,7 @@ export const inviteRoutes: FastifyPluginAsync<InviteRouteOptions> = async (app, 
         if (standing === undefined || standing === null || liveRole(standing) !== 'host') {
           throw new AppError('invite_invalid', { detail: INVITE_DETAILS.unknown });
         }
-        await opts.sessionInvites?.revoke(sessionInvite);
+        await opts.sessionInvites?.revoke(sessionInvite, userId);
         return reply.code(204).send();
       }
       const invite = await inviteOf(opts, request);
