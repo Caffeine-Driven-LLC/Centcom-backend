@@ -101,8 +101,9 @@ check(
   await until(() => guest.state === 'live'),
   `Bob is ${guest.me.role} and ${guest.state} (keys granted)`,
 );
-await host.sendEvent('message.user', { secret: { text: 'welcome, Bob' } });
-await guest.sendEvent('message.user', { secret: { text: 'thanks, Alice' } });
+const hostMsg = await host.sendEvent('message.user', { secret: { text: 'welcome, Bob' } });
+// A command post: only the host emits messages; a member answers with a comment on one.
+await guest.sendEvent('comment.add', { secret: { target: hostMsg.id, text: 'thanks, Alice' } });
 check(await until(() => log.length === 4, 5_000), 'both read both messages');
 log.forEach((line) => console.log(`     ${line}`));
 

@@ -209,10 +209,15 @@ export function appToken(who: Person): string {
     .access_token;
 }
 
-/** Collects the readable messages a session client receives. */
+/**
+ * Collects the readable messages a session client receives: the host's `message.user` and the
+ * comments members attach to them (in a command post only the host emits `message.*`).
+ */
 export function listen(h: any, into: string[], name: string): void {
   h.onAny((e: any) => {
-    if (e.kind === 'message.user') into.push(`${name} read: ${String(e.secret?.text)}`);
+    if (e.kind === 'message.user' || e.kind === 'comment.add') {
+      into.push(`${name} read: ${String(e.secret?.text)}`);
+    }
   });
 }
 
