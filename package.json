@@ -32,6 +32,8 @@
     "security:sbom": "node infra/security/sbom.mjs",
     "security:install-hook": "git config core.hooksPath infra/security/hooks",
     "secret-guard:scan": "tsx --tsconfig tsconfig.test.json tools/repo/secret-guard-scan.ts",
+    "loadtest:relay": "bash -c 'ulimit -n 200000; exec tsx --tsconfig tsconfig.test.json infra/loadtest/relay-load.ts \"$@\"' --",
+    "capacity:model": "tsx --tsconfig tsconfig.test.json infra/loadtest/capacity.ts",
     "alerts:lint": "tsx --tsconfig tsconfig.test.json infra/alerts/lint.mjs",
     "alerts:test": "node infra/alerts/promtool.mjs",
     "alerts:render": "node infra/alerts/render.mjs",
@@ -43,6 +45,7 @@
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@types/node": "22.20.5",
+    "@types/ws": "8.18.2",
     "@vitest/coverage-v8": "5.0.3",
     "eslint": "10.12.0",
     "prettier": "3.9.9",
@@ -51,6 +54,7 @@
     "typescript-eslint": "8.71.0",
     "vite": "8.3.3",
     "vitest": "5.0.3",
+    "ws": "8.22.0",
     "yaml": "2.9.1"
   }
 }
