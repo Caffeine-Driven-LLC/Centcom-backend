@@ -24,8 +24,11 @@ listen(guest, log, 'guest');
 console.log(`guest  ${guest.me.role} joined (${guest.state}), waiting for the host's keys`);
 await until(() => guest.state === 'live');
 console.log(`guest  ${guest.state}`);
-await host.sendEvent('message.user', { secret: { text: 'hello from the host' } });
-await guest.sendEvent('message.user', { secret: { text: 'hello from the guest' } });
+const hello = await host.sendEvent('message.user', { secret: { text: 'hello from the host' } });
+// A command post: only the host emits messages; the guest answers with a comment on one.
+await guest.sendEvent('comment.add', {
+  secret: { target: hello.id, text: 'hello from the guest' },
+});
 await until(() => log.length === 4, 5_000);
 log.forEach((line) => console.log(line));
 console.log(

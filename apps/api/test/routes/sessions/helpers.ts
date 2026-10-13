@@ -243,6 +243,7 @@ export class World {
               name: s.name,
               state: 'live',
               region: s.region,
+              mode: s.mode ?? 'command_post',
               created_by: s.createdBy,
               created_at: s.at,
               ended_at: null,

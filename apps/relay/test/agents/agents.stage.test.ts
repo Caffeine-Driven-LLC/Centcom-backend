@@ -165,7 +165,8 @@ describe('agents/module.ts', () => {
       onShutdown: () => undefined,
     } as unknown as RelayContext;
     await relayModule.register(ctx);
-    expect(pipeline.orders()).toEqual([39]);
+    // The command-post gate (B110) and the agents stage, both at 39.
+    expect(pipeline.orders()).toEqual([39, 39]);
     expect(ctx.agents?.list('ses_x')).toEqual([]);
   });
 

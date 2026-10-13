@@ -291,6 +291,7 @@ export function createSessionRouteStore(db: SessionRoutesDb): SessionRouteStore 
         'sessions.name',
         'sessions.state',
         'sessions.region',
+        'sessions.mode',
         'sessions.created_by',
         'sessions.created_at',
         'sessions.ended_at',

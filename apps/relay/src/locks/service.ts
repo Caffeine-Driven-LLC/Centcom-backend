@@ -58,6 +58,7 @@ export const LOCK_DETAILS = Object.freeze({
   malformed: 'The frame does not carry a valid file lock.',
   serverOnly: 'Only the relay sends file.lock deny and expire.',
   unavailable: 'File locks cannot be changed right now; try again shortly.',
+  notOwner: "Only the host or the agent's owner may lock files for this agent.",
 } as const);
 
 /** Buckets of `relay_lock_wait_ms`. */
@@ -72,6 +73,12 @@ export interface LockServiceDeps {
   /** Sequences server frames outside a client frame (B044's emitServerBatch). */
   emitter: LockEmitter;
   hints?: ConflictHintPort;
+  /**
+   * Who owns an agent (B057's registry, B110). With it, a non-host member may only lock for an agent
+   * they own: a lock names its agent in the clear `p`, and an editor must not take or free locks in
+   * another member's agent's name. Without it (tests) the frame's agent id is taken as given.
+   */
+  agents?: { ownerOf(sid: string, agentId: string): Promise<string | undefined> };
   /** Milliseconds; default Date.now. */
   clock?: () => number;
   logger?: Logger;
@@ -249,6 +256,21 @@ export class LockService {
     }
     const request = parse(frame.id, frame.p);
     if ('outcome' in request) return request;
+    if (this.deps.agents !== undefined && ctx.sender.role !== 'host') {
+      let owner: string | undefined;
+      try {
+        owner = await this.deps.agents.ownerOf(ctx.sid, request.agent);
+      } catch {
+        return {
+          outcome: 'refused',
+          code: 'service_unavailable',
+          detail: LOCK_DETAILS.unavailable,
+        };
+      }
+      if (owner !== ctx.sender.memberId) {
+        return { outcome: 'refused', code: 'forbidden', detail: LOCK_DETAILS.notOwner };
+      }
+    }
     let outcome: LockOutcome | 'unsequenced';
     try {
       outcome = await this.deps.store.withSession(ctx.sid, (tx) =>
