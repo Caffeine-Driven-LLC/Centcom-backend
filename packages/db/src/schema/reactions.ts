@@ -1,6 +1,6 @@
 /**
  * Table types of reactions and comment pointers (B062, migration
- * 20260102004800_reactions_comments.sql). Written by the relay's reactions module from sequenced
+ * 20260102005400_reactions_comments.sql). Written by the relay's reactions module from sequenced
  * frames; a reaction is cleartext (target, code), a comment only a pointer (seq, frame id, size,
  * key id), never its text or target (both inside `ct`).
  */

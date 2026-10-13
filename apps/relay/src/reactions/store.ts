@@ -1,5 +1,5 @@
 /**
- * Reaction and comment stores on Postgres (B062, migration 20260102004800_reactions_comments.sql).
+ * Reaction and comment stores on Postgres (B062, migration 20260102005400_reactions_comments.sql).
  *
  * - **Reactions:** one row per (session, target, code, member) with the seq of the frame that set
  *   it and whether it was removed. A write applies only when its seq is newer than the row's, so
