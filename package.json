@@ -37,6 +37,7 @@
     "dr:verify": "bash infra/dr/verify.sh",
     "dr:drill": "bash infra/dr/drill.sh",
     "dr:status": "bash infra/dr/backup-status.sh",
+    "chaos": "bash -c 'CHAOS=1 exec vitest run --config vitest.workspace.ts apps/api/test/chaos \"$@\"' --",
     "loadtest:relay": "bash -c 'ulimit -n 200000; exec tsx --tsconfig tsconfig.test.json infra/loadtest/relay-load.ts \"$@\"' --",
     "capacity:model": "tsx --tsconfig tsconfig.test.json infra/loadtest/capacity.ts",
     "alerts:lint": "tsx --tsconfig tsconfig.test.json infra/alerts/lint.mjs",
