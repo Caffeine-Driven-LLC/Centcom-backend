@@ -10,8 +10,7 @@ import { lock, lockEnv } from '../locks/helpers.js';
 describe('file.lock and agent ownership', () => {
   it("an editor locks for its own agent, not for another member's", async () => {
     const [mine, theirs] = [newId('agt'), newId('agt')];
-    let env!: ReturnType<typeof lockEnv>;
-    env = lockEnv({
+    const env: ReturnType<typeof lockEnv> = lockEnv({
       agents: {
         ownerOf: (_s, agent) =>
           Promise.resolve(
@@ -33,8 +32,9 @@ describe('file.lock and agent ownership', () => {
 
   it('release is checked the same way', async () => {
     const mine = newId('agt');
-    let env!: ReturnType<typeof lockEnv>;
-    env = lockEnv({ agents: { ownerOf: () => Promise.resolve(env.editor.memberId) } });
+    const env: ReturnType<typeof lockEnv> = lockEnv({
+      agents: { ownerOf: () => Promise.resolve(env.editor.memberId) },
+    });
     await env.send(lock('acquire', 'p1', mine), env.editor);
     const other = await env.send(lock('release', 'p1', mine), env.other);
     expect(other).toMatchObject({ outcome: 'refused', code: 'forbidden' });

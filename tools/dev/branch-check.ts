@@ -329,16 +329,16 @@ if (known === 'unknown event kind board.note' || known.includes('unknown event k
   );
   const noteId = got(seenB, 'board.note')?.id as string | undefined;
   check(
-    (await attempt(guest, 'board.pin', { p: { note: noteId, pinned: true } })) === 'ok',
+    (await attempt(guest, 'board.pin', { p: { target: noteId, pinned: true } })) === 'ok',
     'an editor may pin',
   );
-  const removeOther = await attempt(guest, 'board.remove', { p: { note: noteId } });
+  const removeOther = await attempt(guest, 'board.remove', { p: { target: noteId } });
   check(removeOther === 'forbidden', `an editor cannot remove the host's note -> ${removeOther}`);
   check(
-    (await attempt(hostHandle, 'board.remove', { p: { note: noteId } })) === 'ok',
+    (await attempt(hostHandle, 'board.remove', { p: { target: noteId } })) === 'ok',
     'the host removes it',
   );
-  const unknownPin = await attempt(guest, 'board.pin', { p: { note: msg(), pinned: true } });
+  const unknownPin = await attempt(guest, 'board.pin', { p: { target: msg(), pinned: true } });
   check(unknownPin === 'invalid_frame', `pinning an unknown note -> ${unknownPin}`);
   let accepted = 0;
   let limited = '';

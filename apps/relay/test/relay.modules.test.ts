@@ -97,7 +97,7 @@ describe('discovery', () => {
     expect((err as ModuleError).module).toBe('broken');
   });
 
-  it('finds the relay lanes’ modules in src/, by order (B039: the codec at 10, B040: the connection at 12, B038: the handshake at 15, B043: the rooms at 20, B049: keys at 25, B050: privacy at 30, B047: presence and B067: presence history at 35, B048: cursors at 36, B051: control at 38, B057: agents, B060: approvals, B061: branches, B052: the queue and B059: locks at 39, B041: sequencing at 40, B042: resume at 45, B044: fan-out at 50, B046: backpressure at 55, B045: the cluster at 60)', async () => {
+  it('finds the relay lanes’ modules in src/, by order (B039: the codec at 10, B040: the connection at 12, B038: the handshake at 15, B043: the rooms at 20, B049: keys at 25, B050: privacy at 30, B047: presence and B067: presence history at 35, B048: cursors at 36, B051: control at 38, B057: agents, B060: approvals, B111: the board, B061: branches, B052: the queue and B059: locks at 39, B041: sequencing at 40, B042: resume at 45, B044: fan-out at 50, B046: backpressure at 55, B045: the cluster at 60)', async () => {
     const found = await discoverModules();
     expect(found.map((m) => [m.name, m.order])).toEqual([
       ['codec', 10],
@@ -112,6 +112,7 @@ describe('discovery', () => {
       ['control', 38],
       ['agents', 39],
       ['approvals', 39],
+      ['board', 39],
       ['branches', 39],
       ['locks', 39],
       ['queue', 39],
