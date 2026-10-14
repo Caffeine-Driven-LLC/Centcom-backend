@@ -19,7 +19,7 @@ backend   scaffold  ·······················build the serv
 | **M1** Solo agent in the terminal | A person installs Centcom, it finds their own Claude Code and/or Codex, and they work with agents in git worktrees in a polished TUI with the mascot. No network, no account. | 39 / 0 | 109 / 0 | none (demo script) |
 | **M2** LAN multiplayer (free tier) | Two machines on the same Wi-Fi share one command post with no backend and no account: pair with a code, queue prompts, host approves, everything end-to-end encrypted. | 17 / 0 | 59 / 0 | G3 (LAN variant against the client simulator) |
 | **M3** Accounts and relay | Sign in to Centcom, create a hosted session, and work together from anywhere through the relay, with resume after a dropped connection. | 3 / 47 | 9 / 145 | G1, G2, G3 |
-| **M4** Teams and money | Workspaces with members and roles, invites, plans and checkout, entitlements, quotas, notifications, and the first web screens. | 11 / 25 | 33 / 63 | G4 |
+| **M4** Teams and money | Workspaces with members and roles, invites, plans and checkout, entitlements, quotas, notifications, and the first web screens. | 11 / 26 | 33 / 64 | G4 |
 | **M5** Fleet and polish | Branch-mode fleets across people, file locks, webhooks, audit log, updates, flags and telemetry, and the rest of the web app. | 14 / 19 | 36 / 53 | G5 |
 | **M6** Launch | Production readiness: infrastructure, load and chaos tests, security review, installers, docs, accessibility, and both conformance suites green. | 8 / 6 | 26 / 22 | G6 |
 | **Later** After launch | Useful but not needed for launch. | 1 / 2 | 1 / 4 | - |
@@ -35,9 +35,9 @@ Rough calendar time to reach a milestone, per side, from the lane sizes: `weeks 
 | M3 | client | 203 | 32 | 25 wk | 17 wk | 13 wk |
 | M3 | backend | 177 | 39 | 22 wk | 15 wk | 11 wk |
 | M4 | client | 236 | 32 | 30 wk | 20 wk | 15 wk |
-| M4 | backend | 240 | 44 | 30 wk | 20 wk | 15 wk |
+| M4 | backend | 241 | 44 | 30 wk | 20 wk | 15 wk |
 | M6 | client | 298 | 37 | 37 wk | 25 wk | 19 wk |
-| M6 | backend | 315 | 49 | 39 wk | 26 wk | 20 wk |
+| M6 | backend | 316 | 49 | 40 wk | 26 wk | 20 wk |
 
 
 ## M0 · Contracts and scaffolding
@@ -251,7 +251,7 @@ Workspaces with members and roles, invites, plans and checkout, entitlements, qu
   - Seats, proration and dunning behave per contract
   - Quota warnings reach clients as notices and notifications
   - Web app covers login, session view, members, invites, billing
-- **Effort:** client 33 person-days (longest chain 9 d) · backend 63 person-days (longest chain 17 d)
+- **Effort:** client 33 person-days (longest chain 9 d) · backend 64 person-days (longest chain 17 d)
 
 **Client lanes (11):**
 
@@ -267,7 +267,7 @@ Workspaces with members and roles, invites, plans and checkout, entitlements, qu
 - [C088](client/C088.md) Web invites and join flow with deep links (M)
 - [C089](client/C089.md) Web billing UI (M)
 
-**Backend lanes (25):**
+**Backend lanes (26):**
 
 - [B030](backend/B030.md) Seat accounting and seat-limit enforcement (S)
 - [B034](backend/B034.md) Workspace settings and policies (S)
@@ -294,6 +294,7 @@ Workspaces with members and roles, invites, plans and checkout, entitlements, qu
 - [B104](backend/B104.md) Share-link guests can read the members' public keys (S)
 - [B105](backend/B105.md) Session invites: one person into one session, no seat (L)
 - [B108](backend/B108.md) Session invites: audit events and their own e-mail template (S)
+- [B112](backend/B112.md) A test server for a Raspberry Pi 4 (4 GB): one command, one container stack, to try session sharing and the whole product (S)
 
 ## M5 · Fleet and polish
 

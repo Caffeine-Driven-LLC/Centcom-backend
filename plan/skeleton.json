@@ -1344,6 +1344,19 @@
         "B057",
         "B110"
       ]
+    },
+    {
+      "id": "B112",
+      "title": "A test server for a Raspberry Pi 4 (4 GB): one command, one container stack, to try session sharing and the whole product",
+      "plan": "backend",
+      "phase": "P6 Platform",
+      "size": "S",
+      "role": "platform",
+      "depends_on": [
+        "B091",
+        "B072",
+        "B102"
+      ]
     }
   ],
   "client": [
