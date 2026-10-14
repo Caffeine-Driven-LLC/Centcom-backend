@@ -1,0 +1,19 @@
+# The plain router of the Pi test server (B112): no TLS, no certificates. The relay's WebSocket path goes to the
+# relay, everything else to the API. Tailscale `serve` and a Cloudflare tunnel put real HTTPS in front of this.
+{
+	auto_https off
+	admin off
+}
+
+:8081 {
+	encode zstd gzip
+	@ws path /v1/ws /v1/ws/*
+	handle @ws {
+		reverse_proxy relay:8080
+	}
+	handle {
+		reverse_proxy api:3000 {
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+}

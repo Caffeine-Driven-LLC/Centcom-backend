@@ -1,0 +1,38 @@
+# HTTPS for the local network (B112): Caddy's own certificate authority signs the certificate of PI_HOST (a name
+# such as raspberrypi.local, or an address). The apps must trust that authority: up.sh prints how, and the root
+# certificate is at http://<pi>/ca.crt. FOR TESTING ONLY.
+{
+	local_certs
+	# An address (https://192.168.1.20) sends no server name; this serves it the certificate of PI_HOST.
+	default_sni {$PI_HOST}
+	auto_https disable_redirects
+	http_port {$PI_HTTP_PORT:80}
+	https_port {$PI_HTTPS_PORT:443}
+}
+
+{$PI_HOST}:{$PI_HTTPS_PORT:443} {
+	tls internal
+	encode zstd gzip
+	@ws path /v1/ws /v1/ws/*
+	handle @ws {
+		reverse_proxy relay:8080
+	}
+	handle {
+		reverse_proxy api:3000 {
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+}
+
+# Plain HTTP serves the CA certificate and nothing else.
+http://{$PI_HOST}:{$PI_HTTP_PORT:80} {
+	handle /ca.crt {
+		root * /data/caddy/pki/authorities/local
+		rewrite * /root.crt
+		header Content-Type application/x-x509-ca-cert
+		file_server
+	}
+	handle {
+		respond "Centcom test server. Use https; the CA certificate is at /ca.crt." 404
+	}
+}
