@@ -14,7 +14,7 @@ DR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$DR_DIR/../deploy/lib.sh"
 
 # Exit codes shared by the scripts.
-EXIT_NODECRYPT=3 EXIT_VERIFY=4 EXIT_RTO=5
+EXIT_NODECRYPT=3 EXIT_VERIFY=4 EXIT_RTO=5 EXIT_QUARANTINE=6
 
 log() { printf '%s dr: %s\n' "$(date -u +%H:%M:%S)" "$*" >&2; }
 
@@ -50,6 +50,31 @@ pg() {
   fi
 }
 psql_src() { pg psql --username=centcom --dbname=centcom --no-psqlrc --quiet --tuples-only --no-align -v ON_ERROR_STOP=1 "$@"; }
+
+# ---- credential-leak scan (B101) -------------------------------------------------------------------
+# backup_scan ARTEFACT: standard input to standard output, unchanged, while the credential scanner reads the same
+# bytes. Exit 3 means a provider credential was found in the stream, or it could not be read to the end: the caller
+# quarantines the artefact (backup.sh uploads nothing; restore.sh fails). The scanner is the API image's
+# `dist/scan-stream.js`, run with no network; BACKUP_SCAN_SCRIPT=<file> runs a local copy with the host's Node
+# (development and tests); BACKUP_SCAN=skip turns it off, loudly, and the manifest says so.
+backup_scan() {
+  local artefact="$1" script image
+  if [[ "$(cfg BACKUP_SCAN)" == skip ]]; then
+    log "WARNING: BACKUP_SCAN=skip, so $artefact is NOT scanned for provider credentials"
+    cat
+    return 0
+  fi
+  script="$(cfg BACKUP_SCAN_SCRIPT)"
+  if [[ -n "$script" ]]; then
+    node "$script" "$artefact"
+    return
+  fi
+  image="$(cfg BACKUP_SCAN_IMAGE "centcom-api:$(state_get current-tag)")"
+  docker image inspect "$image" >/dev/null 2>&1 \
+    || die 1 "the scanner image $image is not here, so $artefact cannot be scanned for credentials (set BACKUP_SCAN_IMAGE, or BACKUP_SCAN=skip to go without, knowingly)"
+  docker run --rm -i --network none --read-only --cap-drop ALL --security-opt no-new-privileges:true \
+    --entrypoint node "$image" dist/scan-stream.js "$artefact"
+}
 
 # ---- gpg (symmetric, AES-256, integrity-protected) -----------------------------------------------
 # encrypt: plaintext on stdin, ciphertext on stdout.  decrypt: the reverse; exits non-zero (and

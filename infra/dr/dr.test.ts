@@ -8,12 +8,13 @@
  * refusal to restore into the live stack without acknowledging the deletion caveat.
  */
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const DR = import.meta.dirname;
+const SCANNER = join(DR, '..', '..', 'apps', 'api', 'dist', 'scan-stream.js');
 const HAS_DOCKER = spawnSync('docker', ['version'], { stdio: 'ignore' }).status === 0;
 const SUFFIX = `${process.pid}-${Date.now() % 100000}`;
 const PG = `dr-test-pg-${SUFFIX}`;
@@ -44,6 +45,8 @@ function run(script: string, args: string[] = [], extra: Record<string, string> 
       BACKUP_S3_ACCESS_KEY_ID: KEY,
       BACKUP_S3_SECRET_ACCESS_KEY: SECRET,
       BACKUP_S3_REGION: 'us-east-1',
+      // the credential scan (B101) runs with the built scanner when it exists; scan.test.ts covers the scan itself
+      ...(existsSync(SCANNER) ? { BACKUP_SCAN_SCRIPT: SCANNER } : { BACKUP_SCAN: 'skip' }),
       ...extra,
     },
   });

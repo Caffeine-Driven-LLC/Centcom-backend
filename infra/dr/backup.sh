@@ -70,8 +70,20 @@ pg_server="$SNAP_OUT"
 
 log "dump -> encrypt"
 dump_file="$work/centcom-$stamp.dump.gpg"
-pg pg_dump --username=centcom --dbname=centcom --format=custom --snapshot="$snapshot_id" --no-owner \
-  | encrypt >"$dump_file"
+set +e
+# --compress=0: the custom format compresses table data by default, and a scanner cannot see a key inside zlib
+pg pg_dump --username=centcom --dbname=centcom --format=custom --compress=0 --snapshot="$snapshot_id" --no-owner \
+  | backup_scan "db/centcom-$stamp.dump" | encrypt >"$dump_file"
+statuses=("${PIPESTATUS[@]}")
+set -e
+if [[ "${statuses[1]}" -eq 3 ]]; then
+  # A provider credential is in the database (or the scan could not finish): nothing is uploaded.
+  mkdir -p "$STATE_DIR/quarantine"
+  cp "$dump_file" "$STATE_DIR/quarantine/centcom-$stamp.dump.gpg"
+  state_event "backup $stamp QUARANTINED by the credential scan; not uploaded"
+  die "$EXIT_QUARANTINE" "the dump holds a provider credential (or could not be scanned to the end): not uploaded; the encrypted copy is in $STATE_DIR/quarantine for the owners"
+fi
+[[ "${statuses[0]}" -eq 0 && "${statuses[1]}" -eq 0 && "${statuses[2]}" -eq 0 ]] || die 1 "the dump, scan or encryption failed (${statuses[*]})"
 printf 'rollback;\n\\q\n' >&"${SNAP[1]}"
 wait "$SNAP_PID" 2>/dev/null || true
 
@@ -79,9 +91,10 @@ bytes="$(stat -c %s "$dump_file")"
 [[ "$bytes" -gt 1024 ]] || die 1 "the encrypted dump is only $bytes bytes; refusing to upload it"
 sha="$(sha256sum "$dump_file" | cut -d' ' -f1)"
 key="db/centcom-$stamp.dump.gpg"
+scan_state=clean; [[ "$(cfg BACKUP_SCAN)" != skip ]] || scan_state=skipped
 manifest="$work/centcom-$stamp.manifest.json"
 cat >"$manifest" <<JSON
-{"version":1,"created_at":"$started","tag":"${tag:-unknown}","pg_server":"$pg_server","schema_version":"$schema_version","encryption":"gpg-aes256","dump":{"key":"$key","bytes":$bytes,"sha256":"$sha"},"tables":$tables_json}
+{"version":1,"created_at":"$started","tag":"${tag:-unknown}","pg_server":"$pg_server","schema_version":"$schema_version","encryption":"gpg-aes256","credential_scan":"$scan_state","dump":{"key":"$key","bytes":$bytes,"sha256":"$sha"},"tables":$tables_json}
 JSON
 
 if [[ -n "$local_dir" ]]; then

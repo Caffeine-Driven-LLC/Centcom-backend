@@ -20,6 +20,7 @@ import { noopMetrics, type Logger, type Metrics } from '@centcom/core';
 import type { TelemetryConfig } from './config.js';
 import type { TelemetryLimits } from './limits.js';
 import { dayOf, type TelemetryRepository } from './repository.js';
+import { secretGuard } from '@centcom/core';
 import { scrubBatch, type DropReason } from './scrub.js';
 
 /** A request as ingest sees it. */
@@ -106,15 +107,23 @@ export class TelemetryIngest {
       if (scrubbed.fieldsDropped > 0) {
         this.#metrics.counter('telemetry_fields_dropped_total').inc(scrubbed.fieldsDropped);
       }
-      if (scrubbed.accepted.length === 0) return outcome;
+      // B101 surface 3: an event that still holds a provider credential is dropped, the rest is kept,
+      // and the answer stays 204.
+      const guarded = secretGuard.guardTelemetryBatch(scrubbed.accepted, {
+        metrics: this.#metrics,
+        ...(this.deps.logger === undefined ? {} : { logger: this.deps.logger }),
+      });
+      drop('pii_pattern', guarded.rejected);
+      const accepted = guarded.clean;
+      if (accepted.length === 0) return outcome;
       try {
-        await this.deps.repository.insert(dayOf(new Date(now)), scrubbed.accepted);
+        await this.deps.repository.insert(dayOf(new Date(now)), accepted);
       } catch (err) {
-        drop('store_error', scrubbed.accepted.length);
+        drop('store_error', accepted.length);
         this.deps.logger?.warn({ error: (err as Error).name }, 'telemetry.store_failed');
         return outcome;
       }
-      outcome.stored = scrubbed.accepted.length;
+      outcome.stored = accepted.length;
       this.#metrics.counter('telemetry_accepted_total').inc(outcome.stored);
       return outcome;
     } catch (err) {

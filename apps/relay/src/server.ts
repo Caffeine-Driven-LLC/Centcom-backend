@@ -28,6 +28,7 @@ import {
   AppError,
   noopMetrics,
   isAppError,
+  secretGuard,
   toProblem,
   type Logger,
   type Metrics,
@@ -366,7 +367,10 @@ export interface RunningRelay {
 export async function startRelay(options: StartRelayOptions): Promise<RunningRelay | null> {
   // B050: every module logs through the scrubber and counts through the label guard.
   const metrics = guardMetrics(options.metrics ?? noopMetrics);
-  const logger = createRelayLogger(options.logger);
+  // The field allow-list first, then the credential scanner over what is left (B101 surface 1).
+  const logger = secretGuard.createGuardedLogger(createRelayLogger(options.logger), {
+    metrics: options.metrics ?? noopMetrics,
+  });
   const registry = new ConnectionRegistry({
     max: options.config.maxConnections,
     ...(options.clock === undefined ? {} : { clock: options.clock }),

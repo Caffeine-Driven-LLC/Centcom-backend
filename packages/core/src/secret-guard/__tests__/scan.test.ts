@@ -41,6 +41,24 @@ describe('scanText', () => {
   });
 });
 
+describe('scanJson on the objects Fastify builds', () => {
+  it('reads the query object of fast-querystring (its prototype has no prototype), which `request.query` always is', () => {
+    function Empty(this: object): void {}
+    Empty.prototype = Object.create(null) as object;
+    const query = new (Empty as unknown as new () => Record<string, string>)();
+    query['next'] = ANTHROPIC_KEY;
+    expect(scanJson(query).map((h) => h.pattern)).toEqual(['anthropic_api_key']);
+  });
+
+  it('still skips class instances and exotic objects (only data objects are walked)', () => {
+    class Holder {
+      secret = ANTHROPIC_KEY;
+    }
+    expect(scanJson(new Holder())).toEqual([]);
+    expect(scanJson(Object.create({ inherited: ANTHROPIC_KEY }))).toEqual([]);
+  });
+});
+
 describe('scanJson', () => {
   it('walks arrays, objects and errors, and skips numbers, dates and buffers', () => {
     const err = Object.assign(new Error(`failed with ${AWS_KEY}`), { extra: { k: ANTHROPIC_KEY } });

@@ -28,6 +28,7 @@ import {
   type Env,
   type PaginationConfig,
   type RateLimitConfig,
+  secretGuard,
 } from '@centcom/core';
 import {
   loadObjectStoreConfig,
@@ -121,6 +122,8 @@ export interface ApiConfig {
   relay: { url: string; region: string } | null;
   /** The S3-compatible store of session history and snapshots; null: those routes are off. */
   objectStore: ObjectStoreConfig | null;
+  /** The credential-leak guard (B101): on by default; the allow-list file is read once. */
+  secretGuard: secretGuard.SecretGuardConfig;
   /** Cookies are `Secure` only when the public URL is https. */
   secureCookies: boolean;
 }
@@ -191,6 +194,7 @@ export function loadApiConfig(env?: Env): ApiConfig {
         ? null
         : { url: own.RELAY_PUBLIC_URL, region: own.RELAY_REGION },
     objectStore: objectStoreOf(env),
+    secretGuard: secretGuard.secretGuardConfig(env),
     secureCookies: base.publicApiUrl.startsWith('https:'),
   };
 }

@@ -21,6 +21,7 @@ import {
   createEmailService,
   noopMetrics,
   rbacAuditSink,
+  secretGuard,
   RELAY_CONTROL_CHANNEL,
 } from '@centcom/core';
 import {
@@ -145,8 +146,11 @@ export const deviceUrl = (publicApiUrl: string): string =>
   `${publicApiUrl.replace(/\/+$/, '')}/device`;
 
 export function createContext(deps: AppDeps): AppContext {
-  const { config, db, redis, logger } = deps;
+  const { config, db, redis } = deps;
   const metrics = deps.metrics ?? noopMetrics;
+  // B101 surface 1: every line the services write passes the scanner first; a provider credential
+  // becomes `[redacted:<pattern>]` and is counted. The worker and the scripts get it too (createContext).
+  const logger = secretGuard.createGuardedLogger(deps.logger, { metrics });
   const clock = deps.clock ?? Date.now;
   const kv = redis.kv;
 
@@ -412,6 +416,8 @@ export function createContext(deps: AppDeps): AppContext {
 
   return {
     ...deps,
+    // the guarded logger replaces deps.logger for everything built from this context (B101)
+    logger,
     metrics,
     billing,
     rbac,
