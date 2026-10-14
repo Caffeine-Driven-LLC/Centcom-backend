@@ -1,8 +1,8 @@
-# Backend plan · 111 lanes (B001-B111)
+# Backend plan · 112 lanes (B001-B112)
 
 Repo: `Centcom-backend` · Rules: [`plan/GUIDELINES.md`](../GUIDELINES.md) · Format: [`plan/LANE_CARD_SPEC.md`](../LANE_CARD_SPEC.md) · Connection points: [`contracts/`](../../contracts/index.json)
 
-- **111 lanes**: 27 small (≤1 d), 64 medium (≤3 d), 20 large (≤5 d) · 319 person-days of work in total
+- **112 lanes**: 28 small (≤1 d), 64 medium (≤3 d), 20 large (≤5 d) · 320 person-days of work in total
 - **15 dependency layers** · critical path **49 days** (see [`GRAPH.md`](../GRAPH.md)) · parallelism in layer 1: 1 lanes can start on day one
 - Every lane card is independent: it names its inputs (contracts), outputs (deliverables), and how to build with no counterpart (`build_against`).
 - **No lane in this plan depends on a lane in the other plan.** The two sides meet only at contract IDs.
@@ -142,6 +142,7 @@ Repo: `Centcom-backend` · Rules: [`plan/GUIDELINES.md`](../GUIDELINES.md) · Fo
 | [B109](B109.md) | The worker process: usage counters, expiry sweeps and workspace purge | M5 | M | platform | B027, B029, B053, B068, B075, B107 | CT-API-USAGE, CT-API-WORKSPACES | G5 |
 | [B110](B110.md) | Branch sessions: choose the session mode at creation and make the relay apply it | M5 | M | platform | B038, B053, B054, B057, B061 | CT-API-SESSIONS, CT-WS-SESSION-EVENTS | G5 |
 | [B111](B111.md) | Shared board notes in the relay: board.note, board.pin and board.remove | M5 | M | platform | B041, B043, B057, B110 | CT-WS-SESSION-EVENTS | G5 |
+| [B112](B112.md) | A test server for a Raspberry Pi 4 (4 GB): one command, one container stack, to try session sharing and the whole product | M4 | S | platform | B091, B072, B102 | - | - |
 
 ### P7 Ops
 
