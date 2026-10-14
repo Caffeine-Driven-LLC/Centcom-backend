@@ -84,3 +84,16 @@ pg_backup() {
     "ls -1t /backups/pre-*.dump 2>/dev/null | tail -n +$(("${BACKUP_KEEP:-10}" + 1)) | xargs -r rm -f" >&2
   printf '%s\n' "$name"
 }
+
+# safety_copy: a dump of the live database, taken just before a script drops it for a restore, so a
+# restore that fails half way (or restores the wrong backup) never leaves nothing behind. It is
+# the same dump as a pre-deploy one (/backups/pre-before-restore-<time>.dump in the postgres
+# container). Stops the script (exit 1) when the dump cannot be taken: pass the script's
+# --skip-safety-copy only when the database is too damaged to dump.
+safety_copy() {
+  local name
+  name="$(pg_backup before-restore)" \
+    || die 1 "could not take a safety copy of the current database; nothing was dropped. If the database is too damaged to dump, run again with --skip-safety-copy"
+  state_event "safety copy $name before restoring a database"
+  log "safety copy of the current database: /backups/$name"
+}

@@ -3,7 +3,7 @@
 #
 #   infra/dr/restore.sh --latest | --key <db/centcom-....dump.gpg> | --file <local .dump.gpg>
 #                       [--into fresh|stack] [--keep] [--report <file>]
-#                       [--i-know-deletions-may-reappear]
+#                       [--i-know-deletions-may-reappear] [--skip-safety-copy]
 #
 #   --into fresh   (default) a throwaway Postgres container with NO network, so nothing can reach
 #                  production from it. It is removed when the script ends unless --keep; with --keep
@@ -13,7 +13,10 @@
 #                  since the backup is lost, and so is every account deletion made since then:
 #                  deleted accounts are back until their deletion is requested again. That is a
 #                  privacy incident to handle (infra/runbooks/dr/restore-database.md), so the
-#                  script refuses unless --i-know-deletions-may-reappear is given.
+#                  script refuses unless --i-know-deletions-may-reappear is given. The current
+#                  database is dumped first (pre-before-restore-*.dump in the postgres container's
+#                  /backups) so a failed restore can be undone; --skip-safety-copy leaves that out
+#                  (only for a database too damaged to dump).
 #
 # The ciphertext is checked against the manifest's SHA-256 first, then decrypted into pg_restore
 # through a pipe (plaintext never lands on disk). A wrong passphrase or altered data stops the run
@@ -24,7 +27,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-key="" file="" into=fresh keep=0 report="" ack=0 latest=0
+key="" file="" into=fresh keep=0 report="" ack=0 latest=0 safety=1
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --latest) latest=1; shift ;;
@@ -34,7 +37,8 @@ while [[ $# -gt 0 ]]; do
     --keep) keep=1; shift ;;
     --report) report="${2:?}"; shift 2 ;;
     --i-know-deletions-may-reappear) ack=1; shift ;;
-    -h | --help) sed -n '2,29p' "$0"; exit 0 ;;
+    --skip-safety-copy) safety=0; shift ;;
+    -h | --help) sed -n '2,33p' "$0"; exit 0 ;;
     *) die "$EXIT_USAGE" "unknown option $1" ;;
   esac
 done
@@ -105,7 +109,7 @@ else
   export TAG="${TAG:-$(state_get current-tag)}"
   log "stopping api, worker, relay and caddy"
   compose stop api worker relay caddy >/dev/null
-  ensure_postgres
+  if [[ $safety -eq 1 ]]; then safety_copy; else ensure_postgres; fi
   compose exec -T postgres dropdb --username=centcom --force --if-exists centcom
   compose exec -T postgres createdb --username=centcom centcom
   target="$(compose ps -q postgres)"
