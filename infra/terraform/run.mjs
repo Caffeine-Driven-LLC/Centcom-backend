@@ -12,7 +12,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
@@ -63,12 +63,14 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (status === 0 && decision.action === 'plan') {
     status = terraform(['plan', '-input=false', '-out=plan.tfplan'], dir);
   } else if (status === 0) {
-    if (decision.planFile !== undefined && !existsSync(decision.planFile)) {
+    // terraform runs inside envs/<env>, so the plan path is made absolute against the caller's cwd.
+    const planPath = decision.planFile === undefined ? undefined : resolve(decision.planFile);
+    if (planPath !== undefined && !existsSync(planPath)) {
       out(`no such plan file: ${decision.planFile}`);
       process.exit(2);
     }
     status = terraform(
-      decision.planFile === undefined ? ['apply'] : ['apply', '-input=false', decision.planFile],
+      planPath === undefined ? ['apply'] : ['apply', '-input=false', planPath],
       dir,
     );
   }
