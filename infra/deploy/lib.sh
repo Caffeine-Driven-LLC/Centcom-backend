@@ -8,7 +8,10 @@ COMPOSE_FILE="$DEPLOY_DIR/docker-compose.prod.yml"
 ENV_FILE="${DEPLOY_ENV_FILE:-$DEPLOY_DIR/production.env}"
 STATE_DIR="${DEPLOY_STATE_DIR:-$DEPLOY_DIR/.state}"
 # Exit codes shared by the scripts.
-EXIT_USAGE=2 EXIT_CONTRACT=3 EXIT_UNHEALTHY=20 EXIT_ROLLBACK_FAILED=21
+EXIT_USAGE=2 EXIT_CONTRACT=3 EXIT_UNSAFE_MIGRATION=4 EXIT_GATE=10 EXIT_UNHEALTHY=20
+EXIT_ROLLBACK_FAILED=21 EXIT_SLO=30
+# The repository checkout the server builds from (the migrations, the conformance report).
+REPO_DIR="$(cd "$DEPLOY_DIR/../.." && pwd)"
 
 log() { printf '%s deploy: %s\n' "$(date -u +%H:%M:%S)" "$*"; }
 die() {
