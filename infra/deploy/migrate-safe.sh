@@ -2,7 +2,9 @@
 # Applies the pending database migrations with a safety net (B092):
 #
 #   1. shows what is pending (centcom-db status) and stops if there is nothing;
-#   2. on a database that already has data, refuses a pending "-- contract" migration (one that may drop data) unless --allow-contract;
+#   2. runs migration-lint.mjs on the pending files (each must work with the release still running);
+#      on a database that already has data, refuses a pending "-- contract" migration (one that may
+#      drop data) unless --allow-contract;
 #   3. dumps the database to /backups/pre-<tag>-<time>.dump and reads the dump back;
 #   4. applies the migrations (each file runs in its own transaction, under an advisory lock).
 #
@@ -14,7 +16,8 @@
 #   infra/deploy/migrate-safe.sh [--tag <tag>] [--allow-contract] [--dry-run]
 #
 # Exit codes: 0 done or nothing to do; 1 a step failed; 2 usage or incomplete settings;
-# 3 a contract migration is pending and --allow-contract was not given.
+# 3 a contract migration is pending and --allow-contract was not given; 4 a pending migration
+# fails migration-lint.mjs.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
@@ -56,6 +59,18 @@ if ! printf '%s\n' "$status" | tail -n 1 | grep -q '^0 applied'; then
     fi
   done
 fi
+# Every pending migration must work with the release still running (migration-lint.mjs: no rename,
+# no NOT NULL without a default, no index build that locks an existing table, destructive steps
+# only after a "-- contract" marker).
+# A new database (nothing applied) runs no release yet, so there is nothing to break.
+if ! printf '%s\n' "$status" | tail -n 1 | grep -q '^0 applied'; then
+  lint_files=()
+  for file in "${pending[@]}"; do lint_files+=("$REPO_DIR/packages/db/migrations/$file"); done
+  if ! node "$DEPLOY_DIR/migration-lint.mjs" "${lint_files[@]}"; then
+    die "$EXIT_UNSAFE_MIGRATION" "a pending migration would break the release still running (above); split it into expand and contract releases"
+  fi
+fi
+
 if [[ ${#contract[@]} -gt 0 && $allow_contract -eq 0 ]]; then
   die "$EXIT_CONTRACT" "pending contract migration(s) may drop data: ${contract[*]}; check the previous release no longer uses it, then re-run with --allow-contract"
 fi

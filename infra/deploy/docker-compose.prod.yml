@@ -189,6 +189,20 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
 
+  # deploy.sh's checks (B092): the smoke test and the SLO guard, run with the new version's Node on
+  # the private network. Only the two scripts are mounted (never the settings file); no secret.
+  deploy-check:
+    image: centcom-api:${TAG:-local}
+    profiles: ['tools']
+    entrypoint: ['node']
+    read_only: true
+    security_opt: ['no-new-privileges:true']
+    cap_drop: ['ALL']
+    volumes:
+      - ./smoke.mjs:/deploy/smoke.mjs:ro
+      - ./slo-guard.mjs:/deploy/slo-guard.mjs:ro
+    networks: [backend]
+
   postgres:
     <<: *service
     image: postgres:16

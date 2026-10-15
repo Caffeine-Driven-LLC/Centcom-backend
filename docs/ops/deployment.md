@@ -24,8 +24,12 @@ deploy drops the relay's WebSockets for a few seconds; clients reconnect and res
 | `Caddyfile`               | HTTPS, Cloudflare client addresses, `/internal/admin/*` and `/metrics` hidden.                 |
 | `production.env.example`  | Every setting and secret, named and explained. `gen-env.mjs` turns it into `production.env`.   |
 | `gen-env.mjs`             | Writes `production.env` (mode 600) with fresh random secrets and an Ed25519 signing key.       |
-| `deploy.sh <tag>`         | Build, back up, migrate, start in order, check health, roll back if it fails.                  |
-| `migrate-safe.sh`         | Backup, then migrate. Refuses a `-- contract` migration unless `--allow-contract`.             |
+| `deploy.sh <tag>`         | Gate, build, back up, migrate, blue/green the API, smoke, SLO guard, roll back if any fails.   |
+| `migrate-safe.sh`         | Lint, backup, then migrate. Refuses a `-- contract` migration unless `--allow-contract`.       |
+| `migration-lint.mjs`      | Refuses a migration that would break the release still running (rename, NOT NULL, ...).        |
+| `release-gate.mjs`        | Production needs a fresh green conformance report for the commit and the stage record.         |
+| `smoke.mjs`               | healthz, readyz, status, JWKS, device-code start, a relay WebSocket upgrade.                   |
+| `slo-guard.mjs`           | 5 minutes of Caddy's metrics: under 1 % 5xx, p95 within 2x the baseline; else roll back.       |
 | `rollback.sh`             | `--images` goes back to the previous tag; `--restore-db <dump>` also restores the database.    |
 | `drill-token.sh`          | Local drills only: mints a web-app token so `pnpm dev:branch-check` can run against the stack. |
 
@@ -60,15 +64,51 @@ compiler.
 ## Deploying
 
 ```sh
-infra/deploy/deploy.sh v1
+infra/deploy/deploy.sh v1 --env stage                                  # the stage server
+infra/deploy/deploy.sh v1 --env production --approved-by "Ada Lovelace" \
+  --stage-record stage-deploy-record.json                              # production
 ```
 
-In order: check the settings, build the three images as `centcom-*:v1`, back up the database and
-apply the pending migrations ([below](#migrations-and-backups)), start Postgres, Redis and MinIO,
-then the API (waits until healthy), the worker, the relay (waits until healthy) and Caddy.
+The server needs Docker, bash and Node 22 (the gate, the linter and the deploy record run on the
+host), and [trivy](https://trivy.dev) in production. In order:
 
-- A service that is not healthy within `DEPLOY_WAIT_S` (120 s) stops the deploy: the previous tag is
-  started again and the script exits **20**. Exit 21 means the restore failed too.
+1. **Settings** are checked (no placeholder left, mode 600, compose validates).
+2. **Release gate** (`release-gate.mjs`, exit **10** on a failure, nothing changed).
+   - Production: `conformance-report.json` from `pnpm conformance` (B100) must be for the commit
+     being deployed, under 24 h old, with no failed case.
+   - Production also needs the stage server's `deploy-record.json` for the same commit, with
+     result `deployed` (`--stage-record`): prod ships only what stage ran.
+   - Production needs a named approver (`--approved-by`, or `DEPLOY_APPROVER`), recorded.
+   - Stage needs the report only with `REQUIRE_CONFORMANCE=true`.
+3. **Build** the three images as `centcom-*:v1`. In production, `trivy` must find no critical,
+   fixable vulnerability in any of them (exit 10). `DEPLOY_SCAN=0` skips the scan, and the record
+   says `scanned: false`.
+4. **Migrations**: lint, back up, apply ([below](#migrations-and-backups)).
+5. **Blue/green for the API.** The new API container starts _next to_ the old one, under the same
+   service name, so Caddy sends requests to both as soon as the new one is healthy. The old one
+   keeps serving until the checks below pass. The worker, then the relay (which drains its
+   WebSockets for up to 60 s; clients resume from their last `seq`), then Caddy are updated in
+   place. A changed Caddyfile is applied with a graceful `caddy reload` first.
+6. **Smoke** (`smoke.mjs`): `/healthz`, `/readyz`, `/v1/status`, the JWKS (at least one key), a
+   device-code start, and a WebSocket upgrade on the relay.
+7. **SLO guard** (`slo-guard.mjs`, `--slo-window`, default 300 s), on Caddy's per-host request
+   metrics (an internal `:9180` listener, never published):
+   - 1 % of 5xx or more, or a p95 over twice the pre-deploy baseline, is a breach (exit **30**);
+   - fewer than 20 requests in the window is nothing to judge, so it passes;
+   - metrics that cannot be read are a breach in production and a warning in stage;
+   - `--skip-slo` is allowed in stage only.
+8. **The old API stops** (30 s to finish its requests), and `.state/deploy-record.json` records
+   the run (with a copy per run under `.state/records/`):
+   `{env, service, tag, digest: {api, worker, relay}, git_sha, started_at, finished_at, result,
+approver, scanned}`.
+
+**Rolling back on a failure in steps 5-7:** the new API container is removed (the old one never
+stopped serving), and the previous tag's worker and relay start again. Exit **20** for an
+unhealthy service or a failed smoke test, **30** for an SLO breach, and **21** if the restore
+failed too. The record's `result` says which (`unhealthy`, `smoke_failed`, `slo_breach`, ...).
+A failure takes at most `DEPLOY_WAIT_S` (120 s) plus the guard window to be detected; the rollback
+itself is the old container staying up, plus a minute for the worker and the relay.
+
 - One deploy at a time: a second run stops with a message (a lock in `infra/deploy/.state/`).
 - The previous tag's images stay on the server, so going back needs no build.
 - `.state/history.log` lists every backup, migration, deploy and rollback with a timestamp.
@@ -82,9 +122,21 @@ of the release before it, so a rollback of the code never needs a rollback of th
 `migrate-safe.sh` (run by `deploy.sh`) does this, in order:
 
 1. `centcom-db status`; nothing pending means it stops here, no backup.
-2. On a database that already has data, a pending migration with a `-- contract` marker (one that
-   may drop columns or tables) stops the deploy with exit 3. Check that the previous release no
-   longer uses what it removes, then deploy with `--allow-contract`.
+2. On a database that already has data:
+   - `migration-lint.mjs` checks the pending files (exit **4**: split the change into an expand
+     release and a contract release). It refuses:
+     - `RENAME` of a column, table or constraint (add the new one, copy, drop it later);
+     - `ADD COLUMN ... NOT NULL` without a `DEFAULT` (the old code's inserts would fail);
+     - `ALTER COLUMN ... TYPE` (a rewrite);
+     - `CREATE INDEX` on a table the file did not create (it blocks writes while it builds).
+       The runner wraps each file in a transaction, so `CONCURRENTLY` is not possible; a table
+       known to be small can be acknowledged with
+       `-- deploy-lint: allow index-lock <table> (<why>)`;
+     - `DROP COLUMN`, `DROP TABLE` and `SET NOT NULL`, unless they come after a `-- contract`
+       marker.
+   - A pending migration with a `-- contract` marker (one that may drop columns or tables) stops
+     the deploy with exit 3. Check that the previous release no longer uses what it removes, then
+     deploy with `--allow-contract`.
 3. `pg_dump` (custom format) to `/backups/pre-<tag>-<time>.dump` on the `backups` volume, read
    back with `pg_restore --list`. The newest 10 pre-deploy dumps are kept (`BACKUP_KEEP`).
 4. Apply. Each file runs in its own transaction under an advisory lock; a failing file changes
@@ -110,8 +162,11 @@ tested restore drill are lane B099.
 | 1    | a step failed (the message says which; a failed migration prints the fix) |
 | 2    | usage, or the settings file is incomplete or world-readable               |
 | 3    | a contract migration is pending and `--allow-contract` was not given      |
-| 20   | the new version was unhealthy; the previous one is serving again          |
-| 21   | the new version was unhealthy and restoring the previous one failed       |
+| 4    | a pending migration would break the release still running (lint)          |
+| 10   | the release gate failed (conformance, stage record, or a vulnerability)   |
+| 20   | unhealthy or failed the smoke test; the previous one is serving again     |
+| 21   | the new version failed and restoring the previous one failed too          |
+| 30   | the SLO guard saw a breach; the previous one is serving again             |
 
 ## Secrets
 
@@ -152,4 +207,70 @@ on the Team plan, because production refuses `DEV_DEFAULT_PLAN`.
    not started (it needs cloud accounts).
 4. **No off-site backups yet** (B099), no WAF or rate-limit rules at Cloudflare (B097), no load
    numbers (B095).
-5. **Images are built on the server.** There is no registry and no image signing or scan yet.
+5. **Images are built on the server.** There is no registry, so there is no digest to promote
+   from stage to prod. Production rebuilds the same commit (the gate checks the commit, and the
+   record keeps each image's id), and images are not signed (cosign needs a registry). trivy scans
+   them in production.
+6. **The GitHub workflows are not in the repository.** `.github/` is changed only by a human. The
+   drafts below run these same scripts over SSH.
+7. **Not yet run on a real server.** The scripts and checks are tested (`infra/deploy/*.test.ts`)
+   and the earlier steps were drilled on a local production compose. The blue/green step, the
+   smoke test and the SLO guard have not been drilled end to end yet; do one stage drill (deploy,
+   then a deliberately broken tag) before the first production deploy.
+
+## Draft workflows (for a human to add under `.github/workflows/`)
+
+Both run the scripts on the server over SSH, so the server keeps the images and the state.
+`DEPLOY_SSH_KEY` is a deploy key for a non-root user. GitHub environments: `stage`, and
+`production` with required reviewers; the reviewer's name becomes `--approved-by`.
+
+```yaml
+# deploy-stage.yml: on main after CI is green
+name: deploy-stage
+on:
+  workflow_run: { workflows: [ci], types: [completed], branches: [main] }
+concurrency: { group: deploy-stage, cancel-in-progress: false }
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: stage
+    timeout-minutes: 20
+    steps:
+      - uses: webfactory/ssh-agent@v0.9.0
+        with: { ssh-private-key: '${{ secrets.DEPLOY_SSH_KEY }}' }
+      - run: |
+          ssh -o StrictHostKeyChecking=accept-new "${{ vars.STAGE_HOST }}" \
+            "cd Centcom-backend && git fetch && git checkout ${{ github.event.workflow_run.head_sha }} \
+             && pnpm conformance --report conformance-report.json \
+             && infra/deploy/deploy.sh ${GITHUB_SHA::12} --env stage"
+          scp "${{ vars.STAGE_HOST }}:Centcom-backend/infra/deploy/.state/deploy-record.json" stage-deploy-record.json
+      - uses: actions/upload-artifact@v4
+        with: { name: stage-deploy-record, path: stage-deploy-record.json }
+```
+
+```yaml
+# deploy-prod.yml: manual, with the production environment's required reviewers
+name: deploy-prod
+on:
+  workflow_dispatch: { inputs: { sha: { required: true, type: string } } }
+concurrency: { group: deploy-production, cancel-in-progress: false }
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: dawidd6/action-download-artifact@v6
+        with: { workflow: deploy-stage.yml, name: stage-deploy-record, commit: '${{ inputs.sha }}' }
+      - uses: webfactory/ssh-agent@v0.9.0
+        with: { ssh-private-key: '${{ secrets.DEPLOY_SSH_KEY }}' }
+      - run: |
+          scp stage-deploy-record.json "${{ vars.PROD_HOST }}:stage-deploy-record.json"
+          ssh "${{ vars.PROD_HOST }}" "cd Centcom-backend && git fetch && git checkout ${{ inputs.sha }} \
+            && pnpm conformance --report conformance-report.json \
+            && infra/deploy/deploy.sh ${INPUT_SHA::12} --env production \
+               --approved-by '${{ github.actor }}' --stage-record ~/stage-deploy-record.json"
+        env: { INPUT_SHA: '${{ inputs.sha }}' }
+```
+
+`rollback.yml` is the same SSH step running `infra/deploy/rollback.sh --images [--to <tag>]`.
