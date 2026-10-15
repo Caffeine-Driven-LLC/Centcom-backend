@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-13",
+ "updated": "2026-10-15",
  "lanes": {
   "B001": {
    "pct": 1,
@@ -432,6 +432,22 @@
   "B095": {
    "pct": 0.75,
    "note": "2026-10-13: relay load runner, capacity model, docs/capacity.md (#131); 2,500 connections pass on one relay (planning figure 2,000), 799 frames/s pass; gaps: a 10-minute soak stalled at minute 4 with memory 241 to 423 MiB (cause open), load against API routes, no measurement on the real server"
+  },
+  "B096": {
+   "pct": 0.85,
+   "note": "2026-10-15: chaos tests for Redis, Postgres, crash, relay restart and clock skew in apps/api/test/chaos (#137), failure modes in docs/ops/failure-modes.md; gaps: card paths (infra/chaos/) not used, not run against a real server"
+  },
+  "B098": {
+   "pct": 0.7,
+   "note": "2026-10-15: threat model, hardening notes and a checker (#138); gaps: abuse cases, pen-test scope, disclosure policy and ASVS mapping documents from the card are not written"
+  },
+  "B100": {
+   "pct": 0.75,
+   "note": "2026-10-15: provider conformance suite and gates G1-G6 in infra/conformance (#139), docs/testing/conformance.md; gaps: release-gate workflow is a protected path and not added, suite not under packages/testkit as the card says"
+  },
+  "B112": {
+   "pct": 0.9,
+   "note": "2026-10-15: Raspberry Pi 4 test server: compose, Caddy router, env and up/down/reset scripts (#141); gaps: not run on a real Pi"
   }
  },
  "next": [
