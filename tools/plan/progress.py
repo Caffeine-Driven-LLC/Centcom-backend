@@ -127,11 +127,11 @@ def main():
     new = re.sub(re.escape(START) + r'.*?' + re.escape(END), lambda _: b, cur, flags=re.S) if START in cur else None
     if new is None:  # first run: put it right after the first paragraph/status line, before the first "## "
         i = cur.find('\n## '); new = (cur[:i] + '\n\n' + b + '\n' + cur[i:]) if i >= 0 else cur + '\n\n' + b + '\n'
-    svg_path = os.path.join(ROOT, 'docs', 'progress.svg'); old_svg = open(svg_path).read() if os.path.exists(svg_path) else ''
+    svg_path = os.path.join(ROOT, 'docs', 'progress.svg'); old_svg = open(svg_path, encoding='utf8', errors='replace').read() if os.path.exists(svg_path) else ''
     if '--check' in sys.argv:
         if old_svg != svg_text or new != cur: sys.exit('progress is out of date: run python3 tools/plan/progress.py')
         print('progress up to date'); return
-    os.makedirs(os.path.dirname(svg_path), exist_ok=True); open(svg_path, 'w').write(svg_text); open(readme, 'w', encoding='utf8').write(new)
+    os.makedirs(os.path.dirname(svg_path), exist_ok=True); open(svg_path, 'w', encoding='utf8', newline='\n').write(svg_text); open(readme, 'w', encoding='utf8').write(new)
     print(f'{s}: {round(overall * 100)}% built · ' + ' · '.join(f"{m} {round(tot[m][0] / tot[m][1] * 100) if tot[m][1] else 0}%" for m in ORDER if tot[m][1]))
 
 
