@@ -36,3 +36,10 @@ d913b969d1cc5942d5b1f0af866bbba06383edc2:apps/api/test/modules/apikeys/config.te
 77c1620040320fcf3a973424e481bd1c9ff72736:apps/api/test/modules/projects/projects.validation.test.ts:gitlab-pat:61
 77c1620040320fcf3a973424e481bd1c9ff72736:apps/api/test/modules/projects/projects.validation.test.ts:stripe-access-token:64
 77c1620040320fcf3a973424e481bd1c9ff72736:apps/api/test/modules/projects/projects.validation.test.ts:aws-access-token:65
+
+# secret-guard tests (commit 80a9237, merged outside the pipeline): the test builds the
+# token shape from pieces, so the file on main holds no token; history still has the join().
+80a9237177e5ef36a1addd3f367739bc4593f3bf:apps/api/test/secret-guard/mounts.test.ts:generic-api-key:21
+80a9237177e5ef36a1addd3f367739bc4593f3bf:apps/api/test/secret-guard/scan-stream.test.ts:generic-api-key:14
+80a9237177e5ef36a1addd3f367739bc4593f3bf:apps/relay/test/secret-guard/secret-guard.test.ts:generic-api-key:19
+80a9237177e5ef36a1addd3f367739bc4593f3bf:infra/dr/scan.test.ts:generic-api-key:21
