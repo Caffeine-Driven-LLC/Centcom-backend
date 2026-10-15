@@ -1,0 +1,684 @@
+{
+  "env": "prod",
+  "resources": [
+    {
+      "address": "module.environment.module.admin.fly_app.this",
+      "type": "fly_app",
+      "name": "this",
+      "values": {
+        "name": "centcom-prod-admin",
+        "org": "centcom-prod"
+      }
+    },
+    {
+      "address": "module.environment.module.api.fly_app.this",
+      "type": "fly_app",
+      "name": "this",
+      "values": {
+        "name": "centcom-prod-api",
+        "org": "centcom-prod"
+      }
+    },
+    {
+      "address": "module.environment.module.api.fly_cert.host[\"api.centcom.example\"]",
+      "type": "fly_cert",
+      "name": "host",
+      "values": {
+        "app": "centcom-prod-api",
+        "hostname": "api.centcom.example"
+      }
+    },
+    {
+      "address": "module.environment.module.api.fly_cert.host[\"releases.centcom.example\"]",
+      "type": "fly_cert",
+      "name": "host",
+      "values": {
+        "app": "centcom-prod-api",
+        "hostname": "releases.centcom.example"
+      }
+    },
+    {
+      "address": "module.environment.module.api.fly_ip.shared_v4[0]",
+      "type": "fly_ip",
+      "name": "shared_v4",
+      "values": {
+        "app": "centcom-prod-api",
+        "region": "global",
+        "type": "shared_v4"
+      }
+    },
+    {
+      "address": "module.environment.module.api.fly_ip.v6[0]",
+      "type": "fly_ip",
+      "name": "v6",
+      "values": {
+        "app": "centcom-prod-api",
+        "region": "global",
+        "type": "v6"
+      }
+    },
+    {
+      "address": "module.environment.module.dns.cloudflare_dns_record.cname[\"api.centcom.example\"]",
+      "type": "cloudflare_dns_record",
+      "name": "cname",
+      "values": {
+        "comment": "Managed by Terraform (B091)",
+        "content": "centcom-prod-api.fly.dev",
+        "data": null,
+        "include_shadow_metadata": false,
+        "name": "api.centcom.example",
+        "priority": null,
+        "private_routing": null,
+        "proxied": true,
+        "ttl": 1,
+        "type": "CNAME",
+        "zone_id": "00000000000000000000000000000000"
+      }
+    },
+    {
+      "address": "module.environment.module.dns.cloudflare_dns_record.cname[\"relay-fra.centcom.example\"]",
+      "type": "cloudflare_dns_record",
+      "name": "cname",
+      "values": {
+        "comment": "Managed by Terraform (B091)",
+        "content": "centcom-prod-relay.fly.dev",
+        "data": null,
+        "include_shadow_metadata": false,
+        "name": "relay-fra.centcom.example",
+        "priority": null,
+        "private_routing": null,
+        "proxied": true,
+        "ttl": 1,
+        "type": "CNAME",
+        "zone_id": "00000000000000000000000000000000"
+      }
+    },
+    {
+      "address": "module.environment.module.dns.cloudflare_dns_record.cname[\"relay-iad.centcom.example\"]",
+      "type": "cloudflare_dns_record",
+      "name": "cname",
+      "values": {
+        "comment": "Managed by Terraform (B091)",
+        "content": "centcom-prod-relay.fly.dev",
+        "data": null,
+        "include_shadow_metadata": false,
+        "name": "relay-iad.centcom.example",
+        "priority": null,
+        "private_routing": null,
+        "proxied": true,
+        "ttl": 1,
+        "type": "CNAME",
+        "zone_id": "00000000000000000000000000000000"
+      }
+    },
+    {
+      "address": "module.environment.module.dns.cloudflare_dns_record.cname[\"releases.centcom.example\"]",
+      "type": "cloudflare_dns_record",
+      "name": "cname",
+      "values": {
+        "comment": "Managed by Terraform (B091)",
+        "content": "centcom-prod-api.fly.dev",
+        "data": null,
+        "include_shadow_metadata": false,
+        "name": "releases.centcom.example",
+        "priority": null,
+        "private_routing": null,
+        "proxied": true,
+        "ttl": 1,
+        "type": "CNAME",
+        "zone_id": "00000000000000000000000000000000"
+      }
+    },
+    {
+      "address": "module.environment.module.postgres.fly_app.db",
+      "type": "fly_app",
+      "name": "db",
+      "values": {
+        "name": "centcom-prod-db",
+        "org": "centcom-prod"
+      }
+    },
+    {
+      "address": "module.environment.module.postgres.fly_machine.db[\"fra\"]",
+      "type": "fly_machine",
+      "name": "db",
+      "values": {
+        "app": "centcom-prod-db",
+        "cmd": null,
+        "cpus": 2,
+        "entrypoint": null,
+        "env": {
+          "FLY_APP_NAME": "centcom-prod-db",
+          "PRIMARY_REGION": "iad"
+        },
+        "exec": null,
+        "image": "flyio/postgres-flex:16.6",
+        "memorymb": 4096,
+        "mounts": [
+          {
+            "path": "/data"
+          }
+        ],
+        "name": "centcom-prod-db-fra",
+        "region": "fra",
+        "services": null
+      }
+    },
+    {
+      "address": "module.environment.module.postgres.fly_machine.db[\"iad\"]",
+      "type": "fly_machine",
+      "name": "db",
+      "values": {
+        "app": "centcom-prod-db",
+        "cmd": null,
+        "cpus": 2,
+        "entrypoint": null,
+        "env": {
+          "FLY_APP_NAME": "centcom-prod-db",
+          "PRIMARY_REGION": "iad"
+        },
+        "exec": null,
+        "image": "flyio/postgres-flex:16.6",
+        "memorymb": 4096,
+        "mounts": [
+          {
+            "path": "/data"
+          }
+        ],
+        "name": "centcom-prod-db-iad",
+        "region": "iad",
+        "services": null
+      }
+    },
+    {
+      "address": "module.environment.module.postgres.fly_volume.data[\"fra\"]",
+      "type": "fly_volume",
+      "name": "data",
+      "values": {
+        "app": "centcom-prod-db",
+        "name": "pg_data",
+        "region": "fra",
+        "size": 50
+      }
+    },
+    {
+      "address": "module.environment.module.postgres.fly_volume.data[\"iad\"]",
+      "type": "fly_volume",
+      "name": "data",
+      "values": {
+        "app": "centcom-prod-db",
+        "name": "pg_data",
+        "region": "iad",
+        "size": 50
+      }
+    },
+    {
+      "address": "module.environment.module.r2.cloudflare_r2_bucket_lifecycle.this[\"backups\"]",
+      "type": "cloudflare_r2_bucket_lifecycle",
+      "name": "this",
+      "values": {
+        "account_id": "00000000000000000000000000000000",
+        "bucket_name": "centcom-prod-backups",
+        "jurisdiction": "default",
+        "rules": [
+          {
+            "abort_multipart_uploads_transition": {
+              "condition": {
+                "max_age": 604800,
+                "type": "Age"
+              }
+            },
+            "conditions": {
+              "prefix": ""
+            },
+            "delete_objects_transition": null,
+            "enabled": true,
+            "id": "abort-stale-uploads",
+            "storage_class_transitions": null
+          },
+          {
+            "abort_multipart_uploads_transition": null,
+            "conditions": {
+              "prefix": ""
+            },
+            "delete_objects_transition": {
+              "condition": {
+                "date": null,
+                "max_age": 7776000,
+                "type": "Age"
+              }
+            },
+            "enabled": true,
+            "id": "expire-objects",
+            "storage_class_transitions": null
+          }
+        ]
+      }
+    },
+    {
+      "address": "module.environment.module.r2.cloudflare_r2_bucket_lifecycle.this[\"exports\"]",
+      "type": "cloudflare_r2_bucket_lifecycle",
+      "name": "this",
+      "values": {
+        "account_id": "00000000000000000000000000000000",
+        "bucket_name": "centcom-prod-exports",
+        "jurisdiction": "default",
+        "rules": [
+          {
+            "abort_multipart_uploads_transition": {
+              "condition": {
+                "max_age": 604800,
+                "type": "Age"
+              }
+            },
+            "conditions": {
+              "prefix": ""
+            },
+            "delete_objects_transition": null,
+            "enabled": true,
+            "id": "abort-stale-uploads",
+            "storage_class_transitions": null
+          },
+          {
+            "abort_multipart_uploads_transition": null,
+            "conditions": {
+              "prefix": ""
+            },
+            "delete_objects_transition": {
+              "condition": {
+                "date": null,
+                "max_age": 2592000,
+                "type": "Age"
+              }
+            },
+            "enabled": true,
+            "id": "expire-objects",
+            "storage_class_transitions": null
+          }
+        ]
+      }
+    },
+    {
+      "address": "module.environment.module.r2.cloudflare_r2_bucket_lifecycle.this[\"history\"]",
+      "type": "cloudflare_r2_bucket_lifecycle",
+      "name": "this",
+      "values": {
+        "account_id": "00000000000000000000000000000000",
+        "bucket_name": "centcom-prod-history",
+        "jurisdiction": "default",
+        "rules": [
+          {
+            "abort_multipart_uploads_transition": {
+              "condition": {
+                "max_age": 604800,
+                "type": "Age"
+              }
+            },
+            "conditions": {
+              "prefix": ""
+            },
+            "delete_objects_transition": null,
+            "enabled": true,
+            "id": "abort-stale-uploads",
+            "storage_class_transitions": null
+          }
+        ]
+      }
+    },
+    {
+      "address": "module.environment.module.r2.cloudflare_r2_bucket_lifecycle.this[\"releases\"]",
+      "type": "cloudflare_r2_bucket_lifecycle",
+      "name": "this",
+      "values": {
+        "account_id": "00000000000000000000000000000000",
+        "bucket_name": "centcom-prod-releases",
+        "jurisdiction": "default",
+        "rules": [
+          {
+            "abort_multipart_uploads_transition": {
+              "condition": {
+                "max_age": 604800,
+                "type": "Age"
+              }
+            },
+            "conditions": {
+              "prefix": ""
+            },
+            "delete_objects_transition": null,
+            "enabled": true,
+            "id": "abort-stale-uploads",
+            "storage_class_transitions": null
+          }
+        ]
+      }
+    },
+    {
+      "address": "module.environment.module.r2.cloudflare_r2_bucket_lifecycle.this[\"snapshots\"]",
+      "type": "cloudflare_r2_bucket_lifecycle",
+      "name": "this",
+      "values": {
+        "account_id": "00000000000000000000000000000000",
+        "bucket_name": "centcom-prod-snapshots",
+        "jurisdiction": "default",
+        "rules": [
+          {
+            "abort_multipart_uploads_transition": {
+              "condition": {
+                "max_age": 604800,
+                "type": "Age"
+              }
+            },
+            "conditions": {
+              "prefix": ""
+            },
+            "delete_objects_transition": null,
+            "enabled": true,
+            "id": "abort-stale-uploads",
+            "storage_class_transitions": null
+          },
+          {
+            "abort_multipart_uploads_transition": null,
+            "conditions": {
+              "prefix": ""
+            },
+            "delete_objects_transition": {
+              "condition": {
+                "date": null,
+                "max_age": 7776000,
+                "type": "Age"
+              }
+            },
+            "enabled": true,
+            "id": "expire-objects",
+            "storage_class_transitions": null
+          }
+        ]
+      }
+    },
+    {
+      "address": "module.environment.module.r2.cloudflare_r2_bucket_lock.this[\"backups\"]",
+      "type": "cloudflare_r2_bucket_lock",
+      "name": "this",
+      "values": {
+        "account_id": "00000000000000000000000000000000",
+        "bucket_name": "centcom-prod-backups",
+        "jurisdiction": "default",
+        "rules": [
+          {
+            "condition": {
+              "date": null,
+              "max_age_seconds": 2592000,
+              "type": "Age"
+            },
+            "enabled": true,
+            "id": "retain-30-days",
+            "prefix": ""
+          }
+        ]
+      }
+    },
+    {
+      "address": "module.environment.module.r2.cloudflare_r2_bucket.this[\"backups\"]",
+      "type": "cloudflare_r2_bucket",
+      "name": "this",
+      "values": {
+        "account_id": "00000000000000000000000000000000",
+        "jurisdiction": "default",
+        "location": "enam",
+        "name": "centcom-prod-backups",
+        "storage_class": "Standard"
+      }
+    },
+    {
+      "address": "module.environment.module.r2.cloudflare_r2_bucket.this[\"exports\"]",
+      "type": "cloudflare_r2_bucket",
+      "name": "this",
+      "values": {
+        "account_id": "00000000000000000000000000000000",
+        "jurisdiction": "default",
+        "location": "enam",
+        "name": "centcom-prod-exports",
+        "storage_class": "Standard"
+      }
+    },
+    {
+      "address": "module.environment.module.r2.cloudflare_r2_bucket.this[\"history\"]",
+      "type": "cloudflare_r2_bucket",
+      "name": "this",
+      "values": {
+        "account_id": "00000000000000000000000000000000",
+        "jurisdiction": "default",
+        "location": "enam",
+        "name": "centcom-prod-history",
+        "storage_class": "Standard"
+      }
+    },
+    {
+      "address": "module.environment.module.r2.cloudflare_r2_bucket.this[\"releases\"]",
+      "type": "cloudflare_r2_bucket",
+      "name": "this",
+      "values": {
+        "account_id": "00000000000000000000000000000000",
+        "jurisdiction": "default",
+        "location": "enam",
+        "name": "centcom-prod-releases",
+        "storage_class": "Standard"
+      }
+    },
+    {
+      "address": "module.environment.module.r2.cloudflare_r2_bucket.this[\"snapshots\"]",
+      "type": "cloudflare_r2_bucket",
+      "name": "this",
+      "values": {
+        "account_id": "00000000000000000000000000000000",
+        "jurisdiction": "default",
+        "location": "enam",
+        "name": "centcom-prod-snapshots",
+        "storage_class": "Standard"
+      }
+    },
+    {
+      "address": "module.environment.module.r2.cloudflare_r2_managed_domain.off[\"backups\"]",
+      "type": "cloudflare_r2_managed_domain",
+      "name": "off",
+      "values": {
+        "account_id": "00000000000000000000000000000000",
+        "bucket_name": "centcom-prod-backups",
+        "enabled": false,
+        "jurisdiction": "default"
+      }
+    },
+    {
+      "address": "module.environment.module.r2.cloudflare_r2_managed_domain.off[\"exports\"]",
+      "type": "cloudflare_r2_managed_domain",
+      "name": "off",
+      "values": {
+        "account_id": "00000000000000000000000000000000",
+        "bucket_name": "centcom-prod-exports",
+        "enabled": false,
+        "jurisdiction": "default"
+      }
+    },
+    {
+      "address": "module.environment.module.r2.cloudflare_r2_managed_domain.off[\"history\"]",
+      "type": "cloudflare_r2_managed_domain",
+      "name": "off",
+      "values": {
+        "account_id": "00000000000000000000000000000000",
+        "bucket_name": "centcom-prod-history",
+        "enabled": false,
+        "jurisdiction": "default"
+      }
+    },
+    {
+      "address": "module.environment.module.r2.cloudflare_r2_managed_domain.off[\"releases\"]",
+      "type": "cloudflare_r2_managed_domain",
+      "name": "off",
+      "values": {
+        "account_id": "00000000000000000000000000000000",
+        "bucket_name": "centcom-prod-releases",
+        "enabled": false,
+        "jurisdiction": "default"
+      }
+    },
+    {
+      "address": "module.environment.module.r2.cloudflare_r2_managed_domain.off[\"snapshots\"]",
+      "type": "cloudflare_r2_managed_domain",
+      "name": "off",
+      "values": {
+        "account_id": "00000000000000000000000000000000",
+        "bucket_name": "centcom-prod-snapshots",
+        "enabled": false,
+        "jurisdiction": "default"
+      }
+    },
+    {
+      "address": "module.environment.module.redis.fly_app.redis",
+      "type": "fly_app",
+      "name": "redis",
+      "values": {
+        "name": "centcom-prod-redis",
+        "org": "centcom-prod"
+      }
+    },
+    {
+      "address": "module.environment.module.redis.fly_machine.redis",
+      "type": "fly_machine",
+      "name": "redis",
+      "values": {
+        "app": "centcom-prod-redis",
+        "cmd": null,
+        "cpus": 1,
+        "entrypoint": [
+          "sh",
+          "-c",
+          "exec redis-server --appendonly yes --appendfsync everysec --dir /data --protected-mode yes --requirepass \"$REDIS_PASSWORD\""
+        ],
+        "exec": null,
+        "image": "redis:7.4.11-alpine",
+        "memorymb": 1024,
+        "mounts": [
+          {
+            "path": "/data"
+          }
+        ],
+        "name": "centcom-prod-redis",
+        "region": "iad",
+        "services": null
+      }
+    },
+    {
+      "address": "module.environment.module.redis.fly_volume.data",
+      "type": "fly_volume",
+      "name": "data",
+      "values": {
+        "app": "centcom-prod-redis",
+        "name": "redis_data",
+        "region": "iad",
+        "size": 5
+      }
+    },
+    {
+      "address": "module.environment.module.relay.fly_app.this",
+      "type": "fly_app",
+      "name": "this",
+      "values": {
+        "name": "centcom-prod-relay",
+        "org": "centcom-prod"
+      }
+    },
+    {
+      "address": "module.environment.module.relay.fly_cert.host[\"relay-fra.centcom.example\"]",
+      "type": "fly_cert",
+      "name": "host",
+      "values": {
+        "app": "centcom-prod-relay",
+        "hostname": "relay-fra.centcom.example"
+      }
+    },
+    {
+      "address": "module.environment.module.relay.fly_cert.host[\"relay-iad.centcom.example\"]",
+      "type": "fly_cert",
+      "name": "host",
+      "values": {
+        "app": "centcom-prod-relay",
+        "hostname": "relay-iad.centcom.example"
+      }
+    },
+    {
+      "address": "module.environment.module.relay.fly_ip.shared_v4[0]",
+      "type": "fly_ip",
+      "name": "shared_v4",
+      "values": {
+        "app": "centcom-prod-relay",
+        "region": "global",
+        "type": "shared_v4"
+      }
+    },
+    {
+      "address": "module.environment.module.relay.fly_ip.v6[0]",
+      "type": "fly_ip",
+      "name": "v6",
+      "values": {
+        "app": "centcom-prod-relay",
+        "region": "global",
+        "type": "v6"
+      }
+    },
+    {
+      "address": "module.environment.module.worker.fly_app.this",
+      "type": "fly_app",
+      "name": "this",
+      "values": {
+        "name": "centcom-prod-worker",
+        "org": "centcom-prod"
+      }
+    }
+  ],
+  "outputs": {
+    "api_url": "https://api.centcom.example",
+    "bucket_names": {
+      "backups": "centcom-prod-backups",
+      "exports": "centcom-prod-exports",
+      "history": "centcom-prod-history",
+      "releases": "centcom-prod-releases",
+      "snapshots": "centcom-prod-snapshots"
+    },
+    "database_url_secret_name": "DATABASE_URL",
+    "fly_app_names": {
+      "admin": "centcom-prod-admin",
+      "api": "centcom-prod-api",
+      "postgres": "centcom-prod-db",
+      "redis": "centcom-prod-redis",
+      "relay": "centcom-prod-relay",
+      "worker": "centcom-prod-worker"
+    },
+    "redis_url_secret_name": "REDIS_URL",
+    "relay_urls": {
+      "fra": "wss://relay-fra.centcom.example",
+      "iad": "wss://relay-iad.centcom.example"
+    },
+    "scale": {
+      "admin": {
+        "count": 1,
+        "regions": ["iad"]
+      },
+      "api": {
+        "count": 3,
+        "regions": ["iad", "fra"]
+      },
+      "postgres": {
+        "ha": true,
+        "regions": ["iad", "fra"]
+      },
+      "relay": {
+        "count_per_region": 2,
+        "regions": ["iad", "fra"]
+      },
+      "worker": {
+        "count": 2,
+        "regions": ["iad"]
+      }
+    }
+  }
+}
