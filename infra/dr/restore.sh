@@ -20,7 +20,7 @@
 # before any database is touched or changed: exit 3. After the restore, verify.sh runs.
 #
 # Exit codes: 0 restored and verified; 1 a step failed; 2 usage; 3 cannot decrypt; 4 verification
-# failed.
+# failed; 6 the credential scan quarantined the restore.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
@@ -114,8 +114,15 @@ fi
 
 # 5. restore through a pipe
 log "restoring"
-decrypt <"$dump" | run_in_target pg_restore --username=centcom --dbname=centcom --no-owner --exit-on-error \
-  || die 1 "pg_restore failed"
+set +e
+decrypt <"$dump" | backup_scan "restore/$(basename "$dump")" | run_in_target pg_restore --username=centcom --dbname=centcom --no-owner --exit-on-error
+statuses=("${PIPESTATUS[@]}")
+set -e
+[[ "${statuses[0]}" -eq 0 ]] || die "$EXIT_NODECRYPT" "cannot decrypt the dump"
+[[ "${statuses[2]}" -eq 0 ]] || die 1 "pg_restore failed"
+if [[ "${statuses[1]}" -eq 3 ]]; then
+  die "$EXIT_QUARANTINE" "the restored data holds a provider credential (or could not be scanned to the end): the restore is quarantined, do not put it in service"
+fi
 
 # 6. verify
 log "verifying"

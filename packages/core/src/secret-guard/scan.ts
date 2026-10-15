@@ -136,9 +136,18 @@ export function scanText(text: string, o: ScanOptions = {}): Hit[] {
 
 type Visit = (text: string) => void;
 
+/**
+ * A plain data object: `{}`, `Object.create(null)`, or what fast-querystring (Fastify's query parser) builds,
+ * an instance of `function Empty() {}` whose prototype has no prototype. That last form is the one every
+ * `request.query` has, and skipping it meant the REST guard never looked at a query string.
+ */
 const isPlain = (value: object): boolean => {
   const proto: unknown = Object.getPrototypeOf(value);
-  return proto === Object.prototype || proto === null;
+  return (
+    proto === Object.prototype ||
+    proto === null ||
+    (typeof proto === 'object' && Object.getPrototypeOf(proto) === null)
+  );
 };
 
 /**

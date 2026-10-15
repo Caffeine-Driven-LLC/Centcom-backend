@@ -19,8 +19,10 @@ import { secretGuard } from '@centcom/core';
 | backup    | `backupScanHook(stream, {artefact})`              | `quarantined: true`; a read error is `scan_incomplete` | B099 backup/restore  |
 | CI        | `pnpm secret-guard:scan [--logs d] [--dump f]`    | exit 1, `path:line pattern-id`                         | CI (workflow to add) |
 
-**This lane ships the scanner and the adapters; it mounts nothing.** The owning lanes add the
-one-line mount (`app.addHook(...)`, `guardFrame(...)` in the relay's frame path, and so on).
+**Mounted** (follow-up of the lane, tests in `apps/api/test/secret-guard`, `apps/relay/test/secret-guard`, `infra/dr/scan.test.ts`):
+the API logger and REST hook (`createContext`, `buildApp`), the relay logger and a frame stage of order 31
+(`apps/relay/src/secret-guard`), the telemetry ingest, and `backup.sh` / `restore.sh` through
+`apps/api/src/scan-stream.ts`. Not mounted: the CI log and dump scan (a workflow, `.github/` is protected).
 
 ## Rules the code keeps
 

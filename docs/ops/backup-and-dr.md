@@ -84,3 +84,18 @@ data), [`server-loss.md`](../../infra/runbooks/dr/server-loss.md) (rebuild on a 
   separate lane (#127); call it on the plaintext stream between pg_dump and gpg when both are merged.
 - The drill runs on the same machine as production. It proves the backups restore, not that the
   provider survives a region loss.
+
+## Credential scan of dumps and restores (B101)
+
+`backup.sh` pipes the dump through the credential scanner (`apps/api/src/scan-stream.js` in the API image, run with no
+network) before it is encrypted. If a provider credential (an Anthropic or OpenAI key, an AWS or Google key, a bearer
+line) is in the data, or the stream cannot be read to the end, **nothing is uploaded**: the script exits 6, keeps an
+encrypted copy in `infra/deploy/.state/quarantine/`, writes a line to the history, and the owners decide. `restore.sh`
+scans the decrypted stream on its way into `pg_restore` and exits 6 the same way, so a restore is not put into service
+unnoticed. Settings: `BACKUP_SCAN_IMAGE` (default `centcom-api:<current tag>`), `BACKUP_SCAN_SCRIPT` (a local copy run
+with the host's Node, for development), and `BACKUP_SCAN=skip` to go without, knowingly: the log warns and the manifest
+records `"credential_scan":"skipped"`. A backup is refused when no scanner is available and `skip` was not given.
+
+The dump is written uncompressed (`pg_dump --compress=0`) so the scanner can read it; the custom format compresses table data
+by default, and a credential inside compressed data is invisible. Backups made before this change are compressed: a
+restore scans them but cannot find a credential inside the compressed parts.

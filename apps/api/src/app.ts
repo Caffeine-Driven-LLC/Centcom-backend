@@ -11,7 +11,7 @@
  * Owns: the order and the module loop. Must not: listen, read the environment, or open
  * connections.
  */
-import { AppError } from '@centcom/core';
+import { AppError, secretGuard } from '@centcom/core';
 import { fastify, type FastifyInstance } from 'fastify';
 import { createContext, type AppDeps } from './context.js';
 import { API_MODULES, type ApiModule } from './modules.js';
@@ -57,6 +57,21 @@ export async function buildApp(
     logger,
     metrics,
   });
+  // B101 surface 2: a request that carries a provider credential (body, query, path or headers other than
+  // Authorization) is answered 400 before any handler runs. The telemetry route is left to its own
+  // ingest, which must always answer 204 and drops the offending event instead (guardTelemetryBatch).
+  const guard = secretGuard.secretGuardHook({
+    metrics,
+    logger,
+    enabled: config.secretGuard.enabled,
+    maxBodyBytes: config.secretGuard.maxBodyBytes,
+    allow: config.secretGuard.allow,
+  });
+  app.addHook('preValidation', (request, reply) =>
+    (request.routeOptions.url ?? request.url.split('?')[0]) === '/v1/telemetry/events'
+      ? Promise.resolve(undefined)
+      : guard(request, reply),
+  );
   await app.register(webTokenCookiePlugin, { allowedOrigins: config.pkce.allowedOrigins });
   await app.register(authPlugin, { tokens: ctx.tokens });
   await app.register(idempotencyPlugin, {

@@ -109,6 +109,7 @@ export const batch = (events: unknown[], over: Record<string, unknown> = {}) => 
 /** The route on the API's stack, over the memory repository. */
 export interface TelemetryApp {
   app: FastifyInstance;
+  ingest: TelemetryIngest;
   repo: MemoryTelemetryRepository;
   redis: RedisBackend;
   captured: ReturnType<typeof captureLogger>;
@@ -149,6 +150,7 @@ export async function telemetryApp(): Promise<TelemetryApp> {
   await app.ready();
   return {
     app,
+    ingest,
     repo,
     redis,
     captured,
