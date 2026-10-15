@@ -382,8 +382,8 @@
    "note": "2026-10-13: encrypted backups, verified restore and a restore drill for one server (#129); gaps: off-site bucket not tried with a real R2 or B2 account"
   },
   "B101": {
-   "pct": 0.9,
-   "note": "2026-10-13: credential-leak guard for logs, requests, frames, telemetry, backups and the repo (#127)"
+   "pct": 0.95,
+   "note": "2026-10-15: credential-leak guard for logs, requests, frames, telemetry, backups and the repo (#127, #142) with tests for each surface; gaps: the card paths .github/workflows/secret-guard.yml and tools/ci/secret-guard-scan.mjs are protected, so the repo scan is tools/repo/secret-guard-scan.ts run by pnpm secret-guard:scan"
   },
   "B102": {
    "pct": 1,
@@ -426,8 +426,8 @@
    "note": "merged in #122; board state is a Redis document for 48 hours and is not yet deleted when a session is purged"
   },
   "B092": {
-   "pct": 0.6,
-   "note": "2026-10-13: safe-migration runner, deploy.sh with automatic rollback on a failed health check, rollback.sh, restore option; proven on the local prod compose (#126); gaps: not blue/green, nothing run on a real server"
+   "pct": 0.8,
+   "note": "2026-10-15: safe-migration lint and runner, smoke, SLO guard with rollback, release gate (fresh green conformance report, stage record), deploy lock, rollback.sh, blue/green for the API on one server (#126, #143); gaps: deploy-stage, deploy-prod and rollback workflows are drafts in docs/ops/deployment.md (.github/ is protected), no registry so no digest promotion or cosign, nothing run on a real server"
   },
   "B095": {
    "pct": 0.75,
