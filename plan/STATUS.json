@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-15",
+ "updated": "2026-10-16",
  "lanes": {
   "B001": {
    "pct": 1,
@@ -426,8 +426,8 @@
    "note": "merged in #122; board state is a Redis document for 48 hours and is not yet deleted when a session is purged"
   },
   "B092": {
-   "pct": 0.8,
-   "note": "2026-10-15: safe-migration lint and runner, smoke, SLO guard with rollback, release gate (fresh green conformance report, stage record), deploy lock, rollback.sh, blue/green for the API on one server (#126, #143); gaps: deploy-stage, deploy-prod and rollback workflows are drafts in docs/ops/deployment.md (.github/ is protected), no registry so no digest promotion or cosign, nothing run on a real server"
+   "pct": 1,
+   "note": "merged in #148"
   },
   "B095": {
    "pct": 0.75,
