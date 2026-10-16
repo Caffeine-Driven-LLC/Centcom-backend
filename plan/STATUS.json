@@ -438,8 +438,8 @@
    "note": "2026-10-15: chaos tests for Redis, Postgres, crash, relay restart and clock skew in apps/api/test/chaos (#137), failure modes in docs/ops/failure-modes.md; gaps: card paths (infra/chaos/) not used, not run against a real server"
   },
   "B098": {
-   "pct": 0.7,
-   "note": "2026-10-15: threat model, hardening notes and a checker (#138); gaps: abuse cases, pen-test scope, disclosure policy and ASVS mapping documents from the card are not written"
+   "pct": 0.9,
+   "note": "2026-10-16: threat model, abuse cases for 12 contracts, pen-test scope, disclosure policy and security.txt template, ASVS 4.0.3 L2 V2-V14 mapping, pentest:seed/reset with 30-day credentials, and an extended pentest:check (#138, #150); gaps: pen-test not run and no vendor engaged, disclosure policy and security.txt not published (owner address and domain, response times to confirm), ASVS rows marked partial, seed never run on a deployed environment, two-reviewer checklist not recorded"
   },
   "B100": {
    "pct": 0.75,
