@@ -19,3 +19,11 @@ Thumbs.db
 
 # CycloneDX SBOMs written by pnpm security:sbom
 /sbom/
+
+# Terraform (B091): working directories, plans and state are never committed
+.terraform/
+*.tfplan
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
