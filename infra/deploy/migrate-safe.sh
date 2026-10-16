@@ -52,11 +52,17 @@ log "${#pending[@]} pending: ${pending[*]}"
 contract=()
 if ! printf '%s\n' "$status" | tail -n 1 | grep -q '^0 applied'; then
   for file in "${pending[@]}"; do
-    if compose run --rm --no-deps -T --entrypoint grep migrate -qiE \
+    # grep: 0 a marker is there, 1 none; anything else (2: the file cannot be read, 125-127: docker
+    # could not run it) means the check did not happen, and an unchecked file is not a safe one.
+    rc=0
+    compose run --rm --no-deps -T --entrypoint grep migrate -qiE \
       '^[[:space:]]*--[[:space:]]*contract([[:space:]]+phase)?[[:space:]]*[:.-]?[[:space:]]*$' \
-      "node_modules/@centcom/db/migrations/$file"; then
-      contract+=("$file")
-    fi
+      "node_modules/@centcom/db/migrations/$file" || rc=$?
+    case "$rc" in
+      0) contract+=("$file") ;;
+      1) ;;
+      *) die 1 "could not check $file for a contract step (grep exit $rc); nothing was migrated" ;;
+    esac
   done
 fi
 # Every pending migration must work with the release still running (migration-lint.mjs: no rename,
