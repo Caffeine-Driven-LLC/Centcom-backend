@@ -19,6 +19,7 @@ import {
   Secret,
   SmtpProvider,
   splitSender,
+  isLoopbackHost,
   type RenderedEmail,
 } from '../../src/index.js';
 import { startFakeSmtp, tlsMaterial, type FakeSmtp } from './smtp-server.js';
@@ -440,5 +441,89 @@ describe('configuration of the new providers', () => {
   it('defaults SMTP to port 587 with required STARTTLS', () => {
     const c = emailConfig({ EMAIL_FROM: FROM, EMAIL_PROVIDER: 'smtp', SMTP_HOST: 'h' });
     expect(c.smtp).toEqual({ host: 'h', port: 587, secure: 'starttls' });
+  });
+});
+
+describe('credentials over a cleartext SMTP connection', () => {
+  const FROM = 'Centcom <no-reply@centcom.test>';
+  const creds = { user: 'u', password: new Secret('p') };
+
+  it('recognises only loopback literals as this machine', () => {
+    for (const h of ['localhost', 'LOCALHOST', '127.0.0.1', '127.9.9.9', '::1', '[::1]'])
+      expect(isLoopbackHost(h), h).toBe(true);
+    for (const h of [
+      'smtp.example.test',
+      '10.0.0.5',
+      '192.168.1.2',
+      '127.0.0.1.evil.test',
+      '0.0.0.0',
+      'mail.localhost.evil.test',
+    ]) {
+      expect(isLoopbackHost(h), h).toBe(false);
+    }
+  });
+
+  it('refuses to be built with credentials, secure none and a host that is not this machine', () => {
+    const build = (host: string, extra: object = {}) =>
+      new SmtpProvider({ host, port: 25, secure: 'none', ...creds, ...extra });
+    expect(() => build('smtp.example.test')).toThrow(/clear text/);
+    expect(() => build('10.0.0.5')).toThrow(/SMTP_ALLOW_CLEARTEXT_AUTH/);
+    expect(() => build('smtp.example.test', { user: 'u', password: undefined })).toThrow(
+      /clear text/,
+    );
+  });
+
+  it('allows it for loopback, with the explicit flag, without credentials, and with an encrypted link', () => {
+    const base = { host: 'smtp.example.test', port: 25 };
+    expect(
+      () => new SmtpProvider({ host: '127.0.0.1', port: 25, secure: 'none', ...creds }),
+    ).not.toThrow();
+    expect(
+      () => new SmtpProvider({ ...base, secure: 'none', ...creds, allowCleartextAuth: true }),
+    ).not.toThrow();
+    expect(() => new SmtpProvider({ ...base, secure: 'none' })).not.toThrow();
+    expect(() => new SmtpProvider({ ...base, secure: 'starttls', ...creds })).not.toThrow();
+    expect(() => new SmtpProvider({ ...base, secure: 'tls', ...creds })).not.toThrow();
+  });
+
+  it('is refused by the configuration at start-up, naming the key and not the password', () => {
+    const env = {
+      EMAIL_FROM: FROM,
+      EMAIL_PROVIDER: 'smtp',
+      SMTP_HOST: 'smtp.example.test',
+      SMTP_SECURE: 'none',
+      SMTP_USER: 'u',
+      SMTP_PASSWORD: 'hunter2-not-printed',
+    };
+    let message = '';
+    try {
+      emailConfig(env);
+    } catch (e) {
+      message = (e as Error).message;
+    }
+    expect(message).toContain('SMTP_SECURE');
+    expect(message).not.toContain('hunter2');
+    expect(emailConfig({ ...env, SMTP_ALLOW_CLEARTEXT_AUTH: 'true' }).smtp).toMatchObject({
+      secure: 'none',
+      allowCleartextAuth: true,
+    });
+    expect(emailConfig({ ...env, SMTP_HOST: '127.0.0.1' }).smtp).toMatchObject({
+      host: '127.0.0.1',
+    });
+    expect(emailConfig({ ...env, SMTP_SECURE: 'starttls' }).smtp?.secure).toBe('starttls');
+    const noCreds = {
+      EMAIL_FROM: FROM,
+      EMAIL_PROVIDER: 'smtp',
+      SMTP_HOST: 'smtp.example.test',
+      SMTP_SECURE: 'none',
+    };
+    expect(emailConfig(noCreds).smtp).toMatchObject({ secure: 'none' });
+    // the provider built from a valid configuration is the SMTP one
+    expect(
+      createEmailProvider(
+        emailConfig({ ...env, SMTP_ALLOW_CLEARTEXT_AUTH: 'true' }),
+        captureLogger().logger,
+      ).name,
+    ).toBe('smtp');
   });
 });

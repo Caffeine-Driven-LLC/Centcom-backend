@@ -49,6 +49,7 @@ export {
   BREVO_API_URL,
   BrevoProvider,
   buildMime,
+  isLoopbackHost,
   RESEND_API_URL,
   ResendProvider,
   SmtpProvider,
