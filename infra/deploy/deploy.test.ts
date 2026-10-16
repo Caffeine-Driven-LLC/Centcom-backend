@@ -235,7 +235,7 @@ describe('the scripts', () => {
     expect(run('deploy.sh', {}, 'bad tag!').status).toBe(2);
     const missing = run(
       'deploy.sh',
-      { DEPLOY_ENV_FILE: join(tmp, 'nope.env'), DEPLOY_STATE_DIR: tmp },
+      { DEPLOY_ENV_FILE: join(tmp, 'nope.env'), DEPLOY_STATE_DIR: tmp, DEPLOY_APPROVER: 'test' },
       'v1',
     );
     expect(missing.status).toBe(2);
@@ -245,12 +245,20 @@ describe('the scripts', () => {
   it('refuses a settings file with placeholders or a loose mode, before touching Docker', async () => {
     const env = join(tmp, 'half.env');
     genEnv(env); // CHANGE_ME values remain
-    const half = run('deploy.sh', { DEPLOY_ENV_FILE: env, DEPLOY_STATE_DIR: tmp }, 'v1');
+    const half = run(
+      'deploy.sh',
+      { DEPLOY_ENV_FILE: env, DEPLOY_STATE_DIR: tmp, DEPLOY_APPROVER: 'test' },
+      'v1',
+    );
     expect(half.status).toBe(2);
     expect(half.stderr).toMatch(/unfilled values on line/);
     await rm(env);
     await writeFile(env, 'API_HOST=x\n', { mode: 0o644 });
-    const loose = run('deploy.sh', { DEPLOY_ENV_FILE: env, DEPLOY_STATE_DIR: tmp }, 'v1');
+    const loose = run(
+      'deploy.sh',
+      { DEPLOY_ENV_FILE: env, DEPLOY_STATE_DIR: tmp, DEPLOY_APPROVER: 'test' },
+      'v1',
+    );
     expect(loose.status).toBe(2);
     expect(loose.stderr).toContain('mode 600');
   });

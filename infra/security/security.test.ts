@@ -329,7 +329,8 @@ describe('gitleaks configuration', () => {
     const dates = [...toml.matchAll(/description = "expires: (\d{4}-\d{2}-\d{2})\./g)].map(
       (m) => m[1] ?? '',
     );
-    const allowlists = toml.match(/\[\[rules\.allowlists\]\]|^\[allowlist\]/gm) ?? [];
+    const allowlists =
+      toml.match(/\[\[rules\.allowlists\]\]|^\[\[allowlists\]\]|^\[allowlist\]/gm) ?? [];
     expect(dates).toHaveLength(allowlists.length);
     for (const d of dates)
       expect(new Date(`${d}T23:59:59Z`).getTime(), d).toBeGreaterThan(Date.now());
