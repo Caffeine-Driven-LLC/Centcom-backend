@@ -26,6 +26,17 @@ export interface FileResult {
   message: string;
 }
 
+/**
+ * `pnpm conformance` itself runs as `tsx --tsconfig tsconfig.test.json`, and tsx exports that choice to its
+ * children as TSX_TSCONFIG_PATH=tsconfig.test.json, a path relative to the repository root. A test that
+ * starts its own `node --import tsx` in another folder (cache-bench.ts, in packages/core) then looks for
+ * that file there, does not find it and crashes inside tsx. The vitest child gets the environment without
+ * tsx's own variables; its tests and workers load their own configuration.
+ */
+export function withoutTsxEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  return Object.fromEntries(Object.entries(env).filter(([key]) => !key.startsWith('TSX_')));
+}
+
 /** Runs `paths`; resolves with one entry per test file vitest ran. Throws if vitest produced no report. */
 export function runVitest(
   paths: readonly string[],
@@ -53,6 +64,7 @@ export function runVitest(
         timeout: options.timeoutMs ?? 40 * 60_000,
         maxBuffer: 1 << 28,
         stdio: ['ignore', 'ignore', 'ignore'],
+        env: withoutTsxEnv(process.env),
       },
     );
     let json: {
