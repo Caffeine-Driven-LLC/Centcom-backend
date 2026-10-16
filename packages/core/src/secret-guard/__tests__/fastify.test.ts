@@ -8,6 +8,7 @@ import { newId } from '@centcom/contracts';
 import { createLogger } from '../../log/logger.js';
 import { captureStream, recordingMetrics } from '../../../test/log/helpers.js';
 import { createAllowList } from '../allow.js';
+import { MAX_JSON_NODES } from '../scan.js';
 import {
   REJECTION_DETAIL,
   secretGuardHook,
@@ -153,7 +154,9 @@ describe('secretGuardHook', () => {
     await hook(request({ body: 'a'.repeat(4_096) }), b);
     expect(b.sent[0]?.status).toBe(413);
     const c = fakeReply();
-    await hook(request({ body: new Array<string>(60_000).fill('some ordinary words') }), c);
+    // more values than the scanner walks (MAX_JSON_NODES): 413 whatever the machine's speed, not only when
+    // the 20 ms budget happens to run out
+    await hook(request({ body: new Array<string>(MAX_JSON_NODES + 1).fill('w') }), c);
     expect(c.sent[0]?.status).toBe(413);
   });
 
