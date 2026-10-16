@@ -5,22 +5,25 @@
 #                                           The database stays as it is: this is right whenever the
 #                                           newer migrations were additive, which the expand/contract
 #                                           rule guarantees. About a minute.
-#   rollback.sh --restore-db <dump> [--to <tag>]
+#   rollback.sh --restore-db <dump> [--to <tag>] [--skip-safety-copy]
 #                                           also replace the database with a pre-deploy dump (the name
 #                                           deploy.sh printed, in /backups). Everything written since the
-#                                           dump is LOST; the services are stopped meanwhile.
+#                                           dump is LOST; the services are stopped meanwhile. The current
+#                                           database is dumped first (pre-before-restore-*.dump in
+#                                           /backups) unless --skip-safety-copy.
 #
 # Exit codes: 0 done; 1 failed; 2 usage.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-mode="" dump="" to=""
+mode="" dump="" to="" safety=1
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --images) mode=images; shift ;;
     --restore-db) mode=db; dump="${2:?--restore-db needs a dump name}"; shift 2 ;;
     --to) to="${2:?--to needs a tag}"; shift 2 ;;
-    -h | --help) sed -n '2,15p' "$0"; exit 0 ;;
+    --skip-safety-copy) safety=0; shift ;;
+    -h | --help) sed -n '2,18p' "$0"; exit 0 ;;
     *) die "$EXIT_USAGE" "unknown option $1" ;;
   esac
 done
@@ -40,6 +43,7 @@ if [[ "$mode" == db ]]; then
   compose exec -T postgres test -s "/backups/$dump" || die 1 "/backups/$dump does not exist or is empty"
   log "stopping api, worker and relay"
   compose stop api worker relay caddy >/dev/null
+  if [[ $safety -eq 1 ]]; then safety_copy; fi
   log "restoring the database from $dump"
   compose exec -T postgres dropdb --username=centcom --force --if-exists centcom
   compose exec -T postgres createdb --username=centcom centcom
