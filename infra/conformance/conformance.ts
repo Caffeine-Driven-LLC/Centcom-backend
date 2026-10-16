@@ -263,6 +263,12 @@ function main(): number {
     process.stdout.write(
       `${c.status.padEnd(16)} ${c.id} (${c.cases.length} cases, ${c.fixtures_run} fixtures)\n`,
     );
+    // what failed, so a red run explains itself in the log (the report holds the same, 500 characters each)
+    for (const k of c.cases) {
+      if (k.status !== 'fail') continue;
+      const first = (k.error?.message ?? 'failed').split('\n')[0]?.slice(0, 200) ?? 'failed';
+      process.stdout.write(`    FAILED ${k.name}\n      ${first}\n`);
+    }
   }
   const s = report.summary;
   process.stdout.write(
