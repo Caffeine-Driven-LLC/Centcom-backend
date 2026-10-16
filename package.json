@@ -42,6 +42,7 @@
     "infra:apply": "node infra/terraform/run.mjs apply",
     "infra:fly": "node infra/fly/gen.mjs",
     "pentest:check": "node infra/pentest/check-threat-model.mjs",
+    "pentest:seed": "tsx --tsconfig tsconfig.test.json infra/pentest/seed.ts",
     "conformance": "tsx --tsconfig tsconfig.test.json infra/conformance/conformance.ts",
     "gate:g1": "tsx --tsconfig tsconfig.test.json infra/conformance/gate.ts G1",
     "gate:g2": "tsx --tsconfig tsconfig.test.json infra/conformance/gate.ts G2",

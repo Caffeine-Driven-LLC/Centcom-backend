@@ -260,100 +260,17 @@ Elevation of privilege), threat, control, owner lane, evidence (tests or scripts
 | TM-OPS-05  | T   | A bad migration corrupts data                                                     | Forward-only, backward-compatible migrations; backup before migrating; contract migrations need a flag                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | B092  | `infra/deploy/deploy.test.ts`                                                                                                                                                                                  | mitigated |
 | TM-OPS-06  | S   | Mail from our domain is forged                                                    | SPF, DKIM and DMARC at the domain (a human step; see `docs/ops/mail.md`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | B032  | `docs/ops/mail.md`                                                                                                                                                                                             | open      |
 
-## Abuse cases
+## Abuse cases, penetration test, disclosure and ASVS
 
-Each case names the request and the response the system must give. "Evidence" paths are tests that exercise
-the same case; where a case has none, it is a **manual test for the pen-test**.
+These live in their own files so a tester can be handed each one:
 
-| #   | Contract / area | Abuse case                                                                               | Expected response                                                                            | Evidence                                                        |
-| --- | --------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| 1   | CT-AUTH         | Present a refresh token twice                                                            | 400 `invalid_grant`, the whole family is revoked                                             | `apps/api/test/modules/auth/tokens/refresh.test.ts`             |
-| 2   | CT-AUTH         | Use an access token signed with `alg: none`, or `HS256` with the public key              | 401 `token_invalid`                                                                          | `apps/api/test/modules/auth/tokens/jwt.test.ts`                 |
-| 3   | CT-AUTH         | Try many wrong user codes against `/device`                                              | Generic failure; locked out for 15 minutes after 10 tries in 10 minutes                      | `apps/api/test/modules/auth/device/security.test.ts`            |
-| 4   | CT-AUTH         | Open `/login/email/verify?t=` from a scanner, then from the real browser                 | Scanner sees a page and consumes nothing; the browser signs in                               | `apps/api/test/modules/auth/magic-link/prefetch.test.ts`        |
-| 5   | CT-AUTH         | Ask for a sign-in link for an unknown address and a known one                            | Identical answer                                                                             | `apps/api/test/modules/auth/magic-link/enumeration.test.ts`     |
-| 6   | CT-RBAC         | A `member` calls an `admin` route; a token without the scope calls it                    | 403 `forbidden`                                                                              | `packages/core/test/rbac/matrix.test.ts`                        |
-| 7   | CT-RBAC         | Read `/v1/workspaces/{id}/members` of a workspace you are not in, with a guessed id      | 404 `not_found` (never 403, so existence is hidden)                                          | `apps/api/test/rbac-plugin.test.ts`                             |
-| 8   | CT-WS-ENVELOPE  | Send a frame with an unknown type, a 10 MiB `ct`, or invalid UTF-8                       | Frame refused with the registry error; unknown types tolerated (acked, ignored) per contract | `apps/relay/test/codec`                                         |
-| 9   | CT-WS-ENVELOPE  | Reuse a relay ticket on a second connection or after expiry                              | Handshake refused                                                                            | `apps/relay/test/handshake/handshake.ticket.test.ts`            |
-| 10  | CT-WS-QUEUE     | An editor sends `queue.approve`                                                          | Refused, nothing changes, audit event                                                        | `apps/relay/test/queue/queue.policy.test.ts`                    |
-| 11  | CT-WS-QUEUE     | Submit the same item twice with one client id                                            | Deduped to one                                                                               | `apps/relay/test/queue/queue.idempotency.test.ts`               |
-| 12  | CT-WS-CONTROL   | A kicked member keeps sending on the old connection                                      | Connection dropped within the 2 s membership refresh                                         | `apps/relay/test/control/control.kick-rotate.test.ts`           |
-| 13  | CT-WS-CONTROL   | A non-host calls `end` or `transfer`                                                     | Refused                                                                                      | `apps/relay/test/control/control.transfer-end.test.ts`          |
-| 14  | CT-RESUME       | Resume from a `seq` far in the past or the future                                        | Replay from the log, or `snapshot required`; never other sessions' frames                    | `apps/relay/test/resume/resume.snapshot-required.test.ts`       |
-| 15  | CT-RESUME       | Resume into a session you were removed from                                              | Refused at the handshake                                                                     | `apps/relay/test/handshake/handshake.access.test.ts`            |
-| 16  | CT-API-SESSIONS | Request a join token for a session of another workspace                                  | 404                                                                                          | `apps/api/test/routes/sessions`                                 |
-| 17  | CT-API-SESSIONS | Hammer the share-link join route from one address                                        | The 11th join in a minute is 429 with `Retry-After`                                          | `apps/api/test/share-links/share-links.limits.test.ts`          |
-| 18  | CT-API-SESSIONS | Read history of a session after being kicked                                             | 403/404                                                                                      | `apps/api/test/history/history.authz.test.ts`                   |
-| 19  | CT-API-SESSIONS | Upload a snapshot of another size than the one declared in the pre-signed request        | The object store refuses (length is part of the signature)                                   | `apps/api/test/snapshots/snapshots.presign.test.ts`             |
-| 20  | CT-API-BILLING  | Post a Stripe event with a bad, stale or missing signature                               | 400, nothing stored                                                                          | `apps/api/test/entrypoint/billing.e2e.test.ts`                  |
-| 21  | CT-API-BILLING  | Checkout with `success_url=https://evil` or a price the catalogue does not sell          | URL ignored; 422 for the price                                                               | `apps/api/test/billing/checkout/checkout.redirects.test.ts`     |
-| 22  | CT-API-BILLING  | Redeem coupon codes in a loop                                                            | Generic failure, then 429                                                                    | `apps/api/test/billing/promotions/promotions.ratelimit.test.ts` |
-| 23  | CT-API-BILLING  | Replay a checkout request with the same `Idempotency-Key` but another body               | 409 `idempotency_conflict`                                                                   | `apps/api/test/billing/checkout/checkout.idempotency.test.ts`   |
-| 24  | CT-API-USAGE    | Submit usage for a workspace you are not in; submit 100 000 events in one batch          | Attributed to your own device only; 413/422                                                  | `apps/api/test/usage/ingest/usage.attribution.test.ts`          |
-| 25  | CT-API-WEBHOOKS | Register an endpoint at `http://169.254.169.254/` or a DNS name that resolves to it      | Refused at registration or blocked at delivery                                               | `apps/api/test/webhooks/webhooks.ssrf.test.ts`                  |
-| 26  | CT-API-WEBHOOKS | Read another workspace's endpoints or deliveries                                         | 404                                                                                          | `apps/api/test/webhooks/webhooks.routes.test.ts`                |
-| 27  | CT-TELEMETRY    | Post telemetry with props outside the allow-list, or with a bearer token                 | 204; unknown props dropped; token ignored                                                    | `apps/api/test/telemetry/telemetry.routes.test.ts`              |
-| 28  | CT-API-RELEASES | Request `/v1/releases/stable/latest` with odd `platform` values; look for a yanked build | 400 for bad values; yanked never served                                                      | `apps/api/test/releases/releases.routes.test.ts`                |
-| 29  | Edge            | Request `/internal/admin/v1/users` and `/metrics` through the public host                | 404 from Caddy                                                                               | `infra/deploy/deploy.test.ts`                                   |
-| 30  | Edge            | Send a 5 MiB body to `/v1/telemetry/events`                                              | 413 (Caddy) / 204 (API, by contract: never an error body)                                    | `infra/deploy/deploy.test.ts`                                   |
-
-## Penetration-test preparation
-
-**Status: not run.** No test has been performed and no vendor engaged. This section is what to hand a tester.
-
-### Scope
-
-| In scope                                                                                                                                                                | Out of scope                                                                                     |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| A dedicated **pen-test environment** deployed from `infra/deploy` (API, relay, worker, Caddy) with its own hostnames, Stripe **test mode**, and a throwaway mail domain | Production hosts and production data stores                                                      |
-| The public REST API, the device and login pages, the WebSocket relay, the Stripe webhook endpoint, the outgoing webhook deliverer (receiver URLs the tester controls)   | Stripe, Resend/Brevo/Postmark, Cloudflare, the CDN and GitHub themselves (third-party providers) |
-| The admin listener, **from inside the allow-listed CIDR the tester is given**                                                                                           | Denial-of-service beyond the rate below; social engineering of staff; physical access            |
-| The deploy scripts and the container images (read access to the repository is given)                                                                                    | The client application (own threat model)                                                        |
-
-### Rules of engagement
-
-- At most **50 requests per second sustained per tester address**; announce any burst test in advance.
-- Use only the provided test accounts and workspaces; never try to read other customers' data. Stop and report
-  at once if real personal data or a real credential is found.
-- Stripe test mode only (cards `4242 4242 4242 4242` and Stripe's documented failure cards).
-- No destructive tests against the database or object store; the environment can be rebuilt with
-  `deploy.sh` and restored from a backup, but tell us before you try.
-- Report within 24 hours for critical findings; findings go to the address in the disclosure policy (a
-  `security.txt` and a disclosure policy page are web-side work and are **not** produced yet).
-
-### Test accounts to prepare (a seed script is not written yet)
-
-One user per workspace role (owner, admin, billing, member, guest) and per session role (host, editor, viewer),
-workspaces on free, pro and team, two sessions with synthetic ciphertext. Until `pnpm pentest:seed` exists,
-create them by hand against the pen-test environment with `SELF_HOST_PLAN` unset and the Stripe test keys.
-
-### Severity
-
-CVSS v4 base score, then a local override: anything that exposes plaintext work content, mints an identity, or
-changes another customer's plan is **critical** regardless of score.
-
-### Checklist for the tester (and for us before the test)
-
-1. [ ] Every row of the tables above is `mitigated`, `accepted` with a reason, or open with an issue.
-2. [ ] `pnpm pentest:check` passes; `pnpm chaos` passes; `pnpm security:deps`, `security:secrets` pass.
-3. [ ] The environment runs the release candidate (`SERVICE_VERSION` visible in `/v1/status`), with the WAF module applied.
-4. [ ] Authentication: tokens (alg, kid, aud, skew, revocation), device flow limits, magic-link prefetch and
-       enumeration, PKCE and `return_to`, social linking, API keys.
-5. [ ] Authorization: every route with a second user from another workspace (IDOR), every role against every
-       route, guest and viewer tokens, kicked members on live sockets.
-6. [ ] Relay: ticket replay, malformed and oversized frames, `seq` manipulation on resume, slow-consumer behaviour,
-       cross-session leakage, anything in logs, metrics, errors or close reasons that is not an id or a code.
-7. [ ] Data: history and snapshot access after removal, pre-signed URL scope and expiry, share-link entropy,
-       export and deletion flows.
-8. [ ] Billing: forged and replayed webhooks, price and URL tampering, idempotency conflicts, coupon guessing,
-       plan state after out-of-order events.
-9. [ ] Webhooks: SSRF (private ranges, DNS rebinding, redirects), signature verification on the receiver side,
-       payload contents.
-10. [ ] Edge and deploy: admin path and metrics hidden, body limits, headers and CORS, TLS configuration, open ports
-        (only 80 and 443), container privileges, secrets in the image or environment of a container that should not have them.
-11. [ ] Supply chain: a lockfile change that adds an install script, a typosquatted dependency.
-12. [ ] Retest: each fix gets a regression test (GUIDELINES section 4.6) and the tester confirms.
+- [`abuse-cases.md`](abuse-cases.md): the requests to try and the response each must get (30 cases, every wire
+  contract the backend implements).
+- [`pentest-scope.md`](pentest-scope.md): targets, rules of engagement, test accounts (`pnpm pentest:seed`), reporting,
+  severity and the tester's checklist. **Status: the test has not been run and no vendor is engaged.**
+- [`disclosure-policy.md`](disclosure-policy.md) and [`security.txt.template`](security.txt.template): how outsiders
+  report to us (written, not yet published).
+- [`asvs-mapping.md`](asvs-mapping.md): ASVS 4.0.3 level 2, chapters V2 to V14, mapped to the controls above.
 
 ## Known open items
 
@@ -365,5 +282,6 @@ changes another customer's plan is **critical** regardless of score.
 - **Telemetry endpoint**: `POST /v1/telemetry/events` (B085) and its ingest are built and tested but not registered in
   `apps/api/src/modules.ts`, so the live API answers 404 to it. The leak guard is in the ingest and the REST hook
   exempts the route, ready for when it is mounted.
-- No pen-test seed script, `security.txt`, disclosure policy page or ASVS mapping exists yet; they are
-  written-down intentions of the lane card, not deliverables of this change.
+- The pen-test has not been run, `security.txt` and the disclosure policy are not published (they need an owner-chosen
+  address and domain), and the ASVS mapping lists its partial rows. No code limits a refresh token to 30 days; the
+  pen-test environment is destroyed within 30 days instead (see `pentest-scope.md`).
