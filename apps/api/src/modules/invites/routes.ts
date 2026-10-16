@@ -26,7 +26,6 @@ import { AppError, defineFilters, idFilter, parsePageQuery, type SigningKeys } f
 import { inviteStatus, type InviteRecord, type WorkspaceStore } from '@centcom/db';
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { requireScope } from '../../plugins/rbac.js';
-import { hasScope } from '@centcom/core';
 import { liveRole } from '../../routes/sessions/access.js';
 import type { SessionRouteStore } from '../../routes/sessions/store.js';
 import type { SessionInviteService } from './session-invites.js';
@@ -173,11 +172,19 @@ export const inviteRoutes: FastifyPluginAsync<InviteRouteOptions> = async (app, 
     '/v1/invites/:id',
     {
       preHandler: async (request, reply) => {
-        // A session host (scope sessions:host) may revoke a session invite; the rest is workspaces:write.
+        // A session invite needs `sessions:host`; a workspace invite needs `workspaces:write`. The
+        // scope that stands in for the other is never enough: a CLI token holds `sessions:host`
+        // but not `workspaces:write`, and must not revoke workspace invites.
         const actor = request.server.rbac.actor(request);
-        if (actor !== null && opts.sessionInvites !== undefined && hasScope(actor, 'sessions:host'))
-          return;
-        await requireScope('workspaces:write').call(app, request, reply);
+        const isSessionInvite =
+          actor !== null &&
+          opts.sessionInvites !== undefined &&
+          (await sessionInviteOf(opts, request)) !== null;
+        await requireScope(isSessionInvite ? 'sessions:host' : 'workspaces:write').call(
+          app,
+          request,
+          reply,
+        );
       },
     },
     async (request, reply) => {

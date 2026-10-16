@@ -27,6 +27,7 @@ import { MembershipService, memberRoutes } from '../../../src/modules/members/in
 import {
   inviteRoutes,
   InviteService,
+  type SessionInviteService,
   type InviteUrlBuilder,
   type SeatGate,
 } from '../../../src/modules/invites/index.js';
@@ -355,6 +356,8 @@ export interface InvitesAppOptions {
   withoutSeatGate?: boolean;
   /** Makes queueing an email fail (Redis or the queue down). */
   failMail?: boolean;
+  /** Turns on the session-invite branch of the routes (B105) with a service that knows no invite. */
+  withSessionInvites?: boolean;
 }
 
 /** The invite, member and workspace routes over one in-memory state. */
@@ -407,6 +410,15 @@ export async function invitesApp(options: InvitesAppOptions = {}): Promise<Invit
         workspaces: state,
         cursorKeys: KEYS,
         clock: read,
+        ...(options.withSessionInvites === true
+          ? {
+              sessionInvites: {
+                find: () => Promise.resolve(null),
+                preview: () => Promise.resolve(null),
+              } as unknown as SessionInviteService,
+              sessionStore: { standing: () => Promise.resolve(null) },
+            }
+          : {}),
       });
     },
   });
