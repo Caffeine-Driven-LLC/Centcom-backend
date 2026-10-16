@@ -5,7 +5,8 @@
  * `Authorization` header is not scanned: it carries the service's own access token. The handler
  * does not run, and nothing about the match is logged, counted in a label or returned.
  *
- * Fail closed: a scanner failure rejects; a scan over its 20 ms budget answers `413
+ * Fail closed: a scanner failure rejects; a scan over its 20 ms budget, or a body of more than
+ * MAX_JSON_NODES values, answers `413
  * payload_too_large` instead of skipping the check.
  *
  * Owns: choosing what to scan and the rejection. Must not: log, label or echo matched text, or
@@ -105,7 +106,9 @@ export function secretGuardHook(o: SecretGuardHookOptions = {}): SecretGuardHook
         }
       }
     } catch (err) {
-      tooLarge = err instanceof ScanLimitError && err.reason === 'budget';
+      // a body past the node cap is as good as a huge one: answer 413 whatever the machine's speed
+      tooLarge =
+        err instanceof ScanLimitError && (err.reason === 'budget' || err.reason === 'nodes');
       found = tooLarge ? undefined : { pattern: 'unscannable', offset: 0, length: 0 };
     }
     metrics.scanned('rest', (performance.now() - started) / 1000);

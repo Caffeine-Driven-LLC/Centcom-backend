@@ -30,7 +30,7 @@ the API logger and REST hook (`createContext`, `buildApp`), the relay logger and
   copies every key but `ct` and `sig` without reading those two. The module imports no crypto and
   holds no key (`ciphertext.test.ts` checks the sources).
 - **Reject surfaces fail closed.** If the scanner throws, a REST request or frame is rejected, a
-  telemetry event dropped. A request over its 20 ms scan budget gets `413 payload_too_large`. The
+  telemetry event dropped. A request over its 20 ms scan budget, or with more than 100,000 values, gets `413 payload_too_large`. The
   logger fails open: unscannable fields become `[unscannable]` and the line is still written.
 - **False positives** are handled only by `secret-guard.allow.json`: a pattern id plus a location
   (`path`, `route`, `log_component`), a reason and an expiry, at most 20 entries. No entry can name
