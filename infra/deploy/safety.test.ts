@@ -19,7 +19,7 @@ echo "$*" >> "$FAKE_DOCKER_LOG"
 case "$*" in
   *"--entrypoint grep"*) exit "\${FAKE_GREP_RC:-1}" ;;
   *"pg_restore"*) cat >/dev/null; exit 0 ;;
-  *" status"*) printf 'applied  1_a  2026-01-01T00:00:00.000Z\\npending  20260102009999_x\\n1 applied, 1 pending\\n'; exit 0 ;;
+  *" status"*) printf 'applied  1_a  2026-01-01T00:00:00.000Z\\npending  20260101000000_core_schema\\n1 applied, 1 pending\\n'; exit 0 ;;
 esac
 exit 0
 `;
@@ -150,7 +150,7 @@ describe('migrate-safe.sh', () => {
 
   it('refuses a contract migration (exit 3) and goes on without one', async () => {
     const contract = await run(migrate, ['--tag', 't'], { FAKE_GREP_RC: '0' });
-    expect(contract.res.status).toBe(3);
+    expect(contract.res.status, contract.res.stderr).toBe(3);
     const plain = await run(migrate, ['--tag', 't'], { FAKE_GREP_RC: '1' });
     expect(plain.res.status, plain.res.stderr).toBe(0);
     expect(at(plain.calls, 'pg_dump')).toBeGreaterThan(-1);
