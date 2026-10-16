@@ -17,7 +17,7 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 
 ![Progress](docs/progress.svg)
 
-**97% built** (weighted by lane size across 112 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
+**98% built** (weighted by lane size across 112 lanes). Details and how this is computed: [`tools/plan/progress.py`](tools/plan/progress.py). Update [`plan/STATUS.json`](plan/STATUS.json) when you finish or advance a lane, then run `python3 tools/plan/progress.py`.
 
 ## Next steps
 
@@ -33,15 +33,15 @@ The public sales site and the full documentation live in [`site/`](site/README.m
 | Lane | What | Done | Note |
 |---|---|--:|---|
 | [B097](plan/backend/B097.md) | Security hardening: headers, WAF rules, secret scanning, dependency policy | 90% | 2026-10-13: security headers and CORS, dependency policy and secret scripts, gitleaks rules, WAF Terraform module (#128), Caddy request-body limits and private paths (#132); gaps: WAF rules not tried against a real Cloudflare plan, workflows and dependabot are protected paths |
-| [B101](plan/backend/B101.md) | Credential-leak guard: scanners for logs, frames, telemetry, backups and CI | 90% | 2026-10-13: credential-leak guard for logs, requests, frames, telemetry, backups and the repo (#127) |
 | [B112](plan/backend/B112.md) | A test server for a Raspberry Pi 4 (4 GB): one command, one container stack, to try session sharing and the whole product | 90% | 2026-10-15: Raspberry Pi 4 test server: compose, Caddy router, env and up/down/reset scripts (#141); gaps: not run on a real Pi |
 | [B099](plan/backend/B099.md) | Backup, restore and disaster-recovery drills | 85% | 2026-10-13: encrypted backups, verified restore and a restore drill for one server (#129); gaps: off-site bucket not tried with a real R2 or B2 account |
 | [B096](plan/backend/B096.md) | Chaos and failure-mode tests | 85% | 2026-10-15: chaos tests for Redis, Postgres, crash, relay restart and clock skew in apps/api/test/chaos (#137), failure modes in docs/ops/failure-modes.md; gaps: card paths (infra/chaos/) not used, not run against a real server |
+| [B092](plan/backend/B092.md) | Deployment pipeline: blue/green, safe migrations, rollback | 80% | 2026-10-15: safe-migration lint and runner, smoke, SLO guard with rollback, release gate (fresh green conformance report, stage record), deploy lock, rollback.sh, blue/green for the API on one server (#126, #143); gaps: deploy-stage, deploy-prod and rollback workflows are drafts in docs/ops/deployment.md (.github/ is protected), no registry so no digest promotion or cosign, nothing run on a real server |
 | [B095](plan/backend/B095.md) | Load testing and capacity model | 75% | 2026-10-13: relay load runner, capacity model, docs/capacity.md (#131); 2,500 connections pass on one relay (planning figure 2,000), 799 frames/s pass; gaps: a 10-minute soak stalled at minute 4 with memory 241 to 423 MiB (cause open), load against API routes, no measurement on the real server |
 | [B100](plan/backend/B100.md) | Provider conformance suite and release gate | 75% | 2026-10-15: provider conformance suite and gates G1-G6 in infra/conformance (#139), docs/testing/conformance.md; gaps: release-gate workflow is a protected path and not added, suite not under packages/testkit as the card says |
 | [B091](plan/backend/B091.md) | Infrastructure as code: environments dev, stage, prod | 70% | 2026-10-13: production images, compose, Caddy and deploy scripts for one server (#126); gaps: only one environment (no dev/stage/prod split), not run on a real server, ARM images unchecked |
 
-+2 more in [`plan/STATUS.json`](plan/STATUS.json).
++1 more in [`plan/STATUS.json`](plan/STATUS.json).
 
 ### Ready to pick up (all dependencies done)
 
