@@ -13,7 +13,7 @@
  */
 import { randomBytes } from 'node:crypto';
 import { Writable } from 'node:stream';
-import { GenericContainer, TestContainers, Wait } from 'testcontainers';
+import { GenericContainer, TestContainers, Wait, type StartedTestContainer } from 'testcontainers';
 import { CONTAINER_LABELS, CONTAINER_STARTUP_TIMEOUT_MS, TestStackError } from './containers.js';
 
 /** The collector build the infra config targets. */
@@ -120,6 +120,24 @@ export async function startGrafana(): Promise<TestGrafana> {
   }
 }
 
+/**
+ * Everything a container that has already exited printed. `Wait.forOneShotStartup()` returns when the
+ * container is done, but the log consumer is fed by a separate stream that may not have delivered the
+ * output yet (an `amtool routes test` run came back empty on a busy runner); reading the container's logs
+ * to their end is the complete answer.
+ */
+async function finishedOutput(container: StartedTestContainer, streamed: string): Promise<string> {
+  try {
+    const stream = await container.logs();
+    const parts: string[] = [];
+    for await (const chunk of stream) parts.push(String(chunk));
+    const all = parts.join('');
+    return all.length >= streamed.length ? all : streamed;
+  } catch {
+    return streamed;
+  }
+}
+
 /** Runs `promtool <args>` with `files` (name to content) in /work; resolves its exit code and output. */
 export async function runPromtool(
   files: Readonly<Record<string, string>>,
@@ -127,7 +145,7 @@ export async function runPromtool(
 ): Promise<{ exitCode: number; output: string }> {
   const logs = logBuffer();
   try {
-    await new GenericContainer(PROMETHEUS_IMAGE)
+    const started = await new GenericContainer(PROMETHEUS_IMAGE)
       .withCopyContentToContainer(
         Object.entries(files).map(([name, content]) => ({ content, target: `/work/${name}` })),
       )
@@ -139,7 +157,7 @@ export async function runPromtool(
       .withWaitStrategy(Wait.forOneShotStartup())
       .withStartupTimeout(CONTAINER_STARTUP_TIMEOUT_MS)
       .start();
-    return { exitCode: 0, output: logs.text() };
+    return { exitCode: 0, output: await finishedOutput(started, logs.text()) };
   } catch {
     return { exitCode: 1, output: logs.text() };
   }
@@ -152,7 +170,7 @@ export async function runAmtool(
 ): Promise<{ exitCode: number; output: string }> {
   const logs = logBuffer();
   try {
-    await new GenericContainer(ALERTMANAGER_IMAGE)
+    const started = await new GenericContainer(ALERTMANAGER_IMAGE)
       .withCopyContentToContainer(
         Object.entries(files).map(([name, content]) => ({ content, target: `/work/${name}` })),
       )
@@ -164,7 +182,7 @@ export async function runAmtool(
       .withWaitStrategy(Wait.forOneShotStartup())
       .withStartupTimeout(CONTAINER_STARTUP_TIMEOUT_MS)
       .start();
-    return { exitCode: 0, output: logs.text() };
+    return { exitCode: 0, output: await finishedOutput(started, logs.text()) };
   } catch {
     return { exitCode: 1, output: logs.text() };
   }
