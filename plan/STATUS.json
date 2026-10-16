@@ -362,8 +362,8 @@
    "note": "merged in #96"
   },
   "B091": {
-   "pct": 0.7,
-   "note": "2026-10-13: production images, compose, Caddy and deploy scripts for one server (#126); gaps: only one environment (no dev/stage/prod split), not run on a real server, ARM images unchecked"
+   "pct": 0.8,
+   "note": "2026-10-16: one-server production images, compose, Caddy and deploy scripts (#126); Terraform modules (fly-app, postgres, redis, r2, dns, environment), roots for dev, stage and prod, generated Fly files with health checks and relay kill_timeout, plan-JSON policy tests, infra:check/plan/apply (#147); terraform fmt, validate and offline plans pass; gaps: nothing applied to a real Fly or Cloudflare account (idempotent re-plan and destroy/recreate are owner-run), tflint and checkov never run, no infra-check CI job (.github/ is protected), Postgres and Redis provider ADR open, no lock files"
   },
   "B093": {
    "pct": 1,
@@ -426,8 +426,8 @@
    "note": "merged in #122; board state is a Redis document for 48 hours and is not yet deleted when a session is purged"
   },
   "B092": {
-   "pct": 1,
-   "note": "merged in #148"
+   "pct": 0.8,
+   "note": "2026-10-16: safe-migration lint and runner, smoke, SLO guard with rollback, release gate (fresh green conformance report, stage record), deploy lock, rollback.sh, blue/green for the API on one server (#126, #143); #148 only repaired main's tests and is not the lane; gaps: deploy-stage, deploy-prod and rollback workflows are drafts in docs/ops/deployment.md (.github/ is protected), no registry so no digest promotion or cosign, nothing run on a real server"
   },
   "B095": {
    "pct": 0.75,
