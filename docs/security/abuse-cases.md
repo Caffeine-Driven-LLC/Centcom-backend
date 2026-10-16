@@ -1,0 +1,57 @@
+# Abuse cases
+
+Lane B098. One table of requests an attacker or a careless client can make against the backend, the response
+the system must give, and the test that already exercises the same case. It extends the threat model
+([`threat-model.md`](threat-model.md)): every row of that file's STRIDE tables is a threat, every row here is
+something a tester can try with `curl` or a WebSocket client.
+
+`pnpm pentest:check` reads this file. It checks that the table has at least 25 cases, that every case names a
+contract and an expected response, that every evidence path exists, and that these twelve contracts each have
+at least one case: CT-AUTH, CT-RBAC, CT-WS-ENVELOPE, CT-WS-QUEUE, CT-WS-CONTROL, CT-RESUME, CT-API-SESSIONS,
+CT-API-BILLING, CT-API-USAGE, CT-API-WEBHOOKS, CT-TELEMETRY, CT-API-RELEASES.
+
+Status and code names come from [`contracts/errors.json`](../../contracts/errors.json) (REST) and the close-code
+table in [`contracts/03-ws-envelope.md`](../../contracts/03-ws-envelope.md) (WebSocket: 4400 protocol violation,
+4401 unauthenticated or ticket invalid, 4403 forbidden or membership revoked, 4404 session not found or ended,
+4429 rate limited, 4503 overloaded). Where a case has no automated evidence it would be a **manual test for the
+pen-test**; today every row has evidence.
+
+| #   | Contract / area | Abuse case                                                                               | Expected response                                                                                                        | Evidence                                                        |
+| --- | --------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
+| 1   | CT-AUTH         | Present a refresh token twice                                                            | 400 `invalid_grant`, the whole family is revoked                                                                         | `apps/api/test/modules/auth/tokens/refresh.test.ts`             |
+| 2   | CT-AUTH         | Use an access token signed with `alg: none`, or `HS256` with the public key              | 401 `token_invalid`                                                                                                      | `apps/api/test/modules/auth/tokens/jwt.test.ts`                 |
+| 3   | CT-AUTH         | Try many wrong user codes against `/device`                                              | Generic failure; locked out for 15 minutes after 10 tries in 10 minutes                                                  | `apps/api/test/modules/auth/device/security.test.ts`            |
+| 4   | CT-AUTH         | Open `/login/email/verify?t=` from a scanner, then from the real browser                 | Scanner sees a page and consumes nothing; the browser signs in                                                           | `apps/api/test/modules/auth/magic-link/prefetch.test.ts`        |
+| 5   | CT-AUTH         | Ask for a sign-in link for an unknown address and a known one                            | Identical answer                                                                                                         | `apps/api/test/modules/auth/magic-link/enumeration.test.ts`     |
+| 6   | CT-RBAC         | A `member` calls an `admin` route; a token without the scope calls it                    | 403 `forbidden`                                                                                                          | `packages/core/test/rbac/matrix.test.ts`                        |
+| 7   | CT-RBAC         | Read `/v1/workspaces/{id}/members` of a workspace you are not in, with a guessed id      | 404 `not_found` (never 403, so existence is hidden)                                                                      | `apps/api/test/rbac-plugin.test.ts`                             |
+| 8   | CT-WS-ENVELOPE  | Send malformed JSON, or a frame over the size limit                                      | Connection closed 4400 `invalid_frame`; an unknown but well-formed frame type is tolerated (acked, ignored) per contract | `apps/relay/test/codec`                                         |
+| 9   | CT-WS-ENVELOPE  | Reuse a relay ticket on a second connection, after expiry, or after the first one closed | Close 4401 with one uniform body for every bad ticket                                                                    | `apps/relay/test/handshake/handshake.ticket.test.ts`            |
+| 10  | CT-WS-QUEUE     | An editor sends `queue.approve`                                                          | `sys.error` `forbidden`, nothing changes, audit event                                                                    | `apps/relay/test/queue/queue.policy.test.ts`                    |
+| 11  | CT-WS-QUEUE     | Submit the same item twice with one client id                                            | Deduped to one item; the second submit is acknowledged, not queued again                                                 | `apps/relay/test/queue/queue.idempotency.test.ts`               |
+| 12  | CT-WS-CONTROL   | A kicked member keeps sending on the old connection                                      | Connection closed 4403 within the 2 s membership refresh                                                                 | `apps/relay/test/control/control.kick-rotate.test.ts`           |
+| 13  | CT-WS-CONTROL   | A non-host calls `end` or `transfer`                                                     | `sys.error` `forbidden`; the session is unchanged                                                                        | `apps/relay/test/control/control.transfer-end.test.ts`          |
+| 14  | CT-RESUME       | Resume from a `seq` far in the past or the future                                        | Replay from the log, or the contract's `snapshot required` answer; never another session's frames                        | `apps/relay/test/resume/resume.snapshot-required.test.ts`       |
+| 15  | CT-RESUME       | Resume into a session you were removed from                                              | Close 4403 (`not_a_member`) at the handshake                                                                             | `apps/relay/test/handshake/handshake.access.test.ts`            |
+| 16  | CT-API-SESSIONS | Request a join token for a session of another workspace                                  | 404 `not_found`                                                                                                          | `apps/api/test/routes/sessions`                                 |
+| 17  | CT-API-SESSIONS | Hammer the share-link join route from one address                                        | The 11th join in a minute is 429 `rate_limited` with `Retry-After`                                                       | `apps/api/test/share-links/share-links.limits.test.ts`          |
+| 18  | CT-API-SESSIONS | Read history of a session after being kicked                                             | 403 `forbidden` or 404 `not_found`; standing is checked on every read                                                    | `apps/api/test/history/history.authz.test.ts`                   |
+| 19  | CT-API-SESSIONS | Upload a snapshot of another size than the one declared in the pre-signed request        | The object store refuses (length is part of the signature)                                                               | `apps/api/test/snapshots/snapshots.presign.test.ts`             |
+| 20  | CT-API-BILLING  | Post a Stripe event with a bad, stale or missing signature                               | 400, nothing stored                                                                                                      | `apps/api/test/entrypoint/billing.e2e.test.ts`                  |
+| 21  | CT-API-BILLING  | Checkout with `success_url=https://evil` or a price the catalogue does not sell          | URL ignored; 422 `validation_failed` for the price                                                                       | `apps/api/test/billing/checkout/checkout.redirects.test.ts`     |
+| 22  | CT-API-BILLING  | Redeem coupon codes in a loop                                                            | Generic failure, then 429 `rate_limited`                                                                                 | `apps/api/test/billing/promotions/promotions.ratelimit.test.ts` |
+| 23  | CT-API-BILLING  | Replay a checkout request with the same `Idempotency-Key` but another body               | 409 `idempotency_conflict`                                                                                               | `apps/api/test/billing/checkout/checkout.idempotency.test.ts`   |
+| 24  | CT-API-USAGE    | Submit usage for a workspace you are not in; submit 100 000 events in one batch          | Attributed to your own device only; 413 `payload_too_large` / 422 `validation_failed`                                    | `apps/api/test/usage/ingest/usage.attribution.test.ts`          |
+| 25  | CT-API-WEBHOOKS | Register an endpoint at `http://169.254.169.254/` or a DNS name that resolves to it      | Refused at registration (422) or blocked at delivery                                                                     | `apps/api/test/webhooks/webhooks.ssrf.test.ts`                  |
+| 26  | CT-API-WEBHOOKS | Read another workspace's endpoints or deliveries                                         | 404 `not_found`                                                                                                          | `apps/api/test/webhooks/webhooks.routes.test.ts`                |
+| 27  | CT-TELEMETRY    | Post telemetry with props outside the allow-list, or with a bearer token                 | 204; unknown props dropped; token ignored                                                                                | `apps/api/test/telemetry/telemetry.routes.test.ts`              |
+| 28  | CT-API-RELEASES | Request `/v1/releases/stable/latest` with odd `platform` values; look for a yanked build | 400 `invalid_request` for bad values; yanked never served                                                                | `apps/api/test/releases/releases.routes.test.ts`                |
+| 29  | Edge            | Request `/internal/admin/v1/users` and `/metrics` through the public host                | 404 from Caddy                                                                                                           | `infra/deploy/deploy.test.ts`                                   |
+| 30  | Edge            | Send a 5 MiB body to `/v1/telemetry/events`                                              | 413 (Caddy) / 204 (API, by contract: never an error body)                                                                | `infra/deploy/deploy.test.ts`                                   |
+
+## What the seed gives a tester for these cases
+
+[`pnpm pentest:seed --env stage`](pentest-scope.md#test-accounts-and-data) creates the accounts that make most rows
+reproducible: `pt-outsider` and the `pentest-team` workspace for the cross-workspace cases (7, 16, 26), one user per
+role for the authorization cases (6, 10, 13), and two sessions with synthetic ciphertext for the history and
+resume cases (14, 15, 18).

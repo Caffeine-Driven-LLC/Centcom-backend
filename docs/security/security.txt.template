@@ -1,0 +1,8 @@
+# Template for /.well-known/security.txt (RFC 9116). The web side serves the filled-in file; only the
+# template is produced by lane B098. Replace every {{placeholder}}; Expires must be less than a year away.
+Contact: mailto:{{SECURITY_CONTACT}}
+Expires: {{EXPIRES_RFC3339}}
+Preferred-Languages: en
+Canonical: https://{{SITE_HOST}}/.well-known/security.txt
+Policy: https://{{SITE_HOST}}/security
+Acknowledgments: https://{{SITE_HOST}}/security/thanks
