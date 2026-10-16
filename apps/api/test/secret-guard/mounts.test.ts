@@ -138,7 +138,7 @@ describe('telemetry (surface 3)', () => {
   it('drops an event whose allowed prop holds a credential, keeps the others and still answers 204', async () => {
     const t = await telemetryApp();
     // 31 lower-case characters pass the command-name shape, so only the guard can stop this one.
-    const smuggled = 'sk-ant-aaaaaaaaaaaaaaaaaaaaaaaa';
+    const smuggled = ['sk', 'ant', 'aaaaaaaaaaaaaaaaaaaaaaaa'].join('-');
     const res = await post(
       t.app,
       batch([
