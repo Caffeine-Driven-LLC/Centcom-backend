@@ -272,6 +272,17 @@ These live in their own files so a tester can be handed each one:
   report to us (written, not yet published).
 - [`asvs-mapping.md`](asvs-mapping.md): ASVS 4.0.3 level 2, chapters V2 to V14, mapped to the controls above.
 
+## Accepted risks
+
+Every `accepted` row has a justification, a risk owner and a review date. A risk is re-decided on its review date or
+earlier if the control it relies on changes.
+
+| ID         | Justification                                                                                                | Risk owner    | Next review |
+| ---------- | ------------------------------------------------------------------------------------------------------------ | ------------- | ----------- |
+| TM-REL-02  | The signing key lives outside this repo and server, in the release pipeline (B084); nothing here can hold it. | Security lead | 2027-04-16  |
+| TM-EDGE-01 | Volumetric floods are absorbed by Cloudflare, which is outside our control; the origin has per-address limits. | Security lead | 2027-04-16  |
+| TM-OPS-04  | One server is the chosen launch topology; restore is tested, and up to 26 h of data loss is tolerated.        | Backend lead  | 2027-04-16  |
+
 ## Known open items
 
 - **TM-DATA-06**: restoring a backup can resurrect accounts that were deleted after the backup. There is no
