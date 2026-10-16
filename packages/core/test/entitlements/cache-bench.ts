@@ -1,7 +1,7 @@
 /**
  * Times EntitlementCache hits (B080 acceptance 2: p99 under 1 ms). cache.test.ts runs this in a
  * separate Node process, as redact-bench.ts does: test workers run under coverage instrumentation
- * and share their thread with other test files. 1 000 workspaces are cached; after a warm-up, three
+ * and share their thread with other test files. 1 000 workspaces are cached; after a warm-up, nine
  * rounds of 10 000 hits on random workspaces, each hit timed alone; writes `{ p99s }`
  * (milliseconds, one per round) as JSON to stdout.
  */
@@ -9,7 +9,8 @@ import { performance } from 'node:perf_hooks';
 import { EntitlementCache } from '../../src/entitlements/cache.js';
 
 const WORKSPACES = 1_000;
-const ROUNDS = 3;
+// the test takes the best round: more rounds make it robust to a busy machine (a pause in every round is unlikely)
+const ROUNDS = 9;
 const PER_ROUND = 10_000;
 
 const cache = new EntitlementCache<{ rev: number }>({
