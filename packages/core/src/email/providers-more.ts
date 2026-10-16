@@ -181,6 +181,18 @@ export class BrevoProvider implements EmailProvider {
 /** How the SMTP link is protected. */
 export type SmtpSecure = 'tls' | 'starttls' | 'none';
 
+/**
+ * True for an address that never leaves this machine: `localhost`, 127.0.0.0/8 and ::1. A name that merely resolves
+ * to one is not trusted (DNS can change), only these literals.
+ */
+export function isLoopbackHost(host: string): boolean {
+  const h = host
+    .trim()
+    .toLowerCase()
+    .replace(/^\[|\]$/g, '');
+  return h === 'localhost' || h === '::1' || /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(h);
+}
+
 /** Options for SmtpProvider. */
 export interface SmtpOptions {
   host: string;
@@ -193,6 +205,11 @@ export interface SmtpOptions {
   clientName?: string;
   /** Extra TLS options (tests pass a CA). */
   tls?: ConnectionOptions;
+  /**
+   * Send the user name and password over a connection that is not encrypted (`secure: 'none'`) to a host that is
+   * not on this machine. Refused unless this is true (SMTP_ALLOW_CLEARTEXT_AUTH): anyone on the path would read the password.
+   */
+  allowCleartextAuth?: boolean;
 }
 
 /** One SMTP reply: the code and the text lines (without the code). */
@@ -311,6 +328,16 @@ export class SmtpProvider implements EmailProvider {
   readonly #o: SmtpOptions;
 
   constructor(options: SmtpOptions) {
+    if (
+      options.secure === 'none' &&
+      (options.user !== undefined || options.password !== undefined) &&
+      !isLoopbackHost(options.host) &&
+      options.allowCleartextAuth !== true
+    ) {
+      throw new TypeError(
+        'the smtp provider would send credentials in clear text to a host that is not this machine: use SMTP_SECURE=starttls or tls, or set SMTP_ALLOW_CLEARTEXT_AUTH=true',
+      );
+    }
     this.#o = options;
   }
 
