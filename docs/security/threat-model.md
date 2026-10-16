@@ -277,11 +277,11 @@ These live in their own files so a tester can be handed each one:
 Every `accepted` row has a justification, a risk owner and a review date. A risk is re-decided on its review date or
 earlier if the control it relies on changes.
 
-| ID         | Justification                                                                                                | Risk owner    | Next review |
-| ---------- | ------------------------------------------------------------------------------------------------------------ | ------------- | ----------- |
-| TM-REL-02  | The signing key lives outside this repo and server, in the release pipeline (B084); nothing here can hold it. | Security lead | 2027-04-16  |
+| ID         | Justification                                                                                                  | Risk owner    | Next review |
+| ---------- | -------------------------------------------------------------------------------------------------------------- | ------------- | ----------- |
+| TM-REL-02  | The signing key lives outside this repo and server, in the release pipeline (B084); nothing here can hold it.  | Security lead | 2027-04-16  |
 | TM-EDGE-01 | Volumetric floods are absorbed by Cloudflare, which is outside our control; the origin has per-address limits. | Security lead | 2027-04-16  |
-| TM-OPS-04  | One server is the chosen launch topology; restore is tested, and up to 26 h of data loss is tolerated.        | Backend lead  | 2027-04-16  |
+| TM-OPS-04  | One server is the chosen launch topology; restore is tested, and up to 26 h of data loss is tolerated.         | Backend lead  | 2027-04-16  |
 
 ## Known open items
 
@@ -294,5 +294,5 @@ earlier if the control it relies on changes.
   `apps/api/src/modules.ts`, so the live API answers 404 to it. The leak guard is in the ingest and the REST hook
   exempts the route, ready for when it is mounted.
 - The pen-test has not been run, `security.txt` and the disclosure policy are not published (they need an owner-chosen
-  address and domain), and the ASVS mapping lists its partial rows. No code limits a refresh token to 30 days; the
-  pen-test environment is destroyed within 30 days instead (see `pentest-scope.md`).
+  address and domain), and the ASVS mapping lists its partial rows. Credentials the seed issues end after 30 days; those from the e-mail
+  link flow do not, so the pen-test environment is reset or destroyed within 30 days (see `pentest-scope.md`).

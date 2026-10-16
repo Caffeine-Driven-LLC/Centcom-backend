@@ -27,3 +27,6 @@ Thumbs.db
 *.tfstate.*
 crash.log
 *.tfvars
+
+# Synthetic pen-test credentials written by pnpm pentest:seed (B098)
+/infra/pentest/accounts.generated.json

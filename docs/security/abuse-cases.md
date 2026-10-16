@@ -51,7 +51,7 @@ pen-test**; today every row has evidence.
 
 ## What the seed gives a tester for these cases
 
-[`pnpm pentest:seed`](pentest-scope.md#test-accounts-and-data) creates the accounts that make most rows
+[`pnpm pentest:seed --env stage`](pentest-scope.md#test-accounts-and-data) creates the accounts that make most rows
 reproducible: `pt-outsider` and the `pentest-team` workspace for the cross-workspace cases (7, 16, 26), one user per
 role for the authorization cases (6, 10, 13), and two sessions with synthetic ciphertext for the history and
 resume cases (14, 15, 18).
