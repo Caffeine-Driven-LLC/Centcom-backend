@@ -1,0 +1,72 @@
+# B092 rollback: runs infra/deploy/rollback.sh on the server.
+#   mode `images`      start the previous (or the given) tag's images again; the database stays as it is
+#                      (right whenever the newer migrations were additive, which expand/contract guarantees).
+#   mode `restore-db`  ALSO replace the database with a pre-deploy dump; everything written since the dump is
+#                      LOST and the services are stopped meanwhile. Use the production environment's required
+#                      reviewers as the confirmation.
+#
+# INERT until configured: skipped while the matching host variable (STAGE_HOST / PROD_HOST) is empty.
+name: rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Which server
+        required: true
+        type: choice
+        options: [stage, production]
+      mode:
+        description: images, or restore-db (loses data written since the dump)
+        required: true
+        type: choice
+        options: [images, restore-db]
+      to:
+        description: Tag to go back to (empty = the previous one recorded on the server)
+        required: false
+        type: string
+      dump:
+        description: Pre-deploy dump name printed by deploy.sh (restore-db only)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ inputs.target }}
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    runs-on: ubuntu-24.04
+    environment: ${{ inputs.target }}
+    timeout-minutes: 30
+    env:
+      HOST: ${{ inputs.target == 'production' && vars.PROD_HOST || vars.STAGE_HOST }}
+      KNOWN_HOSTS: ${{ inputs.target == 'production' && vars.PROD_KNOWN_HOSTS || vars.STAGE_KNOWN_HOSTS }}
+      MODE: ${{ inputs.mode }}
+      TO: ${{ inputs.to }}
+      DUMP: ${{ inputs.dump }}
+    steps:
+      - name: Inputs are well formed
+        run: |
+          [[ -n "$HOST" ]] || { echo "the host variable for ${{ inputs.target }} is not set: nothing to roll back" >&2; exit 1; }
+          [[ -n "$KNOWN_HOSTS" ]] || { echo "the known-hosts variable is empty" >&2; exit 1; }
+          [[ -z "$TO" || "$TO" =~ ^[A-Za-z0-9._-]{1,128}$ ]] || { echo "bad tag" >&2; exit 1; }
+          if [[ "$MODE" == restore-db ]]; then
+            [[ "$DUMP" =~ ^[A-Za-z0-9._-]{1,200}$ ]] || { echo "restore-db needs the dump name" >&2; exit 1; }
+          fi
+      - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+      - name: Trust only the recorded host key
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$KNOWN_HOSTS" >> ~/.ssh/known_hosts
+      - name: Roll back
+        run: |
+          args="--images"
+          [[ "$MODE" == restore-db ]] && args="--restore-db $DUMP"
+          [[ -n "$TO" ]] && args="$args --to $TO"
+          ssh -o StrictHostKeyChecking=yes "$HOST" "cd Centcom-backend && infra/deploy/rollback.sh $args"

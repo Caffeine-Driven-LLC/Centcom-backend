@@ -1,0 +1,70 @@
+# B092 deploy to production: manual, for a commit that was deployed to stage. The `production`
+# environment must have required reviewers: the person who approves is recorded (`--approved-by` is the
+# user who started this run; the environment's reviewer approval is the gate before the job starts).
+# deploy.sh itself refuses without a stage record for this commit, a fresh green conformance report and
+# a passing infra check (the release gate, infra/deploy/release-gate.mjs).
+#
+# INERT until configured: the job is skipped while the repository variable PROD_HOST is empty.
+# One-time setup: environment `production` with required reviewers; secret DEPLOY_SSH_KEY (may be an
+# environment secret); variables PROD_HOST (user@host) and PROD_KNOWN_HOSTS (ssh-keyscan output).
+name: deploy-prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Full 40-character commit SHA that was deployed to stage
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: vars.PROD_HOST != ''
+    runs-on: ubuntu-24.04
+    environment: production
+    timeout-minutes: 40
+    env:
+      SHA: ${{ inputs.sha }}
+      HOST: ${{ vars.PROD_HOST }}
+      KNOWN_HOSTS: ${{ vars.PROD_KNOWN_HOSTS }}
+      APPROVER: ${{ github.actor }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Inputs are well formed
+        run: |
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "sha must be a full 40-character commit SHA" >&2; exit 1; }
+          [[ "$APPROVER" =~ ^[A-Za-z0-9-]+$ ]] || { echo "unexpected actor name" >&2; exit 1; }
+          [[ -n "$KNOWN_HOSTS" ]] || { echo "PROD_KNOWN_HOSTS is empty" >&2; exit 1; }
+      - name: The commit is on main
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/compare/main...${SHA}" -q .status | grep -Eq '^(identical|behind)$' \
+            || { echo "$SHA is not an ancestor of main" >&2; exit 1; }
+      - name: Download the stage deploy record for this commit
+        run: |
+          run_id=$(gh run list --workflow deploy-stage.yml --commit "$SHA" --status success --limit 1 --json databaseId -q '.[0].databaseId')
+          [[ -n "$run_id" ]] || { echo "no successful stage deploy of $SHA: deploy it to stage first" >&2; exit 1; }
+          gh run download "$run_id" --name stage-deploy-record
+      - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+      - name: Trust only the recorded host key
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$KNOWN_HOSTS" >> ~/.ssh/known_hosts
+      - name: Deploy to production
+        run: |
+          scp -o StrictHostKeyChecking=yes stage-deploy-record.json conformance-report.json "$HOST:"
+          ssh -o StrictHostKeyChecking=yes "$HOST" \
+            "cd Centcom-backend && git fetch --quiet && git checkout --quiet $SHA \
+             && pnpm install --frozen-lockfile \
+             && cp ~/conformance-report.json conformance-report.json \
+             && infra/deploy/deploy.sh ${SHA:0:12} --env production \
+                  --approved-by '$APPROVER' --stage-record ~/stage-deploy-record.json"

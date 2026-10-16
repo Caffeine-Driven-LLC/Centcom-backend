@@ -38,7 +38,8 @@ jobs:
 
   test:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    # the unit suite takes 7 to 10 minutes on a runner; a 10-minute limit cancelled it on busy runs
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -58,7 +59,8 @@ jobs:
 
   integration:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    # 10 minutes was not enough once the suite grew: #147 and #150 hit the limit and passed only on a re-run.
+    timeout-minutes: 25
     # Steps start only after both services report healthy. A service that is not healthy within
     # 12 retries x 5 s = 60 s fails the job during container setup, and its log is printed there.
     services:

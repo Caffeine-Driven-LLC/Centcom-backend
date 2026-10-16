@@ -1,0 +1,36 @@
+# B091 infra check: terraform fmt, validate for dev/stage/prod, tflint and the checkov policy scan
+# (`pnpm infra:check`, each tool in a throwaway container; needs Docker, no cloud account or token).
+# Check name: `infra-check / infra-check`.
+name: infra-check
+
+on:
+  pull_request:
+    paths:
+      - 'infra/terraform/**'
+      - 'infra/security/**'
+      - '.github/workflows/infra-check.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'infra/terraform/**'
+      - 'infra/security/**'
+  workflow_dispatch: # deploy-prod reads the result for the commit it deploys
+
+permissions:
+  contents: read
+
+concurrency:
+  group: infra-check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  infra-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: terraform fmt, validate (dev, stage, prod), tflint, checkov
+        run: pnpm infra:check

@@ -1,0 +1,69 @@
+# B100 release gate: the provider conformance suite on every pull request to main and every night, with
+# the report uploaded as an artifact (`conformance-report.json`). deploy-prod reads this report and refuses
+# a missing, stale (> 24 h) or failed one.
+# Check name: `release-gate / conformance`.
+#
+# The nightly run is against the local stack (in-process services plus Postgres and Redis). `--target stage`
+# is not available yet: `pnpm conformance` refuses it until a stage environment exists. When it does, add a
+# second job here that runs `pnpm conformance --target stage` on the schedule.
+name: release-gate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '23 3 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  conformance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: centcom
+          POSTGRES_PASSWORD: centcom # CI-only throwaway database; not a secret
+          POSTGRES_DB: centcom_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U centcom -d centcom_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      DATABASE_URL: postgres://centcom:centcom@localhost:5432/centcom_test
+      REDIS_URL: redis://localhost:6379/0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Services reachable
+        run: node tools/ci/wait-for-services.mjs
+      - name: Provider conformance suite (every contract, local target)
+        run: pnpm conformance --target local --report conformance-report.json
+      - name: Gates G1 to G5 (the backend half of the integration gates)
+        run: |
+          for g in 1 2 3 4 5; do pnpm "gate:g$g" --report conformance-report.json; done
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: conformance-report
+          path: conformance-report.json
+          if-no-files-found: error
+          retention-days: 30

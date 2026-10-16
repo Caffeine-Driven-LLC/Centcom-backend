@@ -26,12 +26,18 @@ const jobIds = (yml) =>
   [...(yml.split(/^jobs:\s*$/m)[1] ?? '').matchAll(/^ {2}([\w-]+):\s*$/gm)].map((m) => m[1]);
 
 describe('workflow guardrails', () => {
-  it('has the ci, security, pr-title and Claude PR pipeline workflows', () => {
+  it('has the ci, security, pr-title, Claude PR pipeline, deploy, release-gate, secret-guard and infra-check workflows', () => {
     expect(Object.keys(workflows).sort()).toEqual([
       'ci.yml',
       'claude-pr-trigger.yml',
       'claude-pr.yml',
+      'deploy-prod.yml',
+      'deploy-stage.yml',
+      'infra-check.yml',
       'pr-title.yml',
+      'release-gate.yml',
+      'rollback.yml',
+      'secret-guard.yml',
       'security.yml',
     ]);
   });

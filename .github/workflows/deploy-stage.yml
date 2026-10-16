@@ -1,0 +1,69 @@
+# B092 deploy to stage: on main, after `ci` finished green. Runs the repository's own scripts on the
+# server over SSH (the server keeps the images and the deploy state): the conformance suite, then
+# infra/deploy/deploy.sh (safe migrations, blue/green, smoke test, SLO guard, automatic rollback).
+# The deploy record is uploaded; deploy-prod refuses a commit that has no record from here.
+#
+# INERT until configured: the job is skipped while the repository variable STAGE_HOST is empty.
+# One-time setup (docs/ops/deployment.md):
+#   environment `stage`;  secret DEPLOY_SSH_KEY (a deploy key for a non-root user on the server);
+#   variables STAGE_HOST (user@host) and STAGE_KNOWN_HOSTS (the output of `ssh-keyscan host`, checked by
+#   hand once; the connection is refused for any other host key).
+name: deploy-stage
+
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-stage
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.head_repository.full_name == github.repository
+      && vars.STAGE_HOST != ''
+    runs-on: ubuntu-24.04
+    environment: stage
+    timeout-minutes: 30
+    env:
+      SHA: ${{ github.event.workflow_run.head_sha }}
+      HOST: ${{ vars.STAGE_HOST }}
+      KNOWN_HOSTS: ${{ vars.STAGE_KNOWN_HOSTS }}
+    steps:
+      - name: The commit is a full SHA
+        run: |
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "not a commit SHA: $SHA" >&2; exit 1; }
+          [[ -n "$KNOWN_HOSTS" ]] || { echo "STAGE_KNOWN_HOSTS is empty" >&2; exit 1; }
+      - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+      - name: Trust only the recorded host key
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$KNOWN_HOSTS" >> ~/.ssh/known_hosts
+      - name: Conformance, then deploy to stage
+        run: |
+          ssh -o StrictHostKeyChecking=yes "$HOST" \
+            "cd Centcom-backend && git fetch --quiet && git checkout --quiet $SHA \
+             && pnpm install --frozen-lockfile \
+             && pnpm conformance --report conformance-report.json \
+             && infra/deploy/deploy.sh ${SHA:0:12} --env stage"
+      - name: Fetch the deploy record
+        run: |
+          scp -o StrictHostKeyChecking=yes "$HOST:Centcom-backend/infra/deploy/.state/deploy-record.json" stage-deploy-record.json
+          scp -o StrictHostKeyChecking=yes "$HOST:Centcom-backend/conformance-report.json" conformance-report.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: stage-deploy-record
+          path: |
+            stage-deploy-record.json
+            conformance-report.json
+          if-no-files-found: error
+          retention-days: 30

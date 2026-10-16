@@ -18,7 +18,7 @@ import {
 import { evaluateG6, writeGate, type G6Env } from './gate.js';
 import { CONFORMANCE_MAP, GATE_TESTS } from './map.js';
 import { exitCode, reportProblems, type ConformanceReport } from './report.js';
-import { ROOT, type FileResult } from './run-vitest.js';
+import { ROOT, withoutTsxEnv, type FileResult } from './run-vitest.js';
 
 const temps: string[] = [];
 const tmp = (): string => {
@@ -216,6 +216,18 @@ describe('the report', () => {
     writeGate(path, { id: 'G2', status: 'fail', checks: [] });
     const written = JSON.parse(require_(path)) as ConformanceReport;
     expect(written.gates.map((g) => `${g.id}:${g.status}`)).toEqual(['G1:fail', 'G2:fail']);
+  });
+});
+
+describe('the environment of the vitest child', () => {
+  it("drops tsx's own variables (a relative TSX_TSCONFIG_PATH crashes a test that starts node in another folder) and keeps the rest", () => {
+    const env = withoutTsxEnv({
+      PATH: '/usr/bin',
+      DATABASE_URL: 'postgres://x',
+      TSX_TSCONFIG_PATH: 'tsconfig.test.json',
+      TSX_ANYTHING: '1',
+    });
+    expect(env).toEqual({ PATH: '/usr/bin', DATABASE_URL: 'postgres://x' });
   });
 });
 
