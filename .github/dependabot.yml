@@ -1,14 +1,41 @@
-# B002: security updates only. `open-pull-requests-limit: 0` turns off routine version-update PRs;
-# Dependabot security updates (enabled in the repository settings) still open PRs for advisories.
+# B097: grouped weekly version updates, plus the security updates GitHub opens for advisories.
+# Dependabot security updates (enabled in the repository settings) open their own PRs per advisory and
+# are not held back by the groups or the limits below. Dependabot PRs are not lanes: pr-title skips them.
+# Dependencies stay exact-pinned (infra/security/check-deps.mjs); the update PRs must keep that true and
+# pass the licence allow-list and `pnpm audit`, which run on every PR like any other change.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 0
+      day: monday
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 0
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      actions:
+        patterns: ['*']
+  - package-ecosystem: docker
+    directory: /infra/deploy
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+  - package-ecosystem: terraform
+    directories:
+      - /infra/terraform/envs/dev
+      - /infra/terraform/envs/stage
+      - /infra/terraform/envs/prod
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3

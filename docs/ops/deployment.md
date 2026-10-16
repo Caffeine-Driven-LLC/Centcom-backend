@@ -211,66 +211,37 @@ on the Team plan, because production refuses `DEV_DEFAULT_PLAN`.
    from stage to prod. Production rebuilds the same commit (the gate checks the commit, and the
    record keeps each image's id), and images are not signed (cosign needs a registry). trivy scans
    them in production.
-6. **The GitHub workflows are not in the repository.** `.github/` is changed only by a human. The
-   drafts below run these same scripts over SSH.
+6. **The workflows are in the repository but off.** `deploy-stage.yml`, `deploy-prod.yml` and `rollback.yml`
+   (under `.github/workflows/`) run these same scripts over SSH. Each is skipped until its host variable
+   (`STAGE_HOST` / `PROD_HOST`) is set, so nothing deploys until a server exists.
 7. **Not yet run on a real server.** The scripts and checks are tested (`infra/deploy/*.test.ts`)
    and the earlier steps were drilled on a local production compose. The blue/green step, the
    smoke test and the SLO guard have not been drilled end to end yet; do one stage drill (deploy,
    then a deliberately broken tag) before the first production deploy.
 
-## Draft workflows (for a human to add under `.github/workflows/`)
+## Workflows
 
-Both run the scripts on the server over SSH, so the server keeps the images and the state.
-`DEPLOY_SSH_KEY` is a deploy key for a non-root user. GitHub environments: `stage`, and
-`production` with required reviewers; the reviewer's name becomes `--approved-by`.
+`deploy-stage.yml` (after `ci` is green on main), `deploy-prod.yml` (manual, for a commit that was deployed
+to stage) and `rollback.yml` (manual: `images`, or `restore-db` which loses data written since the dump) run
+the scripts on the server over SSH, so the server keeps the images and the state.
 
-```yaml
-# deploy-stage.yml: on main after CI is green
-name: deploy-stage
-on:
-  workflow_run: { workflows: [ci], types: [completed], branches: [main] }
-concurrency: { group: deploy-stage, cancel-in-progress: false }
-jobs:
-  deploy:
-    if: github.event.workflow_run.conclusion == 'success'
-    runs-on: ubuntu-latest
-    environment: stage
-    timeout-minutes: 20
-    steps:
-      - uses: webfactory/ssh-agent@v0.9.0
-        with: { ssh-private-key: '${{ secrets.DEPLOY_SSH_KEY }}' }
-      - run: |
-          ssh -o StrictHostKeyChecking=accept-new "${{ vars.STAGE_HOST }}" \
-            "cd Centcom-backend && git fetch && git checkout ${{ github.event.workflow_run.head_sha }} \
-             && pnpm conformance --report conformance-report.json \
-             && infra/deploy/deploy.sh ${GITHUB_SHA::12} --env stage"
-          scp "${{ vars.STAGE_HOST }}:Centcom-backend/infra/deploy/.state/deploy-record.json" stage-deploy-record.json
-      - uses: actions/upload-artifact@v4
-        with: { name: stage-deploy-record, path: stage-deploy-record.json }
-```
+One-time setup, in the repository settings:
 
-```yaml
-# deploy-prod.yml: manual, with the production environment's required reviewers
-name: deploy-prod
-on:
-  workflow_dispatch: { inputs: { sha: { required: true, type: string } } }
-concurrency: { group: deploy-production, cancel-in-progress: false }
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - uses: dawidd6/action-download-artifact@v6
-        with: { workflow: deploy-stage.yml, name: stage-deploy-record, commit: '${{ inputs.sha }}' }
-      - uses: webfactory/ssh-agent@v0.9.0
-        with: { ssh-private-key: '${{ secrets.DEPLOY_SSH_KEY }}' }
-      - run: |
-          scp stage-deploy-record.json "${{ vars.PROD_HOST }}:stage-deploy-record.json"
-          ssh "${{ vars.PROD_HOST }}" "cd Centcom-backend && git fetch && git checkout ${{ inputs.sha }} \
-            && pnpm conformance --report conformance-report.json \
-            && infra/deploy/deploy.sh ${INPUT_SHA::12} --env production \
-               --approved-by '${{ github.actor }}' --stage-record ~/stage-deploy-record.json"
-        env: { INPUT_SHA: '${{ inputs.sha }}' }
-```
+| What        | Name                                    | Notes                                                                                                      |
+| ----------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Environment | `stage`                                 | no reviewers needed                                                                                        |
+| Environment | `production`                            | **required reviewers**; the person who starts a run is recorded as `--approved-by`                         |
+| Secret      | `DEPLOY_SSH_KEY`                        | a deploy key for a non-root user on the server (can be set per environment)                                |
+| Variables   | `STAGE_HOST`, `PROD_HOST`               | `user@host`; a workflow stays skipped while its variable is empty                                          |
+| Variables   | `STAGE_KNOWN_HOSTS`, `PROD_KNOWN_HOSTS` | the output of `ssh-keyscan <host>`, checked by hand once; the connection is refused for any other host key |
 
-`rollback.yml` is the same SSH step running `infra/deploy/rollback.sh --images [--to <tag>]`.
+`deploy-prod` also checks that the commit is on main and that stage deployed it (the stage run's artifact
+`stage-deploy-record`); `deploy.sh` then applies the release gate (conformance report fresh and green, infra
+check passed). Inputs are validated in the workflow and passed through environment variables, never
+interpolated into a shell command.
+
+Other workflows from the same lanes: `infra-check.yml` (B091: `pnpm infra:check` on changes under
+`infra/terraform/`), `release-gate.yml` (B100: the conformance suite and gates G1 to G5 on every pull request
+to main and nightly, report uploaded as `conformance-report`; the nightly run is against the local stack until a
+stage target exists), `secret-guard.yml` (B101: `pnpm secret-guard:scan` on every pull request and weekly) and
+`dependabot.yml` (B097: grouped weekly updates).
