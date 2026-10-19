@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://centcom.dev/infra/chaos/scenario.schema.json",
+  "title": "Chaos scenario (B096)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "hypothesis", "target", "steady_state", "inject", "expect"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{2,40}$" },
+    "hypothesis": { "type": "string", "minLength": 10 },
+    "target": { "enum": ["compose"] },
+    "steady_state": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/check" } },
+    "inject": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/fault" } },
+    "during": { "type": "array", "items": { "$ref": "#/$defs/check" } },
+    "abort_if": { "type": "array", "items": { "$ref": "#/$defs/check" } },
+    "expect": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/check" } }
+  },
+  "$defs": {
+    "fault": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fault", "service", "duration_s"],
+      "properties": {
+        "fault": { "enum": ["stop", "kill", "pause", "restart"] },
+        "service": { "type": "string", "pattern": "^(\\$\\{API_SERVICE\\}|[a-z][a-z0-9-]*)$" },
+        "duration_s": { "type": "integer", "minimum": 0, "maximum": 600 }
+      }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 3 },
+        "http": { "type": "string", "pattern": "^\\$\\{API_URL\\}/" },
+        "status": { "type": "array", "items": { "type": "integer" }, "minItems": 1 },
+        "header": { "type": "string" },
+        "service_running": { "type": "string" },
+        "running": { "type": "boolean" },
+        "within_s": { "type": "integer", "minimum": 0, "maximum": 600 }
+      },
+      "oneOf": [{ "required": ["http", "status"] }, { "required": ["service_running", "running"] }]
+    }
+  }
+}

@@ -1,0 +1,18 @@
+id: relay-restart
+hypothesis: Restarting the relay (a SIGTERM drain, then a start) leaves the API untouched and the relay running again within 90 s.
+target: compose
+steady_state:
+  - { name: API is ready, http: '${API_URL}/readyz', status: [200], within_s: 30 }
+  - { name: relay is running, service_running: relay, running: true }
+inject:
+  - { fault: restart, service: relay, duration_s: 0 }
+abort_if:
+  - { name: API stopped answering, http: '${API_URL}/healthz', status: [0, 500, 502, 503, 504] }
+expect:
+  - {
+      name: relay is running again within 90 s,
+      service_running: relay,
+      running: true,
+      within_s: 90,
+    }
+  - { name: API is still ready, http: '${API_URL}/readyz', status: [200], within_s: 10 }
