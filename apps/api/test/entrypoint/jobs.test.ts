@@ -37,10 +37,11 @@ const OBJECT_STORE = {
 };
 
 describe('the worker job services', () => {
-  it('purges a workspace through five hooks with an object store, four without (with a log line)', async () => {
+  it('purges a workspace through six hooks with an object store (the tombstone first), four without (with a log line)', async () => {
     const withStore = services(OBJECT_STORE);
     expect(withStore.jobs.hooks.list().map((h) => h.name)).toEqual(
       expect.arrayContaining([
+        'tombstone',
         'invites',
         'entitlements',
         'projects',
@@ -48,7 +49,8 @@ describe('the worker job services', () => {
         'history',
       ]),
     );
-    expect(withStore.jobs.hooks.list()).toHaveLength(5);
+    expect(withStore.jobs.hooks.list()[0]?.name).toBe('tombstone');
+    expect(withStore.jobs.hooks.list()).toHaveLength(6);
     await withStore.close();
 
     const without = services();

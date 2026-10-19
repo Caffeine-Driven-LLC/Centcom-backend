@@ -204,9 +204,21 @@ services:
       - ./slo-guard.mjs:/deploy/slo-guard.mjs:ro
     networks: [backend]
 
+  # One-shot: the archive volume belongs to the postgres user, so archive_command can write to it.
+  wal-init:
+    image: postgres:16
+    restart: 'no'
+    user: root
+    command: ['sh', '-c', 'mkdir -p /wal && chown postgres:postgres /wal && chmod 700 /wal']
+    volumes:
+      - wal-archive:/wal
+    networks: [backend]
+
   postgres:
     <<: *service
     image: postgres:16
+    depends_on:
+      wal-init: { condition: service_completed_successfully }
     command:
       - postgres
       - -c
@@ -215,6 +227,15 @@ services:
       - max_connections=100
       - -c
       - log_min_duration_statement=1000
+      # Point-in-time recovery (docs/ops/backup-and-dr.md): off until PG_ARCHIVE_MODE=on and wal-ship.sh runs.
+      - -c
+      - wal_level=replica
+      - -c
+      - archive_mode=${PG_ARCHIVE_MODE:-off}
+      - -c
+      - archive_timeout=60
+      - -c
+      - archive_command=test ! -f /wal/%f && cp %p /wal/%f.tmp && mv /wal/%f.tmp /wal/%f
     environment:
       POSTGRES_USER: centcom
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
@@ -222,6 +243,7 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - backups:/backups
+      - wal-archive:/wal
     networks: [backend]
     healthcheck:
       test: ['CMD', 'pg_isready', '--username=centcom', '--dbname=centcom']
@@ -304,3 +326,4 @@ volumes:
   caddy-data:
   caddy-config:
   backups:
+  wal-archive:

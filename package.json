@@ -25,6 +25,7 @@
     "dev:two-clients": "tsx --tsconfig tsconfig.test.json tools/dev/two-clients.ts",
     "dev:two-accounts": "tsx --tsconfig tsconfig.test.json tools/dev/two-accounts.ts",
     "dev:relay": "tsx --tsconfig tsconfig.test.json tools/dev/relay.ts",
+    "tombstones:apply": "tsx --tsconfig tsconfig.test.json apps/api/scripts/apply-tombstones.ts",
     "release:publish": "tsx --tsconfig tsconfig.test.json apps/api/scripts/publish-release.ts",
     "security:deps": "node infra/security/check-deps.mjs",
     "security:licenses": "node infra/security/check-licenses.mjs",
