@@ -77,6 +77,7 @@ Owner: B032, `emailConfig()` in `@centcom/core`.
 | `SMTP_HOST` | string |  | no | no | SMTP server host name; required when EMAIL_PROVIDER is smtp. |
 | `SMTP_PORT` | integer 1..65535 | `587` | no | no | SMTP server port: 587 for starttls, 465 for tls, 25 for none. |
 | `SMTP_SECURE` | `tls` \| `starttls` \| `none` | `starttls` | no | no | SMTP link protection: tls (encrypted from the start, port 465), starttls (upgrade, required) or none (plain text; a trusted local relay only). |
+| `SMTP_ALLOW_CLEARTEXT_AUTH` | boolean (0, 1, true, false) | `false` | no | no | Allow SMTP_USER and SMTP_PASSWORD over a connection with SMTP_SECURE=none to a host that is not this machine. Off by default: the password would cross the network in clear text. |
 | `SMTP_USER` | string |  | no | no | SMTP user name; with SMTP_PASSWORD it turns on AUTH PLAIN. |
 | `SMTP_PASSWORD` | string |  | no | yes | SMTP password; set together with SMTP_USER. |
 | `EMAIL_TIMEOUT_MS` | integer 1000..60000 | `10000` | no | no | Longest wait for one provider call, in milliseconds; slower calls are retried. |

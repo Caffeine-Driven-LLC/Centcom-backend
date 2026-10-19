@@ -6,7 +6,7 @@
  * token anywhere but the Postmark request header.
  */
 import { z } from 'zod';
-import { defineConfig, envInt, type Env } from '../config/define.js';
+import { defineConfig, envBool, envInt, type Env } from '../config/define.js';
 import { secretString, type Secret } from '../config/secret.js';
 import type { Logger } from '../log/logger.js';
 import {
@@ -15,7 +15,13 @@ import {
   PostmarkProvider,
   type EmailProvider,
 } from './providers.js';
-import { BrevoProvider, ResendProvider, SmtpProvider, type SmtpSecure } from './providers-more.js';
+import {
+  BrevoProvider,
+  isLoopbackHost,
+  ResendProvider,
+  SmtpProvider,
+  type SmtpSecure,
+} from './providers-more.js';
 import { checkSender } from './validation.js';
 
 /** The providers EMAIL_PROVIDER names. */
@@ -82,6 +88,11 @@ export const emailEnvSchema = z
         'SMTP link protection: tls (encrypted from the start, port 465), starttls (upgrade, required) or none (plain text; a trusted local relay only).',
       example: 'starttls',
     }),
+    SMTP_ALLOW_CLEARTEXT_AUTH: envBool().default(false).meta({
+      description:
+        'Allow SMTP_USER and SMTP_PASSWORD over a connection with SMTP_SECURE=none to a host that is not this machine. Off by default: the password would cross the network in clear text.',
+      example: 'false',
+    }),
     SMTP_USER: z.string().min(1).max(256).optional().meta({
       description: 'SMTP user name; with SMTP_PASSWORD it turns on AUTH PLAIN.',
       example: '',
@@ -109,6 +120,21 @@ export const emailEnvSchema = z
     need('resend', 'RESEND_API_KEY', values.RESEND_API_KEY !== undefined);
     need('brevo', 'BREVO_API_KEY', values.BREVO_API_KEY !== undefined);
     need('smtp', 'SMTP_HOST', values.SMTP_HOST !== undefined);
+    if (
+      values.EMAIL_PROVIDER === 'smtp' &&
+      values.SMTP_SECURE === 'none' &&
+      values.SMTP_USER !== undefined &&
+      values.SMTP_HOST !== undefined &&
+      !isLoopbackHost(values.SMTP_HOST) &&
+      !values.SMTP_ALLOW_CLEARTEXT_AUTH
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['SMTP_SECURE'],
+        message:
+          'none would send SMTP_USER and SMTP_PASSWORD in clear text to a host that is not this machine: use starttls or tls, or set SMTP_ALLOW_CLEARTEXT_AUTH=true',
+      });
+    }
     if ((values.SMTP_USER === undefined) !== (values.SMTP_PASSWORD === undefined)) {
       ctx.addIssue({
         code: 'custom',
@@ -134,6 +160,7 @@ export interface SmtpSettings {
   host: string;
   port: number;
   secure: SmtpSecure;
+  allowCleartextAuth?: boolean;
   user?: string;
   password?: Secret;
 }
@@ -154,6 +181,7 @@ export function emailConfig(env?: Env): EmailConfig {
             host: v.SMTP_HOST,
             port: v.SMTP_PORT,
             secure: v.SMTP_SECURE,
+            ...(v.SMTP_ALLOW_CLEARTEXT_AUTH ? { allowCleartextAuth: true } : {}),
             ...(v.SMTP_USER === undefined ? {} : { user: v.SMTP_USER }),
             ...(v.SMTP_PASSWORD === undefined ? {} : { password: v.SMTP_PASSWORD }),
           },

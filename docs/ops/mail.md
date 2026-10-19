@@ -18,26 +18,29 @@ With `console` (the default) or `memory` nobody can sign in by e-mail and invite
 
 ## Settings
 
-| Key                     | Provider | Meaning                                                               |
-| ----------------------- | -------- | --------------------------------------------------------------------- |
-| `EMAIL_PROVIDER`        | all      | `resend`, `brevo`, `postmark`, `smtp` (real); `console`, `memory`     |
-| `EMAIL_FROM`            | all      | `Centcom <no-reply@your-domain>`; the domain must be verified (below) |
-| `EMAIL_TIMEOUT_MS`      | all      | longest wait for one provider call (default 10000)                    |
-| `RESEND_API_KEY`        | resend   | API key with "Sending access" only                                    |
-| `BREVO_API_KEY`         | brevo    | v3 API key (SMTP & API section)                                       |
-| `POSTMARK_SERVER_TOKEN` | postmark | server token                                                          |
-| `SMTP_HOST`             | smtp     | server name                                                           |
-| `SMTP_PORT`             | smtp     | 587 (starttls, default), 465 (tls), 25 (none)                         |
-| `SMTP_SECURE`           | smtp     | `starttls` (upgrade is required, else the send fails), `tls`, `none`  |
-| `SMTP_USER`/`PASSWORD`  | smtp     | together; turn on AUTH PLAIN, only ever sent after encryption         |
+| Key                         | Provider | Meaning                                                                              |
+| --------------------------- | -------- | ------------------------------------------------------------------------------------ |
+| `EMAIL_PROVIDER`            | all      | `resend`, `brevo`, `postmark`, `smtp` (real); `console`, `memory`                    |
+| `EMAIL_FROM`                | all      | `Centcom <no-reply@your-domain>`; the domain must be verified (below)                |
+| `EMAIL_TIMEOUT_MS`          | all      | longest wait for one provider call (default 10000)                                   |
+| `RESEND_API_KEY`            | resend   | API key with "Sending access" only                                                   |
+| `BREVO_API_KEY`             | brevo    | v3 API key (SMTP & API section)                                                      |
+| `POSTMARK_SERVER_TOKEN`     | postmark | server token                                                                         |
+| `SMTP_HOST`                 | smtp     | server name                                                                          |
+| `SMTP_PORT`                 | smtp     | 587 (starttls, default), 465 (tls), 25 (none)                                        |
+| `SMTP_SECURE`               | smtp     | `starttls` (upgrade is required, else the send fails), `tls`, `none`                 |
+| `SMTP_USER`/`PASSWORD`      | smtp     | together; turn on AUTH PLAIN, only ever sent after encryption (see below for `none`) |
+| `SMTP_ALLOW_CLEARTEXT_AUTH` | smtp     | default false; see below                                                             |
 
 `infra/deploy/production.env.example` lists all of them; `gen-env.mjs` copies them into
 `production.env`. The API and the worker both read them (the compose file passes them to both).
 Keys are `Secret`s: they appear in no log line, error or health output. Provider error text is
 never kept (it can quote the recipient); only the HTTP or SMTP status is logged.
 
-`SMTP_SECURE=none` sends the password and the mail in clear text. Use it only for a relay on the same
-machine or private network.
+`SMTP_SECURE=none` sends the mail, and the password if there is one, in clear text. With credentials it is
+**refused at start-up** unless the host is on this machine (`localhost`, 127.x.x.x, `::1`); to send a password
+unencrypted to another host anyway (a relay on a trusted private network) you must set
+`SMTP_ALLOW_CLEARTEXT_AUTH=true` yourself. Without credentials `none` is allowed, as before.
 
 ## What a human must do (cannot be done from the repo)
 
