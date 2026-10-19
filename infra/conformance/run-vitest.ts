@@ -57,6 +57,9 @@ export function runVitest(
         '--reporter=json',
         `--outputFile=${out}`,
         '--coverage.enabled=false',
+        // two test files at a time: every contract's tests run in one vitest process on a 4-core runner, and
+        // latency assertions (p95/p99 budgets, 5 s timeouts) failed when a dozen files competed for the CPU
+        '--maxWorkers=2',
       ],
       {
         cwd: ROOT,
