@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-16",
+ "updated": "2026-10-19",
  "lanes": {
   "B001": {
    "pct": 1,
@@ -378,8 +378,8 @@
    "note": "2026-10-13: security headers and CORS, dependency policy and secret scripts, gitleaks rules, WAF Terraform module (#128), Caddy request-body limits and private paths (#132); gaps: WAF rules not tried against a real Cloudflare plan, workflows and dependabot are protected paths"
   },
   "B099": {
-   "pct": 0.85,
-   "note": "2026-10-13: encrypted backups, verified restore and a restore drill for one server (#129); gaps: off-site bucket not tried with a real R2 or B2 account"
+   "pct": 1,
+   "note": "merged in #160"
   },
   "B101": {
    "pct": 0.95,
