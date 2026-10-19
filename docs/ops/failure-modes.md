@@ -2,11 +2,31 @@
 
 Lane B096 (chaos and failure-mode tests). Each row is a promise the experiments below check.
 
-Run them with `pnpm chaos` (needs Docker, or `DATABASE_URL` and `REDIS_URL`; `CHAOS_OUTAGE_S=60 pnpm chaos`
+Run them with `pnpm chaos:experiments` (needs Docker, or `DATABASE_URL` and `REDIS_URL`; `CHAOS_OUTAGE_S=60 pnpm chaos:experiments`
 holds each outage for the card's 60 s instead of the default 8 s; `CHAOS_REPORT=chaos-report.json` writes
 `{scenario, passed, steady_state_before, during, after, violations[]}` per scenario). They are skipped by a
 plain `pnpm test` because they take minutes. The clock-skew experiment injects no fault and runs in the
 normal test run whenever Postgres and Redis are available.
+
+## The runner (`pnpm chaos`)
+
+`pnpm chaos --scenario <id|all> --env local [--duration-s N] [--api-service api|api-green] [--api-url URL]
+[--project NAME] [--env-file FILE] [--report FILE]`, `pnpm chaos heal --env local` and `pnpm chaos list`
+(`infra/chaos/`). A scenario is a YAML file in `infra/chaos/scenarios/` (hypothesis, steady-state checks, faults,
+checks that must hold while the fault is active, abort conditions, checks that must hold after healing); the shape is
+`infra/chaos/scenario.schema.json`. The runner checks the steady state first, applies each fault to a service of one
+compose project (`docker compose stop|kill|pause|restart`), polls the `during` checks, heals, polls the `expect` checks
+and writes `chaos-report.json` (`{scenario, passed, steady_state_before, during, after, violations[]}`). Healing always
+runs, also after an error or Ctrl-C; an abort condition that becomes true heals at once and fails the scenario.
+
+- **It refuses production**: `--env prod` and any `--api-url` that is not a loopback address exit 2; `--env stage` exits 2
+  too (the owner-run Fly extension is not built).
+- **It touches only the compose project it is given** and signals no process of its own.
+- Shipped scenarios: `redis-outage`, `postgres-kill`, `relay-restart`, `worker-kill`, `api-restart`. Verified: all five
+  passed against the B112 test stack (the production images; `--file infra/pi/docker-compose.pi.yml --env-file infra/pi/.state/pi.env --project centcom-pi --api-url http://127.0.0.1:8081`), torn down afterwards.
+- Not built from the card: Toxiproxy faults (latency, packet loss), the Fly stage mode, scenarios for the blob store, a
+  webhook receiver, DNS and the relay partition, and invariant checkers such as seq continuity and the write ledger (those
+  live in the vitest experiments below).
 
 ## Degradation policy
 
@@ -51,6 +71,6 @@ dead-letter (`apps/worker` email tests), webhook receiver failures (`apps/api/te
 - Blob store (MinIO/R2) down for 5 minutes with snapshot and history assertions; DNS failure for webhook
   targets; network partition between relay nodes; a worker killed mid-job for each queue; the 1000-event Stripe
   storm at that size; Toxiproxy and Fly machine stop/restart on stage. None of the experiments ran in CI
-  (workflows are protected paths): wire `pnpm chaos` as a nightly job if you want it there.
+  (workflows are protected paths): wire `pnpm chaos:experiments` and the runner as a nightly job if you want it there.
 - Postgres **failover** to a replica is not tested: the stack has no replica (the crash-restart experiment is the
   single-server equivalent).

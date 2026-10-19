@@ -1,0 +1,18 @@
+id: worker-kill
+hypothesis: Killing the worker does not affect the API, and the worker is running again once started (its jobs are idempotent and queued work waits in Redis).
+target: compose
+steady_state:
+  - { name: API is ready, http: '${API_URL}/readyz', status: [200], within_s: 30 }
+  - { name: worker is running, service_running: worker, running: true }
+inject:
+  - { fault: kill, service: worker, duration_s: 10 }
+during:
+  - { name: API stays ready, http: '${API_URL}/readyz', status: [200] }
+  - { name: worker is down, service_running: worker, running: false }
+expect:
+  - {
+      name: worker is running again within 60 s,
+      service_running: worker,
+      running: true,
+      within_s: 60,
+    }
