@@ -4,3 +4,6 @@
 10 3 * * *  cd /opt/centcom && infra/dr/backup.sh >>/var/log/centcom-backup.log 2>&1 && infra/dr/prune.sh >>/var/log/centcom-backup.log 2>&1
 */15 * * * * cd /opt/centcom && infra/dr/backup-status.sh --prom /var/lib/node_exporter/textfile/centcom_backup.prom >/dev/null 2>&1
 30 4 1 * *  cd /opt/centcom && infra/dr/drill.sh --use-latest --report /var/log/centcom-dr-drill.json >>/var/log/centcom-backup.log 2>&1
+# Point-in-time recovery (only with PG_ARCHIVE_MODE=on): ship the WAL every minute, a base backup at 02:40.
+* * * * *   cd /opt/centcom && infra/dr/wal-ship.sh >>/var/log/centcom-wal.log 2>&1
+40 2 * * *  cd /opt/centcom && infra/dr/basebackup.sh >>/var/log/centcom-wal.log 2>&1

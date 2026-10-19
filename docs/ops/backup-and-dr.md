@@ -69,10 +69,10 @@ data), [`server-loss.md`](../../infra/runbooks/dr/server-loss.md) (rebuild on a 
 
 ## What is not covered (read this)
 
-- **Point-in-time recovery** (WAL archiving, RPO 5 min): not built. Up to a day of writes can be lost.
-- **Account deletions after a restore.** A restore brings back accounts deleted since the backup,
-  and the application keeps no deletion log outside the database (B026), so
-  `replay-deletions` cannot exist yet. `restore.sh --into stack` refuses without
+- **Point-in-time recovery** is an option, off by default (`PG_ARCHIVE_MODE=off`): see "Point-in-time recovery" below. Without it, up to a day of writes can be lost.
+- **Account deletions after a restore.** A restore brings back accounts deleted since the backup. The
+  deletion log below covers **workspaces**; accounts are not covered because the account deletion flow (B026) is
+  not wired into the running API yet, so nothing records them. `restore.sh --into stack` refuses without
   `--i-know-deletions-may-reappear`, and the runbook says what to do by hand.
 - **Session history in the bundled MinIO.** The `minio-data` volume is on the server's disk and is
   not part of these backups. Put `OBJECT_STORE_*` on R2/B2 (versioned) to make the history durable.
@@ -99,3 +99,33 @@ records `"credential_scan":"skipped"`. A backup is refused when no scanner is av
 The dump is written uncompressed (`pg_dump --compress=0`) so the scanner can read it; the custom format compresses table data
 by default, and a credential inside compressed data is invisible. Backups made before this change are compressed: a
 restore scans them but cannot find a credential inside the compressed parts.
+
+## Point-in-time recovery (option)
+
+Cuts the data lost in a disaster from up to 26 hours (the nightly dump) to about two minutes.
+
+1. Set `PG_ARCHIVE_MODE=on` in `production.env` and redeploy: Postgres writes every finished WAL segment, and at least
+   one a minute (`archive_timeout=60`), into the `wal-archive` volume (a one-shot `wal-init` makes the volume writable).
+   **Do not turn it on before step 2 runs**: nothing empties the volume but the shipper.
+2. Cron (see `infra/dr/crontab.example`): `infra/dr/wal-ship.sh` every minute and `infra/dr/basebackup.sh` daily. The shipper
+   encrypts each segment with the backup passphrase, uploads it to `wal/<segment>.gpg`, downloads it again and compares, and
+   only then deletes it from the volume; a segment it could not ship stays and the script exits 1. The base backup
+   (`pg_basebackup`, tar, gzip, encrypted) goes to `base/<stamp>.tar.gz.gpg` with a manifest.
+3. Restore: `infra/dr/pitr-restore.sh --to '2026-10-14 09:58:00+00' --keep` (or `--to latest`). It picks the newest base
+   backup that started before the moment, unpacks it and every shipped segment into a throwaway container with no
+   network, lets Postgres replay to the moment, promotes, and prints the container name. The time must be later than the
+   end of that base backup and no later than the last shipped segment.
+
+Verified (`infra/dr/pitr.test.ts`, real Postgres and MinIO in Docker): rows written before the chosen moment are in
+the restored database and rows written after it are not; `--to latest` has everything shipped; a wrong passphrase stops
+before anything starts (exit 3); an unreachable bucket leaves the segments in the volume and the shipper exits 1; the
+bucket holds ciphertext only. **Not verified:** a server-side disaster (the last unshipped minute is lost by design), a
+real Cloudflare R2 or Backblaze B2 bucket, and archive volume sizing under real write load.
+
+## Deletion tombstones (workspaces)
+
+When a workspace is purged, the first purge hook writes `tombstones/workspace/<id>.json` (an id and a time) to the object
+store, outside the database. After restoring an older backup run `pnpm tombstones:apply --dry-run`, then
+`pnpm tombstones:apply`: every tombstoned workspace that the restored database holds is marked deleted and purged again with
+the normal hooks. Idempotent; a workspace that is not there is already gone. Needs `OBJECT_STORE_*` (the same settings as
+the worker). Covers workspaces only (see above for accounts).

@@ -33,6 +33,11 @@ import {
 } from '@centcom/storage';
 import type { Kysely } from 'kysely';
 import type { AppContext } from './context.js';
+import {
+  blobTombstoneLog,
+  registerTombstoneHook,
+  type TombstoneLog,
+} from './modules/tombstones/index.js';
 import { createEntitlementRepository } from './modules/entitlements/repository.js';
 import { UsageAggregator } from './modules/usage/aggregate.js';
 import { subscribedPeriod } from './modules/usage/quota.js';
@@ -46,6 +51,8 @@ export interface JobServices {
   /** Hard-deletes a deleted workspace. */
   workspaces: { purge(workspaceId: string): Promise<{ purged: boolean }> };
   hooks: PurgeHookRegistry;
+  /** The deletion tombstone log; null without an object store. */
+  tombstones: TombstoneLog | null;
 }
 
 /** Builds the job services from the API's context. */
@@ -53,6 +60,12 @@ export function createJobServices(ctx: AppContext): JobServices {
   const db = ctx.db as unknown as Kysely<CoreDatabase>;
   const view = <DB>(): Kysely<DB> => ctx.db as unknown as Kysely<DB>;
   const hooks = createPurgeHookRegistry();
+  // First hook: the tombstone is written before any data is destroyed (see modules/tombstones).
+  const tombstones =
+    ctx.config.objectStore === null
+      ? null
+      : blobTombstoneLog(createS3BlobStore(ctx.config.objectStore));
+  if (tombstones !== null) registerTombstoneHook(hooks, tombstones);
   const invites = createInviteStore(view<InviteDatabase>());
   registerInvitePurgeHook(hooks, invites);
   registerEntitlementsPurgeHook(hooks, createEntitlementRepository(view()));
@@ -92,5 +105,6 @@ export function createJobServices(ctx: AppContext): JobServices {
     invites,
     workspaces: createWorkspaceStore(db),
     hooks,
+    tombstones,
   };
 }
