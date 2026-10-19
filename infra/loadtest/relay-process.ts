@@ -4,7 +4,7 @@
  * reads /proc, and kill/restart for the reconnect storm.
  */
 import { spawn, type ChildProcess } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { openSync, readFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -36,6 +36,10 @@ export interface RelayOptions {
   env?: Record<string, string>;
   /** Raise the open-file limit of the relay (default 200 000, within the hard limit). */
   nofile?: number;
+  /** Extra flags for `node`, before the entry point (`--trace-gc`). */
+  nodeArgs?: string[];
+  /** Append the relay's standard output to this file instead of dropping it. */
+  stdoutFile?: string;
 }
 
 export class RelayProcess {
@@ -86,11 +90,20 @@ export class RelayProcess {
         '-c',
         `ulimit -n ${limit} 2>/dev/null || ulimit -n $(ulimit -Hn); exec "$0" "$@"`,
         process.execPath,
+        ...(this.opts.nodeArgs ?? []),
         '--import',
         'tsx',
         join(ROOT, 'apps/relay/src/main.ts'),
       ],
-      { cwd: ROOT, env, stdio: ['ignore', 'ignore', 'inherit'] },
+      {
+        cwd: ROOT,
+        env,
+        stdio: [
+          'ignore',
+          this.opts.stdoutFile === undefined ? 'ignore' : openSync(this.opts.stdoutFile, 'a'),
+          'inherit',
+        ],
+      },
     );
     this.child.once('exit', () => (this.lastCpuTicks = 0));
     await this.ready();
