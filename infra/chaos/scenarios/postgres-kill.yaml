@@ -1,0 +1,17 @@
+id: postgres-kill
+hypothesis: With Postgres killed the API answers not ready (never healthy), stays alive, and the service is ready again within 120 s of the database restarting.
+target: compose
+steady_state:
+  - { name: API is ready, http: '${API_URL}/readyz', status: [200], within_s: 30 }
+inject:
+  - { fault: kill, service: postgres, duration_s: 15 }
+during:
+  - { name: readyz reports 503 within 15 s, http: '${API_URL}/readyz', status: [503], within_s: 15 }
+  - { name: healthz stays 200, http: '${API_URL}/healthz', status: [200] }
+expect:
+  - {
+      name: API is ready again within 120 s,
+      http: '${API_URL}/readyz',
+      status: [200],
+      within_s: 120,
+    }

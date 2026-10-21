@@ -1,0 +1,9 @@
+id: api-restart
+hypothesis: Restarting the API container (a SIGTERM drain) is visible as a short outage at most and the service is ready again within 60 s.
+target: compose
+steady_state:
+  - { name: API is ready, http: '${API_URL}/readyz', status: [200], within_s: 30 }
+inject:
+  - { fault: restart, service: '${API_SERVICE}', duration_s: 0 }
+expect:
+  - { name: API is ready again within 60 s, http: '${API_URL}/readyz', status: [200], within_s: 60 }
