@@ -20,6 +20,13 @@ import {
 } from '@centcom/core';
 import { closeDb, createDb } from '@centcom/db';
 import {
+  createAccountExportQueue,
+  createAccountPurgeQueue,
+  createWorkspacePurgeQueue,
+  scheduleAccountExportSweep,
+  scheduleAccountPurgeSweep,
+  startAccountExportWorker,
+  startAccountPurgeWorker,
   createInviteExpiryQueue,
   createSessionExpiryQueue,
   createStripeEventDlq,
@@ -93,7 +100,10 @@ export async function runWorker(env: Env): Promise<number> {
     return 1;
   }
 
-  const ctx = createContext({ config, db, redis, logger });
+  // A workspace the account purge deletes is purged by this process's workspace-purge worker, so the
+  // services built here queue to it (without a queue the soft delete would only be logged).
+  const purgeQueue = createWorkspacePurgeQueue({ connection });
+  const ctx = createContext({ config, db, redis, logger, purgeQueue });
   const jobs = createJobServices(ctx);
   const common = { logger, metrics: ctx.metrics };
   const closers: (() => Promise<unknown>)[] = [];
@@ -130,6 +140,40 @@ export async function runWorker(env: Env): Promise<number> {
     closers.push(
       () => sessions.close(),
       () => sessionQueue.close(),
+    );
+  }
+
+  closers.push(() => purgeQueue.close());
+
+  // Account deletion (B026): the purge at the end of the 30-day grace (an hourly sweep also queues due
+  // ones) and, with an object store, the data exports.
+  const accountPurgeQueue = createAccountPurgeQueue({ connection });
+  await scheduleAccountPurgeSweep(accountPurgeQueue);
+  const accountPurge = startAccountPurgeWorker({
+    connection,
+    queue: accountPurgeQueue,
+    purge: (userId) => jobs.accounts.purge(userId),
+    due: (now, limit) => jobs.accounts.due(now, limit),
+    ...common,
+  });
+  closers.push(
+    () => accountPurge.close(),
+    () => accountPurgeQueue.close(),
+  );
+  const exportRunner = jobs.accounts.exports;
+  if (exportRunner !== null) {
+    const accountExportQueue = createAccountExportQueue({ connection });
+    await scheduleAccountExportSweep(accountExportQueue);
+    const accountExport = startAccountExportWorker({
+      connection,
+      queue: accountExportQueue,
+      run: (exportId, opts) => exportRunner.run(exportId, opts),
+      sweep: (now) => exportRunner.sweep(now),
+      ...common,
+    });
+    closers.push(
+      () => accountExport.close(),
+      () => accountExportQueue.close(),
     );
   }
 
@@ -180,7 +224,14 @@ export async function runWorker(env: Env): Promise<number> {
 
   logger.info(
     {
-      jobs: ['usage.aggregate', 'invite-expiry', 'session-expiry', 'workspace-purge'],
+      jobs: [
+        'usage.aggregate',
+        'invite-expiry',
+        'session-expiry',
+        'workspace-purge',
+        'account-purge',
+        ...(exportRunner === null ? [] : ['account-export']),
+      ],
       email: config.email?.provider ?? 'off',
       billing: ctx.billing === null ? 'off' : 'stripe',
     },

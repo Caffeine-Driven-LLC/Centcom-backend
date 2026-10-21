@@ -22,7 +22,7 @@ import { sql, type Kysely } from 'kysely';
 
 /** What a tombstone says. */
 export interface Tombstone {
-  kind: 'workspace';
+  kind: 'workspace' | 'account';
   id: string;
   deletedAt: Date;
 }
@@ -35,14 +35,25 @@ export interface TombstoneLog {
   list(): Promise<{ tombstones: Tombstone[]; unreadable: number }>;
 }
 
-/** The prefix of the log in the object store. */
+/** The prefix of the workspace tombstones in the object store. */
 export const TOMBSTONE_PREFIX = 'tombstones/workspace/';
-const KEY = /^tombstones\/workspace\/(wsp_[0-9A-HJKMNP-TV-Z]{26})\.json$/;
+/** The prefix of the account tombstones. */
+export const ACCOUNT_TOMBSTONE_PREFIX = 'tombstones/account/';
+const KEY = /^tombstones\/(workspace|account)\/((?:wsp|usr)_[0-9A-HJKMNP-TV-Z]{26})\.json$/;
 
 export const tombstoneKey = (workspaceId: string): string => {
   if (!isId('wsp', workspaceId)) throw new TypeError('tombstoneKey: not a wsp_ id');
   return `${TOMBSTONE_PREFIX}${workspaceId}.json`;
 };
+
+/** The key of an account's tombstone. */
+export const accountTombstoneKey = (userId: string): string => {
+  if (!isId('usr', userId)) throw new TypeError('accountTombstoneKey: not a usr_ id');
+  return `${ACCOUNT_TOMBSTONE_PREFIX}${userId}.json`;
+};
+
+const keyOf = (t: Pick<Tombstone, 'kind' | 'id'>): string =>
+  t.kind === 'account' ? accountTombstoneKey(t.id) : tombstoneKey(t.id);
 
 /** The log in an object store (S3/R2/MinIO in production, memory in tests). */
 export function blobTombstoneLog(blobs: BlobStore): TombstoneLog {
@@ -54,16 +65,22 @@ export function blobTombstoneLog(blobs: BlobStore): TombstoneLog {
         id: t.id,
         deleted_at: t.deletedAt.toISOString(),
       });
-      await blobs.put(tombstoneKey(t.id), new TextEncoder().encode(body), {
+      await blobs.put(keyOf(t), new TextEncoder().encode(body), {
         contentType: 'application/json',
       });
     },
     async list() {
       const out: Tombstone[] = [];
       let unreadable = 0;
-      for (const key of await blobs.list(TOMBSTONE_PREFIX)) {
-        const id = KEY.exec(key)?.[1];
-        if (id === undefined) {
+      const keys = [
+        ...(await blobs.list(TOMBSTONE_PREFIX)),
+        ...(await blobs.list(ACCOUNT_TOMBSTONE_PREFIX)),
+      ];
+      for (const key of keys) {
+        const match = KEY.exec(key);
+        const kind = match?.[1] as Tombstone['kind'] | undefined;
+        const id = match?.[2];
+        if (kind === undefined || id === undefined) {
           unreadable += 1;
           continue;
         }
@@ -75,13 +92,13 @@ export function blobTombstoneLog(blobs: BlobStore): TombstoneLog {
           const at = new Date(String(parsed['deleted_at']));
           if (
             parsed['v'] !== 1 ||
-            parsed['kind'] !== 'workspace' ||
+            parsed['kind'] !== kind ||
             parsed['id'] !== id ||
             Number.isNaN(at.getTime())
           ) {
             throw new Error('not a tombstone');
           }
-          out.push({ kind: 'workspace', id, deletedAt: at });
+          out.push({ kind, id, deletedAt: at });
         } catch {
           unreadable += 1;
         }
@@ -121,13 +138,29 @@ export interface ApplyReport {
   absent: number;
   /** With `dryRun`: the ids that would be purged. */
   wouldPurge: string[];
+  /** Tombstoned accounts that the database held and the account purge deleted or scrubbed again. */
+  accountsPurged: string[];
+  /** Tombstoned accounts that were not in the database, or were already deleted. */
+  accountsAbsent: number;
+  /** Tombstoned accounts the purge could not finish (it blocked or is waiting); run it again after a look. */
+  accountsPending: string[];
+  /** With `dryRun`: the account ids that would be purged. */
+  accountsWouldPurge: string[];
 }
 
 export interface ApplyDeps {
-  db: Kysely<{ workspaces: { id: string; deleted_at: Date | null } }>;
+  db: Kysely<{
+    workspaces: { id: string; deleted_at: Date | null };
+    users: { id: string; status: string; deletion_scheduled_at: Date | null };
+  }>;
   log: Pick<TombstoneLog, 'list'>;
   /** The worker's purge for one workspace (hooks, then the rows). */
   purge(workspaceId: string): Promise<{ purged: boolean }>;
+  /**
+   * The account purge for one user (`purgeUser` over the restored database, with its deadline already passed).
+   * Without it, account tombstones are counted and left alone.
+   */
+  purgeAccount?(userId: string): Promise<'deleted' | 'scrubbed' | 'waiting' | 'blocked' | string>;
   dryRun?: boolean;
   logger?: Logger;
 }
@@ -144,8 +177,16 @@ export async function applyTombstones(deps: ApplyDeps): Promise<ApplyReport> {
     purged: [],
     absent: 0,
     wouldPurge: [],
+    accountsPurged: [],
+    accountsAbsent: 0,
+    accountsPending: [],
+    accountsWouldPurge: [],
   };
   for (const t of tombstones) {
+    if (t.kind === 'account') {
+      await applyAccount(deps, t, report);
+      continue;
+    }
     const row = await deps.db
       .selectFrom('workspaces')
       .select('id')
@@ -169,4 +210,37 @@ export async function applyTombstones(deps: ApplyDeps): Promise<ApplyReport> {
     deps.logger?.info({ workspace_id: t.id, purged }, 'tombstones.applied');
   }
   return report;
+}
+
+/** Puts one tombstoned account back through the account purge, if the database holds it undeleted. */
+async function applyAccount(deps: ApplyDeps, t: Tombstone, report: ApplyReport): Promise<void> {
+  const row = await deps.db
+    .selectFrom('users')
+    .select(['id', 'status'])
+    .where('id', '=', t.id)
+    .executeTakeFirst();
+  if (row === undefined || row.status === 'deleted') {
+    report.accountsAbsent += 1;
+    return;
+  }
+  if (deps.purgeAccount === undefined) return;
+  if (deps.dryRun === true) {
+    report.accountsWouldPurge.push(t.id);
+    return;
+  }
+  // The restored row may be active; the purge only takes users who are pending deletion and due, so make it so
+  // (the tombstone's time is the moment the purge ran, which is in the past by definition).
+  await deps.db
+    .updateTable('users')
+    .set({
+      status: 'pending_deletion',
+      deletion_scheduled_at: sql<Date>`least(coalesce(deletion_scheduled_at, ${t.deletedAt}), ${t.deletedAt})`,
+    })
+    .where('id', '=', t.id)
+    .where('status', '<>', 'deleted')
+    .execute();
+  const outcome = await deps.purgeAccount(t.id);
+  if (outcome === 'deleted' || outcome === 'scrubbed') report.accountsPurged.push(t.id);
+  else report.accountsPending.push(t.id);
+  deps.logger?.info({ user_id: t.id, outcome }, 'tombstones.account_applied');
 }

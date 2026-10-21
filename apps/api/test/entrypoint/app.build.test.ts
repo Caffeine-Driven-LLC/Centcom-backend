@@ -151,6 +151,7 @@ describe('buildApp (B102)', () => {
     expect(skipped.map((l) => l['module'])).toEqual([
       'billing',
       'email-login',
+      'account-exports',
       'invites',
       'history',
       'snapshots',
@@ -170,6 +171,7 @@ describe('buildApp (B102)', () => {
     const skipped = captured.lines().filter((l) => l['msg'] === 'api.module_skipped');
     expect(skipped.map((l) => l['module'])).toEqual([
       'billing',
+      'account-exports',
       'sessions',
       'history',
       'snapshots',
@@ -196,6 +198,7 @@ describe('buildApp (B102)', () => {
     const skipped = captured.lines().filter((l) => l['msg'] === 'api.module_skipped');
     expect(skipped.map((l) => l['module'])).toEqual([
       'billing',
+      'account-exports',
       'invites',
       'history',
       'snapshots',

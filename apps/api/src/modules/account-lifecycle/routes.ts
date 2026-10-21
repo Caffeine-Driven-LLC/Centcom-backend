@@ -63,7 +63,8 @@ const ctxOf = (request: FastifyRequest): RequestCtx =>
 
 const noStore = (reply: FastifyReply): FastifyReply => reply.header('cache-control', 'no-store');
 
-export const accountLifecycleRoutes: FastifyPluginAsync<AccountLifecycleRouteOptions> = async (
+/** `DELETE /v1/me` and `POST /v1/me/restore`: they need no file store. */
+export const accountDeletionRoutes: FastifyPluginAsync<AccountLifecycleRouteOptions> = async (
   app,
   { service },
 ) => {
@@ -93,7 +94,13 @@ export const accountLifecycleRoutes: FastifyPluginAsync<AccountLifecycleRouteOpt
       return user;
     },
   );
+};
 
+/** `POST /v1/me/export` and `GET /v1/me/export/{id}`: they need the file store exports are written to. */
+export const accountExportRoutes: FastifyPluginAsync<AccountLifecycleRouteOptions> = async (
+  app,
+  { service },
+) => {
   app.post(
     '/v1/me/export',
     {
@@ -119,4 +126,13 @@ export const accountLifecycleRoutes: FastifyPluginAsync<AccountLifecycleRouteOpt
       return view;
     },
   );
+};
+
+/** All four routes. */
+export const accountLifecycleRoutes: FastifyPluginAsync<AccountLifecycleRouteOptions> = async (
+  app,
+  options,
+) => {
+  await app.register(accountDeletionRoutes, options);
+  await app.register(accountExportRoutes, options);
 };

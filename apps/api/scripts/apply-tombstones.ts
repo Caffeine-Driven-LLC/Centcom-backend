@@ -1,5 +1,5 @@
 /**
- * `pnpm tombstones:apply [--dry-run]` (after restoring a backup): deletes again the workspaces that were
+ * `pnpm tombstones:apply [--dry-run]` (after restoring a backup): deletes again the workspaces and accounts that were
  * purged after the backup was taken, using the tombstone log in the object store. Reads the same
  * configuration as the worker (DATABASE_URL, REDIS_URL, OBJECT_STORE_*). Prints ids and counts only.
  *
@@ -51,6 +51,7 @@ async function main(): Promise<number> {
       log: jobs.tombstones,
       dryRun,
       logger,
+      purgeAccount: (userId) => jobs.accounts.purge(userId),
       purge: (workspaceId) =>
         processWorkspacePurge(
           { id: `tombstone-${workspaceId}`, data: { workspaceId }, attemptsMade: 0 },
@@ -58,9 +59,17 @@ async function main(): Promise<number> {
         ),
     });
     process.stdout.write(
-      `${dryRun ? 'dry run: ' : ''}${report.tombstones} tombstones, ${report.purged.length} purged, ${report.wouldPurge.length} would be purged, ${report.absent} not in the database, ${report.unreadable} unreadable\n`,
+      `${dryRun ? 'dry run: ' : ''}${report.tombstones} tombstones, ${report.purged.length} purged, ${report.wouldPurge.length} would be purged, ${report.absent} not in the database, ${report.unreadable} unreadable; accounts: ${report.accountsPurged.length} purged, ${report.accountsWouldPurge.length} would be purged, ${report.accountsPending.length} not finished, ${report.accountsAbsent} not in the database or already deleted\n`,
     );
-    for (const id of [...report.purged, ...report.wouldPurge]) process.stdout.write(`${id}\n`);
+    for (const id of [
+      ...report.purged,
+      ...report.wouldPurge,
+      ...report.accountsPurged,
+      ...report.accountsWouldPurge,
+    ]) {
+      process.stdout.write(`${id}\n`);
+    }
+    for (const id of report.accountsPending) process.stdout.write(`${id} (not finished)\n`);
     return 0;
   } finally {
     await Promise.allSettled([closeDb(db), redis.close()]);

@@ -318,6 +318,16 @@ export const METRICS = {
     API_WORKER,
   ),
   account_purge_failed_total: counter('Account purges that failed.', [], WORKER),
+  account_tombstones_recorded_total: counter(
+    'Account deletion tombstones written before a purge.',
+    [],
+    API_WORKER,
+  ),
+  account_tombstones_skipped_total: counter(
+    'Account purges run without a tombstone log (no object store configured).',
+    [],
+    API_WORKER,
+  ),
   account_purges_total: counter('Account purge runs, by outcome.', ['outcome'], API_WORKER),
   admin_audit_failures_total: counter('Admin API calls whose audit write failed.'),
   admin_calls_total: counter('Admin API calls by outcome.', ['outcome']),
