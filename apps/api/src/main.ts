@@ -22,6 +22,11 @@ import { closeDb, createDb } from '@centcom/db';
 import type { Kysely } from 'kysely';
 import { sql } from 'kysely';
 import {
+  cancelAccountPurge,
+  createAccountExportQueue,
+  createAccountPurgeQueue,
+  enqueueAccountExport,
+  scheduleAccountPurge,
   createEmailQueue,
   createStripeEventQueue,
   createWorkspacePurgeQueue,
@@ -119,9 +124,14 @@ async function main(): Promise<number> {
   // Stripe webhook events are stored by the API and processed by the worker's stripe.event.process queue.
   const stripeQueue =
     config.billing === null ? null : createStripeEventQueue({ connection: queueConnection });
+  // Account deletion: the purge is delayed to the end of the grace period; exports need the object store.
+  const accountPurgeQueue = createAccountPurgeQueue({ connection: queueConnection });
+  const accountExportQueue = createAccountExportQueue({ connection: queueConnection });
   const closeQueues = async (): Promise<void> => {
     await Promise.allSettled([
       purgeQueue.close(),
+      accountPurgeQueue.close(),
+      accountExportQueue.close(),
       emailQueue?.close() ?? Promise.resolve(),
       stripeQueue?.close() ?? Promise.resolve(),
       queueConnection.quit(),
@@ -133,6 +143,11 @@ async function main(): Promise<number> {
     redis,
     logger,
     purgeQueue,
+    accountJobs: {
+      enqueueExport: (exportId) => enqueueAccountExport(accountExportQueue, exportId),
+      schedulePurge: (userId, at) => scheduleAccountPurge(accountPurgeQueue, userId, at),
+      cancelPurge: (userId) => cancelAccountPurge(accountPurgeQueue, userId),
+    },
     ...(emailQueue === null ? {} : { emailQueue }),
     ...(stripeQueue === null
       ? {}

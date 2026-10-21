@@ -51,6 +51,18 @@ import { TokenService } from './modules/auth/tokens/index.js';
 import { createLoginSessions, type LoginSessions } from './modules/auth/web-session/store.js';
 import { deviceStoreFromDb } from './modules/devices/repo.js';
 import { DeviceService } from './modules/devices/service.js';
+import {
+  ACCOUNT_LIFECYCLE_ACTIONS,
+  AccountLifecycleService,
+  createAccountLifecycleStore,
+  exportBlobStoreFrom,
+  type AccountJobs,
+  type AccountLifecycleAction,
+  type AccountLifecycleStore,
+  type ExportBlobStore,
+  type LifecycleDb,
+} from './modules/account-lifecycle/index.js';
+import { createS3ObjectStore } from './modules/audit-api/object-store.js';
 import { createCollab, type Collab } from './collab.js';
 import { createBilling, type Billing } from './billing.js';
 import type { EventQueue as StripeEventQueue } from './modules/billing/webhooks/ingest.js';
@@ -98,6 +110,21 @@ export interface AppDeps {
   stripeEventQueue?: StripeEventQueue;
   /** Where a deleted workspace's purge is queued (the worker's `workspace-purge` queue); without one it is only logged. */
   purgeQueue?: PurgeQueue;
+  /**
+   * The worker's `account-export` and `account-purge` queues. Without them nothing is queued at request
+   * time: the worker's sweeps (hourly for purges, every 15 minutes for exports) find the work instead.
+   */
+  accountJobs?: AccountJobs;
+}
+
+/** The account lifecycle's services (B026). */
+export interface AccountLifecycle {
+  service: AccountLifecycleService;
+  store: AccountLifecycleStore;
+  /** Where export files go; null without an object store (exports are then not offered). */
+  blobs: ExportBlobStore | null;
+  /** Writes `account.*` audit events (also used by the worker's purge). */
+  emitter: ReturnType<typeof createAuditEmitter<AccountLifecycleAction>>;
 }
 
 /** The services the route modules draw on. */
@@ -128,6 +155,8 @@ export interface AppContext extends AppDeps {
   collab: Collab;
   /** Stripe billing; null when STRIPE_SECRET_KEY is not set. */
   billing: Billing | null;
+  /** Account deletion and data export (B026). */
+  accounts: AccountLifecycle;
   /** What each workspace's plan allows, cached. */
   entitlements: CachedEntitlements;
   /** The plan catalogue and the uncached reads (B069). */
@@ -414,8 +443,45 @@ export function createContext(deps: AppDeps): AppContext {
     ...(deps.stripeEventQueue === undefined ? {} : { eventQueue: deps.stripeEventQueue }),
   });
 
+  const accountStore = createAccountLifecycleStore(view<LifecycleDb>());
+  const accountBlobs =
+    config.objectStore === null
+      ? null
+      : exportBlobStoreFrom(createS3ObjectStore(config.objectStore, { clock }));
+  const accountEmitter = createAuditEmitter({
+    db: view<CoreDatabase>() as unknown as AuditDb,
+    actions: ACCOUNT_LIFECYCLE_ACTIONS,
+    logger,
+    metrics,
+    clock,
+  });
+  const accounts: AccountLifecycle = {
+    store: accountStore,
+    blobs: accountBlobs,
+    emitter: accountEmitter,
+    service: new AccountLifecycleService({
+      store: accountStore,
+      emitter: accountEmitter,
+      tokens,
+      jobs: deps.accountJobs ?? {
+        enqueueExport: () => Promise.resolve(),
+        schedulePurge: () => Promise.resolve(),
+        cancelPurge: () => Promise.resolve(),
+      },
+      blobs: accountBlobs ?? {
+        presignGet: () => {
+          throw new Error('no object store is configured');
+        },
+      },
+      clock,
+      logger,
+      metrics,
+    }),
+  };
+
   return {
     ...deps,
+    accounts,
     // the guarded logger replaces deps.logger for everything built from this context (B101)
     logger,
     metrics,

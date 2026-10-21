@@ -22,6 +22,13 @@ The queues live in `@centcom/worker`: `account-export` (`enqueueAccountExport`,
 `cancelAccountPurge`, `startAccountPurgeWorker`, a sweep every hour). The service's `AccountJobs`
 port is those three functions over the two queues.
 
+**Wiring.** `context.ts` builds `ctx.accounts` (service, store, emitter, export file store); `modules.ts` registers
+`accountLifecycleRoutes` (the two export routes only with an object store); `main.ts` passes the queues as
+`accountJobs`; `jobs.ts` builds `jobs.accounts` (`purge` over `purgeUser`, `due`, the export runner) and
+`worker.ts` starts the two workers and their sweeps. The purge writes the account's tombstone first
+(`modules/tombstones`). The magic-link sign-in lets an account in its grace period in, so the user can call
+restore. User-facing description: [docs/accounts/deletion.md](../../../../../docs/accounts/deletion.md).
+
 ## Behaviour
 
 - **Delete.** One transaction locks the user, refuses (409) the only owner of a workspace that has

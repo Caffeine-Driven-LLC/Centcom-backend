@@ -70,10 +70,12 @@ data), [`server-loss.md`](../../infra/runbooks/dr/server-loss.md) (rebuild on a 
 ## What is not covered (read this)
 
 - **Point-in-time recovery** is an option, off by default (`PG_ARCHIVE_MODE=off`): see "Point-in-time recovery" below. Without it, up to a day of writes can be lost.
-- **Account deletions after a restore.** A restore brings back accounts deleted since the backup. The
-  deletion log below covers **workspaces**; accounts are not covered because the account deletion flow (B026) is
-  not wired into the running API yet, so nothing records them. `restore.sh --into stack` refuses without
-  `--i-know-deletions-may-reappear`, and the runbook says what to do by hand.
+- **Account deletions after a restore.** A restore brings back accounts deleted since the backup. The deletion log
+  below records both workspaces and accounts (the account purge, B026, writes a tombstone first), and
+  `pnpm tombstones:apply` deletes them again; it needs the object store the tombstones were written to. An account
+  that was purged while no object store was configured has no tombstone (`account_tombstones_skipped_total`).
+  `restore.sh --into stack` still refuses without `--i-know-deletions-may-reappear`, so run the apply step before
+  letting anyone in.
 - **Session history in the bundled MinIO.** The `minio-data` volume is on the server's disk and is
   not part of these backups. Put `OBJECT_STORE_*` on R2/B2 (versioned) to make the history durable.
 - **Redis** is treated as rebuildable (rate limits, idempotency, queues): AOF is on, nothing else.
@@ -122,10 +124,16 @@ before anything starts (exit 3); an unreachable bucket leaves the segments in th
 bucket holds ciphertext only. **Not verified:** a server-side disaster (the last unshipped minute is lost by design), a
 real Cloudflare R2 or Backblaze B2 bucket, and archive volume sizing under real write load.
 
-## Deletion tombstones (workspaces)
+## Deletion tombstones (workspaces and accounts)
 
 When a workspace is purged, the first purge hook writes `tombstones/workspace/<id>.json` (an id and a time) to the object
-store, outside the database. After restoring an older backup run `pnpm tombstones:apply --dry-run`, then
-`pnpm tombstones:apply`: every tombstoned workspace that the restored database holds is marked deleted and purged again with
-the normal hooks. Idempotent; a workspace that is not there is already gone. Needs `OBJECT_STORE_*` (the same settings as
-the worker). Covers workspaces only (see above for accounts).
+store, outside the database. When an account is purged, `purgeUser` writes `tombstones/account/<usr_id>.json` first (same
+shape, still only an id and a time) and stops, to be retried by the job, if the write fails. After restoring an older backup run
+`pnpm tombstones:apply --dry-run`, then `pnpm tombstones:apply`: every tombstoned workspace that the restored database holds is
+marked deleted and purged again with the normal hooks, and every tombstoned account the database holds undeleted is set to
+`pending_deletion` with its deadline in the past and put through the account purge (personal rows removed, audit rows
+pseudonymised to `usr_deleted`, sole workspaces deleted). Accounts whose sole workspaces are still being purged, or that now block
+because they own a shared workspace, are listed as "not finished"; they stay `pending_deletion`, so the worker's hourly
+`account-purge` sweep finishes them (or a human decides, for a block). Idempotent; an id that is not there, or already `deleted`, is
+skipped. Needs `OBJECT_STORE_*` (the same settings as the worker). Without an object store there is no log: the purge still runs
+and `account_tombstones_skipped_total` counts it, so alert on it in production.

@@ -7,6 +7,7 @@
  *    `cancelDeletion` ran): `cancelled`. A deadline still in the future: `not_due`. A user who
  *    became the only owner of a workspace with other members during the grace period: `blocked`
  *    (nothing is deleted, `account_purge_blocked_total` counts it; a human decides).
+ *    The account's tombstone is written first (see `PurgeDeps.tombstones`).
  * 2. **Files.** The user's export files are deleted from the object store.
  * 3. **Personal data**, in one transaction that locks the user's row: the exports, notifications,
  *    notification preferences, push subscriptions, sign-in identities and grants, refresh tokens,
@@ -76,6 +77,13 @@ export interface PurgeDeps {
   deleteWorkspace(workspaceId: string): Promise<void>;
   /** Writes `account.purge` (`ACCOUNT_LIFECYCLE_ACTIONS`). */
   emitter: Pick<AuditEmitter<AccountLifecycleAction>, 'emit'>;
+  /**
+   * The tombstone log (modules/tombstones). The tombstone of the account is written before any data is
+   * destroyed (a failure here stops the purge and the job retries), so a restore from an older backup cannot
+   * bring the account back (`pnpm tombstones:apply`). Without an object store there is no log: the purge still
+   * runs and `account_tombstones_skipped_total` counts it.
+   */
+  tombstones?: { record(t: { kind: 'account'; id: string; deletedAt: Date }): Promise<void> };
   /** Milliseconds; default Date.now. */
   clock?: () => number;
   logger?: Logger;
@@ -292,6 +300,12 @@ export async function purgeUser(deps: PurgeDeps, userId: string): Promise<PurgeO
       metrics.counter('account_purge_blocked_total').inc();
       deps.logger?.warn({ user_id: userId }, 'account_purge.blocked_by_sole_ownership');
       return 'blocked';
+    }
+    if (deps.tombstones === undefined) {
+      metrics.counter('account_tombstones_skipped_total').inc();
+    } else {
+      await deps.tombstones.record({ kind: 'account', id: userId, deletedAt: now });
+      metrics.counter('account_tombstones_recorded_total').inc();
     }
     if (!(await removePersonalData(deps, userId, now))) return 'cancelled';
   }

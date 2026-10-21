@@ -8,7 +8,9 @@
  *   nonce, valid MAGIC_LINK_TTL_S (15 minutes), used at most once.
  * - **Limits:** 5 links per address per hour; past it, nothing is sent and the caller cannot tell.
  *   The 20/min per address cap is the rate limiter's auth bucket (B023), set on the routes.
- * - **Accounts:** `pending_deletion` and `deleted` accounts fail to sign in like a bad link.
+ * - **Accounts:** `deleted` accounts fail to sign in like a bad link. A `pending_deletion` account can sign
+ *   in during its 30-day grace period (B026): it is the only way to hold a token again after the deletion
+ *   revoked them, and so to call `POST /v1/me/restore`. Signing in does not cancel the deletion.
  * - **Failures:** a mail that cannot be sent after 3 attempts gives its link up (counted and
  *   logged); the token store down is a 503 with `retry_after_s`.
  *
@@ -196,7 +198,7 @@ export class MagicLinkService {
     );
     if (used === null) return this.#fail('unknown');
     const { user } = await this.#o.users.getOrCreateByEmail(used.email);
-    if (user.status !== 'active') return this.#fail('account_closed', user.id);
+    if (user.status === 'deleted') return this.#fail('account_closed', user.id);
     this.#metrics.counter('magic_link_logins_total').inc();
     this.#o.logger?.info({ user_id: user.id }, 'auth.magic_link_login');
     return { userId: user.id, returnTo: this.#o.returnTo.resolve(used.returnTo) };

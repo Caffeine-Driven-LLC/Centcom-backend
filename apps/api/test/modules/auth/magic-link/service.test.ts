@@ -137,18 +137,21 @@ describe('a sign-in link', () => {
     expect([...users.byEmail.keys()]).toEqual([composed]);
   });
 
-  it('fails like a bad link for accounts being deleted or deleted', async () => {
+  it('fails like a bad link for a deleted account, but lets one in its grace period sign in (to restore it)', async () => {
     const { app, service, mailer, users, completed } = await magicLinkApp();
     users.byEmail.set('gone@example.test', { id: 'usr_x', status: 'deleted' });
     users.byEmail.set('leaving@example.test', { id: 'usr_y', status: 'pending_deletion' });
     const browser = nonceOf(await requestLink(app, 'gone@example.test'));
     await requestLink(app, 'leaving@example.test', { cookie: `centcom_login_nonce=${browser}` });
     await service.idle();
+    const statuses: number[] = [];
     for (const { link } of mailer.sent) {
       const response = await useLink(app, tokenOf(link), browser, csrfFor(browser));
-      expect(response.statusCode).toBe(400);
+      statuses.push(response.statusCode);
     }
-    expect(completed).toEqual([]);
+    expect(statuses[0]).toBe(400);
+    expect(statuses[1]).not.toBe(400);
+    expect(completed.map((c) => c.userId)).toEqual(['usr_y']);
   });
 
   it('gives a link up after 3 failed mail attempts, counted and logged', async () => {

@@ -38,6 +38,14 @@ import {
   registerTombstoneHook,
   type TombstoneLog,
 } from './modules/tombstones/index.js';
+import {
+  AccountExportRunner,
+  duePurges,
+  purgeUser,
+  workspaceDeleterFrom,
+  type PurgeDb,
+  type PurgeOutcome,
+} from './modules/account-lifecycle/index.js';
 import { createEntitlementRepository } from './modules/entitlements/repository.js';
 import { UsageAggregator } from './modules/usage/aggregate.js';
 import { subscribedPeriod } from './modules/usage/quota.js';
@@ -53,6 +61,15 @@ export interface JobServices {
   hooks: PurgeHookRegistry;
   /** The deletion tombstone log; null without an object store. */
   tombstones: TombstoneLog | null;
+  /** The account lifecycle's jobs (B026). */
+  accounts: {
+    /** `purgeUser` over the live services; writes the account's tombstone first when there is a log. */
+    purge(userId: string): Promise<PurgeOutcome>;
+    /** Users whose deletion deadline has passed (the hourly sweep's input). */
+    due(now: Date, limit: number): Promise<string[]>;
+    /** Builds and expires exports; null without an object store. */
+    exports: AccountExportRunner | null;
+  };
 }
 
 /** Builds the job services from the API's context. */
@@ -106,5 +123,32 @@ export function createJobServices(ctx: AppContext): JobServices {
     workspaces: createWorkspaceStore(db),
     hooks,
     tombstones,
+    accounts: {
+      purge: (userId) =>
+        purgeUser(
+          {
+            db: view<PurgeDb>(),
+            blobs: ctx.accounts.blobs ?? { delete: () => Promise.resolve() },
+            deleteWorkspace: workspaceDeleterFrom(ctx.collab.workspaces, ctx.accounts.emitter),
+            emitter: ctx.accounts.emitter,
+            ...(tombstones === null ? {} : { tombstones }),
+            clock: ctx.clock ?? Date.now,
+            logger: ctx.logger,
+            metrics: ctx.metrics,
+          },
+          userId,
+        ),
+      due: (now, limit) => duePurges(view<PurgeDb>(), now, limit),
+      exports:
+        ctx.accounts.blobs === null
+          ? null
+          : new AccountExportRunner({
+              store: ctx.accounts.store,
+              blobs: ctx.accounts.blobs,
+              clock: ctx.clock ?? Date.now,
+              logger: ctx.logger,
+              metrics: ctx.metrics,
+            }),
+    },
   };
 }

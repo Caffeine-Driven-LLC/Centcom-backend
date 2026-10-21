@@ -8,6 +8,7 @@
  */
 import type { FastifyInstance } from 'fastify';
 import type { AppContext } from './context.js';
+import { accountDeletionRoutes, accountExportRoutes } from './modules/account-lifecycle/index.js';
 import { deviceRoutes as deviceGrantRoutes } from './modules/auth/device/routes.js';
 import { webLoginCompleter } from './modules/auth/web-session/store.js';
 import { devicePages } from './pages/device.js';
@@ -144,6 +145,20 @@ export const API_MODULES: readonly ApiModule[] = [
           };
         },
       });
+    },
+  },
+  {
+    name: 'account-lifecycle',
+    register: async (app, ctx) => {
+      await app.register(accountDeletionRoutes, { service: ctx.accounts.service });
+    },
+  },
+  {
+    name: 'account-exports',
+    skip: (ctx) =>
+      ctx.accounts.blobs === null ? 'no object store is configured (OBJECT_STORE_*)' : null,
+    register: async (app, ctx) => {
+      await app.register(accountExportRoutes, { service: ctx.accounts.service });
     },
   },
   {

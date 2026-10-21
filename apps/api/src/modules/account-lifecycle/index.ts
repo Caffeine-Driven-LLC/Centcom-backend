@@ -40,6 +40,8 @@ export {
 export {
   ACCOUNT_BODY_LIMIT,
   ACCOUNT_ROUTE_DETAILS,
+  accountDeletionRoutes,
+  accountExportRoutes,
   accountLifecycleRoutes,
   GRACE_DAYS,
   type AccountLifecycleRouteOptions,
