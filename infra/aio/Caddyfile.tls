@@ -1,0 +1,36 @@
+# Opt-in HTTPS for other computers (B112, AIO_TLS=1): Caddy's own certificate authority signs a certificate for
+# TEST_SERVER_HOST (a name or an address). The apps must trust that authority; the root certificate is at
+# http://<host>:8081/ca.crt. FOR TESTING ONLY. The entrypoint copies this file to /run/centcom/tls.caddy.
+{$TEST_SERVER_HOST}:{$AIO_TLS_PORT:8443} {
+	tls internal
+	encode zstd gzip
+	@ws path /v1/ws /v1/ws/*
+	handle @ws {
+		reverse_proxy 127.0.0.1:8088
+	}
+	handle {
+		reverse_proxy 127.0.0.1:3000 {
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+}
+
+# The object store over HTTPS: the API hands clients presigned URLs for session snapshots. The Host header reaches
+# MinIO unchanged (Caddy's default), so the signature stays valid.
+{$TEST_SERVER_HOST}:{$AIO_S3_TLS_PORT:9443} {
+	tls internal
+	reverse_proxy 127.0.0.1:{$AIO_S3_PORT:9000}
+}
+
+# Plain HTTP serves the CA certificate and nothing else.
+http://{$TEST_SERVER_HOST}:{$AIO_HTTP_CA_PORT:8081} {
+	handle /ca.crt {
+		root * /data/caddy/pki/authorities/local
+		rewrite * /root.crt
+		header Content-Type application/x-x509-ca-cert
+		file_server
+	}
+	handle {
+		respond "Centcom test server. Use https; the CA certificate is at /ca.crt." 404
+	}
+}

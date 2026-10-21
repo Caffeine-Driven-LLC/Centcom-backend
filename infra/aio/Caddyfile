@@ -1,0 +1,28 @@
+# The front door of the one-container test server (B112): one port (8080) for the API and the relay, plain HTTP.
+# /v1/ws goes to the relay, everything else to the API. The apps accept plain http/ws for localhost only; for another
+# computer start the container with AIO_TLS=1 (see docs/ops/test-server-container.md), which adds the HTTPS site
+# from Caddyfile.tls through the import below.
+{
+	admin off
+	auto_https disable_redirects
+	local_certs
+	# An address (https://192.168.1.20) sends no server name; this serves it the certificate of TEST_SERVER_HOST.
+	default_sni {$TEST_SERVER_HOST:localhost}
+	http_port {$AIO_HTTP_CA_PORT:8081}
+	https_port {$AIO_TLS_PORT:8443}
+}
+
+:8080 {
+	encode zstd gzip
+	@ws path /v1/ws /v1/ws/*
+	handle @ws {
+		reverse_proxy 127.0.0.1:8088
+	}
+	handle {
+		reverse_proxy 127.0.0.1:3000 {
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+}
+
+import /run/centcom/tls*.caddy
