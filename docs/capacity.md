@@ -83,7 +83,13 @@ Thresholds (the card's): fan-out p95 under 150 ms and p99 under 400 ms measured 
 | 1500 | 21.4 | 31.4 | 1499 | 0.41 | 425 | passed |
 | 1500 | 20.8 | 29.6 | 1499 | 0.4 | 427 | passed |
 
-**1 of 10 windows failed their checks.** The cause was not established: the failing window shows the relay's memory jumping and latency stalling for seconds while the other minutes sit at a steady 20 to 30 ms, on a laptop that other work was using. Treat it as an open finding for the relay owners until a soak on a quiet server says otherwise.
+**1 of 10 windows failed their checks.** It was investigated on 2026-10-14 and is **not a leak in the relay**:
+
+- Three more 1 500-connection soaks were run (one with a Redis and memory sampler every 5 s, one with `--trace-gc`, one 5-minute run). Resident memory rises while the 1 500 connections are made and then stays flat for the remaining nine windows, to the megabyte, in every run. The run with `--trace-gc` (`infra/loadtest/reports/2026-10-14-relay-soak.json`, all ten windows passed) shows a live heap of about 70 MB after each of 82 mark-compacts, a longest mark-compact pause of 11 ms and a longest scavenge of 19 ms: garbage collection cannot cause a stall of seconds.
+- The failing windows (the 4th in the first run, the 1st in a second) coincided with a stall of the whole machine: the load generator's own event-loop lag was 13 to 16 ms against 1 to 3 ms in the good windows, the machine's load was 10 to 12 on 8 cores and about 4 cores were used by other work. Redis reported no AOF delay or fork stall in the watched run.
+- The "memory jump" came with those stalls: the runs that stalled ended at 417 to 463 MiB, the clean run at 276 MiB, all flat afterwards. Memory that a burst of buffered frames takes from the operating system is not given back, so the step is a consequence of the stall, not its cause. This explanation fits the data but was not proven: an attempt to stall a relay on purpose is not part of the evidence.
+
+To look at a stall yourself: `pnpm loadtest:relay --profile soak --connections 1500 --duration 600 --relay-node-args "--trace-gc" --relay-stdout gc.txt`, and compare the failing window's `generatorLagP99Ms`, `loadavg1` and `foreignCores` with the others. Run it on a quiet server; a result from a busy laptop says little about the relay.
 
 ## Instances and cost for the launch targets
 

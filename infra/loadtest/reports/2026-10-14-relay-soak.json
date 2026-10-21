@@ -1,0 +1,612 @@
+{
+  "scenario": "soak",
+  "started_at": "2026-10-13T22:46:40.910Z",
+  "target": "localhost",
+  "environment": {
+    "cpus": 8,
+    "cpu_model": "Intel(R) Core(TM) Ultra 7 355",
+    "memory_gib": 30.7,
+    "kernel": "7.2.8-arch1-2",
+    "node": "v22.23.3",
+    "generator_processes": 1,
+    "relay": "apps/relay/src/main.ts via tsx, one process per node",
+    "backing": "Redis 7 (AOF on), Postgres 16, MinIO in Docker on loopback; generators and relay share this machine"
+  },
+  "thresholds": [
+    {
+      "name": "members behind their session at the end (frame loss)",
+      "ok": true,
+      "value": 0,
+      "limit": 0
+    },
+    {
+      "name": "clients that could not connect",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 % of 1500"
+    },
+    {
+      "name": "1500 connections: fan-out p95 (ms)",
+      "ok": true,
+      "value": 24.8,
+      "limit": 150
+    },
+    {
+      "name": "1500 connections: fan-out p99 (ms)",
+      "ok": true,
+      "value": 38.7,
+      "limit": 400
+    },
+    {
+      "name": "1500 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "1500 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 1.6,
+      "limit": 100
+    },
+    {
+      "name": "1500 connections: fan-out p95 (ms)",
+      "ok": true,
+      "value": 27.1,
+      "limit": 150
+    },
+    {
+      "name": "1500 connections: fan-out p99 (ms)",
+      "ok": true,
+      "value": 41,
+      "limit": 400
+    },
+    {
+      "name": "1500 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "1500 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 1.8,
+      "limit": 100
+    },
+    {
+      "name": "1500 connections: fan-out p95 (ms)",
+      "ok": true,
+      "value": 24.1,
+      "limit": 150
+    },
+    {
+      "name": "1500 connections: fan-out p99 (ms)",
+      "ok": true,
+      "value": 37.5,
+      "limit": 400
+    },
+    {
+      "name": "1500 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "1500 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 1.7,
+      "limit": 100
+    },
+    {
+      "name": "1500 connections: fan-out p95 (ms)",
+      "ok": true,
+      "value": 26.3,
+      "limit": 150
+    },
+    {
+      "name": "1500 connections: fan-out p99 (ms)",
+      "ok": true,
+      "value": 38.7,
+      "limit": 400
+    },
+    {
+      "name": "1500 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "1500 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 1.3,
+      "limit": 100
+    },
+    {
+      "name": "1500 connections: fan-out p95 (ms)",
+      "ok": true,
+      "value": 25.6,
+      "limit": 150
+    },
+    {
+      "name": "1500 connections: fan-out p99 (ms)",
+      "ok": true,
+      "value": 52,
+      "limit": 400
+    },
+    {
+      "name": "1500 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "1500 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 1.8,
+      "limit": 100
+    },
+    {
+      "name": "1500 connections: fan-out p95 (ms)",
+      "ok": true,
+      "value": 25.6,
+      "limit": 150
+    },
+    {
+      "name": "1500 connections: fan-out p99 (ms)",
+      "ok": true,
+      "value": 39.8,
+      "limit": 400
+    },
+    {
+      "name": "1500 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "1500 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 2.3,
+      "limit": 100
+    },
+    {
+      "name": "1500 connections: fan-out p95 (ms)",
+      "ok": true,
+      "value": 23.4,
+      "limit": 150
+    },
+    {
+      "name": "1500 connections: fan-out p99 (ms)",
+      "ok": true,
+      "value": 34.4,
+      "limit": 400
+    },
+    {
+      "name": "1500 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "1500 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 1.9,
+      "limit": 100
+    },
+    {
+      "name": "1500 connections: fan-out p95 (ms)",
+      "ok": true,
+      "value": 27.1,
+      "limit": 150
+    },
+    {
+      "name": "1500 connections: fan-out p99 (ms)",
+      "ok": true,
+      "value": 46.2,
+      "limit": 400
+    },
+    {
+      "name": "1500 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "1500 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 1.6,
+      "limit": 100
+    },
+    {
+      "name": "1500 connections: fan-out p95 (ms)",
+      "ok": true,
+      "value": 25.6,
+      "limit": 150
+    },
+    {
+      "name": "1500 connections: fan-out p99 (ms)",
+      "ok": true,
+      "value": 38.7,
+      "limit": 400
+    },
+    {
+      "name": "1500 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "1500 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 2.2,
+      "limit": 100
+    },
+    {
+      "name": "1500 connections: fan-out p95 (ms)",
+      "ok": true,
+      "value": 27.1,
+      "limit": 150
+    },
+    {
+      "name": "1500 connections: fan-out p99 (ms)",
+      "ok": true,
+      "value": 49,
+      "limit": 400
+    },
+    {
+      "name": "1500 connections: unexpected closes",
+      "ok": true,
+      "value": 0,
+      "limit": "0.1 %"
+    },
+    {
+      "name": "1500 connections: generator not saturated (lag p99 ms)",
+      "ok": true,
+      "value": 1.4,
+      "limit": 100
+    },
+    {
+      "name": "windows that failed their checks",
+      "ok": true,
+      "value": 0,
+      "limit": 0
+    }
+  ],
+  "steps": [
+    {
+      "connections": 1500,
+      "sessions": 300,
+      "seconds": 65.1,
+      "framesSent": 19523,
+      "deliveries": 97665,
+      "deliveryRatio": 1.0005,
+      "deliveriesPerS": 1501,
+      "p50Ms": 9.6,
+      "p95Ms": 24.8,
+      "p99Ms": 38.7,
+      "maxMs": 114.2,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.48,
+      "relayRssMiB": 272,
+      "generatorLagP99Ms": 1.6,
+      "loadavg1": 5.5,
+      "fps": 1,
+      "sequencedFramesPerS": 300,
+      "foreignCores": 2.4,
+      "machineBusyCores": 3.5,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 6.24,
+        "postgresCpuPercent": 25.65,
+        "minioCpuPercent": 19.56
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": true,
+      "failed": []
+    },
+    {
+      "connections": 1500,
+      "sessions": 300,
+      "seconds": 65.1,
+      "framesSent": 19509,
+      "deliveries": 97545,
+      "deliveryRatio": 1,
+      "deliveriesPerS": 1499,
+      "p50Ms": 9.6,
+      "p95Ms": 27.1,
+      "p99Ms": 41,
+      "maxMs": 123.5,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.43,
+      "relayRssMiB": 273,
+      "generatorLagP99Ms": 1.8,
+      "loadavg1": 7.5,
+      "fps": 1,
+      "sequencedFramesPerS": 300,
+      "foreignCores": 2.9,
+      "machineBusyCores": 4.3,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 20.6,
+        "postgresCpuPercent": 32.63,
+        "minioCpuPercent": 29.14
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": true,
+      "failed": []
+    },
+    {
+      "connections": 1500,
+      "sessions": 300,
+      "seconds": 65.1,
+      "framesSent": 19519,
+      "deliveries": 97515,
+      "deliveryRatio": 0.9992,
+      "deliveriesPerS": 1499,
+      "p50Ms": 9.6,
+      "p95Ms": 24.1,
+      "p99Ms": 37.5,
+      "maxMs": 74.9,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.42,
+      "relayRssMiB": 276,
+      "generatorLagP99Ms": 1.7,
+      "loadavg1": 4.9,
+      "fps": 1,
+      "sequencedFramesPerS": 300,
+      "foreignCores": 2,
+      "machineBusyCores": 3.3,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 6.87,
+        "postgresCpuPercent": 34.57,
+        "minioCpuPercent": 32.31
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": true,
+      "failed": []
+    },
+    {
+      "connections": 1500,
+      "sessions": 300,
+      "seconds": 65.1,
+      "framesSent": 19513,
+      "deliveries": 97510,
+      "deliveryRatio": 0.9994,
+      "deliveriesPerS": 1499,
+      "p50Ms": 9.6,
+      "p95Ms": 26.3,
+      "p99Ms": 38.7,
+      "maxMs": 116.4,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.41,
+      "relayRssMiB": 276,
+      "generatorLagP99Ms": 1.3,
+      "loadavg1": 5.4,
+      "fps": 1,
+      "sequencedFramesPerS": 300,
+      "foreignCores": 3,
+      "machineBusyCores": 4.1,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 6.83,
+        "postgresCpuPercent": 30.95,
+        "minioCpuPercent": 24.43
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": true,
+      "failed": []
+    },
+    {
+      "connections": 1500,
+      "sessions": 300,
+      "seconds": 65.1,
+      "framesSent": 19510,
+      "deliveries": 97550,
+      "deliveryRatio": 1,
+      "deliveriesPerS": 1499,
+      "p50Ms": 9.1,
+      "p95Ms": 25.6,
+      "p99Ms": 52,
+      "maxMs": 194.8,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.43,
+      "relayRssMiB": 276,
+      "generatorLagP99Ms": 1.8,
+      "loadavg1": 6.2,
+      "fps": 1,
+      "sequencedFramesPerS": 300,
+      "foreignCores": 1.9,
+      "machineBusyCores": 3.1,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 6.8,
+        "postgresCpuPercent": 34.88,
+        "minioCpuPercent": 27.11
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": true,
+      "failed": []
+    },
+    {
+      "connections": 1500,
+      "sessions": 300,
+      "seconds": 65.1,
+      "framesSent": 19503,
+      "deliveries": 97515,
+      "deliveryRatio": 1,
+      "deliveriesPerS": 1499,
+      "p50Ms": 9.4,
+      "p95Ms": 25.6,
+      "p99Ms": 39.8,
+      "maxMs": 88.8,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.41,
+      "relayRssMiB": 276,
+      "generatorLagP99Ms": 2.3,
+      "loadavg1": 5.7,
+      "fps": 1,
+      "sequencedFramesPerS": 300,
+      "foreignCores": 2.7,
+      "machineBusyCores": 3.8,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 5.63,
+        "postgresCpuPercent": 33.05,
+        "minioCpuPercent": 21.82
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": true,
+      "failed": []
+    },
+    {
+      "connections": 1500,
+      "sessions": 300,
+      "seconds": 65.1,
+      "framesSent": 19506,
+      "deliveries": 97530,
+      "deliveryRatio": 1,
+      "deliveriesPerS": 1499,
+      "p50Ms": 9.4,
+      "p95Ms": 23.4,
+      "p99Ms": 34.4,
+      "maxMs": 99.2,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.44,
+      "relayRssMiB": 276,
+      "generatorLagP99Ms": 1.9,
+      "loadavg1": 5.3,
+      "fps": 1,
+      "sequencedFramesPerS": 300,
+      "foreignCores": 1.9,
+      "machineBusyCores": 3.2,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 8.34,
+        "postgresCpuPercent": 34.99,
+        "minioCpuPercent": 29.25
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": true,
+      "failed": []
+    },
+    {
+      "connections": 1500,
+      "sessions": 300,
+      "seconds": 65.1,
+      "framesSent": 19518,
+      "deliveries": 97590,
+      "deliveryRatio": 1,
+      "deliveriesPerS": 1499,
+      "p50Ms": 9.9,
+      "p95Ms": 27.1,
+      "p99Ms": 46.2,
+      "maxMs": 119.8,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.42,
+      "relayRssMiB": 276,
+      "generatorLagP99Ms": 1.6,
+      "loadavg1": 8.5,
+      "fps": 1,
+      "sequencedFramesPerS": 300,
+      "foreignCores": 3,
+      "machineBusyCores": 4.1,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 6.26,
+        "postgresCpuPercent": 34.53,
+        "minioCpuPercent": 20.14
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": true,
+      "failed": []
+    },
+    {
+      "connections": 1500,
+      "sessions": 300,
+      "seconds": 65.1,
+      "framesSent": 19506,
+      "deliveries": 97530,
+      "deliveryRatio": 1,
+      "deliveriesPerS": 1499,
+      "p50Ms": 9.4,
+      "p95Ms": 25.6,
+      "p99Ms": 38.7,
+      "maxMs": 92.5,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.41,
+      "relayRssMiB": 276,
+      "generatorLagP99Ms": 2.2,
+      "loadavg1": 10.3,
+      "fps": 1,
+      "sequencedFramesPerS": 300,
+      "foreignCores": 2.6,
+      "machineBusyCores": 3.9,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 6.59,
+        "postgresCpuPercent": 35.85,
+        "minioCpuPercent": 31.77
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": true,
+      "failed": []
+    },
+    {
+      "connections": 1500,
+      "sessions": 300,
+      "seconds": 65.1,
+      "framesSent": 19511,
+      "deliveries": 97555,
+      "deliveryRatio": 1,
+      "deliveriesPerS": 1499,
+      "p50Ms": 9.9,
+      "p95Ms": 27.1,
+      "p99Ms": 49,
+      "maxMs": 121.3,
+      "unexpectedCloses": 0,
+      "relayCpuCores": 0.43,
+      "relayRssMiB": 276,
+      "generatorLagP99Ms": 1.4,
+      "loadavg1": 10.1,
+      "fps": 1,
+      "sequencedFramesPerS": 300,
+      "foreignCores": 2.9,
+      "machineBusyCores": 4.2,
+      "noisy": false,
+      "backing": {
+        "redisCpuPercent": 6.43,
+        "postgresCpuPercent": 31.65,
+        "minioCpuPercent": 37.82
+      },
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "ok": true,
+      "failed": []
+    }
+  ],
+  "extra": {
+    "connect_failures": 0,
+    "handshake_retries_after_4503": 0,
+    "loss_check": {
+      "sessions": 300,
+      "membersBehind": 0,
+      "membersWithGap": 0,
+      "duplicates": 0
+    }
+  },
+  "resources": {
+    "relay_rss_mib_max": 276,
+    "relay_cpu_cores_max": 0.48
+  },
+  "passed": true
+}

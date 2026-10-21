@@ -70,6 +70,10 @@ interface Options {
   nodes: number;
   out: string | undefined;
   url: string | undefined;
+  /** Extra `node` flags for the relay, such as `--trace-gc` (diagnostics). */
+  relayNodeArgs: string[];
+  /** A file the relay's standard output is appended to (what `--trace-gc` prints). */
+  relayStdout: string | undefined;
 }
 
 function parse(argv: readonly string[]): Options {
@@ -85,6 +89,8 @@ function parse(argv: readonly string[]): Options {
     nodes: 3,
     out: undefined,
     url: undefined,
+    relayNodeArgs: [],
+    relayStdout: undefined,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv[i] ?? '';
@@ -126,6 +132,14 @@ function parse(argv: readonly string[]): Options {
         break;
       case '--out':
         o.out = value;
+        i += 1;
+        break;
+      case '--relay-node-args':
+        o.relayNodeArgs = (value ?? '').split(' ').filter(Boolean);
+        i += 1;
+        break;
+      case '--relay-stdout':
+        o.relayStdout = value;
         i += 1;
         break;
       case '--url':
@@ -495,7 +509,14 @@ async function main(argv: readonly string[]): Promise<number> {
     jwks = await startJwks({ keys });
     for (let i = 0; i < nodes; i += 1)
       relays.push(
-        new RelayProcess({ port: basePort + i, jwksUrl: jwks.url, backing, region: `n${i}` }),
+        new RelayProcess({
+          port: basePort + i,
+          jwksUrl: jwks.url,
+          backing,
+          region: `n${i}`,
+          nodeArgs: opts.relayNodeArgs,
+          ...(opts.relayStdout === undefined ? {} : { stdoutFile: opts.relayStdout }),
+        }),
       );
     process.stderr.write(`starting ${nodes} relay${nodes > 1 ? 's' : ''}...\n`);
     await Promise.all(relays.map((r) => r.start()));
