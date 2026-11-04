@@ -39,7 +39,7 @@
     "ioredis": "6.0.0",
     "kysely": "0.29.6",
     "pino": "10.4.0",
-    "zod": "4.6.5"
+    "zod": "4.6.6"
   },
   "devDependencies": {
     "fast-check": "4.10.2",
