@@ -14,7 +14,8 @@
 #   --single-port  advertise the front door (8080) for both the API and the relay instead of 3000 and 8088.
 #   --volume NAME  the data volume (default centcom-data); reuse it to keep accounts and sessions.
 #
-# Ports are published on 127.0.0.1 only, unless --host is another name (then on every interface).
+# Ports are published on 127.0.0.1 only, unless --host is another name (then on every interface). Set AIO_BIND=<address>
+# to publish on one address only (a Tailscale address keeps the server off the local network).
 # Running it again while the container runs just prints the settings. Exit: 0 healthy; 1 failed; 2 usage/machine.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -96,7 +97,12 @@ if [[ $already -eq 0 ]]; then
     docker build --file "$REPO_DIR/infra/aio/Dockerfile" --tag "$AIO_IMAGE" "$REPO_DIR"
   fi
   # ---- run -----------------------------------------------------------------------------------------------------
+  # AIO_BIND=<address> publishes on that one address (for example a Tailscale address) instead of every interface
   bind=127.0.0.1; [[ $local_host -eq 1 ]] || bind=0.0.0.0
+  if [[ -n "${AIO_BIND:-}" ]]; then
+    [[ "$AIO_BIND" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || die 2 "AIO_BIND must be an IPv4 address (got: $AIO_BIND)"
+    bind="$AIO_BIND"
+  fi
   if [[ $tls -eq 1 ]]; then
     public_api="https://$host:$tls_port"; public_relay="wss://$host:$tls_port/v1/ws"
   elif [[ $single -eq 1 ]]; then
