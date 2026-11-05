@@ -203,3 +203,16 @@ host's firewall blocks a container reaching the host's own address, and the loop
 unreachable from the host itself, so that path could not be run end to end), the desktop app, a browser web app, Windows and
 macOS CA steps, the Pi's memory figure and build time, `--single-port` and the MinIO console. A restart policy of
 `unless-stopped` is set by `run.sh`.
+
+## Keeping it off the local network (`AIO_BIND`)
+
+With `--host` set to anything but `localhost`, `run.sh` publishes the ports on every interface of the machine. On a
+machine that also sits on a home or office network, set `AIO_BIND` to one address (for example the machine's Tailscale
+address) and the ports are published there only:
+
+```sh
+AIO_BIND=100.x.y.z infra/aio/run.sh --tls --host 100.x.y.z --fresh
+```
+
+Only devices on that network can then reach the server. It is still a development-grade server: relaxed rate limits,
+no backups, a private certificate authority.
